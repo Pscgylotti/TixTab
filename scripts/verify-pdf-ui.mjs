@@ -13,7 +13,7 @@ export async function verifyPdfUi(page) {
     const original = HTMLAnchorElement.prototype.click;
     window.__surfacePdfQa = { original, files: [] };
     HTMLAnchorElement.prototype.click = function () {
-      if (this.href.startsWith('blob:') && /\.(pdf|surfacetab)$/i.test(this.download)) {
+      if (this.href.startsWith('blob:') && /\.(pdf|tixtab)$/i.test(this.download)) {
         const file = { name: this.download, bytes: null };
         window.__surfacePdfQa.files.push(file);
         void fetch(this.href)

@@ -30,7 +30,7 @@ try {
     doc
       .addPage([595, 842])
       .drawText('Clarity in a real Electron window.', { x: 40, y: 700, size: 12, font });
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
     name: 'Clarity.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(await doc.save()),

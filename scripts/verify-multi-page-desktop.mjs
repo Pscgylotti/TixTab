@@ -75,7 +75,7 @@ try {
   let page = await launch();
   const doc = await PDFDocument.create();
   for (let i = 0; i < 6; i++) doc.addPage([600, 900]);
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
     name: 'Restart ink.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(await doc.save()),

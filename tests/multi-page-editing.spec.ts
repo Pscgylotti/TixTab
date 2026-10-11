@@ -10,8 +10,8 @@ async function load(page: Page) {
     c.getContext('2d')!.fillRect(0, 0, 80, 80);
     return c.toDataURL();
   });
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
-    name: 'Editable pages.surfacetab',
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
+    name: 'Editable pages.tixtab',
     mimeType: 'application/json',
     buffer: Buffer.from(
       JSON.stringify({

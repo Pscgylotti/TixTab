@@ -8,7 +8,7 @@ test('continuous touch flings coast, stop on retouch, and never coast a pinch', 
   for (let i = 0; i < 16; i++) doc.addPage([600, 900]);
   await page.goto('/');
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
     name: 'Long PDF.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(await doc.save()),

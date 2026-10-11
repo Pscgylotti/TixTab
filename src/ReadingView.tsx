@@ -55,7 +55,7 @@ const ReadingPage = memo(function ReadingPage({
   onDiagnostic: (d: PenDiagnostic) => void;
   onContext: (x: number, y: number) => void;
   onEditObject: (page: Page, id: string) => void;
-  focusObjectId: string | null;
+  focusObjectId: string | string[] | null;
   active: boolean;
   onActivate: (id: string) => void;
   onEdit: (i: number) => void;
@@ -245,7 +245,7 @@ export default function ReadingView({
   onDiagnostic: (d: PenDiagnostic) => void;
   onContext: (x: number, y: number) => void;
   onEditObject: (page: Page, id: string) => void;
-  focusObjectId: string | null;
+  focusObjectId: string | string[] | null;
 
   zoom: number;
   setZoom: (zoom: number) => void;
@@ -261,7 +261,11 @@ export default function ReadingView({
   const [activePageId, setActivePageId] = useState(pages[index]?.id);
   const penTime = useRef(-Infinity);
   useEffect(() => {
-    const page = pages.find((p) => p.images.some((i) => i.id === focusObjectId));
+    const page = pages.find((p) =>
+      p.images.some((i) =>
+        Array.isArray(focusObjectId) ? focusObjectId.includes(i.id) : i.id === focusObjectId,
+      ),
+    );
     if (page) setActivePageId(page.id);
   }, [focusObjectId]);
 

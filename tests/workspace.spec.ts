@@ -42,6 +42,7 @@ async function project(page: Page) {
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '保存工程', exact: true }).click();
   const downloaded = await downloadPromise;
+  expect(downloaded.suggestedFilename()).toMatch(/\.tixtab$/);
   return JSON.parse(await fs.readFile((await downloaded.path())!, 'utf8'));
 }
 test.beforeEach(async ({ page }) => {
@@ -184,6 +185,7 @@ test('工作空间分组、文档切换位置、搜索置顶、导出与删除�
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '导出工程 阅读 B' }).click();
   const downloaded = await downloadPromise;
+  expect(downloaded.suggestedFilename()).toBe('阅读 B.tixtab');
   expect(JSON.parse(await fs.readFile((await downloaded.path())!, 'utf8')).name).toBe('阅读 B');
   await page.getByRole('button', { name: '删除文档 阅读 B' }).click();
   await page.getByRole('button', { name: '确认删除文档', exact: true }).click();
@@ -410,7 +412,7 @@ test('真实 PDF 打开、插页删页、矢量标注导出与工程重开', asy
   await page.getByRole('button', { name: '撤销', exact: true }).click();
   expect((await project(page)).pages).toHaveLength(2);
   await page.locator('input[type=file]').setInputFiles({
-    name: 'fixture.surfacetab',
+    name: 'fixture.tixtab',
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(saved)),
   });

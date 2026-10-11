@@ -52,6 +52,8 @@ export interface Page {
   height: number;
   strokes: Stroke[];
   images: PlacedImage[];
+  /** Number of image objects below the page's single handwriting layer. Legacy pages default to top. */
+  inkLayer?: number;
   paper: 'plain' | 'dots' | 'lines';
 }
 import { validZoteroSource, type ZoteroSource } from './zoteroSource';
@@ -165,6 +167,8 @@ export function validNotebook(value: unknown): value is Notebook {
             ),
         ) &&
         Array.isArray(p.images) &&
+        (p.inkLayer === undefined ||
+          (Number.isInteger(p.inkLayer) && p.inkLayer >= 0 && p.inkLayer <= p.images.length)) &&
         p.images.every(
           (i) =>
             typeof i.id === 'string' &&

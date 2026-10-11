@@ -55,7 +55,7 @@ export async function verifyPdfWorkerUi(page) {
       }
     };
     HTMLAnchorElement.prototype.click = function () {
-      if (this.href.startsWith('blob:') && /\.(pdf|surfacetab)$/i.test(this.download)) {
+      if (this.href.startsWith('blob:') && /\.(pdf|tixtab)$/i.test(this.download)) {
         const f = { name: this.download, bytes: null };
         qa.files.push(f);
         void fetch(this.href)

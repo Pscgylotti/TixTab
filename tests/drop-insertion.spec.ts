@@ -32,6 +32,41 @@ async function drop(
       );
     }, files);
 }
+test('.tixtab project drag import restores editable objects and saves the new extension', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  const notebook = {
+    version: 1,
+    name: 'TixTab project',
+    source: null,
+    pages: [
+      {
+        id: 'format-page',
+        sourceIndex: null,
+        width: 400,
+        height: 550,
+        paper: 'lines',
+        strokes: [],
+        images: [],
+      },
+    ],
+  };
+  await drop(page, [
+    {
+      name: 'Project.tixtab',
+      type: 'application/json',
+      bytes: [...new TextEncoder().encode(JSON.stringify(notebook))],
+    },
+  ]);
+  await expect(page.getByLabel('文档名称', { exact: true })).toHaveValue('TixTab project');
+  await expect(page.locator('input[type=file][accept=".pdf,.tixtab"]')).toHaveCount(1);
+  const pending = page.waitForEvent('download');
+  await page.getByRole('button', { name: '保存工程', exact: true }).click();
+  const download = await pending;
+  expect(download.suggestedFilename()).toBe('TixTab project.tixtab');
+});
 test('PDF drop asks before opening, inserts specified pages in order, undo/redo restores sources and export', async ({
   page,
 }) => {

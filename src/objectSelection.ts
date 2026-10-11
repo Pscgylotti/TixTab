@@ -50,3 +50,33 @@ export function transformObjects(
       : i,
   );
 }
+export type ObjectOrder = 'front' | 'back' | 'forward' | 'backward';
+/** Stable group order: crossing an unselected neighbour moves a selection exactly one layer. */
+export function reorderObjects(images: PlacedImage[], ids: readonly string[], order: ObjectOrder) {
+  const chosen = new Set(ids);
+  return reorderSelection(images, (i) => chosen.has(i.id), order);
+}
+export function reorderSelection<T>(
+  images: T[],
+  chosen: (image: T) => boolean,
+  order: ObjectOrder,
+) {
+  let result: T[];
+  if (order === 'front' || order === 'back') {
+    const selected = images.filter(chosen),
+      rest = images.filter((i) => !chosen(i));
+    result = order === 'front' ? [...rest, ...selected] : [...selected, ...rest];
+  } else {
+    result = [...images];
+    if (order === 'forward') {
+      for (let i = result.length - 2; i >= 0; i--)
+        if (chosen(result[i]) && !chosen(result[i + 1]))
+          [result[i], result[i + 1]] = [result[i + 1], result[i]];
+    } else {
+      for (let i = 1; i < result.length; i++)
+        if (chosen(result[i]) && !chosen(result[i - 1]))
+          [result[i], result[i - 1]] = [result[i - 1], result[i]];
+    }
+  }
+  return result.every((image, i) => image === images[i]) ? images : result;
+}

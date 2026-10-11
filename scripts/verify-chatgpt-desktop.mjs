@@ -170,7 +170,7 @@ try {
   const original = await PDFDocument.create();
   original.addPage([400, 550]);
   const originalBytes = Buffer.from(await original.save());
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
     name: 'Original desktop.pdf',
     mimeType: 'application/pdf',
     buffer: originalBytes,
@@ -267,7 +267,7 @@ try {
   assert.deepEqual(errors, []);
   const pdf = await PDFDocument.create();
   for (let i = 0; i < 12; i++) pdf.addPage([600, 900]);
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
     name: 'Kinetic check.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(await pdf.save()),

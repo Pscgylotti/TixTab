@@ -15,6 +15,7 @@ import {
 } from 'pdf-lib';
 import type { Notebook, Page } from './model';
 import { finalInkPath } from './ink';
+import { pageLayers } from './pageLayers';
 import { t } from './i18n';
 import { SignedPdfExportError, type PdfExportProgress } from './pdfExportProtocol';
 export { SignedPdfExportError } from './pdfExportProtocol';
@@ -325,30 +326,33 @@ async function appendOverlay(
 ) {
   const layer = PDFPage.create(doc);
   layer.setSize(p.width, p.height);
-  for (const image of p.images) {
-    const png = await doc.embedPng(image.data),
-      scale = Math.min(image.width / png.width, image.height / png.height),
-      width = png.width * scale,
-      height = png.height * scale;
-    layer.drawImage(png, {
-      x: image.x + (image.width - width) / 2,
-      y: p.height - image.y - (image.height + height) / 2,
-      width,
-      height,
-    });
-  }
-  for (const stroke of p.strokes) {
-    const hex = stroke.color.slice(1);
-    layer.drawSvgPath(finalInkPath(stroke), {
-      x: 0,
-      y: p.height,
-      color: rgb(
-        parseInt(hex.slice(0, 2), 16) / 255,
-        parseInt(hex.slice(2, 4), 16) / 255,
-        parseInt(hex.slice(4, 6), 16) / 255,
-      ),
-      opacity: stroke.tool === 'highlighter' ? 0.28 : stroke.tool === 'pencil' ? 0.65 : 1,
-    });
+  for (const image of pageLayers(p)) {
+    if (image) {
+      const png = await doc.embedPng(image.data),
+        scale = Math.min(image.width / png.width, image.height / png.height),
+        width = png.width * scale,
+        height = png.height * scale;
+      layer.drawImage(png, {
+        x: image.x + (image.width - width) / 2,
+        y: p.height - image.y - (image.height + height) / 2,
+        width,
+        height,
+      });
+    } else {
+      for (const stroke of p.strokes) {
+        const hex = stroke.color.slice(1);
+        layer.drawSvgPath(finalInkPath(stroke), {
+          x: 0,
+          y: p.height,
+          color: rgb(
+            parseInt(hex.slice(0, 2), 16) / 255,
+            parseInt(hex.slice(2, 4), 16) / 255,
+            parseInt(hex.slice(4, 6), 16) / 255,
+          ),
+          opacity: stroke.tool === 'highlighter' ? 0.28 : stroke.tool === 'pencil' ? 0.65 : 1,
+        });
+      }
+    }
   }
   const contents = layer.node.Contents();
   if (!(contents instanceof PDFArray) || contents.size() !== 1)

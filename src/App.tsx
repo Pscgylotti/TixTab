@@ -77,6 +77,8 @@ import FullscreenButton from './FullscreenButton';
 import TouchKeyboard from './TouchKeyboard';
 import RegionCapture from './RegionCapture';
 import { imageFile, isImageFile, type ImportedImage } from './svgImport';
+import { objectsFromClipboard, placeClipboardObjects } from './objectClipboard';
+import { appendPageImages } from './pageLayers';
 
 import type { PdfDropChoice } from './PdfDropDialog';
 const PdfDropDialog = lazy(() => import('./PdfDropDialog'));
@@ -186,7 +188,7 @@ export default function App() {
       pageNumber: number;
       documentId: string;
     } | null>(null);
-  const [focusObjectId, setFocusObjectId] = useState<string | null>(null);
+  const [focusObjectId, setFocusObjectId] = useState<string | string[] | null>(null);
   const [capturing, setCapturing] = useState(false),
     [ocrImage, setOcrImage] = useState<string | null>(null);
   const capture = async (pageId: string | null, region: PageRegion) => {
@@ -608,11 +610,7 @@ export default function App() {
     window.getSelection()?.removeAllRanges();
   }, [index, viewMode, pdf]);
   const saveProject = () => {
-    download(
-      encodeProject(current.current),
-      `${current.current.name}.surfacetab`,
-      'application/json',
-    );
+    download(encodeProject(current.current), `${current.current.name}.tixtab`, 'application/json');
     notify(
       tr(
         '\u5DE5\u7A0B\u5DF2\u4FDD\u5B58\uFF0C\u5305\u542B\u539F\u59CB PDF \u548C\u53EF\u7F16\u8F91\u7B14\u8FF9',
@@ -788,11 +786,11 @@ export default function App() {
       id === activeRef.current
         ? current.current
         : (await loadWorkspaceDocument(id, false)).notebook;
-    download(encodeProject(n), `${n.name}.surfacetab`, 'application/json');
+    download(encodeProject(n), `${n.name}.tixtab`, 'application/json');
   };
   const openFiles = (files: File[]) =>
     documentOperation(async () => {
-      const supported = files.filter((f) => /\.(pdf|surfacetab)$/i.test(f.name));
+      const supported = files.filter((f) => /\.(pdf|tixtab)$/i.test(f.name));
       if (!supported.length) {
         notify(tr('请拖入 PDF 或 TixTab 工程文件'));
         return;
@@ -888,9 +886,7 @@ export default function App() {
     if (!objects.length) return;
     commit({
       ...notebook,
-      pages: notebook.pages.map((p) =>
-        p.id === page.id ? { ...p, images: [...p.images, ...objects] } : p,
-      ),
+      pages: notebook.pages.map((p) => (p.id === page.id ? appendPageImages(p, objects) : p)),
     });
     if (
       viewRef.current.mode !== 'dual' ||
@@ -981,10 +977,12 @@ export default function App() {
       });
     });
   };
+  const objectPasteSequence = useRef({ key: '', count: 0 });
   useEffect(() => {
     const paste = (event: ClipboardEvent) => {
       const target = event.target instanceof Element ? event.target : null;
       if (
+        event.defaultPrevented ||
         !ready ||
         busyRef.current ||
         dialog ||
@@ -997,12 +995,22 @@ export default function App() {
         return;
       const files = Array.from(event.clipboardData?.files || []).filter(isImageFile);
       const text = event.clipboardData?.getData('text/plain') || '';
-      if (!files.length && !text.trim()) return;
+      const objects = event.clipboardData ? objectsFromClipboard(event.clipboardData) : null;
+      if (!objects && !files.length && !text.trim()) return;
       event.preventDefault();
       const page = current.current.pages[viewRef.current.index] || current.current.pages[0];
+      const anchorVisible =
+        viewRef.current.mode === 'continuous' &&
+        Array.from(document.querySelectorAll<HTMLElement>('.reading-card')).some((card) => {
+          if (card.dataset.pageId !== pasteAnchor.current?.pageId) return false;
+          const r = card.getBoundingClientRect(),
+            viewport = card.closest('.reading-view')?.getBoundingClientRect();
+          return !!viewport && r.bottom > viewport.top && r.top < viewport.bottom;
+        });
       const anchor =
         pasteAnchor.current?.documentId === activeRef.current &&
         (pasteAnchor.current.pageId === page.id ||
+          anchorVisible ||
           (viewRef.current.mode === 'dual' &&
             pasteAnchor.current.pageId === current.current.pages[viewRef.current.index + 1]?.id))
           ? pasteAnchor.current
@@ -1010,7 +1018,32 @@ export default function App() {
       setSelection(null);
       reportOperation(() =>
         documentOperation(async () => {
-          if (files.length) await droppedImages(files, anchor);
+          if (objects) {
+            const notebook = current.current;
+            const at = notebook.pages.findIndex((p) => p.id === anchor.pageId);
+            if (at < 0) throw Error(tr('目标页面已不存在。'));
+            const page = notebook.pages[at];
+            const key = `${activeRef.current}:${page.id}:${objects.objects.map((i) => i.id).join(',')}:${'x' in anchor ? anchor.x : ''}:${'y' in anchor ? anchor.y : ''}`;
+            const count =
+              objectPasteSequence.current.key === key ? objectPasteSequence.current.count + 1 : 1;
+            objectPasteSequence.current = { key, count };
+            const placed = placeClipboardObjects(objects, page, anchor, count * 16);
+            commit({
+              ...notebook,
+              pages: notebook.pages.map((p) =>
+                p.id === page.id ? appendPageImages(p, placed) : p,
+              ),
+            });
+            if (
+              viewRef.current.mode !== 'dual' ||
+              at < viewRef.current.index ||
+              at > viewRef.current.index + 1
+            )
+              setIndex(at);
+            setTool('object');
+            setFocusObjectId(placed.map((i) => i.id));
+            notify(tr('已粘贴 {0} 个对象', placed.length));
+          } else if (files.length) await droppedImages(files, anchor);
           else {
             const { textBoxImage, defaultTextBox } = await import('./textBox');
             const image = await textBoxImage({ ...defaultTextBox, content: text });
@@ -1465,7 +1498,7 @@ export default function App() {
         ref={file}
         hidden
         multiple
-        accept=".pdf,.surfacetab"
+        accept=".pdf,.tixtab"
         onChange={(e) => {
           const files = Array.from(e.target.files || []);
           e.target.value = '';

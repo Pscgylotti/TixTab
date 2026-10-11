@@ -1,6 +1,7 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { Page } from './model';
 import { drawStrokes } from './ink';
+import { pageLayers } from './pageLayers';
 export interface PageRegion {
   x: number;
   y: number;
@@ -24,12 +25,15 @@ export async function capturePage(page: Page, pdf: PDFDocumentProxy | null, regi
     }).promise;
   }
   ctx.setTransform(scale, 0, 0, scale, -region.x * scale, -region.y * scale);
-  for (const image of page.images) {
+  for (const image of pageLayers(page)) {
+    if (!image) {
+      drawStrokes(ctx, page.strokes);
+      continue;
+    }
     const i = new Image();
     i.src = image.displayData ?? image.data;
     await i.decode();
     ctx.drawImage(i, image.x, image.y, image.width, image.height);
   }
-  drawStrokes(ctx, page.strokes);
   return c.toDataURL('image/png');
 }

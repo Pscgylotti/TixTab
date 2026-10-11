@@ -191,7 +191,7 @@ export default function ObjectLayer({ page, active, zoom, selected, onSelect, on
         onPointerDown={(e) => start(e)}
         {...handlers}
       >
-        {images.map((i) => (
+        {images.map((i, index) => (
           <div
             key={i.id}
             className={`placed-object ${selected.includes(i.id) ? 'chosen' : ''}`}
@@ -205,7 +205,7 @@ export default function ObjectLayer({ page, active, zoom, selected, onSelect, on
                     ? tr('草图对象')
                     : tr('公式对象')
             }
-            style={{ left: i.x, top: i.y, width: i.width, height: i.height }}
+            style={{ left: i.x, top: i.y, width: i.width, height: i.height, zIndex: index * 2 + 2 }}
             onPointerDown={(e) => start(e, i)}
           >
             <img

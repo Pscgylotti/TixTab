@@ -1,6 +1,7 @@
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 import type { Page } from './model';
 import { drawStrokes } from './ink';
+import { pageLayers } from './pageLayers';
 import { t } from './i18n';
 export interface ChatContext {
   label: string;
@@ -78,14 +79,17 @@ export async function pageChatContext(
     }
     check();
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    for (const placed of page.images) {
+    for (const placed of pageLayers(page)) {
+      if (!placed) {
+        drawStrokes(ctx, page.strokes);
+        continue;
+      }
       const image = new Image();
       image.src = placed.displayData ?? placed.data;
       await image.decode();
       check();
       ctx.drawImage(image, placed.x, placed.y, placed.width, placed.height);
     }
-    drawStrokes(ctx, page.strokes);
     check();
     const data = canvas.toDataURL('image/jpeg', 0.85);
     if (data.length > 3000000) throw new Error('input-limit');

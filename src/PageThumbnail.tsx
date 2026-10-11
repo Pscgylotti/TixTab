@@ -5,6 +5,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { isPicture, type Page } from './model';
 import { requestPdfBitmap, renderingCancelled } from './pdfRenderCache';
 import { finalInkPath } from './ink';
+import { pageLayers } from './pageLayers';
 export default memo(function PageThumbnail({
   page,
   pdf,
@@ -67,27 +68,30 @@ export default memo(function PageThumbnail({
       <canvas ref={canvas} />
       {visible && (
         <svg viewBox={`0 0 ${page.width} ${page.height}`} aria-hidden="true">
-          {page.images.map((i) => (
-            <image
-              key={i.id}
-              data-night-ink={!isPicture(i)}
-              href={i.displayData ?? i.data}
-              x={i.x}
-              y={i.y}
-              width={i.width}
-              height={i.height}
-            />
-          ))}
-          <g className="thumbnail-ink">
-            {page.strokes.map((s) => (
-              <path
-                key={s.id}
-                d={finalInkPath(s)}
-                fill={s.color}
-                opacity={s.tool === 'highlighter' ? 0.28 : s.tool === 'pencil' ? 0.65 : 1}
+          {pageLayers(page).map((i) =>
+            i ? (
+              <image
+                key={`object:${i.id}`}
+                data-night-ink={!isPicture(i)}
+                href={i.displayData ?? i.data}
+                x={i.x}
+                y={i.y}
+                width={i.width}
+                height={i.height}
               />
-            ))}
-          </g>
+            ) : (
+              <g key="ink" className="thumbnail-ink">
+                {page.strokes.map((s) => (
+                  <path
+                    key={s.id}
+                    d={finalInkPath(s)}
+                    fill={s.color}
+                    opacity={s.tool === 'highlighter' ? 0.28 : s.tool === 'pencil' ? 0.65 : 1}
+                  />
+                ))}
+              </g>
+            ),
+          )}
         </svg>
       )}
     </div>

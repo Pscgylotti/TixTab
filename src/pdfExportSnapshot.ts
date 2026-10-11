@@ -71,6 +71,7 @@ export async function packPdfExport(notebook: Notebook, signal: AbortSignal) {
       width: page.width,
       height: page.height,
       paper: page.paper,
+      inkLayer: page.inkLayer,
       strokes,
       images: page.images.map((image) => ({
         id: image.id,

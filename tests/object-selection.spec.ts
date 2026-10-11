@@ -17,7 +17,7 @@ async function load(page: Page) {
     { id: 'c', x: 400, y: 400, width: 60, height: 50, kind: 'sketch' },
   ].map((i) => ({ ...i, data: png }));
   await page.locator('input[type=file]').setInputFiles({
-    name: 'objects.surfacetab',
+    name: 'objects.tixtab',
     mimeType: 'application/json',
     buffer: Buffer.from(
       JSON.stringify({

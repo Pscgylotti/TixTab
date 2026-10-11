@@ -54,7 +54,7 @@ export async function verifyUiFeatures(page) {
     { id: 'c', x: 400, y: 400 },
   ].map((i) => ({ ...i, width: 60, height: 50, kind: 'sketch', data: png }));
   await page.locator('input[type=file]').setInputFiles({
-    name: 'groups.surfacetab',
+    name: 'groups.tixtab',
     mimeType: 'application/json',
     buffer: Buffer.from(
       JSON.stringify({

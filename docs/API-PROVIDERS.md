@@ -32,7 +32,7 @@
 
 ## 保存与回退
 
-桌面端将四项功能的完整配置通过 Electron safeStorage 异步加密写到用户数据目录 `provider-settings.v1.enc`，按 Windows 当前登录用户的 DPAPI 保护。配置文件不放在工作空间工程内；导出 `.surfacetab` 不携带 Key 或请求头。不同 Windows 用户/系统迁移可能无法解密，参见 [Electron safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage)。
+桌面端将四项功能的完整配置通过 Electron safeStorage 异步加密写到用户数据目录 `provider-settings.v1.enc`，按 Windows 当前登录用户的 DPAPI 保护。配置文件不放在工作空间工程内；导出 `.tixtab` 不携带 Key 或请求头。不同 Windows 用户/系统迁移可能无法解密，参见 [Electron safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage)。
 
 浏览器预览仅持久保存普通元数据；Key、请求头、URL 用户信息与查询参数不写入 localStorage。Key/请求头和 URL 查询参数在完整刷新后需要重填。桌面解密失败时保留原文件、显示错误，避免用空配置覆盖；操作系统加密不可用时不写明文凭据，只保留本次会话。需要恢复损坏配置时，关闭应用后先备份并移走该 `.enc` 文件，再重新配置。
 

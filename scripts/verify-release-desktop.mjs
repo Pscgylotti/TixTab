@@ -40,7 +40,7 @@ try {
     pdf
       .addPage([595, 842])
       .drawText(`Surface release page ${i}`, { x: 40, y: 700, size: 16, font });
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
     name: 'Release.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(await pdf.save()),

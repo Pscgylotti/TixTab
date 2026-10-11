@@ -39,7 +39,7 @@ try {
     font = await doc.embedFont(StandardFonts.Helvetica);
   for (let n = 1; n <= 12; n++)
     doc.addPage([600, 900]).drawText(`Portable page ${n}`, { font, size: 16, x: 40, y: 800 });
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
     name: 'Portable.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(await doc.save()),

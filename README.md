@@ -16,6 +16,8 @@
 - Editable text boxes and smart clipboard paste are supported. Model idle unloading is configurable in Settings → Tasks and backends (default: 1800 seconds); weights and compiled caches are kept. Text boxes remain editable in projects, but PDF exports currently embed them as images rather than searchable text.
 
 - Pressure-sensitive ink, pen eraser, custom colors, object selection/movement/resizing, multi-object selection and editable Excalidraw sketches.
+- With the Object tool, cut/copy/paste single or multiple objects using Ctrl+X/C/V, including between pages and documents. Editable sketches, formulas/macros and text boxes are preserved. Use Arrange objects for front/back and one-layer moves; Ctrl+[/] moves one layer, Ctrl+Shift+[/] moves to the back/front. Clipboard and ordering edits support undo/redo.
+- All handwriting on a page shares one sortable layer. Select Handwriting layer with the Object tool to move it; inserted objects can be above or below the handwriting. The order is retained in projects, thumbnails, PDF export, captures and chat image attachments.
 - Pen barrel button opens a radial tool menu over the PDF; its center opens text actions when text is selected. This needs right-click pointer events from the Windows pen driver, usually by holding the barrel button and tapping the page.
 - Direct ink and object editing in single, continuous and two-page views, inertial touch scrolling, page thumbnails/reordering, blank pages, fullscreen and collapsible controls.
 - Configurable rendering clarity, automatic detail rendering, experimental PDF night colors and bounded caches.
@@ -26,14 +28,14 @@
 
 ## Notes
 
-TixTab is an independent project and is not affiliated with or endorsed by Microsoft. Microsoft Surface and Windows are trademarks of Microsoft. The app retains the existing `.surfacetab` project format, profile folder and model caches for compatibility with earlier local previews.
+TixTab is an independent project and is not affiliated with or endorsed by Microsoft. Microsoft Surface and Windows are trademarks of Microsoft. Editable projects use the `.tixtab` extension. Earlier project contents are unchanged; rename their extension to `.tixtab` before opening. The existing profile folder and model caches remain compatible.
 
 - **Windows 11 x64 public preview.** Tested on an Intel Surface Pro 11 for Business, Core Ultra 5 238V. Other Surface models, ARM64/Qualcomm NPU and real pen/device combinations are not fully validated. Supported local backends offer CPU fallback; acceleration needs compatible drivers.
 - **Lite: neural weights are not bundled.** Setup needs GitHub/PyPI access; models need their upstream hosts. Allow several GB of disk space. Restricted networks may prevent downloads. Drivers, Zotero, accounts, API keys and Windows speech language packs are separate.
 - Managed Python is pinned and SHA256-checked. Environments live under `%USERPROFILE%\.surfacetab`; setup does not modify PATH. Click Cancel or close the setup panel to stop; reopen and retry if interrupted.
 - Local recognition runs on-device. Online translation, API providers and ChatGPT receive submitted content. Check the provider before sending sensitive PDFs. Account integration is experimental; model access and quota depend on the service.
 - SVG imports remove scripts and external resources. Workspace display stays vector-sharp; PDF export uses a bounded high-resolution PNG. Animated images use a static frame. Merging PDFs invalidates existing signatures and flattens imported form fields.
-- Save an editable `.surfacetab` project alongside exported PDFs. Complex forms, signed/encrypted documents and unusual structures have limitations; editing invalidates existing signatures. See [export notes](docs/PDF-EXPORT.md).
+- Save an editable `.tixtab` project alongside exported PDFs. Complex forms, signed/encrypted documents and unusual structures have limitations; editing invalidates existing signatures. See [export notes](docs/PDF-EXPORT.md).
 - The executable is **unsigned**; SmartScreen may show a warning. Use the official Releases page and verify `SHA256SUMS.txt`.
 
 ## Development

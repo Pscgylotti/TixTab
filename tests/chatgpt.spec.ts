@@ -88,7 +88,7 @@ test('ChatGPT account chat: page context, streaming, isolated history and night 
   await page.goto('/');
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   await page
-    .locator('input[type=file][accept=".pdf,.surfacetab"]')
+    .locator('input[type=file][accept=".pdf,.tixtab"]')
     .setInputFiles({ name: 'Chat PDF.pdf', mimeType: 'application/pdf', buffer: bytes });
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   await page.getByRole('button', { name: '打开 ChatGPT 聊天', exact: true }).click();
@@ -258,7 +258,7 @@ test('continuous page tracking updates attachment, page entry navigates, and off
   });
   await page.goto('/');
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
     name: 'Tracking.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(await doc.save()),

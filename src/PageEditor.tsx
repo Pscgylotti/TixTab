@@ -1,5 +1,6 @@
 import {
   memo,
+  useMemo,
   useEffect,
   useRef,
   useState,
@@ -8,7 +9,10 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { Pencil, Trash2, X } from 'lucide-react';
+import { Pencil, Trash2, X, Copy, Scissors, ClipboardPaste, Layers } from 'lucide-react';
+import { copyObjects, pasteObjectsFromButton } from './objectClipboard';
+import type { ObjectOrder } from './objectSelection';
+import { inkLayerIndex, reorderPageLayers, removePageImages } from './pageLayers';
 import { t as tr, useLocale } from './i18n';
 import {
   hitStroke,
@@ -36,23 +40,32 @@ interface Props {
   onDiagnostic: (d: PenDiagnostic) => void;
   onContext: (x: number, y: number) => void;
   onEditObject: (id: string) => void;
-  focusObjectId: string | null;
+  focusObjectId: string | string[] | null;
   viewport: RefObject<HTMLElement | null>;
   active?: boolean;
   onActivate?: () => void;
   reading?: boolean;
 }
 const StaticInk = memo(function StaticInk({ page }: { page: Page }) {
-  return (
-    <svg viewBox={`0 0 ${page.width} ${page.height}`} className="reading-ink">
-      {page.strokes.map((s) => (
+  const paths = useMemo(
+    () =>
+      page.strokes.map((s) => (
         <path
           key={s.id}
           d={finalInkPath(s)}
           fill={s.color}
           opacity={s.tool === 'highlighter' ? 0.28 : s.tool === 'pencil' ? 0.65 : 1}
         />
-      ))}
+      )),
+    [page.strokes],
+  );
+  return (
+    <svg
+      viewBox={`0 0 ${page.width} ${page.height}`}
+      className="reading-ink"
+      style={{ zIndex: inkLayerIndex(page) * 2 + 1 }}
+    >
+      {paths}
     </svg>
   );
 });
@@ -79,6 +92,10 @@ export default function PageEditor({
     ink = useRef<HTMLCanvasElement>(null),
     live = useRef<HTMLCanvasElement>(null);
   const [selected, setSelected] = useState<string[]>([]);
+  const [inkSelected, setInkSelected] = useState(false);
+  const [clipboardError, setClipboardError] = useState('');
+  const clipboardBusy = useRef(false);
+  const [orderOpen, setOrderOpen] = useState(false);
   useEffect(() => {
     setSelected((ids) => {
       const valid = ids.filter((id) => page.images.some((image) => image.id === id));
@@ -89,15 +106,45 @@ export default function PageEditor({
     selected.length === 1 ? page.images.find((i) => i.id === selected[0]) : undefined;
   useEffect(() => {
     setSelected([]);
+    setInkSelected(false);
+    setOrderOpen(false);
+    setClipboardError('');
   }, [page.id, tool]);
   useEffect(() => {
-    if (!active) setSelected([]);
+    if (!active) {
+      setSelected([]);
+      setInkSelected(false);
+    }
   }, [active]);
   const deleteSelected = () => {
     if (selected.length) {
-      onChange({ ...page, images: page.images.filter((i) => !selected.includes(i.id)) });
+      onChange(removePageImages(page, selected));
       setSelected([]);
     }
+  };
+  const copySelected = async (cut = false) => {
+    if (clipboardBusy.current) return;
+    clipboardBusy.current = true;
+    setClipboardError('');
+    const ids = [...selected],
+      originalPage = page;
+    try {
+      await copyObjects(originalPage, ids);
+      // A delayed clipboard permission prompt must not delete objects on a newly active page.
+      if (cut && pageRef.current.id === originalPage.id) {
+        onChange(removePageImages(pageRef.current, ids));
+        setSelected((current) => current.filter((id) => !ids.includes(id)));
+      }
+    } catch {
+      setClipboardError(tr('复制失败，所选对象已保留。'));
+    } finally {
+      clipboardBusy.current = false;
+    }
+  };
+  const orderSelected = (order: ObjectOrder) => {
+    const next = reorderPageLayers(page, selected, order, inkSelected);
+    if (next !== page) onChange(next);
+    setOrderOpen(false);
   };
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
@@ -105,24 +152,46 @@ export default function PageEditor({
         e.defaultPrevented ||
         !active ||
         tool !== 'object' ||
-        !selected.length ||
+        (!selected.length && !inkSelected) ||
         (e.target as HTMLElement).closest('input,textarea,select,[contenteditable="true"]') ||
         document.querySelector('[aria-modal="true"]')
       )
         return;
-      if (e.key === 'Delete') {
+      if (e.key === 'Delete' && selected.length) {
         e.preventDefault();
         deleteSelected();
       }
-      if (e.key === 'Escape') setSelected([]);
+      if (e.key === 'Escape') {
+        setSelected([]);
+        setInkSelected(false);
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+        if (selected.length && (e.key.toLowerCase() === 'c' || e.key.toLowerCase() === 'x')) {
+          e.preventDefault();
+          void copySelected(e.key.toLowerCase() === 'x');
+        } else if (e.code === 'BracketRight' || e.code === 'BracketLeft') {
+          e.preventDefault();
+          orderSelected(
+            e.code === 'BracketRight'
+              ? e.shiftKey
+                ? 'front'
+                : 'forward'
+              : e.shiftKey
+                ? 'back'
+                : 'backward',
+          );
+        }
+      }
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [tool, selected, page, active]);
+  }, [tool, selected, inkSelected, page, active]);
   useEffect(() => {
-    const i = page.images.find((i) => i.id === focusObjectId);
-    if (i && active) {
-      setSelected([i.id]);
+    const ids = Array.isArray(focusObjectId) ? focusObjectId : [focusObjectId];
+    const chosen = page.images.filter((i) => ids.includes(i.id)).map((i) => i.id);
+    if (chosen.length && active) {
+      setSelected(chosen);
+      setInkSelected(false);
     }
   }, [focusObjectId, active]);
   const pageRef = useRef(page);
@@ -163,7 +232,7 @@ export default function PageEditor({
       prepareCanvas(ink.current);
       redraw(page.strokes);
     }
-  }, [page]);
+  }, [page.id, page.width, page.height, page.strokes]);
   useEffect(
     () => () => {
       cancelAnimationFrame(frame.current);
@@ -279,9 +348,8 @@ export default function PageEditor({
       else if (erased.current && (erased.current.strokes.size || erased.current.images.size)) {
         const pending = erased.current;
         onChange({
-          ...pageRef.current,
+          ...removePageImages(pageRef.current, [...pending.images]),
           strokes: pageRef.current.strokes.filter((s) => !pending.strokes.has(s.id)),
-          images: pageRef.current.images.filter((i) => !pending.images.has(i.id)),
         });
       }
     }
@@ -318,11 +386,24 @@ export default function PageEditor({
           active={tool === 'object'}
           zoom={zoom}
           selected={active ? selected : []}
-          onSelect={setSelected}
+          onSelect={(ids) => {
+            setSelected(ids);
+            setInkSelected(false);
+          }}
           onChange={onChange}
         />
-        {reading ? <StaticInk page={page} /> : <canvas className="ink-layer" ref={ink} />}
-        <canvas className="live-layer" ref={live} width={1} height={1} />
+        {reading ? (
+          <StaticInk page={page} />
+        ) : (
+          <canvas className="ink-layer" ref={ink} style={{ zIndex: inkLayerIndex(page) * 2 + 1 }} />
+        )}
+        <canvas
+          className="live-layer"
+          ref={live}
+          width={1}
+          height={1}
+          style={{ zIndex: pendingCount > 0 ? 10002 : inkLayerIndex(page) * 2 + 1 }}
+        />
         {pendingImages.map((id) => {
           const image = page.images.find((i) => i.id === id);
           return (
@@ -345,21 +426,25 @@ export default function PageEditor({
       </div>
       {active &&
         tool === 'object' &&
-        selected.length > 0 &&
+        (selected.length > 0 || inkSelected || page.strokes.length > 0) &&
         viewport.current?.parentElement &&
         createPortal(
           <div className="object-inspector" onPointerDown={(e) => e.stopPropagation()}>
             <span>
-              {selectedImage
-                ? selectedImage.kind === 'text'
-                  ? tr('文本框')
-                  : isPicture(selectedImage)
-                    ? tr('图片')
-                    : selectedImage.kind === 'sketch'
-                      ? tr('草图')
-                      : tr('公式')
-                : tr('已选择 {0} 个对象', selected.length)}{' '}
-              {tr('· 拖动移动，边角缩放')}
+              {inkSelected
+                ? tr('手写层')
+                : selectedImage
+                  ? selectedImage.kind === 'text'
+                    ? tr('文本框')
+                    : isPicture(selectedImage)
+                      ? tr('图片')
+                      : selectedImage.kind === 'sketch'
+                        ? tr('草图')
+                        : tr('公式')
+                  : selected.length
+                    ? tr('已选择 {0} 个对象', selected.length)
+                    : tr('选择对象或手写层')}{' '}
+              {!!selected.length && tr('· 拖动移动，边角缩放')}
             </span>
             {selectedImage && (
               <button
@@ -378,12 +463,99 @@ export default function PageEditor({
                 {tr('编辑')}
               </button>
             )}
-            <button aria-label={tr('删除选中对象')} onClick={deleteSelected}>
-              <Trash2 size={15} />
+            {!!selected.length && (
+              <>
+                <button
+                  aria-label={tr('剪切选中对象')}
+                  title={`${tr('剪切选中对象')} (Ctrl+X)`}
+                  onClick={() => void copySelected(true)}
+                >
+                  <Scissors size={15} />
+                </button>
+                <button
+                  aria-label={tr('复制选中对象')}
+                  title={`${tr('复制选中对象')} (Ctrl+C)`}
+                  onClick={() => void copySelected()}
+                >
+                  <Copy size={15} />
+                </button>
+              </>
+            )}
+            <button
+              aria-label={tr('粘贴对象')}
+              title={`${tr('粘贴对象')} (Ctrl+V)`}
+              onClick={() => {
+                setClipboardError('');
+                void pasteObjectsFromButton().catch(() =>
+                  setClipboardError(tr('无法读取对象剪贴板，请使用 Ctrl+V。')),
+                );
+              }}
+            >
+              <ClipboardPaste size={15} />
             </button>
-            <button aria-label={tr('取消对象选择')} onClick={() => setSelected([])}>
-              <X size={15} />
-            </button>
+            {page.strokes.length > 0 && (
+              <button
+                aria-label={tr('选择手写层')}
+                aria-pressed={inkSelected}
+                onClick={() => {
+                  setSelected([]);
+                  setInkSelected(true);
+                  setOrderOpen(true);
+                }}
+              >
+                <Pencil size={15} />
+                {tr('手写层')}
+              </button>
+            )}
+            {(selected.length > 0 || inkSelected) && (
+              <div className="object-order">
+                <button
+                  aria-label={tr('排列顺序')}
+                  aria-expanded={orderOpen}
+                  onClick={() => setOrderOpen((v) => !v)}
+                >
+                  <Layers size={15} />
+                </button>
+                {orderOpen && (
+                  <div className="object-order-menu" role="group" aria-label={tr('排列顺序')}>
+                    {(
+                      [
+                        ['front', '置于顶层'],
+                        ['forward', '上移一层'],
+                        ['backward', '下移一层'],
+                        ['back', '置于底层'],
+                      ] as const
+                    ).map(([order, label]) => (
+                      <button key={order} onClick={() => orderSelected(order)}>
+                        {tr(label)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {!!selected.length && (
+              <button aria-label={tr('删除选中对象')} onClick={deleteSelected}>
+                <Trash2 size={15} />
+              </button>
+            )}
+            {(selected.length > 0 || inkSelected) && (
+              <button
+                aria-label={tr('取消对象选择')}
+                onClick={() => {
+                  setSelected([]);
+                  setInkSelected(false);
+                  setOrderOpen(false);
+                }}
+              >
+                <X size={15} />
+              </button>
+            )}
+            {clipboardError && (
+              <div className="object-clipboard-error" role="status">
+                {clipboardError}
+              </div>
+            )}
           </div>,
           viewport.current.parentElement,
         )}

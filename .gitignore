@@ -22,6 +22,7 @@ tmp/
 *.key
 *.enc
 *.surfacetab
+*.tixtab
 *.wav
 *.pdf
 docs/previews/

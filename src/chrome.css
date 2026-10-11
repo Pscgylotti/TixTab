@@ -679,7 +679,7 @@ body {
 .object-layer {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: auto;
   pointer-events: none;
 }
 .object-layer.active {
@@ -694,7 +694,7 @@ body {
   pointer-events: none;
   border: solid #5a85da;
   background: #5a85da22;
-  z-index: 8;
+  z-index: 10000;
 }
 .placed-object {
   position: absolute;
@@ -718,7 +718,7 @@ body {
 }
 .object-selection {
   position: absolute;
-  z-index: 7;
+  z-index: 10001;
   border: var(--outline-size) solid #5a85da;
   pointer-events: none;
 }
@@ -767,6 +767,7 @@ body {
   z-index: 9;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 4px 6px;
   border: 1px solid #ffffffd9;
@@ -785,6 +786,40 @@ body {
   min-height: 34px;
   padding: 7px;
   font-size: 11px;
+}
+.object-order {
+  position: relative;
+}
+.object-order-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  min-width: 132px;
+  padding: 5px;
+  border: 1px solid #c9d6e5;
+  border-radius: 10px;
+  background: #f6faff;
+  box-shadow: 0 4px 20px #37516c20;
+}
+.object-order-menu button {
+  min-height: 40px;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+.object-clipboard-error {
+  flex-basis: 100%;
+  padding: 5px;
+  font-size: 11px;
+  color: #b53232;
+}
+[data-night='true'] .object-order-menu {
+  background: #1e242f;
+  border-color: #3a4353;
+  color: #e0e5ef;
+}
+[data-night='true'] .object-clipboard-error {
+  color: #ffacac;
 }
 @media (max-width: 700px) {
   .sketch-modal header {
@@ -964,7 +999,7 @@ body {
 }
 .pending-erase-object {
   position: absolute;
-  z-index: 8;
+  z-index: 10003;
   pointer-events: none;
   border: 2px solid #e05b62;
   background: #e05b6230;
@@ -1686,6 +1721,8 @@ fieldset.provider-config {
   inset: 0;
   touch-action: none;
   cursor: crosshair;
+  z-index: 5;
+  isolation: isolate;
 }
 .page-editor.tool-hand {
   cursor: grab;

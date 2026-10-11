@@ -171,7 +171,7 @@ test('虚拟缩略图长按跨视区排序，源卡片卸载后仍能松手提�
     })),
   };
   await page.locator('input[type=file]').setInputFiles({
-    name: 'sort.surfacetab',
+    name: 'sort.tixtab',
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(notebook)),
   });

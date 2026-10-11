@@ -138,7 +138,7 @@ test('clarity setting increases actual raster density at low zoom in all page la
     doc
       .addPage([595, 842])
       .drawText('Small PDF text at low zoom 12345', { x: 40, y: 700, size: 12, font });
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
     name: 'clarity.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(await doc.save()),

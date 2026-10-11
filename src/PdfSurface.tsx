@@ -9,6 +9,7 @@ import type { Page, Tool } from './model';
 import PageEditor from './PageEditor';
 import PdfDetailLayer from './PdfDetailLayer';
 import { PanZoomPointers } from './gestures';
+import { objectBox } from './objectSelection';
 export interface PenDiagnostic {
   type: string;
   pressure: number;
@@ -30,7 +31,7 @@ interface Props {
   onRender: (s: string) => void;
   onContext: (x: number, y: number) => void;
   onEditObject: (id: string) => void;
-  focusObjectId: string | null;
+  focusObjectId: string | string[] | null;
 }
 export default function PdfSurface({
   page,
@@ -56,7 +57,10 @@ export default function PdfSurface({
     background = useRef<HTMLCanvasElement>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   useEffect(() => {
-    const image = page.images.find((i) => i.id === focusObjectId);
+    const image = objectBox(
+      page.images,
+      Array.isArray(focusObjectId) ? focusObjectId : focusObjectId ? [focusObjectId] : [],
+    );
     if (image)
       setOffset({
         x: (page.width / 2 - image.x - image.width / 2) * zoom,

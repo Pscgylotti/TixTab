@@ -47,8 +47,8 @@ test('night dims imported and legacy pictures without inversion in all layouts a
       },
     ],
   };
-  await page.locator('input[type=file][accept=".pdf,.surfacetab"]').setInputFiles({
-    name: 'Pictures.surfacetab',
+  await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
+    name: 'Pictures.tixtab',
     mimeType: 'application/json',
     buffer: Buffer.from(
       JSON.stringify({

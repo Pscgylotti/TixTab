@@ -228,7 +228,7 @@ test('2× DPI 高清细节不遮挡插图和笔迹，各模式图层正确，保
       pages: [p, { ...p, id: 'dpi-page-2', sourceIndex: 1, images: [], strokes: [] }],
     };
     await page.locator('input[type=file]').setInputFiles({
-      name: 'dpi.surfacetab',
+      name: 'dpi.tixtab',
       mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify(project)),
     });

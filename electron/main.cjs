@@ -353,12 +353,13 @@ app.whenReady().then(() => {
   });
   session.defaultSession.setPermissionRequestHandler((wc, permission, callback) =>
     callback(
-      ['clipboard-sanitized-write', 'fullscreen'].includes(permission) && trusted(wc.getURL()),
+      ['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission) &&
+        trusted(wc.getURL()),
     ),
   );
   session.defaultSession.setPermissionCheckHandler(
     (wc, permission) =>
-      ['clipboard-sanitized-write', 'fullscreen'].includes(permission) &&
+      ['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission) &&
       !!wc &&
       trusted(wc.getURL()),
   );

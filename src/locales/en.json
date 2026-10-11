@@ -998,5 +998,19 @@
   "保存闲置设置": "Save idle preference",
   "默认 1800 秒（30 分钟），范围 30–86400 秒；从任务结束开始计时，保留模型文件与编译缓存。": "Default: 1800 seconds (30 minutes), range: 30–86400 seconds. The timer starts after work completes; model files and compiled caches are kept.",
   "闲置设置已保存；本地服务下次推理时也会应用。": "Idle preference saved; the local service also applies it on the next inference.",
-  "Texo 按需加载；闲置卸载时间可在任务与后端中设置。": "Texo loads on demand. Set its idle unload time in Tasks & backends."
+  "Texo 按需加载；闲置卸载时间可在任务与后端中设置。": "Texo loads on demand. Set its idle unload time in Tasks & backends.",
+  "剪切选中对象": "Cut selected objects",
+  "复制选中对象": "Copy selected objects",
+  "粘贴对象": "Paste objects",
+  "排列顺序": "Arrange objects",
+  "置于顶层": "Bring to front",
+  "上移一层": "Bring forward",
+  "下移一层": "Send backward",
+  "置于底层": "Send to back",
+  "复制失败，所选对象已保留。": "Copy failed. Selected objects have been kept.",
+  "无法读取对象剪贴板，请使用 Ctrl+V。": "Cannot read the object clipboard. Use Ctrl+V.",
+  "已粘贴 {0} 个对象": "Pasted {0} objects",
+  "手写层": "Handwriting layer",
+  "选择手写层": "Select handwriting layer",
+  "选择对象或手写层": "Select an object or handwriting layer"
 }
