@@ -29,7 +29,7 @@ _last_used = 0.0
 _lock = threading.Lock()
 _devices = None
 _idle_handle = None
-IDLE_RELEASE_SECONDS = 120
+IDLE_RELEASE_SECONDS = 1800
 
 
 def drop_model():
@@ -81,7 +81,7 @@ async def lifetime(app):
         drop_model()
 
 
-app = FastAPI(title='SurfaceTab local OpenVINO', lifespan=lifetime)
+app = FastAPI(title='TixTab local OpenVINO', lifespan=lifetime)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1', 'localhost', '[::1]', 'testserver'])
 app.add_middleware(CORSMiddleware,
                    allow_origins=['http://127.0.0.1:5173', 'http://localhost:5173', 'surfacetab://app'],
@@ -89,12 +89,16 @@ app.add_middleware(CORSMiddleware,
                    expose_headers=['X-SurfaceTab-Speech'])
 
 
-class RecognizeRequest(BaseModel):
+class ModelPolicy(BaseModel):
+    idleReleaseSeconds: int = Field(default=1800, strict=True, ge=30, le=86400)
+
+
+class RecognizeRequest(ModelPolicy):
     image: str = Field(max_length=4_000_000)
     device: Literal['AUTO', 'CPU', 'GPU', 'NPU'] = 'AUTO'
 
 
-class TranslateRequest(BaseModel):
+class TranslateRequest(ModelPolicy):
     text: str = Field(min_length=1, max_length=10000)
     direction: Literal['en-zh', 'zh-en']
     device: Literal['AUTO', 'CPU', 'GPU', 'NPU'] = 'AUTO'
@@ -122,11 +126,25 @@ async def release_models(body: ReleaseRequest, request: Request):
         _lock.release()
 
 
+@app.post('/models/config')
+async def configure_models(body: ModelPolicy, request: Request):
+    global IDLE_RELEASE_SECONDS
+    origin = request.headers.get('origin')
+    if origin and origin not in ['http://127.0.0.1:5173', 'http://localhost:5173', 'surfacetab://app']:
+        raise HTTPException(403, 'Untrusted origin')
+    IDLE_RELEASE_SECONDS = body.idleReleaseSeconds
+    # A busy request schedules its own deadline on completion. Never unload it.
+    if not _lock.locked():
+        cancel_idle_release()
+        release_idle_model()
+    return {'ok': True, 'idleReleaseSeconds': IDLE_RELEASE_SECONDS}
+
+
 PhonemeId = Annotated[int, Field(strict=True, ge=0, le=4096)]
 PhonemeChunk = Annotated[list[PhonemeId], Field(min_length=3, max_length=1024)]
 
 
-class SpeechRequest(BaseModel):
+class SpeechRequest(ModelPolicy):
     voice: Literal['en_US-lessac-low', 'zh_CN-huayan-x_low']
     chunks: list[PhonemeChunk] = Field(min_length=1, max_length=256)
     device: Literal['AUTO', 'CPU', 'GPU', 'NPU'] = 'AUTO'
@@ -141,7 +159,7 @@ def health():
     return {'ok': True, 'engine': 'Texo OpenVINO', 'version': ov.__version__, 'devices': _devices,
             'loaded': _model is not None, 'encoderDevice': _model.encoder_device if _model else None,
             'decoderDevice': _model.encoder_device if _model_kind == ('unimumer', None) and _model else 'CPU', 'idleReleaseSeconds': IDLE_RELEASE_SECONDS,
-            'capabilities': ['recognize', 'unimumer-experimental', 'translate-experimental', 'synthesize-experimental', 'release-idle', 'cache-lease-v1'] + (['ocr-experimental'] if importlib.util.find_spec('rapidocr') else []),
+            'capabilities': ['recognize', 'unimumer-experimental', 'translate-experimental', 'synthesize-experimental', 'release-idle', 'idle-policy-v1', 'cache-lease-v1'] + (['ocr-experimental'] if importlib.util.find_spec('rapidocr') else []),
             'modelKind': _model_kind if _model is not None else None}
 
 
@@ -159,7 +177,7 @@ def create_unimumer():
     return NativeUnimumer()
 
 
-class UnimumerRequest(BaseModel):
+class UnimumerRequest(ModelPolicy):
     image: str = Field(max_length=4_000_000)
     device: Literal['AUTO', 'CPU', 'GPU'] = 'AUTO'
 
@@ -216,7 +234,9 @@ async def synthesize(body: SpeechRequest, request: Request):
 
 
 async def run_native(request, kind, factory, invoke):
-    global _model, _model_kind, _last_used
+    global _model, _model_kind, _last_used, IDLE_RELEASE_SECONDS
+    policy = await request.json()
+    IDLE_RELEASE_SECONDS = policy.get("idleReleaseSeconds", IDLE_RELEASE_SECONDS)
     if not _lock.acquire(blocking=False):
         raise HTTPException(429, 'A local inference request is already running')
     cancelled = threading.Event()

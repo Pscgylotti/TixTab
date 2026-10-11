@@ -128,7 +128,7 @@ try {
           (p) =>
             descendants.has(p.ProcessId) &&
             p.ProcessId !== launcher.pid &&
-            p.Name === 'SurfaceTab.exe' &&
+            p.Name === 'TixTab.exe' &&
             p.ExecutablePath,
         )
         .map((p) => join(dirname(p.ExecutablePath), 'resources', 'app.asar')),

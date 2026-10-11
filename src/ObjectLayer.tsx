@@ -1,6 +1,6 @@
 import { t as tr, useLocale } from './i18n';
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { isEraser, type Page, type PlacedImage } from './model';
+import { isEraser, isPicture, type Page, type PlacedImage } from './model';
 import { objectBox, objectsInBox, transformObjects, type ObjectBox } from './objectSelection';
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
 interface Props {
@@ -196,13 +196,30 @@ export default function ObjectLayer({ page, active, zoom, selected, onSelect, on
             key={i.id}
             className={`placed-object ${selected.includes(i.id) ? 'chosen' : ''}`}
             data-object-id={i.id}
-            aria-label={i.kind === 'sketch' ? tr('草图对象') : tr('公式对象')}
+            aria-label={
+              i.kind === 'text'
+                ? tr('文本框对象')
+                : isPicture(i)
+                  ? tr('图片对象')
+                  : i.kind === 'sketch'
+                    ? tr('草图对象')
+                    : tr('公式对象')
+            }
             style={{ left: i.x, top: i.y, width: i.width, height: i.height }}
             onPointerDown={(e) => start(e, i)}
           >
             <img
               src={i.displayData ?? i.data}
-              alt={i.kind === 'formula' ? i.latex : tr('Excalidraw 草图')}
+              data-night-ink={!isPicture(i)}
+              alt={
+                i.kind === 'text'
+                  ? i.textBox?.content
+                  : isPicture(i)
+                    ? tr('图片')
+                    : i.kind === 'formula'
+                      ? i.latex
+                      : tr('Excalidraw 草图')
+              }
               draggable={false}
             />
           </div>

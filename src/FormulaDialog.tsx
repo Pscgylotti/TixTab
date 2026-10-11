@@ -584,7 +584,7 @@ export default function FormulaDialog({
 
           <footer>
             <TaskCenterButton />
-            <span>{tr('Texo 按需加载；闲置 2 分钟释放模型内存。')}</span>
+            <span>{tr('Texo 按需加载；闲置卸载时间可在任务与后端中设置。')}</span>
             <button
               disabled={!latex.trim()}
               onClick={() =>

@@ -1,17 +1,18 @@
+import { scheduleModelIdle } from './modelIdle';
 import { normalizeTranslationText } from './translationText';
 import { requireLocalModels } from './modelLibrary';
 import { ProviderTaskError } from './providerTasks';
 let worker: Worker | undefined,
   loaded = '',
   cancel: (() => void) | undefined,
-  idle: ReturnType<typeof setTimeout> | undefined;
+  idle: (() => void) | undefined;
 export function releaseTts() {
   const pending = cancel;
   cancel = undefined;
   worker?.terminate();
   worker = undefined;
   loaded = '';
-  clearTimeout(idle);
+  idle?.();
   pending?.();
 }
 export async function localSpeech(
@@ -30,7 +31,7 @@ export async function localSpeech(
   signal?.throwIfAborted();
   if (cancel) throw new ProviderTaskError('busy', '已有语音合成正在运行');
   if (loaded && loaded !== voice) releaseTts();
-  clearTimeout(idle);
+  idle?.();
   worker ??= new Worker(new URL('./tts.worker.ts', import.meta.url), { type: 'module' });
   loaded = voice;
   return new Promise<{ audio: Blob; elapsed: number }>((resolve, reject) => {
@@ -64,7 +65,7 @@ export async function localSpeech(
         return;
       }
       cleanup();
-      idle = setTimeout(releaseTts, 120000);
+      idle = scheduleModelIdle(releaseTts);
       if (data.type === 'result') resolve(data);
       else {
         releaseTts();

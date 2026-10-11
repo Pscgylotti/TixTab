@@ -62,7 +62,12 @@ test('native translation is opt-in, reports device, persists settings and fits E
   await page.locator('.translation-footer .primary').click();
   await expect(page.locator('.translation-status')).toContainText('NPU + CPU');
   expect(requests).toEqual([
-    { text: 'The book is on the table.', direction: 'en-zh', device: 'AUTO' },
+    {
+      text: 'The book is on the table.',
+      direction: 'en-zh',
+      device: 'AUTO',
+      idleReleaseSeconds: 1800,
+    },
   ]);
   await page.getByLabel('翻译计算设备').selectOption('GPU');
   await page.reload();

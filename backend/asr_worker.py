@@ -1,4 +1,4 @@
-"""Owned stdin/stdout worker. Models warm for 90 s; audio never leaves memory."""
+"""Owned stdin/stdout worker. Configurable model idle deadline; audio never leaves memory."""
 import argparse
 import json
 import queue
@@ -17,9 +17,11 @@ def main():
     parser.add_argument('--engine', choices=['sensevoice-small', 'whisper-small'], required=True)
     parser.add_argument('--device', choices=['AUTO', 'NPU', 'GPU', 'CPU'], default='AUTO')
     parser.add_argument('--language', default='zh-CN')
+    parser.add_argument('--idle-seconds', type=int, default=1800)
     parser.add_argument('--wav')  # deterministic verification, never exposed via renderer IPC
     parser.add_argument('--capture-wav')  # test input in place of the microphone
     args = parser.parse_args()
+    idle_seconds = min(86400, max(30, args.idle_seconds))
     write_lock = threading.Lock()
 
     def emit(event, session=None, **values):
@@ -125,12 +127,16 @@ def main():
                 last_used = time.monotonic()
             if current and time.monotonic() - current[2] > 120:
                 current[0].set()
-            if not current and time.monotonic() - last_used > 90:
+            if not current and time.monotonic() - last_used >= idle_seconds:
                 break
             try:
-                command = commands.get(timeout=.25 if current else max(.1, 90 - (time.monotonic() - last_used)))
+                command = commands.get(timeout=.25 if current else max(.1, idle_seconds - (time.monotonic() - last_used)))
             except queue.Empty:
                 continue
+            if command.get('action') == 'idle-policy':
+                value = command.get('idleReleaseSeconds')
+                if type(value) is int and 30 <= value <= 86400:
+                    idle_seconds = value
             if command.get('action') == 'quit':
                 break
             if command.get('action') == 'stop' and current:

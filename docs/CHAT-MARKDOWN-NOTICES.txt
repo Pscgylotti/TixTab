@@ -1,4 +1,4 @@
-SurfaceTab chat Markdown dependency notices
+TixTab chat Markdown dependency notices
 
 @types/debug@4.1.13
 https://github.com/DefinitelyTyped/DefinitelyTyped.git

@@ -1,17 +1,19 @@
-# SurfaceTab
+# TixTab
 
-**Thinking over Surface** — a pen-first PDF reading and annotation workspace for Windows.
+**Thinking over Screen** — a pen-first PDF reading and annotation workspace for Windows.
 
-[简体中文](README.zh-CN.md) · [Download](https://github.com/Pscgylotti/SurfaceTab/releases) · [License](LICENSE)
+[简体中文](README.zh-CN.md) · [Download](https://github.com/Pscgylotti/TixTab/releases) · [License](LICENSE)
 
 ## Get started
 
-1. Download `SurfaceTab-0.2.35-lite-x64.exe` from Releases and run it. This portable app needs no Node.js or Python for basic PDF features.
+1. Download `TixTab-0.2.35-lite-x64.exe` from Releases and run it. This portable app needs no Node.js or Python for basic PDF features.
 2. Open PDFs in tabs, or drop a PDF and choose to open it in new tabs or insert all/selected pages after the current page. Drop PNG/JPEG/WebP/GIF/BMP/AVIF/SVG files to insert image objects.
 3. For local AI, open **Settings → Local model library**, download the models you need, and click **Set up** to prepare managed Python and optional acceleration/speech dependencies.
 4. Switch the interface language in Settings. English, offline Chinese Pinyin, LaTeX and voice keyboard modes are included. Voice input supports Chinese/English, a live waveform and local engines, and inserts at the current text caret.
 
 ## Features
+
+- Editable text boxes and smart clipboard paste are supported. Model idle unloading is configurable in Settings → Tasks and backends (default: 1800 seconds); weights and compiled caches are kept. Text boxes remain editable in projects, but PDF exports currently embed them as images rather than searchable text.
 
 - Pressure-sensitive ink, pen eraser, custom colors, object selection/movement/resizing, multi-object selection and editable Excalidraw sketches.
 - Pen barrel button opens a radial tool menu over the PDF; its center opens text actions when text is selected. This needs right-click pointer events from the Windows pen driver, usually by holding the barrel button and tapping the page.
@@ -23,6 +25,8 @@
 - Zotero local-library integration and an experimental ChatGPT reading assistant with page/file attachments, a detachable native window, and SVG generation/preview/insertion.
 
 ## Notes
+
+TixTab is an independent project and is not affiliated with or endorsed by Microsoft. Microsoft Surface and Windows are trademarks of Microsoft. The app retains the existing `.surfacetab` project format, profile folder and model caches for compatibility with earlier local previews.
 
 - **Windows 11 x64 public preview.** Tested on an Intel Surface Pro 11 for Business, Core Ultra 5 238V. Other Surface models, ARM64/Qualcomm NPU and real pen/device combinations are not fully validated. Supported local backends offer CPU fallback; acceleration needs compatible drivers.
 - **Lite: neural weights are not bundled.** Setup needs GitHub/PyPI access; models need their upstream hosts. Allow several GB of disk space. Restricted networks may prevent downloads. Drivers, Zotero, accounts, API keys and Windows speech language packs are separate.

@@ -1,13 +1,12 @@
+import { scheduleModelIdle } from './modelIdle';
 import { normalizeTranslationText } from './translationText';
-let worker: Worker | undefined,
-  cancel: (() => void) | undefined,
-  idle: ReturnType<typeof setTimeout> | undefined;
+let worker: Worker | undefined, cancel: (() => void) | undefined, idle: (() => void) | undefined;
 export function releasePhonemizer() {
   const pending = cancel;
   cancel = undefined;
   worker?.terminate();
   worker = undefined;
-  clearTimeout(idle);
+  idle?.();
   pending?.();
 }
 export function phonemizeSpeech(text: string, voice: string, signal: AbortSignal) {
@@ -15,7 +14,7 @@ export function phonemizeSpeech(text: string, voice: string, signal: AbortSignal
   if (cancel) return Promise.reject(new Error('Speech phonemization is already running'));
   if (!text.trim() || text.length > 4000)
     return Promise.reject(new Error('Speech requires 1 to 4000 characters'));
-  clearTimeout(idle);
+  idle?.();
   worker ??= new Worker(new URL('./phonemize.worker.ts', import.meta.url), { type: 'module' });
   return new Promise<number[][]>((resolve, reject) => {
     const cleanup = () => {
@@ -47,7 +46,7 @@ export function phonemizeSpeech(text: string, voice: string, signal: AbortSignal
         return;
       }
       cleanup();
-      idle = setTimeout(releasePhonemizer, 120000);
+      idle = scheduleModelIdle(releasePhonemizer);
       resolve(data.chunks);
     };
     worker!.postMessage({ text: normalizeTranslationText(text), voice, base: document.baseURI });

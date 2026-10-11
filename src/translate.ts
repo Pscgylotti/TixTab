@@ -1,14 +1,15 @@
+import { scheduleModelIdle } from './modelIdle';
 import { isLocalTranslationNoop, normalizeTranslationText } from './translationText';
 import { requireLocalModels } from './modelLibrary';
 let worker: Worker | null = null,
-  idle: ReturnType<typeof setTimeout> | undefined,
+  idle: (() => void) | undefined,
   cancel: (() => void) | undefined;
 export function releaseTranslation() {
   cancel?.();
   cancel = undefined;
   worker?.terminate();
   worker = null;
-  clearTimeout(idle);
+  idle?.();
 }
 export async function localTranslate(
   text: string,
@@ -26,7 +27,7 @@ export async function localTranslate(
   await requireLocalModels([target === 'en' ? 'opus-zh-en' : 'opus-en-zh']);
   signal?.throwIfAborted();
   if (cancel) return Promise.reject(new Error('已有本地翻译正在运行'));
-  clearTimeout(idle);
+  idle?.();
   worker ??= new Worker(new URL('./translate.worker.ts', import.meta.url), { type: 'module' });
   return new Promise<{ text: string; elapsed: number }>((resolve, reject) => {
     const cleanup = () => {
@@ -59,7 +60,7 @@ export async function localTranslate(
         return;
       }
       cleanup();
-      idle = setTimeout(releaseTranslation, 120000);
+      idle = scheduleModelIdle(releaseTranslation);
       if (data.type === 'result') resolve(data);
       else reject(new Error(data.error));
     };

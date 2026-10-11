@@ -1,3 +1,4 @@
+import { getModelIdleSeconds } from './modelIdle';
 import { useEffect, useRef, useState } from 'react';
 import { Mic, Square, SlidersHorizontal, X, Download } from 'lucide-react';
 import { t, useLocale } from './i18n';
@@ -172,7 +173,13 @@ export default function DictationButton({
     const token = ++generation.current;
     statusCallback.current(t('正在加载语音模型，首次运行可能需要较长时间…'));
     try {
-      const started = await bridge.run({ action: 'start', language: selected, engine, device });
+      const started = await bridge.run({
+        action: 'start',
+        language: selected,
+        engine,
+        device,
+        idleReleaseSeconds: getModelIdleSeconds(),
+      });
       if (!started.ok) throw new Error(started.error);
       if (token !== generation.current) return;
       while (token === generation.current) {

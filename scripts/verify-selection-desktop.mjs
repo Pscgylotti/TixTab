@@ -8,7 +8,7 @@ import { verifySelectionUi } from './verify-selection-ui.mjs';
 const version = JSON.parse(await readFile('package.json', 'utf8')).version;
 const profile = await mkdtemp(join(tmpdir(), 'surfacetab-selection-'));
 const options = {
-  executablePath: resolve(process.argv[2] || `release/${version}/win-unpacked/SurfaceTab.exe`),
+  executablePath: resolve(process.argv[2] || `release/${version}/win-unpacked/TixTab.exe`),
   args: [],
   env: { ...process.env, SURFACETAB_DEV: '0', SURFACETAB_PROFILE: profile },
   timeout: 60000,

@@ -1,0 +1,46 @@
+.text-box-dialog {
+  width: min(620px, calc(100vw - 24px));
+}
+.text-box-dialog header,
+.text-box-dialog h2,
+.text-box-options,
+.text-box-options label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.text-box-dialog header {
+  justify-content: space-between;
+}
+.text-box-options {
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.text-box-options input[type='number'] {
+  width: 72px;
+}
+.text-box-options input[type='color'] {
+  width: 44px;
+  padding: 3px;
+}
+.text-box-dialog textarea {
+  width: 100%;
+  min-height: 180px;
+  max-height: 45vh;
+  resize: vertical;
+  padding: 12px;
+  line-height: 1.4;
+}
+.text-box-dialog footer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.text-box-dialog footer span {
+  flex: 1 1 200px;
+  font-size: 12px;
+  color: var(--muted);
+}

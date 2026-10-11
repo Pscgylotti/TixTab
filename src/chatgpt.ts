@@ -39,7 +39,7 @@ const errors: Record<string, string> = {
   network: '无法连接 ChatGPT，请检查网络或系统代理后重试。',
   timeout: 'ChatGPT 请求超时，请重试。',
   signin: '请重新登录 ChatGPT。',
-  permission: '当前账号尚未授权 SurfaceTab 使用 ChatGPT 订阅额度。',
+  permission: '当前账号尚未授权 TixTab 使用 ChatGPT 订阅额度。',
   denied: '已取消 ChatGPT 授权。',
   identity: 'ChatGPT 登录验证失败，请重新登录。',
   storage: '无法安全读取或保存 ChatGPT 登录，请检查系统凭据存储。',

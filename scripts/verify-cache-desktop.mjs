@@ -22,7 +22,7 @@ for (const name of ['documents', 'model-library', 'openvino-runtime']) {
   await writeFile(join(base, name, 'sentinel'), 'preserve');
 }
 const app = await electron.launch({
-  executablePath: resolve(process.argv[2] || `release/${version}/win-unpacked/SurfaceTab.exe`),
+  executablePath: resolve(process.argv[2] || `release/${version}/win-unpacked/TixTab.exe`),
   args: [],
   env: {
     ...process.env,

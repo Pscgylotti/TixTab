@@ -181,7 +181,7 @@ test('real OCR initialization cancellation terminates its worker, then succeeds 
     x.fillRect(0, 0, 800, 160);
     x.fillStyle = 'black';
     x.font = '46px Arial';
-    x.fillText('SurfaceTab 12345', 25, 100);
+    x.fillText('TixTab 12345', 25, 100);
     return c.toDataURL();
   });
   const doc = await PDFDocument.create(),
@@ -230,14 +230,14 @@ test('real OCR initialization cancellation terminates its worker, then succeeds 
     await panel.getByRole('button', { name: '关闭任务面板' }).click();
     await page.setViewportSize({ width: 1440, height: 960 });
     await page.getByRole('button', { name: '开始识别', exact: true }).click();
-    await expect(page.getByLabel('识别结果 · 可修改')).toHaveValue(/SurfaceTab 12345/, {
+    await expect(page.getByLabel('识别结果 · 可修改')).toHaveValue(/TixTab 12345/, {
       timeout: 30000,
     });
     expect(page.workers().filter((w) => w.url().includes('/ocr/worker.min.js'))).toHaveLength(1);
     await page.getByRole('button', { name: '任务与后端', exact: true }).click();
     await expect(page.locator('.task-card[data-phase=completed]')).toContainText('tesseract');
     await expect(page.getByRole('dialog', { name: '任务与后端' })).not.toContainText(
-      'SurfaceTab 12345',
+      'TixTab 12345',
     );
     await page.route('http://127.0.0.1:8766/models/release', (route) =>
       route.fulfill({ status: 404, json: { detail: 'older service' } }),
@@ -247,7 +247,7 @@ test('real OCR initialization cancellation terminates its worker, then succeeds 
     await expect
       .poll(() => page.workers().filter((w) => w.url().includes('/ocr/worker.min.js')).length)
       .toBe(0);
-    await expect(page.getByLabel('识别结果 · 可修改')).toHaveValue(/SurfaceTab 12345/);
+    await expect(page.getByLabel('识别结果 · 可修改')).toHaveValue(/TixTab 12345/);
     await panel.getByRole('button', { name: '关闭任务面板' }).click();
     await page.getByRole('button', { name: '开始识别', exact: true }).click();
     await expect(page.locator('.ocr-task-status')).toContainText('请检查结果', { timeout: 30000 });

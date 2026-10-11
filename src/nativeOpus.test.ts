@@ -47,6 +47,7 @@ describe('experimental OPUS native routing', () => {
       text: 'The book is here.\n\nNext paragraph.',
       direction: 'en-zh',
       device: 'AUTO',
+      idleReleaseSeconds: 1800,
     });
     expect(result).toEqual({
       text: '译文',

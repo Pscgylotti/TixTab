@@ -59,5 +59,5 @@ test('continuous touch flings coast, stop on retouch, and never coast a pinch', 
       ),
     ),
   ).toBeLessThan(1);
-  expect(await page.title()).toBe('SurfaceTab · Thinking over Surface');
+  expect(await page.title()).toBe('TixTab · Thinking over Screen');
 });

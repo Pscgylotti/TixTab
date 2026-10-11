@@ -105,7 +105,7 @@ test('export preserves source document fields, annotations, navigation, metadata
   expect(result.text).toContain('Original page 1');
   const output = await PDFDocument.load(new Uint8Array(result.bytes), { updateMetadata: false });
   expect(output.getTitle()).toBe('Preserved document title');
-  expect(output.getAuthor()).toBe('SurfaceTab fixture');
+  expect(output.getAuthor()).toBe('TixTab fixture');
   expect(output.getCreationDate()?.toISOString()).toBe('2024-03-02T12:00:00.000Z');
   await mkdir('tmp/pdfs', { recursive: true });
   await writeFile('tmp/pdfs/preservation-export.pdf', new Uint8Array(result.bytes));

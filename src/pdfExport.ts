@@ -370,12 +370,12 @@ async function appendOverlay(
       doc.context.obj({
         Type: 'Annot',
         Subtype: 'Stamp',
-        Name: 'SurfaceTab',
+        Name: 'TixTab',
         Rect: geometry.rect,
         P: page.ref,
         F: 4,
         AP: { N: ref },
-        T: PDFString.of('SurfaceTab'),
+        T: PDFString.of('TixTab'),
       }),
     ),
   );

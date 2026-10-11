@@ -32,7 +32,7 @@ try {
     errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.locator('.busy-overlay').waitFor({ state: 'hidden' });
-  assert.equal(await page.title(), 'SurfaceTab · Thinking over Surface');
+  assert.equal(await page.title(), 'TixTab · Thinking over Screen');
   assert.equal(await page.evaluate(() => typeof window.surfaceDesktop.chatgpt.run), 'function');
   assert.equal(await page.evaluate(() => typeof window.surfaceDesktop.dictation.run), 'function');
   const doc = await PDFDocument.create(),
@@ -80,7 +80,7 @@ try {
       '-NoProfile',
       '-NonInteractive',
       '-Command',
-      `$p=Get-CimInstance Win32_Process; $ids=@(${launcher.pid}); 1..5|ForEach-Object{$ids+=@($p|Where-Object{$ids -contains $_.ParentProcessId}|ForEach-Object{$_.ProcessId})}; @($p|Where-Object{$ids -contains $_.ProcessId -and $_.Name -eq 'SurfaceTab.exe'}|Select-Object ProcessId,ExecutablePath)|ConvertTo-Json -Compress`,
+      `$p=Get-CimInstance Win32_Process; $ids=@(${launcher.pid}); 1..5|ForEach-Object{$ids+=@($p|Where-Object{$ids -contains $_.ParentProcessId}|ForEach-Object{$_.ProcessId})}; @($p|Where-Object{$ids -contains $_.ProcessId -and $_.Name -eq 'TixTab.exe'}|Select-Object ProcessId,ExecutablePath)|ConvertTo-Json -Compress`,
     ],
     { encoding: 'utf8', windowsHide: true },
   );

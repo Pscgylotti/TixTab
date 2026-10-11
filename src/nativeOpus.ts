@@ -1,3 +1,4 @@
+import { getModelIdleSeconds } from './modelIdle';
 import { RejectedProviderRequest } from './providerTasks';
 import { noteNativeModel, releaseNativeModel } from './nativeResources';
 import { connectNativeTexo, type NativeDevice } from './nativeTexo';
@@ -71,7 +72,12 @@ export async function translatePowerOpus(
     const response = await fetch('http://127.0.0.1:8766/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, direction: target === 'en' ? 'zh-en' : 'en-zh', device }),
+      body: JSON.stringify({
+        text,
+        direction: target === 'en' ? 'zh-en' : 'en-zh',
+        device,
+        idleReleaseSeconds: getModelIdleSeconds(),
+      }),
       signal: AbortSignal.any([signal, AbortSignal.timeout(180000)]),
     });
     const data = await response.json();

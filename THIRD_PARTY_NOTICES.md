@@ -1,6 +1,6 @@
 # Third-party notices / 第三方说明
 
-SurfaceTab application code is AGPL-3.0-only. Third-party code and models retain their own licenses; this file does not relicense them. / 应用许可不覆盖第三方代码与模型。
+TixTab application code is AGPL-3.0-only. Third-party code and models retain their own licenses; this file does not relicense them. / 应用许可不覆盖第三方代码与模型。
 
 Full license texts: [docs/THIRD-PARTY-LICENSES.txt](docs/THIRD-PARTY-LICENSES.txt). Additional attribution: [Pinyin](docs/PINYIN-NOTICES.md), [model terms](docs/MODELS.md), [distribution notes](docs/DISTRIBUTION.md). Electron and Chromium notices are also included beside the extracted executable.
 

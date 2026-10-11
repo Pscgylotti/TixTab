@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { verifyNativeTexo } from './verify-native-ui.mjs';
 const version = JSON.parse(await readFile('package.json', 'utf8')).version;
 const app = await electron.launch({
-  executablePath: resolve(process.argv[2] || `release/${version}/win-unpacked/SurfaceTab.exe`),
+  executablePath: resolve(process.argv[2] || `release/${version}/win-unpacked/TixTab.exe`),
   args: [],
   env: {
     ...process.env,

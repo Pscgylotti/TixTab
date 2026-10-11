@@ -5,6 +5,7 @@ import { providerTasks, type TaskPhase, type TaskErrorCode } from './providerTas
 import { providerCapabilities, providerFailureStatus, releaseLocalResources } from './providers';
 import type { ProviderFeature } from './providerSettings';
 import './taskCenter.css';
+import { getModelIdleSeconds, setModelIdleSeconds, validModelIdleSeconds } from './modelIdle';
 
 const features: Record<ProviderFeature, string> = {
   translation: '翻译',
@@ -31,6 +32,8 @@ const errors: Record<TaskErrorCode, string> = {
 };
 const active = (phase: TaskPhase) => !['completed', 'cancelled', 'failed'].includes(phase);
 export default function TaskCenter({ onClose }: { onClose: () => void }) {
+  const [idleSeconds, setIdleSeconds] = useState(getModelIdleSeconds),
+    [idleSaved, setIdleSaved] = useState(false);
   const locale = useLocale(),
     tasks = useSyncExternalStore(providerTasks.subscribe, providerTasks.getSnapshot);
   const releaseController = useRef<AbortController | null>(null),
@@ -99,6 +102,36 @@ export default function TaskCenter({ onClose }: { onClose: () => void }) {
             <span>{t('{0} 项任务进行中', tasks.filter((job) => active(job.phase)).length)}</span>
           </div>
           <div className="task-memory">
+            <label className="model-idle-setting">
+              {t('模型闲置卸载时间（秒）')}
+              <input
+                type="number"
+                min={30}
+                max={86400}
+                step={1}
+                aria-label={t('模型闲置卸载时间（秒）')}
+                value={idleSeconds}
+                onChange={(event) => {
+                  setIdleSeconds(Number(event.target.value));
+                  setIdleSaved(false);
+                }}
+              />
+              <button
+                disabled={!validModelIdleSeconds(idleSeconds)}
+                onClick={() => {
+                  setModelIdleSeconds(idleSeconds);
+                  setIdleSaved(true);
+                }}
+              >
+                {t('保存闲置设置')}
+              </button>
+            </label>
+            <p className="muted">
+              {t(
+                '默认 1800 秒（30 分钟），范围 30–86400 秒；从任务结束开始计时，保留模型文件与编译缓存。',
+              )}
+            </p>
+            {idleSaved && <p role="status">{t('闲置设置已保存；本地服务下次推理时也会应用。')}</p>}
             <button disabled={releasing} onClick={() => void releaseMemory()}>
               {t(releasing ? '正在释放…' : '释放闲置模型内存')}
             </button>

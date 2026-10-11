@@ -13,12 +13,29 @@ from backend.cache_lease import CacheBusyError
 class ServiceTests(unittest.TestCase):
     def setUp(self):
         service._model = None
+        service.IDLE_RELEASE_SECONDS = 1800
         self.client = TestClient(service.app)
 
     def tearDown(self):
         service.cancel_idle_release()
         service._model = None
         self.client.close()
+
+    def test_configurable_idle_policy_validates_and_never_unloads_busy_work(self):
+        self.assertEqual(self.client.get('/health').json()['idleReleaseSeconds'], 1800)
+        for value in [0, 29, 86401, 30.5, '90']:
+            self.assertEqual(self.client.post('/models/config', json={'idleReleaseSeconds': value}).status_code, 422)
+        self.assertEqual(self.client.post('/models/config', json={'idleReleaseSeconds': 60}, headers={'Origin':'https://foreign.example'}).status_code, 403)
+        model=object();service._model=model;service._last_used=time.monotonic()-120
+        service._lock.acquire()
+        try:
+            result=self.client.post('/models/config',json={'idleReleaseSeconds':60})
+            self.assertEqual(result.status_code,200)
+            self.assertIs(service._model,model)
+        finally:
+            service._lock.release()
+        self.client.post('/models/config',json={'idleReleaseSeconds':60})
+        self.assertIsNone(service._model)
 
     def test_manual_release_does_not_load_and_refuses_busy_or_foreign_origin(self):
         model = object(); service._model = model; service._model_kind = ('texo', None)
@@ -49,7 +66,7 @@ class ServiceTests(unittest.TestCase):
             self.assertTrue(first.cancelled())
             self.assertIsNot(first, second)
             service.cancel_idle_release(); self.assertTrue(second.cancelled())
-            service._last_used = time.monotonic() - 121
+            service._last_used = time.monotonic() - service.IDLE_RELEASE_SECONDS - 1
             service.release_idle_model()
             self.assertIsNone(service._model)
             self.assertIsNone(service._idle_handle)
@@ -97,7 +114,7 @@ class ServiceTests(unittest.TestCase):
             service._lock.release()
 
     def test_idle_release_does_not_release_busy_model(self):
-        model = object(); service._model = model; service._last_used = time.monotonic() - 121
+        model = object(); service._model = model; service._last_used = time.monotonic() - service.IDLE_RELEASE_SECONDS - 1
         service._lock.acquire()
         try:
             service.release_idle_model(); self.assertIs(service._model, model)

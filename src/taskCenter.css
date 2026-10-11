@@ -140,3 +140,13 @@
     grid-template-columns: 90px minmax(0, 1fr);
   }
 }
+.model-idle-setting {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.model-idle-setting input {
+  width: 110px;
+}

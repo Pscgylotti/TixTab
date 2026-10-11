@@ -10,7 +10,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 const version = JSON.parse(await readFile('package.json', 'utf8')).version,
   lite = process.argv.includes('--lite');
 const executable = resolve(
-    process.argv[2] || `release/${version}/lite/SurfaceTab-${version}-lite-x64.exe`,
+    process.argv[2] || `release/${version}/lite/TixTab-${version}-lite-x64.exe`,
   ),
   profile = await mkdtemp(join(tmpdir(), 'surfacetab-model-library-'));
 const catalog = JSON.parse(await readFile('electron/model-catalog.json', 'utf8')),
@@ -127,7 +127,7 @@ try {
     await browser.contexts()[0].route(/^https?:\/\//, (route) => route.abort());
     const pdf = await PDFDocument.create(),
       font = await pdf.embedFont(StandardFonts.Helvetica);
-    pdf.addPage([600, 800]).drawText('SurfaceTab 12345', { x: 70, y: 650, size: 30, font });
+    pdf.addPage([600, 800]).drawText('TixTab 12345', { x: 70, y: 650, size: 30, font });
     await page.locator('input[type=file]').setInputFiles({
       name: 'managed-ocr.pdf',
       mimeType: 'application/pdf',
@@ -142,7 +142,7 @@ try {
     await page.mouse.up();
     await page.getByLabel('OCR 后端').selectOption('local');
     await page.getByRole('button', { name: '开始识别', exact: true }).click();
-    await expect(page.getByLabel('识别结果 · 可修改')).toHaveValue(/SurfaceTab\s+12345/, {
+    await expect(page.getByLabel('识别结果 · 可修改')).toHaveValue(/TixTab\s+12345/, {
       timeout: 90000,
     });
     report.actualOfflineOcr = await page.getByLabel('识别结果 · 可修改').inputValue();

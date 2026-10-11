@@ -8,7 +8,7 @@ const profile = await mkdtemp(join(tmpdir(), 'surfacetab-opus-unavailable-'));
 // Point only this test process at an empty model root; never damage real weights.
 const empty = await mkdtemp(join(tmpdir(), 'surfacetab-opus-empty-'));
 const app = await electron.launch({
-  executablePath: resolve('release/0.2.8/win-unpacked/SurfaceTab.exe'),
+  executablePath: resolve('release/0.2.8/win-unpacked/TixTab.exe'),
   args: [],
   env: {
     ...process.env,

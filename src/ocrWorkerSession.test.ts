@@ -20,8 +20,7 @@ class FakeWorker {
           data: {
             ...packet,
             status: 'resolve',
-            data:
-              packet.action === 'recognize' ? { text: ' SurfaceTab 12345 ', confidence: 98 } : {},
+            data: packet.action === 'recognize' ? { text: ' TixTab 12345 ', confidence: 98 } : {},
           },
         }),
       );
@@ -56,7 +55,7 @@ it.each(['load', 'loadLanguage', 'recognize'])(
     expect(old.terminate).toHaveBeenCalledOnce();
     FakeWorker.hold = '';
     await expect(localOcr(image, progress)).resolves.toMatchObject({
-      text: 'SurfaceTab 12345',
+      text: 'TixTab 12345',
       confidence: 98,
     });
     progress.mockClear();

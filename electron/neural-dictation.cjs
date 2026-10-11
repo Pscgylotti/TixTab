@@ -25,6 +25,8 @@ function createNeuralDictation({
     starting = false,
     startOwner = null,
     startCancelled = false;
+  let idleSeconds = 1800;
+  const validIdle = (value) => Number.isInteger(value) && value >= 30 && value <= 86400;
   const send = (child, message) => {
     try {
       child.stdin.write(JSON.stringify(message) + '\n');
@@ -97,6 +99,12 @@ function createNeuralDictation({
   }
   return {
     async run(owner, r) {
+      if (r?.action === 'idle-policy') {
+        if (!validIdle(r.idleReleaseSeconds)) return { ok: false, error: 'invalid' };
+        idleSeconds = r.idleReleaseSeconds;
+        if (worker) send(worker.child, { action: 'idle-policy', idleReleaseSeconds: idleSeconds });
+        return { ok: true };
+      }
       if (r?.action === 'status')
         return { ok: true, data: { ...(await runtimeStatus()), installing: !!setup } };
       if (r?.action === 'setup') {
@@ -150,6 +158,12 @@ function createNeuralDictation({
         return { ok: true };
       }
       if (r?.action === 'start') {
+        if (r.idleReleaseSeconds !== undefined) {
+          if (!validIdle(r.idleReleaseSeconds)) return { ok: false, error: 'invalid' };
+          idleSeconds = r.idleReleaseSeconds;
+          if (worker)
+            send(worker.child, { action: 'idle-policy', idleReleaseSeconds: idleSeconds });
+        }
         if (starting) return { ok: false, error: 'busy' };
         starting = true;
         startOwner = owner;
@@ -210,6 +224,8 @@ function createNeuralDictation({
                 device,
                 '--language',
                 r.language,
+                '--idle-seconds',
+                String(idleSeconds),
               ],
               {
                 windowsHide: true,

@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 // extracted application's own DevTools port instead of launching it a second time.
 const executable = resolve(
   process.argv[2] ||
-    `release/${JSON.parse(await readFile('package.json', 'utf8')).version}/SurfaceTab-${JSON.parse(await readFile('package.json', 'utf8')).version}-x64.exe`,
+    `release/${JSON.parse(await readFile('package.json', 'utf8')).version}/TixTab-${JSON.parse(await readFile('package.json', 'utf8')).version}-x64.exe`,
 );
 const profile = await mkdtemp(join(tmpdir(), 'surfacetab-portable-'));
 const launcher = spawn(executable, ['--remote-debugging-port=0'], {
@@ -178,7 +178,7 @@ try {
   await verifyFormulaUi(page);
   // Verify the actual launcher's extracted payload, not only the staging folder.
   // Derive it strictly from this launcher's live descendants; do not inspect an
-  // unrelated running SurfaceTab window or guess a temporary directory.
+  // unrelated running TixTab window or guess a temporary directory.
   const processes = JSON.parse(
     execFileSync(
       'powershell.exe',
@@ -205,7 +205,7 @@ try {
     (p) =>
       descendants.has(p.ProcessId) &&
       p.ProcessId !== launcher.pid &&
-      p.Name === 'SurfaceTab.exe' &&
+      p.Name === 'TixTab.exe' &&
       p.ExecutablePath,
   );
   assert.ok(owned.length, 'Actual portable application must be a live launcher descendant');

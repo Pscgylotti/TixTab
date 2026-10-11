@@ -27,7 +27,7 @@ def fixture(name,lines,size=32,width=1000,rotate=False,degrade=False):
     return {'name':name,'expectedLines':lines,'size':image.size,'png':file,
             'image':'data:image/png;base64,'+base64.b64encode(file.read_bytes()).decode()}
 fixtures=[
- fixture('mixed',['SurfaceTab OCR competitive English 12345','This is a book. Open the next page.','本地文字识别与低功耗模式','中英文混合 Surface Pro 2026','公式 x^2 + y^2 = 1']),
+ fixture('mixed',['TixTab OCR competitive English 12345','This is a book. Open the next page.','本地文字识别与低功耗模式','中英文混合 Surface Pro 2026','公式 x^2 + y^2 = 1']),
  fixture('word',['competitive'],width=300),
  fixture('english',['The diffusion coefficient depends on temperature.','The pressure is 101.325 kPa.'],width=1000),
  fixture('chinese',['本地模型支持中文与英文文字识别。','快速预览可以降低渲染负载。']),
@@ -37,7 +37,7 @@ fixtures=[
  fixture('degraded',['A scanned page with light blur.','轻度模糊扫描文字 12345'],degrade=True),
  fixture('narrow',['Surface','Pro','English'],width=250),
  fixture('math',['x^2 + y^2 = 1','E = mc^2'],width=600),
- fixture('long',['A long text line preserves all words: competitive SurfaceTab 12345.'],size=48,width=2500),
+ fixture('long',['A long text line preserves all words: competitive TixTab 12345.'],size=48,width=2500),
  fixture('blank',[],width=400)
 ]
 core=ov.Core();report={'date':'2026-10-11','openvino':ov.__version__,'devices':[{ 'id':d,'name':core.get_property(d,'FULL_DEVICE_NAME')} for d in core.available_devices],

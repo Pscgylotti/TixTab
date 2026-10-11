@@ -18,7 +18,7 @@ from backend import openvino_app as service
 class OcrTests(unittest.TestCase):
     def test_wide_region_keeps_one_complete_line_across_detection_tiles(self):
         image=Image.new('RGB',(2500,150),'white')
-        text='A long text line preserves all words: competitive SurfaceTab 12345.'
+        text='A long text line preserves all words: competitive TixTab 12345.'
         ImageDraw.Draw(image).text((25,20),text,font=ImageFont.truetype('C:/Windows/Fonts/msyh.ttc',48),fill='black')
         stream=io.BytesIO();image.save(stream,'PNG')
         model=NativeOcr();result=model.recognize('data:image/png;base64,'+base64.b64encode(stream.getvalue()).decode(),'CPU')

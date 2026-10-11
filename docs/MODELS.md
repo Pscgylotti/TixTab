@@ -26,7 +26,7 @@ Google 在线接入遵循[官方 Cloud Translation Basic REST 协议](https://do
 
 使用同一固定版本 Texo ONNX 权重，无额外模型下载。静态 384×384 视觉编码器适配 NPU/GPU/CPU；合并解码器的缓存条件分支常量折叠为首步/后续两图，保留原权重与计算，在 CPU 上使用两线程运行。默认依次尝试 NPU、GPU、CPU；单设备手动选择失败则回退 CPU；整个原生后端不可用则回退内置单线程 WASM。NPU 优先是设备策略，尚无瓦特/电池实测结论。
 
-OpenVINO 固定 2026.2.0，依赖见 `backend/requirements-openvino.txt`，Python 3.10 x64 运行时隔离在 `%USERPROFILE%/.surfacetab/openvino-runtime`，避免调用方的 AppData 重定向影响独立启动。本地监听 127.0.0.1:8766，桌面按需启动并在退出时结束自身启动的服务；手动启动的服务由启动者管理。模型闲置 120 秒释放会话，编译结果缓存到 `%LOCALAPPDATA%/SurfaceTab/openvino-cache`。仅在首次安装依赖时联网。
+OpenVINO 固定 2026.2.0，依赖见 `backend/requirements-openvino.txt`，Python 3.10 x64 运行时隔离在 `%USERPROFILE%/.surfacetab/openvino-runtime`，避免调用方的 AppData 重定向影响独立启动。本地监听 127.0.0.1:8766，桌面按需启动并在退出时结束自身启动的服务；手动启动的服务由启动者管理。模型闲置默认 1800 秒释放会话，编译结果缓存到 `%LOCALAPPDATA%/SurfaceTab/openvino-cache`。仅在首次安装依赖时联网。
 
 便携包内包含后端源文件，使用包内 ASAR 的 Texo 权重：首次提取约 80MB 到本机模型缓存，校验清单中的大小与 SHA256，不把 Python 运行时重复装进每次便携解压目录。开发环境优先复用 `public/models/texo`。
 
@@ -38,4 +38,6 @@ RapidOCR 3.10.0（Apache-2.0）复用 PaddleOCR 的检测、方向分类、识�
 
 可选 OCR Python 依赖：`backend/start-openvino.ps1 -Install -Ocr`，使用已有隔离运行时。没有这些依赖或旧服务没有 OCR 能力时使用内置 Tesseract；不会自动下载模型或字体。区域识别默认低功耗优先，可选择 Tesseract 或手动设备，记住本地后端/设备偏好。
 
-NPU/GPU 固定 768px 检测块，64px 重叠、最大边 1472px/至多四块，先合并概率图再找文本框；识别宽度 320/640/1280，超过该宽度使用完整 CPU 行识别，不裁断。识别在字符投影前拆分，投影与方向分类使用 2 线程 CPU。最多 6 个 LRU 会话加 1 个 CPU 投影会话，编译缓存目标 256MiB；单请求、取消检查、120 秒闲置释放和 Texo/OPUS 共用生命周期。详见 [OCR-NATIVE.md](OCR-NATIVE.md)。
+NPU/GPU 固定 768px 检测块，64px 重叠、最大边 1472px/至多四块，先合并概率图再找文本框；识别宽度 320/640/1280，超过该宽度使用完整 CPU 行识别，不裁断。识别在字符投影前拆分，投影与方向分类使用 2 线程 CPU。最多 6 个 LRU 会话加 1 个 CPU 投影会话，编译缓存目标 256MiB；单请求、取消检查、可配置的闲置释放（默认 1800 秒）和 Texo/OPUS 共用生命周期。详见 [OCR-NATIVE.md](OCR-NATIVE.md)。
+
+模型闲置卸载设置位于“设置 → 任务与后端”，默认 1800 秒，范围 30–86400 秒。浏览器 worker、本地 OpenVINO 和本地语音使用同一偏好，从任务结束开始计时；新任务运行时不会被闲置计时器打断。只释放内存与运行会话，保留权重和编译缓存。手动启动的旧本地服务需更新并重启后才能使用新设置。

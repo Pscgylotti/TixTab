@@ -32,7 +32,7 @@ export function useChatWindow() {
     if (!window) return false;
     try {
       const doc = window.document;
-      doc.title = 'SurfaceTab · ChatGPT';
+      doc.title = 'TixTab · ChatGPT';
       doc.body.className = 'chat-popout-host';
       const base = doc.createElement('base');
       base.href = document.baseURI;

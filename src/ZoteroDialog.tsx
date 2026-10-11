@@ -422,7 +422,7 @@ export default function ZoteroDialog({
           <div className="zotero-message" role="status">
             {busy ? t('正在读取 Zotero…') : message}
           </div>
-          <span>{t('标注保存在 SurfaceTab，不自动回写 Zotero。')}</span>
+          <span>{t('标注保存在 TixTab，不自动回写 Zotero。')}</span>
         </footer>
       </section>
     </div>

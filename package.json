@@ -1,5 +1,5 @@
 {
-  "name": "surfacetab",
+  "name": "tixtab",
   "version": "0.2.35",
   "private": true,
   "description": "Surface-first PDF ink workspace",
@@ -65,7 +65,7 @@
   },
   "build": {
     "appId": "local.surfacetab.app",
-    "productName": "SurfaceTab",
+    "productName": "TixTab",
     "electronDist": "node_modules/electron/dist",
     "npmRebuild": false,
     "directories": {
@@ -122,7 +122,7 @@
       "THIRD_PARTY_NOTICES.md",
       "README.zh-CN.md"
     ],
-    "artifactName": "SurfaceTab-${version}-${arch}.${ext}",
+    "artifactName": "TixTab-${version}-${arch}.${ext}",
     "asarUnpack": [
       "electron/cache-helper.ps1",
       "electron/cache-catalog.json",
@@ -136,14 +136,14 @@
     }
   },
   "license": "AGPL-3.0-only",
-  "author": "SurfaceTab contributors",
+  "author": "TixTab contributors",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Pscgylotti/SurfaceTab.git"
+    "url": "https://github.com/Pscgylotti/TixTab.git"
   },
-  "homepage": "https://github.com/Pscgylotti/SurfaceTab",
+  "homepage": "https://github.com/Pscgylotti/TixTab",
   "bugs": {
-    "url": "https://github.com/Pscgylotti/SurfaceTab/issues"
+    "url": "https://github.com/Pscgylotti/TixTab/issues"
   },
   "overrides": {
     "sass": "1.101.0",

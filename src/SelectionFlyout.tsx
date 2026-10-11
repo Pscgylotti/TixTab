@@ -218,7 +218,7 @@ export default function SelectionFlyout({
         <div className="translation-content">
           <div className="translation-heading">
             <span>
-              SurfaceTab <b>Translate</b>
+              TixTab <b>Translate</b>
             </span>
             <button
               className="icon-button"

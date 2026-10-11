@@ -1,6 +1,6 @@
 # Offline Pinyin keyboard
 
-SurfaceTab uses the headless matching engine from **pinyin-ime 1.0.2** (MIT), derived from its published source map. The dictionary type is inlined and the prefix cache is limited to 96 entries. The Lit UI and DOM controller are not used. Source: https://github.com/CatcherInSky/pinyin-ime
+TixTab uses the headless matching engine from **pinyin-ime 1.0.2** (MIT), derived from its published source map. The dictionary type is inlined and the prefix cache is limited to 96 entries. The Lit UI and DOM controller are not used. Source: https://github.com/CatcherInSky/pinyin-ime
 
 The bundled Google Pinyin dictionary comes from that package, derived from **web-pinyin-ime** and the Android Open Source Project PinyinIME dictionary (Apache 2.0). Source: https://github.com/dongyuwei/web-pinyin-ime
 

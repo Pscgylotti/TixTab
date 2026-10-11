@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
-app = FastAPI(title="SurfaceTab local formula OCR")
+app = FastAPI(title="TixTab local formula OCR")
 app.add_middleware(CORSMiddleware, allow_origins=["http://127.0.0.1:5173", "http://localhost:5173", "null"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 _model = None
 _lock = threading.Lock()

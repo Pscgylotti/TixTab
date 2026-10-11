@@ -28,7 +28,11 @@ describe('power-first Texo routing', () => {
       ),
     );
     const result = await recognizePowerTexo('image', 'AUTO', vi.fn(), new AbortController().signal);
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ image: 'image', device: 'AUTO' });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+      image: 'image',
+      device: 'AUTO',
+      idleReleaseSeconds: 1800,
+    });
     expect(result).toEqual({ latex: 'x', device: 'NPU + CPU', elapsed: 24, fallback: false });
     expect(recognizeTexo).not.toHaveBeenCalled();
   });

@@ -49,6 +49,7 @@ describe('native speech routing', () => {
       voice: 'en_US-lessac-low',
       chunks: [[1, 0, 20, 0, 2]],
       device: 'AUTO',
+      idleReleaseSeconds: 1800,
     });
     expect(releaseTts).toHaveBeenCalledOnce();
     expect(localSpeech).not.toHaveBeenCalled();

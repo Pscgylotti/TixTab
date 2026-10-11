@@ -127,6 +127,37 @@ describe('local neural dictation controller', () => {
       f.service.dispose();
     }
   });
+  it('passes the idle deadline at launch and updates a warm worker without interrupting recording', async () => {
+    const f = fixture();
+    try {
+      expect(
+        (await f.service.run(f.owner, { action: 'idle-policy', idleReleaseSeconds: 29 })).error,
+      ).toBe('invalid');
+      const result = await f.service.run(f.owner, {
+        action: 'start',
+        engine: 'whisper-small',
+        language: 'en-US',
+        idleReleaseSeconds: 600,
+      });
+      expect(result.ok).toBe(true);
+      const child = f.children[0];
+      expect(
+        child.args.slice(
+          child.args.indexOf('--idle-seconds'),
+          child.args.indexOf('--idle-seconds') + 2,
+        ),
+      ).toEqual(['--idle-seconds', '600']);
+      child.stdin.read();
+      await f.service.run(f.owner, { action: 'idle-policy', idleReleaseSeconds: 1800 });
+      expect(JSON.parse(child.stdin.read().toString())).toEqual({
+        action: 'idle-policy',
+        idleReleaseSeconds: 1800,
+      });
+      expect(child.killed).not.toBe(true);
+    } finally {
+      f.service.dispose();
+    }
+  });
   it('cancels compilation without opening a microphone and reports bounded fatal errors', async () => {
     const f = fixture();
     try {

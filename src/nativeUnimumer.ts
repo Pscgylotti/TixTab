@@ -1,3 +1,4 @@
+import { getModelIdleSeconds } from './modelIdle';
 import { connectNativeTexo, type NativeDevice } from './nativeTexo';
 import { requireLocalModels } from './modelLibrary';
 import { noteNativeModel } from './nativeResources';
@@ -21,7 +22,7 @@ export async function recognizeUnimumer(
   const response = await fetch('http://127.0.0.1:8766/recognize-unimumer', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image, device }),
+    body: JSON.stringify({ image, device, idleReleaseSeconds: getModelIdleSeconds() }),
     signal: AbortSignal.any([signal, AbortSignal.timeout(180000)]),
   });
   const data = await response.json();

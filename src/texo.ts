@@ -1,14 +1,15 @@
+import { scheduleModelIdle } from './modelIdle';
 import { requireLocalModels } from './modelLibrary';
 type Result = { latex: string; elapsed: number; device: string };
 let worker: Worker | null = null,
-  idle: ReturnType<typeof setTimeout> | undefined,
+  idle: (() => void) | undefined,
   cancel: (() => void) | undefined;
 export function releaseTexo() {
   const pending = cancel;
   cancel = undefined;
   worker?.terminate();
   worker = null;
-  clearTimeout(idle);
+  idle?.();
   pending?.();
 }
 export async function recognizeTexo(
@@ -21,7 +22,7 @@ export async function recognizeTexo(
   await requireLocalModels(['texo']);
   signal?.throwIfAborted();
   if (cancel) return Promise.reject(new Error('已有公式识别正在运行'));
-  clearTimeout(idle);
+  idle?.();
   worker ??= new Worker(new URL('./texo.worker.ts', import.meta.url), { type: 'module' });
   const owned = worker;
   return new Promise<Result>((resolve, reject) => {
@@ -60,7 +61,7 @@ export async function recognizeTexo(
         return;
       }
       cleanup();
-      idle = setTimeout(releaseTexo, 120000);
+      idle = scheduleModelIdle(releaseTexo);
       if (e.data.type === 'result') resolve(e.data);
       else reject(new Error(e.data.error));
     };

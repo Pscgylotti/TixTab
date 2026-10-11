@@ -305,7 +305,7 @@ try {
       Math.abs(el.getBoundingClientRect().bottom - el.parentElement.getBoundingClientRect().bottom),
     )) < 1,
   );
-  assert.equal(await page.title(), 'SurfaceTab · Thinking over Surface');
+  assert.equal(await page.title(), 'TixTab · Thinking over Screen');
   await page.getByRole('button', { name: '适合页面', exact: true }).click();
   await page.waitForTimeout(100);
   assert.deepEqual(errors, []);
@@ -322,7 +322,7 @@ try {
     'Actual Windows offline dictation: generated WAV recognized locally, no microphone capture; passed.',
   );
   console.log(
-    'Actual Electron reading: touch inertia, retouch stop, transparent control gaps, full-height viewport and Thinking over Surface title passed.',
+    'Actual Electron reading: touch inertia, retouch stop, transparent control gaps, full-height viewport and Thinking over Screen title passed.',
   );
   console.log(
     'Actual Electron ChatGPT: loopback OAuth + PKCE + signed identity + IPC + encrypted Windows storage + actual headerless network SSE + original PDF + collapsible account + restart + local history + night portrait + rendered Markdown/KaTeX/code/reference link passed.',

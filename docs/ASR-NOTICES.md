@@ -1,6 +1,6 @@
 # Local speech recognition notices
 
-SurfaceTab 0.2.33 uses the following optional local dependencies. They are installed separately in the ASR runtime; audio inference does not require Torch or a network service.
+TixTab 0.2.33 uses the following optional local dependencies. They are installed separately in the ASR runtime; audio inference does not require Torch or a network service.
 
 Models: SenseVoiceSmall INT8, sherpa-onnx export (2024-07-17; upstream FunAudioLLM/SenseVoiceSmall). Weight terms: FunASR MODEL_LICENSE, reproduced in SENSEVOICE-MODEL-LICENSE.txt. The SenseVoice code repository is MIT; the weight license is separate.
 

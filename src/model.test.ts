@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hitStroke, isEraser, newNotebook, type Stroke } from './model';
+import { hitStroke, isEraser, isPicture, newNotebook, type Stroke } from './model';
 import { outline } from './ink';
 import { decodeProject, encodeProject } from './storage';
 const s: Stroke = {
@@ -50,5 +50,41 @@ describe('笔输入与工程', () => {
     const n = newNotebook();
     n.pages[0].sourceIndex = 0;
     expect(() => decodeProject(encodeProject(n))).toThrow('原始 PDF');
+  });
+  it('文本框工程保留可编辑内容和样式，拒绝异常字号', () => {
+    const notebook = newNotebook();
+    notebook.pages[0].images = [
+      {
+        id: 'text',
+        kind: 'text',
+        data: 'data:image/png;base64,AA==',
+        x: 10,
+        y: 20,
+        width: 200,
+        height: 60,
+        textBox: { content: 'Hello\n中文', fontSize: 18, color: '#123456', bold: true },
+      },
+    ];
+    expect(decodeProject(encodeProject(notebook))).toEqual(notebook);
+    notebook.pages[0].images[0].textBox!.fontSize = Infinity;
+    expect(() => decodeProject(encodeProject(notebook))).toThrow();
+  });
+  it('图片工程往返保留原色类型，并识别旧版无场景图片', () => {
+    const n = newNotebook();
+    const image = {
+      id: 'picture',
+      kind: 'image' as const,
+      data: 'data:image/png;base64,AA==',
+      x: 1,
+      y: 2,
+      width: 30,
+      height: 40,
+    };
+    n.pages[0].images = [image];
+    expect(decodeProject(encodeProject(n)).pages[0].images).toEqual([image]);
+    expect(isPicture(image)).toBe(true);
+    expect(isPicture({ ...image, kind: 'sketch' })).toBe(true);
+    expect(isPicture({ ...image, kind: 'sketch', scene: { elements: [] } })).toBe(false);
+    expect(isPicture({ ...image, kind: 'formula' })).toBe(false);
   });
 });

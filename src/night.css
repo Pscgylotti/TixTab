@@ -167,12 +167,18 @@
   background-image: linear-gradient(transparent 7px, #3b4352 8px);
 }
 /* Display-only adaptation. Stored ink, original PDF, OCR captures and exports retain their colors. */
-[data-night='true'] :is(.ink-layer, .live-layer, .reading-ink, .page-thumbnail > svg) {
+[data-night='true'] :is(.ink-layer, .live-layer, .reading-ink, .thumbnail-ink) {
   filter: invert(0.9) hue-rotate(180deg);
 }
-[data-night='true'] .placed-object img,
-[data-night='true'] .reading-content > img {
+[data-night='true']
+  :is(.placed-object img, .reading-content > img, .page-thumbnail image)[data-night-ink='true'] {
   filter: invert(0.9) hue-rotate(180deg);
+}
+/* Match PDF bitmap dimming without inverting hues or altering stored pixels.
+   The existing original-color switch also restores imported picture brightness. */
+[data-pdf-night='true']
+  :is(.placed-object img, .reading-content > img, .page-thumbnail image)[data-night-ink='false'] {
+  filter: brightness(0.62);
 }
 [data-night='true'] .touch-keyboard .hg-theme-default {
   background: transparent;

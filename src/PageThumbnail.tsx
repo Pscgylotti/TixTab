@@ -2,7 +2,7 @@ import { useAppearance } from './appearance';
 import { t as tr, useLocale } from './i18n';
 import { memo, useEffect, useRef, useState } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import type { Page } from './model';
+import { isPicture, type Page } from './model';
 import { requestPdfBitmap, renderingCancelled } from './pdfRenderCache';
 import { finalInkPath } from './ink';
 export default memo(function PageThumbnail({
@@ -70,6 +70,7 @@ export default memo(function PageThumbnail({
           {page.images.map((i) => (
             <image
               key={i.id}
+              data-night-ink={!isPicture(i)}
               href={i.displayData ?? i.data}
               x={i.x}
               y={i.y}
@@ -77,14 +78,16 @@ export default memo(function PageThumbnail({
               height={i.height}
             />
           ))}
-          {page.strokes.map((s) => (
-            <path
-              key={s.id}
-              d={finalInkPath(s)}
-              fill={s.color}
-              opacity={s.tool === 'highlighter' ? 0.28 : s.tool === 'pencil' ? 0.65 : 1}
-            />
-          ))}
+          <g className="thumbnail-ink">
+            {page.strokes.map((s) => (
+              <path
+                key={s.id}
+                d={finalInkPath(s)}
+                fill={s.color}
+                opacity={s.tool === 'highlighter' ? 0.28 : s.tool === 'pencil' ? 0.65 : 1}
+              />
+            ))}
+          </g>
         </svg>
       )}
     </div>

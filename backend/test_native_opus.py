@@ -93,7 +93,7 @@ class TranslationServiceTests(unittest.TestCase):
             self.assertEqual(opus.call_count,2)
             self.client.post('/recognize',json={'image':'test'});self.assertIs(service._model,texo.return_value)
             self.client.post('/translate',json={'text':'input','direction':'zh-en'});self.assertEqual(opus.call_count,3)
-            service._last_used=time.monotonic()-121;service.release_idle_model();self.assertIsNone(service._model)
+            service._last_used=time.monotonic()-service.IDLE_RELEASE_SECONDS-1;service.release_idle_model();self.assertIsNone(service._model)
         health=self.client.get('/health').json();self.assertIn('translate-experimental',health['capabilities']);self.assertFalse(health['loaded'])
 
     def test_busy_rejected_input_and_error_statuses(self):

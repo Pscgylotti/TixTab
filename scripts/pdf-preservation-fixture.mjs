@@ -8,7 +8,7 @@ export async function preservationFixture() {
   const doc = await PDFDocument.create(),
     font = await doc.embedFont(StandardFonts.Helvetica);
   doc.setTitle('Preserved document title');
-  doc.setAuthor('SurfaceTab fixture');
+  doc.setAuthor('TixTab fixture');
   doc.setCreationDate(new Date('2024-03-02T12:00:00Z'));
   doc.setModificationDate(new Date('2024-03-02T12:00:00Z'));
   const form = doc.getForm(),

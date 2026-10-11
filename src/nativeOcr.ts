@@ -1,3 +1,4 @@
+import { getModelIdleSeconds } from './modelIdle';
 import { RejectedProviderRequest } from './providerTasks';
 import { noteNativeModel, releaseNativeModel } from './nativeResources';
 import { connectNativeTexo, type NativeDevice } from './nativeTexo';
@@ -58,7 +59,7 @@ export async function recognizePowerOcr(
     const response = await fetch('http://127.0.0.1:8766/ocr', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image, device }),
+      body: JSON.stringify({ image, device, idleReleaseSeconds: getModelIdleSeconds() }),
       signal: AbortSignal.any([signal, AbortSignal.timeout(180000)]),
     });
     const data = await response.json();

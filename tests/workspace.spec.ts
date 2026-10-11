@@ -381,7 +381,7 @@ test('真实 PDF 打开、插页删页、矢量标注导出与工程重开', asy
   const doc = await PDFDocument.create(),
     font = await doc.embedFont(StandardFonts.Helvetica);
   const p = doc.addPage([595.28, 841.89]);
-  p.drawText('SurfaceTab PDF test', { x: 50, y: 760, font, size: 24 });
+  p.drawText('TixTab PDF test', { x: 50, y: 760, font, size: 24 });
   p.drawRectangle({ x: 100, y: 500, width: 150, height: 100, color: rgb(0.3, 0.5, 0.8) });
   await page.locator('input[type=file]').setInputFiles({
     name: 'fixture.pdf',

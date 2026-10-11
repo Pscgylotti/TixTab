@@ -46,14 +46,19 @@ export async function pageChatContext(
       .map((i) => i.latex)
       .join('\n')
       .slice(0, 8000);
-    if (!content.trim() && !formula) throw new Error('page-no-text');
-    context.text += `\n${content}${formula ? `\n[Inserted formulas]\n${formula}` : ''}\n[Only page text and inserted LaTeX are included. Ink and figures are not included.]`;
+    const boxes = page.images
+      .filter((i) => i.kind === 'text')
+      .map((i) => i.textBox?.content || '')
+      .join('\n')
+      .slice(0, 8000);
+    if (!content.trim() && !formula && !boxes) throw new Error('page-no-text');
+    context.text += `\n${content}${formula ? `\n[Inserted formulas]\n${formula}` : ''}${boxes ? `\n[Inserted text boxes]\n${boxes}` : ''}\n[Only page text, text boxes and inserted LaTeX are included. Ink and figures are not included.]`;
     return context;
   }
   const hit = cache.find((c) => c.page === page && c.pdf === pdf);
   if (hit) {
     context.image = hit.image;
-    context.text += '\n[Attached page image includes PDF content and SurfaceTab annotations.]';
+    context.text += '\n[Attached page image includes PDF content and TixTab annotations.]';
     return context;
   }
   const scale = Math.min(1.7, Math.sqrt(1200000 / (page.width * page.height))),
@@ -87,7 +92,7 @@ export async function pageChatContext(
     cache.unshift({ page, pdf, image: data });
     cache.length = Math.min(cache.length, 3);
     context.image = data;
-    context.text += '\n[Attached page image includes PDF content and SurfaceTab annotations.]';
+    context.text += '\n[Attached page image includes PDF content and TixTab annotations.]';
     return context;
   } finally {
     signal.removeEventListener('abort', cancel);

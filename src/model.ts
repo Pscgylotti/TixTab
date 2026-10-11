@@ -16,10 +16,34 @@ export interface PlacedImage {
   y: number;
   width: number;
   height: number;
-  kind: 'sketch' | 'formula';
+  kind: 'sketch' | 'formula' | 'image' | 'text';
+  textBox?: TextBox;
   latex?: string;
   macros?: Record<string, string>;
   scene?: Record<string, unknown>;
+}
+export interface TextBox {
+  content: string;
+  fontSize: number;
+  color: string;
+  bold: boolean;
+}
+export function validTextBox(value: unknown): value is TextBox {
+  if (!value || typeof value !== 'object') return false;
+  const box = value as TextBox;
+  return (
+    typeof box.content === 'string' &&
+    box.content.length <= 10_000 &&
+    Number.isFinite(box.fontSize) &&
+    box.fontSize >= 8 &&
+    box.fontSize <= 72 &&
+    /^#[0-9a-f]{6}$/i.test(box.color) &&
+    typeof box.bold === 'boolean'
+  );
+}
+/** Older imported pictures used the sketch kind without an editable scene. */
+export function isPicture(image: PlacedImage) {
+  return image.kind === 'image' || (image.kind === 'sketch' && !image.scene);
 }
 export interface Page {
   id: string;
@@ -144,7 +168,8 @@ export function validNotebook(value: unknown): value is Notebook {
         p.images.every(
           (i) =>
             typeof i.id === 'string' &&
-            ['sketch', 'formula'].includes(i.kind) &&
+            ['sketch', 'formula', 'image', 'text'].includes(i.kind) &&
+            (i.kind !== 'text' || validTextBox(i.textBox)) &&
             (i.macros === undefined || validMacroSnapshot(i.macros)) &&
             (i.displayData === undefined || /^data:image\/svg\+xml;base64,/.test(i.displayData)) &&
             (i.scene === undefined ||

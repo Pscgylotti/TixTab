@@ -54,6 +54,7 @@ import {
   GalleryVerticalEnd,
   File,
   ScanText,
+  Type,
 } from 'lucide-react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfSurface, { type PenDiagnostic } from './PdfSurface';
@@ -79,6 +80,7 @@ import { imageFile, isImageFile, type ImportedImage } from './svgImport';
 
 import type { PdfDropChoice } from './PdfDropDialog';
 const PdfDropDialog = lazy(() => import('./PdfDropDialog'));
+const TextBoxDialog = lazy(() => import('./TextBoxDialog'));
 import { capturePage, type PageRegion } from './capturePage';
 const OcrDialog = lazy(() => import('./OcrDialog'));
 const ModelManager = lazy(() => import('./ModelManager'));
@@ -205,6 +207,7 @@ export default function App() {
     }
   };
   const [editingId, setEditingId] = useState<string | null>(null);
+  const pasteAnchor = useRef<(DropAnchor & { documentId: string }) | null>(null);
   const [bottomCollapsed, setBottomCollapsed] = useState(() =>
     savedChrome('surfacetab.bottomCollapsed'),
   );
@@ -237,6 +240,7 @@ export default function App() {
   const [dialog, setDialog] = useState<
       | 'sketch'
       | 'formula'
+      | 'text'
       | 'help'
       | 'settings'
       | 'models'
@@ -761,7 +765,7 @@ export default function App() {
     documentOperation(async () => {
       const supported = files.filter((f) => /\.(pdf|surfacetab)$/i.test(f.name));
       if (!supported.length) {
-        notify(tr('请拖入 PDF 或 SurfaceTab 工程文件'));
+        notify(tr('请拖入 PDF 或 TixTab 工程文件'));
         return;
       }
       await persist(current.current);
@@ -838,7 +842,8 @@ export default function App() {
         id: uid(),
         data: image.data,
         displayData: image.displayData,
-        kind: 'sketch' as const,
+        kind: image.textBox ? ('text' as const) : ('image' as const),
+        textBox: image.textBox,
         width,
         height,
         x: Math.max(
@@ -943,6 +948,46 @@ export default function App() {
       });
     });
   };
+  useEffect(() => {
+    const paste = (event: ClipboardEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (
+        !ready ||
+        busyRef.current ||
+        dialog ||
+        pendingDrop ||
+        workspaceOpen ||
+        zoteroOpen ||
+        ocrImage ||
+        target?.closest('input,textarea,select,[contenteditable="true"],[role="textbox"]')
+      )
+        return;
+      const files = Array.from(event.clipboardData?.files || []).filter(isImageFile);
+      const text = event.clipboardData?.getData('text/plain') || '';
+      if (!files.length && !text.trim()) return;
+      event.preventDefault();
+      const page = current.current.pages[viewRef.current.index] || current.current.pages[0];
+      const anchor =
+        pasteAnchor.current?.documentId === activeRef.current &&
+        pasteAnchor.current.pageId === page.id
+          ? pasteAnchor.current
+          : { pageId: page.id };
+      setSelection(null);
+      reportOperation(() =>
+        documentOperation(async () => {
+          if (files.length) await droppedImages(files, anchor);
+          else {
+            const { textBoxImage, defaultTextBox } = await import('./textBox');
+            const image = await textBoxImage({ ...defaultTextBox, content: text });
+            addImages([image], anchor);
+            notify(tr('已粘贴为文本框，可使用对象工具编辑。'));
+          }
+        }),
+      );
+    };
+    window.addEventListener('paste', paste);
+    return () => window.removeEventListener('paste', paste);
+  }, [ready, dialog, pendingDrop, workspaceOpen, zoteroOpen, ocrImage]);
   useEffect(() => {
     let depth = 0;
     const isFiles = (e: DragEvent) => e.dataTransfer?.types.includes('Files');
@@ -1157,6 +1202,18 @@ export default function App() {
           <span>{tr('公式')}</span>
         </button>
         <div />
+        <button
+          aria-label={tr('文本框')}
+          title={tr('插入文本框')}
+          onClick={() => {
+            setEditingId(null);
+            setDialog('text');
+          }}
+        >
+          <Type size={20} />
+          <span>{tr('文本框')}</span>
+        </button>
+        <div />
         <button aria-label={tr('加页')} title={tr('加页')} onClick={addPage}>
           <FilePlus2 size={19} />
           <span>{tr('加页')}</span>
@@ -1254,6 +1311,21 @@ export default function App() {
     <div
       className={`app-shell ${headerCollapsed && toolbarCollapsed && bottomCollapsed ? 'chrome-minimal' : ''}`}
       onPointerDownCapture={(event) => {
+        const element = (event.target as HTMLElement).closest<HTMLElement>('.paper,.reading-paper');
+        if (element) {
+          const id = element.closest<HTMLElement>('[data-page-id]')?.dataset.pageId;
+          const p =
+            current.current.pages.find((p) => p.id === id) ||
+            current.current.pages[viewRef.current.index];
+          const rect = element.getBoundingClientRect();
+          if (p)
+            pasteAnchor.current = {
+              documentId: activeRef.current,
+              pageId: p.id,
+              x: ((event.clientX - rect.left) / rect.width) * p.width,
+              y: ((event.clientY - rect.top) / rect.height) * p.height,
+            };
+        }
         if (
           event.pointerType !== 'pen' ||
           !(event.button === 2 || event.buttons & 2) ||
@@ -1373,7 +1445,7 @@ export default function App() {
             <BookOpen size={23} />
           </span>
           <span>
-            Surface<span className="brand-light">Tab</span>
+            Tix<span className="brand-light">Tab</span>
           </span>
           <span className="version">PREVIEW</span>
         </div>
@@ -1700,7 +1772,11 @@ export default function App() {
                 onEditObject={(id) => {
                   setEditingId(id);
                   setDialog(
-                    page.images.find((i) => i.id === id)?.kind === 'formula' ? 'formula' : 'sketch',
+                    page.images.find((i) => i.id === id)?.kind === 'text'
+                      ? 'text'
+                      : page.images.find((i) => i.id === id)?.kind === 'formula'
+                        ? 'formula'
+                        : 'sketch',
                   );
                 }}
               />
@@ -1959,6 +2035,45 @@ export default function App() {
             }
           />
         )}
+        {dialog === 'text' && (
+          <TextBoxDialog
+            initial={editingImage?.textBox}
+            onClose={() => {
+              setDialog(null);
+              setEditingId(null);
+            }}
+            onInsert={(image) => {
+              if (editingImage) {
+                const width = Math.min(
+                    image.width / 2,
+                    page.width * 0.8,
+                    (page.height * 0.8 * image.width) / image.height,
+                  ),
+                  height = (width * image.height) / image.width;
+                updatePage({
+                  ...page,
+                  images: page.images.map((i) =>
+                    i.id === editingImage.id
+                      ? {
+                          ...i,
+                          data: image.data,
+                          displayData: image.displayData,
+                          textBox: image.textBox,
+                          width,
+                          height,
+                          x: Math.max(0, Math.min(page.width - width, i.x)),
+                          y: Math.max(0, Math.min(page.height - height, i.y)),
+                        }
+                      : i,
+                  ),
+                });
+              } else addImages([image], { pageId: page.id });
+              setDialog(null);
+              setEditingId(null);
+              setTool('object');
+            }}
+          />
+        )}
         {dialog === 'formula' && (
           <FormulaDialog
             initialLatex={editingImage?.latex}
@@ -2026,12 +2141,8 @@ export default function App() {
                     {tr('磁盘缓存管理')}
                   </button>
                   <p className="appearance-note">
-                    SurfaceTab · AGPL-3.0-only ·{' '}
-                    <a
-                      href="https://github.com/Pscgylotti/SurfaceTab"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    TixTab · AGPL-3.0-only ·{' '}
+                    <a href="https://github.com/Pscgylotti/TixTab" target="_blank" rel="noreferrer">
                       {tr('源码与许可')}
                     </a>
                   </p>

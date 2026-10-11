@@ -19,7 +19,7 @@ import PdfTextLayer from './PdfTextLayer';
 import PdfDetailLayer from './PdfDetailLayer';
 import { requestPdfBitmap, renderingCancelled } from './pdfRenderCache';
 import { finalInkPath } from './ink';
-import type { Page } from './model';
+import { isPicture, type Page } from './model';
 import { makeLayout, visibleRange, itemAt } from './virtualLayout';
 import { useScrollViewport } from './useScrollViewport';
 import { zoomReadingPoint } from './readingZoom';
@@ -176,7 +176,14 @@ const ReadingPage = memo(function ReadingPage({
                 <img
                   key={i.id}
                   src={i.displayData ?? i.data}
-                  alt={i.latex || tr('草图')}
+                  data-night-ink={!isPicture(i)}
+                  alt={
+                    i.kind === 'text'
+                      ? i.textBox?.content
+                      : isPicture(i)
+                        ? tr('图片')
+                        : i.latex || tr('草图')
+                  }
                   style={{
                     position: 'absolute',
                     left: i.x,

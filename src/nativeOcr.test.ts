@@ -41,7 +41,11 @@ describe('power-first OCR routing', () => {
       engine: 'PP-OCRv4',
       fallback: false,
     });
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ image: 'png', device: 'NPU' });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      image: 'png',
+      device: 'NPU',
+      idleReleaseSeconds: 1800,
+    });
     expect(releaseOcr).toHaveBeenCalledOnce();
     expect(localOcr).not.toHaveBeenCalled();
   });

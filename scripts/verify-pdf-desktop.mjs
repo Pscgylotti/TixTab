@@ -9,7 +9,7 @@ import { verifyDocumentUi } from './verify-document-ui.mjs';
 import { verifyFormulaUi } from './verify-formula-ui.mjs';
 const version = JSON.parse(await readFile('package.json', 'utf8')).version;
 const profile = await mkdtemp(join(tmpdir(), 'surfacetab-pdf-export-'));
-const executable = resolve(process.argv[2] || `release/${version}/win-unpacked/SurfaceTab.exe`);
+const executable = resolve(process.argv[2] || `release/${version}/win-unpacked/TixTab.exe`);
 const app = await electron.launch({
   executablePath: executable,
   args: [],

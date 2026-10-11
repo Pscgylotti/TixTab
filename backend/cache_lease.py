@@ -15,6 +15,7 @@ class CacheBusyError(RuntimeError):
 
 
 def acquire_cache_lease():
+    # Keep the shared legacy path so upgrades reuse caches and cross-version leases.
     root = Path(os.environ.get('LOCALAPPDATA', str(Path.home() / '.cache'))) / 'SurfaceTab'
     path = root / 'native-cache-use.lock'
     for entry in (path, *path.parents):

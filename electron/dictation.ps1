@@ -7,7 +7,7 @@ try {
 using System;
 using System.Text;
 using System.Speech.Recognition;
-public static class SurfaceTabDictation {
+public static class TixTabDictation {
   private static void Levels(SpeechRecognitionEngine engine,int interval=100) {
     int last=Environment.TickCount;
     engine.AudioLevelUpdated+=(sender,e)=>{int now=Environment.TickCount;if(unchecked(now-last)>=interval){last=now;Console.WriteLine("LEVEL "+e.AudioLevel);}};
@@ -53,5 +53,5 @@ public static class SurfaceTabDictation {
   }
 }
 '@
-  if($SelfTest){[SurfaceTabDictation]::Test()}else{[SurfaceTabDictation]::Run($Language)}
+  if($SelfTest){[TixTabDictation]::Test()}else{[TixTabDictation]::Run($Language)}
 } catch { [Console]::WriteLine('ERROR microphone');exit 1 }

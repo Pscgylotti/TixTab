@@ -1,3 +1,4 @@
+import { getModelIdleSeconds } from './modelIdle';
 import { RejectedProviderRequest } from './providerTasks';
 import { noteNativeModel, releaseNativeModel } from './nativeResources';
 import { recognizeTexo, releaseTexo } from './texo';
@@ -71,7 +72,7 @@ export async function recognizePowerTexo(
     const response = await fetch(`${endpoint}/recognize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image, device }),
+      body: JSON.stringify({ image, device, idleReleaseSeconds: getModelIdleSeconds() }),
       signal: AbortSignal.any([signal, AbortSignal.timeout(180000)]),
     });
     const data = await response.json();

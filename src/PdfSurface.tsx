@@ -10,6 +10,7 @@ import {
   hitStroke,
   hitImage,
   isEraser,
+  isPicture,
   uid,
   type Page,
   type Point,
@@ -491,15 +492,27 @@ export default function PdfSurface({
         <div className="object-inspector" onPointerDown={(e) => e.stopPropagation()}>
           <span>
             {selectedImage
-              ? selectedImage.kind === 'sketch'
-                ? tr('草图')
-                : tr('公式')
+              ? selectedImage.kind === 'text'
+                ? tr('文本框')
+                : isPicture(selectedImage)
+                  ? tr('图片')
+                  : selectedImage.kind === 'sketch'
+                    ? tr('草图')
+                    : tr('公式')
               : tr('已选择 {0} 个对象', selected.length)}{' '}
             {tr('· 拖动移动，边角缩放')}
           </span>
           {selectedImage && (
             <button
-              aria-label={selectedImage.kind === 'sketch' ? tr('编辑选中草图') : tr('编辑选中公式')}
+              aria-label={
+                selectedImage.kind === 'text'
+                  ? tr('编辑选中文本框')
+                  : isPicture(selectedImage)
+                    ? tr('编辑选中图片')
+                    : selectedImage.kind === 'sketch'
+                      ? tr('编辑选中草图')
+                      : tr('编辑选中公式')
+              }
               onClick={() => onEditObject(selectedImage.id)}
             >
               <Pencil size={15} />

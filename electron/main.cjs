@@ -37,6 +37,7 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 if (process.env.SURFACETAB_PROFILE) app.setPath('userData', process.env.SURFACETAB_PROFILE);
+else app.setPath('userData', path.join(app.getPath('appData'), 'surfacetab'));
 app.setAppUserModelId('local.surfacetab.app');
 app.whenReady().then(() => {
   const root = path.resolve(__dirname, '../dist');
@@ -367,7 +368,7 @@ app.whenReady().then(() => {
     minWidth: 560,
     minHeight: 600,
     show: false,
-    title: 'SurfaceTab',
+    title: 'TixTab',
     backgroundColor: '#00000000',
     backgroundMaterial: 'mica',
     autoHideMenuBar: true,
@@ -409,7 +410,7 @@ app.whenReady().then(() => {
           height: 780,
           minWidth: 340,
           minHeight: 460,
-          title: 'SurfaceTab · ChatGPT',
+          title: 'TixTab · ChatGPT',
           autoHideMenuBar: true,
           backgroundMaterial: 'mica',
         },
@@ -418,7 +419,7 @@ app.whenReady().then(() => {
     try {
       if (
         ['https://translate.google.com'].includes(new URL(url).origin) ||
-        url === 'https://github.com/Pscgylotti/SurfaceTab' ||
+        url === 'https://github.com/Pscgylotti/TixTab' ||
         modelCatalog.models.some((m) => m.source === url)
       )
         void shell.openExternal(url);

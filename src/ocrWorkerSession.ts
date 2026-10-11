@@ -1,3 +1,4 @@
+import { scheduleModelIdle } from './modelIdle';
 import { requireLocalModels } from './modelLibrary';
 import { ProviderTaskError } from './providerTasks';
 
@@ -12,13 +13,11 @@ type Session = {
     progress: (text: string) => void;
   };
 };
-let session: Session | undefined,
-  active: object | undefined,
-  idle: ReturnType<typeof setTimeout> | undefined;
+let session: Session | undefined, active: object | undefined, idle: (() => void) | undefined;
 export function releaseOcr(reason: unknown = new DOMException('已取消', 'AbortError')) {
   const old = session;
   session = undefined;
-  clearTimeout(idle);
+  idle?.();
   if (old) {
     old.worker.onmessage = null;
     old.worker.onerror = null;
@@ -96,7 +95,7 @@ export async function localOcr(
     throw new ProviderTaskError('invalid-input', 'OCR 图片格式无效');
   const owner = {};
   active = owner;
-  clearTimeout(idle);
+  idle?.();
   const abort = () => releaseOcr(signal?.reason ?? new DOMException('已取消', 'AbortError'));
   signal?.addEventListener('abort', abort, { once: true });
   const timer = setTimeout(
@@ -152,7 +151,7 @@ export async function localOcr(
     signal?.throwIfAborted();
     if (typeof result?.text !== 'string' || !Number.isFinite(result.confidence))
       throw new Error('本地 OCR 返回格式无效');
-    idle = setTimeout(releaseOcr, 120000);
+    idle = scheduleModelIdle(releaseOcr);
     return {
       text: result.text.trim(),
       confidence: result.confidence,

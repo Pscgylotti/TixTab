@@ -1,3 +1,4 @@
+import type { TextBox } from './model';
 const namespace = 'http://www.w3.org/2000/svg';
 const elements = new Set(
   'svg g defs path rect circle ellipse line polyline polygon text tspan textPath linearGradient radialGradient stop clipPath mask marker pattern use title desc'.split(
@@ -10,7 +11,7 @@ const attributes = new Set(
   ),
 );
 const styleProperties = new Set(
-  'fill fill-opacity fill-rule stroke stroke-width stroke-opacity stroke-linecap stroke-linejoin stroke-dasharray opacity font-family font-size font-weight font-style text-anchor dominant-baseline letter-spacing color'.split(
+  'fill fill-opacity fill-rule stroke stroke-width stroke-opacity stroke-linecap stroke-linejoin stroke-dasharray opacity font-family font-size font-weight font-style text-anchor dominant-baseline letter-spacing color white-space'.split(
     ' ',
   ),
 );
@@ -19,6 +20,7 @@ export interface ImportedImage {
   displayData?: string;
   width: number;
   height: number;
+  textBox?: TextBox;
 }
 export interface SafeSvg {
   dataURL: string;

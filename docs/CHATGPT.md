@@ -1,6 +1,6 @@
 # ChatGPT 阅读助手（实验性）
 
-点击阅读区上方的聊天图标，再点 **Continue with ChatGPT**。在系统浏览器中登录现有 ChatGPT 账号并授权 SurfaceTab，完成后返回应用。无需填写 API Key。
+点击阅读区上方的聊天图标，再点 **Continue with ChatGPT**。在系统浏览器中登录现有 ChatGPT 账号并授权 TixTab，完成后返回应用。无需填写 API Key。
 
 实现遵循 OpenAI 官方本地应用授权流程。实际可用性取决于用户、工作空间、地区、订阅和平台开放情况；并非所有账号都保证可用。模型列表由授权账号实时返回，不固定写死模型名称。未授权订阅额度时会保留登录，并显示“启用 ChatGPT 订阅额度”。不会自动改用其它计费方式。
 
@@ -73,6 +73,6 @@ SenseVoiceSmall 默认使用 CPU 双线程，权重约 228 MiB；Whisper small �
 
 中文/English 与应用界面语言独立。WebRTC VAD 在停顿约 720 ms 后提交片段，持续说话最多约 20 秒一段；这两种模型属于分段离线识别，不会逐字实时修订。录音与推理分别运行，波形来自实际麦克风音量。停止录音后，最后一句识别完才结束；过载会明确提示，不默默丢弃排队片段。识别内容仅进入可编辑草稿，仍需点击发送才交给聊天模型。隐藏或关闭聊天立即取消麦克风。
 
-音频只保留在本机内存，不写录音文件、不上传；录音最长两分钟。同一引擎在结束后保温约 90 秒，再自动释放；更换引擎或退出应用释放旧进程。Whisper 缓存有 768 MiB 软上限，并可在缓存管理中清理。SenseVoice 的模型权重适用 FunASR 模型许可，见 SENSEVOICE-MODEL-LICENSE.txt；推理依赖及来源见 ASR-NOTICES.md。
+音频只保留在本机内存，不写录音文件、不上传；录音最长两分钟。同一引擎在结束后按设置保温（默认 1800 秒），再自动释放；更换引擎或退出应用释放旧进程。Whisper 缓存有 768 MiB 软上限，并可在缓存管理中清理。SenseVoice 的模型权重适用 FunASR 模型许可，见 SENSEVOICE-MODEL-LICENSE.txt；推理依赖及来源见 ASR-NOTICES.md。
 
 本机 Core Ultra 5 238V / Arc 130V / Intel AI Boost，OpenVINO 2026.2，使用公开的 5.592 秒中文、7.152 秒英文音频验证：SenseVoice CPU 推理约 0.13–0.17 秒；Whisper CPU 约 1.22–1.42 秒、GPU 约 0.16–0.60 秒、NPU 约 0.17–0.36 秒。Whisper 两种语言均成功使用真实 NPU，首次 NPU 加载约 40 秒，缓存后约 2 秒。以上为小样本延迟测试，不代表识别准确率或实测功耗；真实麦克风、口音、距离和噪声需结合使用环境评估。在这组样本中 Whisper 的转写比 SenseVoice 更准确。
