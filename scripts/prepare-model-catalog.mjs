@@ -1,0 +1,133 @@
+// Fixed asset records reused by the desktop library and slim builds.
+import { readFile, writeFile } from 'node:fs/promises';
+const read = (name) =>
+  readFile(new URL(`../public/models/${name}`, import.meta.url), 'utf8').then(JSON.parse);
+const texo = await read('texo/manifest.json'),
+  reading = await read('reading-manifest.json'),
+  ocr = await read('ppocrv4/manifest.json');
+const models = [];
+const add = (id, name, feature, revision, license, source, device, files, metadata = []) =>
+  models.push({
+    id,
+    name,
+    feature,
+    revision,
+    license,
+    source,
+    device,
+    files,
+    metadata,
+    bytes: files.reduce((n, f) => n + f.bytes, 0),
+  });
+add(
+  'texo',
+  'Texo',
+  'formula',
+  texo.revision,
+  'AGPL-3.0',
+  'https://github.com/alephpi/Texo',
+  'NPU → GPU → CPU · CPU decoder',
+  texo.files.map((f) => ({
+    path: `texo/${f.name}`,
+    bytes: f.bytes,
+    sha256: f.sha256,
+    url: `https://huggingface.co/alephpi/FormulaNet/resolve/${texo.revision}/${f.name}`,
+  })),
+  [{ path: 'texo/manifest.json', data: texo }],
+);
+for (const id of ['opus-en-zh', 'opus-zh-en']) {
+  const m = await read(`${id}/manifest.json`);
+  add(
+    id,
+    id === 'opus-en-zh' ? 'OPUS English → 中文' : 'OPUS 中文 → English',
+    'translation',
+    m.revision,
+    'Apache-2.0 (upstream OPUS-MT)',
+    `https://huggingface.co/${m.repo}`,
+    'CPU (WASM) · optional NPU/GPU encoder',
+    m.files.map((f) => ({
+      path: `${id}/${f.file}`,
+      bytes: f.size,
+      sha256: f.sha256,
+      url: `https://huggingface.co/${m.repo}/resolve/${m.revision}/${f.file}`,
+    })),
+    [{ path: `${id}/manifest.json`, data: m }],
+  );
+}
+add(
+  'tesseract',
+  'Tesseract English + 中文',
+  'ocr',
+  reading.ocrRevision,
+  'Apache-2.0',
+  'https://github.com/tesseract-ocr/tessdata_fast',
+  'CPU (WASM)',
+  reading.files
+    .filter((f) => f.name.startsWith('ocr/'))
+    .map((f) => ({ path: f.name, bytes: f.size, sha256: f.sha256, url: f.url })),
+);
+add(
+  'ppocrv4',
+  'PP-OCRv4 中文 + English',
+  'ocr',
+  ocr.revision,
+  'Apache-2.0 · PaddleOCR / RapidOCR',
+  'https://github.com/RapidAI/RapidOCR',
+  'NPU → GPU → CPU · CPU projection',
+  ocr.files.map((f) => ({
+    path: `ppocrv4/${f.file}`,
+    bytes: f.size,
+    sha256: f.sha256,
+    url: f.source,
+  })),
+  [{ path: 'ppocrv4/manifest.json', data: ocr }],
+);
+for (const [id, prefix, name, license] of [
+  [
+    'piper-en',
+    'piper/en/',
+    'Piper Lessac English',
+    'Voice model: upstream MODEL_CARD; dataset: Lessac terms',
+  ],
+  [
+    'piper-zh',
+    'piper/zh/',
+    'Piper Huayan 中文',
+    'Voice model: upstream MODEL_CARD; dataset license: Unknown',
+  ],
+])
+  add(
+    id,
+    name,
+    'speech',
+    reading.piperRevision,
+    license,
+    'https://huggingface.co/rhasspy/piper-voices',
+    'NPU → GPU → CPU vocoder · CPU (WASM) fallback',
+    reading.files
+      .filter((f) => f.name.startsWith(prefix))
+      .map((f) => ({ path: f.name, bytes: f.size, sha256: f.sha256, url: f.url })),
+  );
+add(
+  'piper-runtime',
+  'Piper phonemizer',
+  'speech',
+  '1.0.0',
+  'eSpeak NG: GPL-3.0 · WASM build: see upstream',
+  'https://github.com/diffusionstudio/piper-wasm',
+  'CPU · shared by both voices',
+  reading.files
+    .filter((f) => f.name.startsWith('piper/runtime/'))
+    .map((f) => ({ path: f.name, bytes: f.size, sha256: f.sha256, url: f.url })),
+);
+await writeFile(
+  new URL('../electron/model-catalog.json', import.meta.url),
+  JSON.stringify({ version: 1, models }, null, 2) + '\n',
+);
+console.log(
+  'Pinned model catalog:',
+  models.length,
+  'bundles,',
+  models.reduce((n, m) => n + m.files.length, 0),
+  'files',
+);

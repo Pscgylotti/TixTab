@@ -1,0 +1,96 @@
+/* A single compact row; tools scroll horizontally rather than wrapping. */
+.workspace-heading.tools-inline {
+  height: var(--compact-row, 36px);
+  min-height: var(--compact-row, 36px);
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 0 8px;
+}
+.tools-inline .workspace-path {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+.tools-inline .workspace-library-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.tools-inline .compact-tools {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  min-width: 28px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+.tools-inline .compact-tools .tool-button {
+  flex: 0 0 30px;
+  position: relative;
+  width: 30px;
+  min-width: 30px;
+  height: 28px;
+  min-height: 28px;
+  padding: 5px;
+}
+.tools-inline .compact-tools .tool-button svg {
+  width: 16px;
+  height: 16px;
+}
+.tools-inline .compact-tools .ballpoint-dot {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.tools-inline .workspace-controls {
+  gap: 2px;
+}
+.tools-inline .workspace-controls button {
+  min-height: 28px;
+  height: 28px;
+  padding: 4px;
+}
+.tools-inline .workspace-controls > .icon-button,
+.tools-inline .view-switch button {
+  min-width: 28px;
+}
+.tools-inline .view-switch {
+  padding: 0;
+}
+@media (max-width: 650px) {
+  .tools-inline .workspace-library-button > span {
+    display: none;
+  }
+  .tools-inline .workspace-library-button {
+    width: 28px;
+    min-width: 28px;
+    justify-content: center;
+  }
+  .workspace-heading.tools-inline {
+    gap: 3px;
+    padding: 0 4px;
+  }
+  .tools-inline .workspace-controls {
+    gap: 1px;
+  }
+  .tools-inline .workspace-controls button,
+  .tools-inline .workspace-controls > .icon-button,
+  .tools-inline .view-switch button {
+    min-width: 24px;
+    height: 28px;
+    padding: 3px;
+  }
+  .tools-inline .night-original-toggle {
+    max-width: 64px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}

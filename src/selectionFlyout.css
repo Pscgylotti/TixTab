@@ -1,0 +1,75 @@
+.selection-flyout {
+  overscroll-behavior: contain;
+  scrollbar-gutter: auto;
+  scrollbar-width: thin;
+}
+.selection-flyout.expanded {
+  scrollbar-gutter: stable;
+}
+.selection-flyout[role='dialog'] :is(button, a, select) {
+  min-width: 44px;
+  min-height: 44px;
+}
+.selection-flyout .selection-actions {
+  gap: 2px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+.selection-flyout .selection-actions > a {
+  margin-left: auto;
+}
+.selection-flyout .translation-language {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.selection-flyout .translation-language > .icon-button:first-of-type {
+  margin-left: auto;
+}
+.selection-flyout .translation-footer {
+  gap: 6px;
+}
+.selection-flyout .translation-footer > button:not(.primary) {
+  min-height: 44px;
+  padding: 8px;
+}
+.selection-flyout .tts-rate {
+  min-height: 44px;
+  flex-wrap: wrap;
+}
+.selection-flyout .tts-rate input {
+  height: 44px;
+}
+.selection-flyout .local-fallback {
+  min-height: 44px;
+  line-height: 1.5;
+}
+.selection-flyout .local-fallback input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.selection-flyout .translation-status {
+  overflow-wrap: anywhere;
+}
+.selection-flyout .provider-config :is(input:not([type='checkbox']), textarea) {
+  min-height: 44px;
+}
+.selection-flyout .provider-checkbox {
+  min-height: 44px;
+}
+.selection-flyout .provider-advanced button {
+  white-space: normal;
+}
+.writing-hand-setting {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  font-size: 13px;
+}
+.writing-hand-setting select {
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 8px;
+}

@@ -1,0 +1,142 @@
+.task-scrim {
+  z-index: 85;
+}
+.task-center {
+  width: min(900px, 96vw);
+  height: min(900px, 94dvh);
+}
+.task-center > header {
+  padding: 16px 20px;
+  flex-shrink: 0;
+}
+.task-center > header p {
+  line-height: 1.6;
+}
+.task-center-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 20px 20px;
+}
+.task-center button {
+  min-height: 44px;
+  white-space: normal;
+}
+.task-center .muted {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.task-center-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.task-list {
+  display: grid;
+  gap: 10px;
+}
+.task-card {
+  background: #f2f6fd;
+  border: 1px solid var(--line);
+  padding: 12px;
+  border-radius: 10px;
+}
+.task-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.task-card-heading > span {
+  margin-left: auto;
+  color: var(--muted);
+}
+.task-card-heading button {
+  padding: 8px 10px;
+}
+.task-card dl {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 7px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+.task-card dt {
+  color: var(--muted);
+}
+.task-card dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.task-fallback {
+  color: #765815;
+  margin-left: 8px;
+}
+.task-error {
+  color: #b94c4c;
+}
+.task-empty {
+  padding: 26px 12px;
+  background: #f2f6fd;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.task-capabilities {
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 16px;
+}
+.task-capabilities summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 0;
+}
+.task-capabilities h3 {
+  font-size: 14px;
+  margin: 12px 0 6px;
+}
+.task-capabilities ul {
+  padding: 0;
+  list-style: none;
+}
+.task-capabilities li {
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.task-capabilities li > :is(span, small) {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+[data-night='true'] :is(.task-card, .task-empty) {
+  background: #232b38;
+  border-color: #3a4353;
+}
+[data-night='true'] .task-fallback {
+  color: #e8c682;
+}
+[data-night='true'] .task-error {
+  color: #f2a6a6;
+}
+@media (max-width: 600px) {
+  .task-center > header {
+    padding: 12px;
+  }
+  .task-center-body {
+    padding: 10px;
+  }
+  .task-center-actions {
+    flex-wrap: wrap;
+  }
+  .task-card dl {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+}

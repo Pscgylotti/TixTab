@@ -1,0 +1,689 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "texo",
+      "name": "Texo",
+      "feature": "formula",
+      "revision": "b2668efe5112082846fde4d446b9bfaab3989533",
+      "license": "AGPL-3.0",
+      "source": "https://github.com/alephpi/Texo",
+      "device": "NPU → GPU → CPU · CPU decoder",
+      "files": [
+        {
+          "path": "texo/config.json",
+          "bytes": 5014,
+          "sha256": "c3816c7ee90aa2815691d2ab376be704964b3735ebd238fb812ff7e0c0cbe336",
+          "url": "https://huggingface.co/alephpi/FormulaNet/resolve/b2668efe5112082846fde4d446b9bfaab3989533/config.json"
+        },
+        {
+          "path": "texo/generation_config.json",
+          "bytes": 213,
+          "sha256": "597241304b9611f729aa859405ee60934fed6c03b38db9dbc4ae86dbe3d2fd93",
+          "url": "https://huggingface.co/alephpi/FormulaNet/resolve/b2668efe5112082846fde4d446b9bfaab3989533/generation_config.json"
+        },
+        {
+          "path": "texo/tokenizer.json",
+          "bytes": 17318,
+          "sha256": "1240f9d178e1ad2a0076fe95ba62e332871c702accdd5ce3ae3ef33ffd6c3a1e",
+          "url": "https://huggingface.co/alephpi/FormulaNet/resolve/b2668efe5112082846fde4d446b9bfaab3989533/tokenizer.json"
+        },
+        {
+          "path": "texo/tokenizer_config.json",
+          "bytes": 936,
+          "sha256": "714479320ce6dbd82ef3df74be4ef543f3535f96f074ea65056b962805f2ccf7",
+          "url": "https://huggingface.co/alephpi/FormulaNet/resolve/b2668efe5112082846fde4d446b9bfaab3989533/tokenizer_config.json"
+        },
+        {
+          "path": "texo/onnx/encoder_model.onnx",
+          "bytes": 54168561,
+          "sha256": "fbd69cf63cf833db1e2ef40013d859b560671c1253278441a01bde4516b624ae",
+          "url": "https://huggingface.co/alephpi/FormulaNet/resolve/b2668efe5112082846fde4d446b9bfaab3989533/onnx/encoder_model.onnx"
+        },
+        {
+          "path": "texo/onnx/decoder_model_merged.onnx",
+          "bytes": 25946299,
+          "sha256": "61d4e9e60e3caa62af3f28a15a22bc13567eb4e618c87917d9597461e54c46be",
+          "url": "https://huggingface.co/alephpi/FormulaNet/resolve/b2668efe5112082846fde4d446b9bfaab3989533/onnx/decoder_model_merged.onnx"
+        }
+      ],
+      "metadata": [
+        {
+          "path": "texo/manifest.json",
+          "data": {
+            "repo": "alephpi/FormulaNet (Texo)",
+            "revision": "b2668efe5112082846fde4d446b9bfaab3989533",
+            "source": "https://github.com/alephpi/Texo",
+            "files": [
+              {
+                "name": "config.json",
+                "bytes": 5014,
+                "sha256": "c3816c7ee90aa2815691d2ab376be704964b3735ebd238fb812ff7e0c0cbe336"
+              },
+              {
+                "name": "generation_config.json",
+                "bytes": 213,
+                "sha256": "597241304b9611f729aa859405ee60934fed6c03b38db9dbc4ae86dbe3d2fd93"
+              },
+              {
+                "name": "tokenizer.json",
+                "bytes": 17318,
+                "sha256": "1240f9d178e1ad2a0076fe95ba62e332871c702accdd5ce3ae3ef33ffd6c3a1e"
+              },
+              {
+                "name": "tokenizer_config.json",
+                "bytes": 936,
+                "sha256": "714479320ce6dbd82ef3df74be4ef543f3535f96f074ea65056b962805f2ccf7"
+              },
+              {
+                "name": "onnx/encoder_model.onnx",
+                "bytes": 54168561,
+                "sha256": "fbd69cf63cf833db1e2ef40013d859b560671c1253278441a01bde4516b624ae"
+              },
+              {
+                "name": "onnx/decoder_model_merged.onnx",
+                "bytes": 25946299,
+                "sha256": "61d4e9e60e3caa62af3f28a15a22bc13567eb4e618c87917d9597461e54c46be"
+              }
+            ]
+          }
+        }
+      ],
+      "bytes": 80138341
+    },
+    {
+      "id": "opus-en-zh",
+      "name": "OPUS English → 中文",
+      "feature": "translation",
+      "revision": "046f55aec303cdee3e0318604406d4df20f1e8ea",
+      "license": "Apache-2.0 (upstream OPUS-MT)",
+      "source": "https://huggingface.co/Xenova/opus-mt-en-zh",
+      "device": "CPU (WASM) · optional NPU/GPU encoder",
+      "files": [
+        {
+          "path": "opus-en-zh/config.json",
+          "bytes": 1503,
+          "sha256": "4727d1229a04f95bf6f39abf949d8080615433d99d6ebd85f81c09edd247d5fa",
+          "url": "https://huggingface.co/Xenova/opus-mt-en-zh/resolve/046f55aec303cdee3e0318604406d4df20f1e8ea/config.json"
+        },
+        {
+          "path": "opus-en-zh/generation_config.json",
+          "bytes": 293,
+          "sha256": "b743baabb7da4c1a2f19fe558bd6b4c0c7c3b0762fcb5ca7a48fe5a2c2219803",
+          "url": "https://huggingface.co/Xenova/opus-mt-en-zh/resolve/046f55aec303cdee3e0318604406d4df20f1e8ea/generation_config.json"
+        },
+        {
+          "path": "opus-en-zh/tokenizer.json",
+          "bytes": 6380952,
+          "sha256": "d0c7da27056e8f42adce9e76d8e792e5daa64e15f5acd2e7aabf0121877dd4c1",
+          "url": "https://huggingface.co/Xenova/opus-mt-en-zh/resolve/046f55aec303cdee3e0318604406d4df20f1e8ea/tokenizer.json"
+        },
+        {
+          "path": "opus-en-zh/tokenizer_config.json",
+          "bytes": 282,
+          "sha256": "a914596e6bff113a8428d4793b586da87cd0b95697a0e72aba90cc1d95858481",
+          "url": "https://huggingface.co/Xenova/opus-mt-en-zh/resolve/046f55aec303cdee3e0318604406d4df20f1e8ea/tokenizer_config.json"
+        },
+        {
+          "path": "opus-en-zh/special_tokens_map.json",
+          "bytes": 74,
+          "sha256": "5e4d1f5e759d74cb1c2fe1d165cfc62b5237aa904de759380cd6f43042eec723",
+          "url": "https://huggingface.co/Xenova/opus-mt-en-zh/resolve/046f55aec303cdee3e0318604406d4df20f1e8ea/special_tokens_map.json"
+        },
+        {
+          "path": "opus-en-zh/onnx/encoder_model_quantized.onnx",
+          "bytes": 52899742,
+          "sha256": "d3b7912bf6a9bd27e4c074c2df91d4ff3d5b4bc5f7f6c8d7cc9c805c98fbafee",
+          "url": "https://huggingface.co/Xenova/opus-mt-en-zh/resolve/046f55aec303cdee3e0318604406d4df20f1e8ea/onnx/encoder_model_quantized.onnx"
+        },
+        {
+          "path": "opus-en-zh/onnx/decoder_model_merged_quantized.onnx",
+          "bytes": 60212804,
+          "sha256": "023be4f841f4c47cd65fffcbaa81c0d99d7f7e0138f7ba0e03fa220a4e688aff",
+          "url": "https://huggingface.co/Xenova/opus-mt-en-zh/resolve/046f55aec303cdee3e0318604406d4df20f1e8ea/onnx/decoder_model_merged_quantized.onnx"
+        }
+      ],
+      "metadata": [
+        {
+          "path": "opus-en-zh/manifest.json",
+          "data": {
+            "name": "opus-en-zh",
+            "repo": "Xenova/opus-mt-en-zh",
+            "revision": "046f55aec303cdee3e0318604406d4df20f1e8ea",
+            "encoder": "d3b7912bf6a9bd27e4c074c2df91d4ff3d5b4bc5f7f6c8d7cc9c805c98fbafee",
+            "decoder": "023be4f841f4c47cd65fffcbaa81c0d99d7f7e0138f7ba0e03fa220a4e688aff",
+            "files": [
+              {
+                "file": "config.json",
+                "size": 1503,
+                "sha256": "4727d1229a04f95bf6f39abf949d8080615433d99d6ebd85f81c09edd247d5fa"
+              },
+              {
+                "file": "generation_config.json",
+                "size": 293,
+                "sha256": "b743baabb7da4c1a2f19fe558bd6b4c0c7c3b0762fcb5ca7a48fe5a2c2219803"
+              },
+              {
+                "file": "tokenizer.json",
+                "size": 6380952,
+                "sha256": "d0c7da27056e8f42adce9e76d8e792e5daa64e15f5acd2e7aabf0121877dd4c1"
+              },
+              {
+                "file": "tokenizer_config.json",
+                "size": 282,
+                "sha256": "a914596e6bff113a8428d4793b586da87cd0b95697a0e72aba90cc1d95858481"
+              },
+              {
+                "file": "special_tokens_map.json",
+                "size": 74,
+                "sha256": "5e4d1f5e759d74cb1c2fe1d165cfc62b5237aa904de759380cd6f43042eec723"
+              },
+              {
+                "file": "onnx/encoder_model_quantized.onnx",
+                "size": 52899742,
+                "sha256": "d3b7912bf6a9bd27e4c074c2df91d4ff3d5b4bc5f7f6c8d7cc9c805c98fbafee"
+              },
+              {
+                "file": "onnx/decoder_model_merged_quantized.onnx",
+                "size": 60212804,
+                "sha256": "023be4f841f4c47cd65fffcbaa81c0d99d7f7e0138f7ba0e03fa220a4e688aff"
+              }
+            ]
+          }
+        }
+      ],
+      "bytes": 119495650
+    },
+    {
+      "id": "opus-zh-en",
+      "name": "OPUS 中文 → English",
+      "feature": "translation",
+      "revision": "39d480d52a9ea3065a1f117adfe4dbc55de10e6f",
+      "license": "Apache-2.0 (upstream OPUS-MT)",
+      "source": "https://huggingface.co/Xenova/opus-mt-zh-en",
+      "device": "CPU (WASM) · optional NPU/GPU encoder",
+      "files": [
+        {
+          "path": "opus-zh-en/config.json",
+          "bytes": 1389,
+          "sha256": "293d318fce41dbf04114eac45037bb88a32d7c4ee21011a75e24a8b98ca45ad1",
+          "url": "https://huggingface.co/Xenova/opus-mt-zh-en/resolve/39d480d52a9ea3065a1f117adfe4dbc55de10e6f/config.json"
+        },
+        {
+          "path": "opus-zh-en/generation_config.json",
+          "bytes": 293,
+          "sha256": "8dc29fef0fe82109f94ef3c2e6ea6bded3215d357b226c34cf7b4630726766c9",
+          "url": "https://huggingface.co/Xenova/opus-mt-zh-en/resolve/39d480d52a9ea3065a1f117adfe4dbc55de10e6f/generation_config.json"
+        },
+        {
+          "path": "opus-zh-en/tokenizer.json",
+          "bytes": 6381339,
+          "sha256": "b306d0301cf280bfd647d7067b5ade2a97b987e6d678df110703c002433643ff",
+          "url": "https://huggingface.co/Xenova/opus-mt-zh-en/resolve/39d480d52a9ea3065a1f117adfe4dbc55de10e6f/tokenizer.json"
+        },
+        {
+          "path": "opus-zh-en/tokenizer_config.json",
+          "bytes": 282,
+          "sha256": "08849acc0a539c4749d8665e9d6217735503a97871ccebeea8a762d5fba1acf7",
+          "url": "https://huggingface.co/Xenova/opus-mt-zh-en/resolve/39d480d52a9ea3065a1f117adfe4dbc55de10e6f/tokenizer_config.json"
+        },
+        {
+          "path": "opus-zh-en/special_tokens_map.json",
+          "bytes": 74,
+          "sha256": "5e4d1f5e759d74cb1c2fe1d165cfc62b5237aa904de759380cd6f43042eec723",
+          "url": "https://huggingface.co/Xenova/opus-mt-zh-en/resolve/39d480d52a9ea3065a1f117adfe4dbc55de10e6f/special_tokens_map.json"
+        },
+        {
+          "path": "opus-zh-en/onnx/encoder_model_quantized.onnx",
+          "bytes": 52899742,
+          "sha256": "84d5e171b626bc8b6b220d022ac58696e9528c25deeacca62b5cbf4364547a99",
+          "url": "https://huggingface.co/Xenova/opus-mt-zh-en/resolve/39d480d52a9ea3065a1f117adfe4dbc55de10e6f/onnx/encoder_model_quantized.onnx"
+        },
+        {
+          "path": "opus-zh-en/onnx/decoder_model_merged_quantized.onnx",
+          "bytes": 60212804,
+          "sha256": "c6b7f04ff1ba0fbd1bf6852599b4c0cad6fe512d57cd887f44ef36cf705424cb",
+          "url": "https://huggingface.co/Xenova/opus-mt-zh-en/resolve/39d480d52a9ea3065a1f117adfe4dbc55de10e6f/onnx/decoder_model_merged_quantized.onnx"
+        }
+      ],
+      "metadata": [
+        {
+          "path": "opus-zh-en/manifest.json",
+          "data": {
+            "name": "opus-zh-en",
+            "repo": "Xenova/opus-mt-zh-en",
+            "revision": "39d480d52a9ea3065a1f117adfe4dbc55de10e6f",
+            "encoder": "84d5e171b626bc8b6b220d022ac58696e9528c25deeacca62b5cbf4364547a99",
+            "decoder": "c6b7f04ff1ba0fbd1bf6852599b4c0cad6fe512d57cd887f44ef36cf705424cb",
+            "files": [
+              {
+                "file": "config.json",
+                "size": 1389,
+                "sha256": "293d318fce41dbf04114eac45037bb88a32d7c4ee21011a75e24a8b98ca45ad1"
+              },
+              {
+                "file": "generation_config.json",
+                "size": 293,
+                "sha256": "8dc29fef0fe82109f94ef3c2e6ea6bded3215d357b226c34cf7b4630726766c9"
+              },
+              {
+                "file": "tokenizer.json",
+                "size": 6381339,
+                "sha256": "b306d0301cf280bfd647d7067b5ade2a97b987e6d678df110703c002433643ff"
+              },
+              {
+                "file": "tokenizer_config.json",
+                "size": 282,
+                "sha256": "08849acc0a539c4749d8665e9d6217735503a97871ccebeea8a762d5fba1acf7"
+              },
+              {
+                "file": "special_tokens_map.json",
+                "size": 74,
+                "sha256": "5e4d1f5e759d74cb1c2fe1d165cfc62b5237aa904de759380cd6f43042eec723"
+              },
+              {
+                "file": "onnx/encoder_model_quantized.onnx",
+                "size": 52899742,
+                "sha256": "84d5e171b626bc8b6b220d022ac58696e9528c25deeacca62b5cbf4364547a99"
+              },
+              {
+                "file": "onnx/decoder_model_merged_quantized.onnx",
+                "size": 60212804,
+                "sha256": "c6b7f04ff1ba0fbd1bf6852599b4c0cad6fe512d57cd887f44ef36cf705424cb"
+              }
+            ]
+          }
+        }
+      ],
+      "bytes": 119495923
+    },
+    {
+      "id": "tesseract",
+      "name": "Tesseract English + 中文",
+      "feature": "ocr",
+      "revision": "87416418657359cb625c412a48b6e1d6d41c29bd",
+      "license": "Apache-2.0",
+      "source": "https://github.com/tesseract-ocr/tessdata_fast",
+      "device": "CPU (WASM)",
+      "files": [
+        {
+          "path": "ocr/eng.traineddata",
+          "bytes": 4113088,
+          "sha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2",
+          "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/eng.traineddata"
+        },
+        {
+          "path": "ocr/chi_sim.traineddata",
+          "bytes": 2469156,
+          "sha256": "a5fcb6f0db1e1d6d8522f39db4e848f05984669172e584e8d76b6b3141e1f730",
+          "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/chi_sim.traineddata"
+        }
+      ],
+      "metadata": [],
+      "bytes": 6582244
+    },
+    {
+      "id": "ppocrv4",
+      "name": "PP-OCRv4 中文 + English",
+      "feature": "ocr",
+      "revision": "rapidocr310",
+      "license": "Apache-2.0 · PaddleOCR / RapidOCR",
+      "source": "https://github.com/RapidAI/RapidOCR",
+      "device": "NPU → GPU → CPU · CPU projection",
+      "files": [
+        {
+          "path": "ppocrv4/ch_PP-OCRv4_det_mobile.onnx",
+          "bytes": 4745517,
+          "sha256": "d2a7720d45a54257208b1e13e36a8479894cb74155a5efe29462512d42f49da9",
+          "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_mobile.onnx"
+        },
+        {
+          "path": "ppocrv4/ch_PP-OCRv4_rec_mobile.onnx",
+          "bytes": 10857958,
+          "sha256": "48fc40f24f6d2a207a2b1091d3437eb3cc3eb6b676dc3ef9c37384005483683b",
+          "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv4/rec/ch_PP-OCRv4_rec_mobile.onnx"
+        },
+        {
+          "path": "ppocrv4/ch_ppocr_mobile_v2.0_cls_mobile.onnx",
+          "bytes": 585532,
+          "sha256": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c",
+          "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv4/cls/ch_ppocr_mobile_v2.0_cls_mobile.onnx"
+        }
+      ],
+      "metadata": [
+        {
+          "path": "ppocrv4/manifest.json",
+          "data": {
+            "name": "ppocrv4",
+            "revision": "rapidocr310",
+            "license": "Apache-2.0",
+            "upstream": "PaddlePaddle/PaddleOCR",
+            "conversion": "RapidAI/RapidOCR 3.10.0",
+            "files": [
+              {
+                "file": "ch_PP-OCRv4_det_mobile.onnx",
+                "size": 4745517,
+                "sha256": "d2a7720d45a54257208b1e13e36a8479894cb74155a5efe29462512d42f49da9",
+                "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_mobile.onnx"
+              },
+              {
+                "file": "ch_PP-OCRv4_rec_mobile.onnx",
+                "size": 10857958,
+                "sha256": "48fc40f24f6d2a207a2b1091d3437eb3cc3eb6b676dc3ef9c37384005483683b",
+                "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv4/rec/ch_PP-OCRv4_rec_mobile.onnx"
+              },
+              {
+                "file": "ch_ppocr_mobile_v2.0_cls_mobile.onnx",
+                "size": 585532,
+                "sha256": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c",
+                "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv4/cls/ch_ppocr_mobile_v2.0_cls_mobile.onnx"
+              }
+            ]
+          }
+        }
+      ],
+      "bytes": 16189007
+    },
+    {
+      "id": "piper-en",
+      "name": "Piper Lessac English",
+      "feature": "speech",
+      "revision": "c10ece1aade47bb51c153c893d14e5bf8e5b7117",
+      "license": "Voice model: upstream MODEL_CARD; dataset: Lessac terms",
+      "source": "https://huggingface.co/rhasspy/piper-voices",
+      "device": "NPU → GPU → CPU vocoder · CPU (WASM) fallback",
+      "files": [
+        {
+          "path": "piper/en/en_US/lessac/low/en_US-lessac-low.onnx",
+          "bytes": 63201294,
+          "sha256": "f7d01dde371555732c4c314111ac79672b1a5ce2fc19266ab42178fd8df7f375",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/en/en_US/lessac/low/en_US-lessac-low.onnx"
+        },
+        {
+          "path": "piper/en/en_US/lessac/low/en_US-lessac-low.onnx.json",
+          "bytes": 4882,
+          "sha256": "45754dfdebb3b8661c3fc564713772deec6e064feeb5b4e9594857dc7305193a",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/en/en_US/lessac/low/en_US-lessac-low.onnx.json"
+        },
+        {
+          "path": "piper/en/en_US/lessac/low/MODEL_CARD",
+          "bytes": 345,
+          "sha256": "f4f5b5ab354ab71dd2c71b571bcd0879b259ddfabaa5169b968a60427d0b73f3",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/en/en_US/lessac/low/MODEL_CARD"
+        }
+      ],
+      "metadata": [],
+      "bytes": 63206521
+    },
+    {
+      "id": "piper-zh",
+      "name": "Piper Huayan 中文",
+      "feature": "speech",
+      "revision": "c10ece1aade47bb51c153c893d14e5bf8e5b7117",
+      "license": "Voice model: upstream MODEL_CARD; dataset license: Unknown",
+      "source": "https://huggingface.co/rhasspy/piper-voices",
+      "device": "NPU → GPU → CPU vocoder · CPU (WASM) fallback",
+      "files": [
+        {
+          "path": "piper/zh/zh_CN/huayan/x_low/zh_CN-huayan-x_low.onnx",
+          "bytes": 20628813,
+          "sha256": "d30b143fac66d821a1285aa013295adf5cd129d3cc11d70334e51c7b20662c37",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/zh/zh_CN/huayan/x_low/zh_CN-huayan-x_low.onnx"
+        },
+        {
+          "path": "piper/zh/zh_CN/huayan/x_low/zh_CN-huayan-x_low.onnx.json",
+          "bytes": 4164,
+          "sha256": "5521dcb09adf68a9bee289032f7f5af18d29bff020953429b5d223ec1f881816",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/zh/zh_CN/huayan/x_low/zh_CN-huayan-x_low.onnx.json"
+        },
+        {
+          "path": "piper/zh/zh_CN/huayan/x_low/MODEL_CARD",
+          "bytes": 237,
+          "sha256": "dc6f68f3036a32d0a74eae7ae07682a0cae06a84be17e681b59e3d11ccb1353d",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/zh/zh_CN/huayan/x_low/MODEL_CARD"
+        }
+      ],
+      "metadata": [],
+      "bytes": 20633214
+    },
+    {
+      "id": "piper-runtime",
+      "name": "Piper phonemizer",
+      "feature": "speech",
+      "revision": "1.0.0",
+      "license": "eSpeak NG: GPL-3.0 · WASM build: see upstream",
+      "source": "https://github.com/diffusionstudio/piper-wasm",
+      "device": "CPU · shared by both voices",
+      "files": [
+        {
+          "path": "piper/runtime/piper_phonemize.wasm",
+          "bytes": 635212,
+          "sha256": "b777cd107a91d2bcc6a1ea46f2c26a662a7407394fe84589198aeaa83dd7a9d6",
+          "url": "https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/piper_phonemize.wasm"
+        },
+        {
+          "path": "piper/runtime/piper_phonemize.data",
+          "bytes": 18077249,
+          "sha256": "29f1025eb23a5b5c192cd14a6efbce4509402ff265405072ee6f7d1a09b78f8c",
+          "url": "https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/piper_phonemize.data"
+        }
+      ],
+      "metadata": [],
+      "bytes": 18712461
+    },
+    {
+      "id": "unimumer-qwen3-vl-2b",
+      "name": "Uni-MuMER Qwen3-VL-2B · Q4_K_M",
+      "feature": "formula",
+      "revision": "553ef381d62eba4490c2e7e28338435a1ead619c",
+      "license": "Apache-2.0; community quantization of phxember/Uni-MuMER-Qwen3-VL-2B",
+      "source": "https://huggingface.co/phxember/Uni-MuMER-Qwen3-VL-2B",
+      "device": "Intel GPU (Vulkan) / CPU · experimental",
+      "optional": true,
+      "files": [
+        {
+          "path": "unimumer/Uni-MuMER-Qwen3-VL-2B.Q4_K_M.gguf",
+          "bytes": 1107411136,
+          "sha256": "58c2c1bef97e81f930709b5d4bf9a6c4e07ae6d2717b111afccb38e4af15293c",
+          "url": "https://huggingface.co/mradermacher/Uni-MuMER-Qwen3-VL-2B-GGUF/resolve/553ef381d62eba4490c2e7e28338435a1ead619c/Uni-MuMER-Qwen3-VL-2B.Q4_K_M.gguf"
+        },
+        {
+          "path": "unimumer/Uni-MuMER-Qwen3-VL-2B.mmproj-Q8_0.gguf",
+          "bytes": 445053984,
+          "sha256": "c3707b03a9e36ea82d90507a1d4e82f56528a3f19610696352b19c42ad2e750b",
+          "url": "https://huggingface.co/mradermacher/Uni-MuMER-Qwen3-VL-2B-GGUF/resolve/553ef381d62eba4490c2e7e28338435a1ead619c/Uni-MuMER-Qwen3-VL-2B.mmproj-Q8_0.gguf"
+        }
+      ],
+      "bytes": 1552465120
+    },
+    {
+      "id": "unimumer-runtime",
+      "name": "Uni-MuMER · llama.cpp Vulkan runtime",
+      "feature": "formula",
+      "revision": "b11429",
+      "license": "MIT; bundled third-party notices retained",
+      "source": "https://github.com/ggml-org/llama.cpp",
+      "device": "Windows x64 · Vulkan / CPU",
+      "optional": true,
+      "files": [
+        {
+          "path": "unimumer-runtime/llama-b11429-bin-win-vulkan-x64.zip",
+          "bytes": 33337769,
+          "sha256": "1bfe78ad9168b79fa02bf67f6af9f5e17a966d824d77238517f7bef12ac73b36",
+          "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-bin-win-vulkan-x64.zip"
+        }
+      ],
+      "bytes": 33337769
+    },
+    {
+      "id": "sensevoice-small",
+      "name": "SenseVoiceSmall INT8",
+      "feature": "dictation",
+      "revision": "2365baeacb507f821a0c8120fcee3d484dba7a07",
+      "license": "SenseVoice model license (see source); Apache-2.0 (sherpa-onnx)",
+      "source": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
+      "device": "CPU (2 threads)",
+      "optional": true,
+      "files": [
+        {
+          "path": "sensevoice-small/LICENSE",
+          "bytes": 71,
+          "sha256": "221c6df10b0931a5629adad671ea48fb7747e034c414b6d2bfa275bc3dd4ea17",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/LICENSE"
+        },
+        {
+          "path": "sensevoice-small/README.md",
+          "bytes": 104,
+          "sha256": "763991a00edaea534ab36bf1b7cf89e61e911666dcfabbba71f91f9f7c593a63",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/README.md"
+        },
+        {
+          "path": "sensevoice-small/model.int8.onnx",
+          "bytes": 239233841,
+          "sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/model.int8.onnx"
+        },
+        {
+          "path": "sensevoice-small/tokens.txt",
+          "bytes": 315894,
+          "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc",
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/tokens.txt"
+        }
+      ],
+      "bytes": 239549910
+    },
+    {
+      "id": "whisper-small",
+      "name": "Whisper small INT8 · OpenVINO",
+      "feature": "dictation",
+      "revision": "5b831719e093f86e1970be663e524fe001489f9b",
+      "license": "Apache-2.0 (OpenVINO export); MIT (original Whisper)",
+      "source": "https://huggingface.co/OpenVINO/whisper-small-int8-ov",
+      "device": "Intel NPU / GPU / CPU",
+      "optional": true,
+      "files": [
+        {
+          "path": "whisper-small/README.md",
+          "bytes": 5990,
+          "sha256": "b8e784e9f4a3df1f9ca28b0d8769e2f89d0e1441437f41a4ceb6134db2f68ad7",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/README.md"
+        },
+        {
+          "path": "whisper-small/added_tokens.json",
+          "bytes": 34604,
+          "sha256": "9715fd2243b6f06a5858b5e32950d2853f73dd5bc201aafcf76f5082a2d8acd1",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/added_tokens.json"
+        },
+        {
+          "path": "whisper-small/config.json",
+          "bytes": 1325,
+          "sha256": "2d1cf9f56daeb3c1afabb7fbd9df05e9d9e00d4aca728be033097cd9ab8ebf1f",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/config.json"
+        },
+        {
+          "path": "whisper-small/generation_config.json",
+          "bytes": 3841,
+          "sha256": "bf619a40ae65e028b089124d04b294b0e8aabfbc0f9f8c5b93b584652d15ec5e",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/generation_config.json"
+        },
+        {
+          "path": "whisper-small/merges.txt",
+          "bytes": 493869,
+          "sha256": "2df2990a395e35e8dfbc7511e08c12d56018d8d04691e0133e5d63b21e154dc6",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/merges.txt"
+        },
+        {
+          "path": "whisper-small/normalizer.json",
+          "bytes": 52666,
+          "sha256": "bf1c507dc8724ca9cf9903640dacfb69dae2f00edee4f21ceba106a7392f26dd",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/normalizer.json"
+        },
+        {
+          "path": "whisper-small/openvino_config.json",
+          "bytes": 445,
+          "sha256": "dce6b43e54dab3eb21d6995fd113dc49f337fd2e650e3c63ed849bcf7bfbd54d",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/openvino_config.json"
+        },
+        {
+          "path": "whisper-small/openvino_decoder_model.bin",
+          "bytes": 154571955,
+          "sha256": "836642928d3354f0f239a45a4166bdd42647cc0e085b7e9d85b303d050e55a3b",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/openvino_decoder_model.bin"
+        },
+        {
+          "path": "whisper-small/openvino_decoder_model.xml",
+          "bytes": 1092851,
+          "sha256": "d44d10b6ff3ce686f1d24cc932c3a178dde693fc1a4107474ce79aaafe6d33bd",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/openvino_decoder_model.xml"
+        },
+        {
+          "path": "whisper-small/openvino_detokenizer.bin",
+          "bytes": 736181,
+          "sha256": "2542d1fe6c4c5d838e7b7c61b24996b94ae0cb54e64ff6dbaab2b9dd5ddd7ca0",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/openvino_detokenizer.bin"
+        },
+        {
+          "path": "whisper-small/openvino_detokenizer.xml",
+          "bytes": 9699,
+          "sha256": "2a3166e38653bb5531a44bab187ffabefdb49f70069ab3d7a05f2b7dd816dfa0",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/openvino_detokenizer.xml"
+        },
+        {
+          "path": "whisper-small/openvino_encoder_model.bin",
+          "bytes": 92204656,
+          "sha256": "cb4ce5067a24d0edf1f29ce4ed7162958be9c5efa7f4cc357b23aaac224d736e",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/openvino_encoder_model.bin"
+        },
+        {
+          "path": "whisper-small/openvino_encoder_model.xml",
+          "bytes": 574964,
+          "sha256": "778225a033690a0661cfdfd79352c569e34943754ef394234df8ffb507049430",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/openvino_encoder_model.xml"
+        },
+        {
+          "path": "whisper-small/openvino_tokenizer.bin",
+          "bytes": 1898933,
+          "sha256": "846f3c65f7a71f120fce7aaaf41b342f0767eb13e3c4e7c2a54f1d49b5c38fda",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/openvino_tokenizer.bin"
+        },
+        {
+          "path": "whisper-small/openvino_tokenizer.xml",
+          "bytes": 27011,
+          "sha256": "9b362d31bae5855e5c4f5e2e1a2196337264b84f546161333027e34ed92a44dd",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/openvino_tokenizer.xml"
+        },
+        {
+          "path": "whisper-small/preprocessor_config.json",
+          "bytes": 356,
+          "sha256": "994838f1fa6462c8b9b3c90edada831f11f3dd8b4664634e18f4694d005c9dbf",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/preprocessor_config.json"
+        },
+        {
+          "path": "whisper-small/special_tokens_map.json",
+          "bytes": 2194,
+          "sha256": "e67ae3a0aaa99abcd9f187138e12db1f65c16a14761c50ef10eef2c174a7a691",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/special_tokens_map.json"
+        },
+        {
+          "path": "whisper-small/tokenizer.json",
+          "bytes": 3930494,
+          "sha256": "7b469ff15eb7816315aa45eec391f5943d639b9d73d110f5c003df5192fd54e3",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/tokenizer.json"
+        },
+        {
+          "path": "whisper-small/tokenizer_config.json",
+          "bytes": 282713,
+          "sha256": "21a4fc0483c14b87f4e0bbc177a9a357479bfa7c95aaf21ad53d71e9c5afafb9",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/tokenizer_config.json"
+        },
+        {
+          "path": "whisper-small/vocab.json",
+          "bytes": 835550,
+          "sha256": "8f680bba319e01a653d2e8a5dbc17a9157179e0576e6ce74ce0c06356c6e24f9",
+          "url": "https://huggingface.co/OpenVINO/whisper-small-int8-ov/resolve/5b831719e093f86e1970be663e524fe001489f9b/vocab.json"
+        }
+      ],
+      "bytes": 256760297
+    }
+  ]
+}

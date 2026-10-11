@@ -1,0 +1,290 @@
+/* Local palette also covers lazy loading, native controls and overflow surfaces. */
+.workspace-manager {
+  color-scheme: light;
+  --library-panel: #fff;
+  --library-nav: #f5f7fb;
+  --library-input: #fff;
+  --library-card: #fff;
+  --library-active: #f7faff;
+  --library-border: #e3e9f1;
+  --library-selected-border: #bacdf1;
+  --library-search: #f4f7fb;
+  --library-delete: #fff0ee;
+}
+.workspace-manager {
+  background: var(--library-panel);
+  width: min(1000px, 96vw);
+  height: min(760px, 92dvh);
+}
+.workspace-manager header {
+  padding: 16px 20px;
+  flex-wrap: wrap;
+}
+.workspace-manager header .row {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.workspace-library-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+.workspace-library-body nav {
+  width: 200px;
+  flex-shrink: 0;
+  padding: 12px;
+  background: var(--library-nav);
+  overflow: auto;
+  border-right: 1px solid var(--library-border);
+}
+.workspace-library-body nav > button,
+.workspace-folder > button:first-child {
+  justify-content: flex-start;
+  width: 100%;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.workspace-library-body nav button.active {
+  background: #e4edfd;
+  color: #4775db;
+}
+.workspace-library-body nav > button span {
+  margin-left: auto;
+}
+.workspace-folder {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.workspace-folder > button:first-child {
+  flex: 1;
+  min-width: 0;
+  padding-left: 10px;
+}
+.workspace-folder > button:not(:first-child) {
+  padding: 4px;
+  min-width: 26px;
+}
+.workspace-library-content {
+  background: var(--library-panel);
+  padding: 16px;
+  overflow: auto;
+  flex: 1;
+  min-width: 0;
+}
+.workspace-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: var(--library-search);
+  border-radius: 9px;
+  margin-bottom: 12px;
+}
+.workspace-search input {
+  background: transparent;
+  border: 0;
+  flex: 1;
+  min-width: 0;
+  outline: 0;
+  font-size: 13px;
+  color: inherit;
+}
+.workspace-document {
+  border: 1px solid var(--library-border);
+  border-radius: 11px;
+  padding: 5px 8px;
+  margin-bottom: 8px;
+  background: var(--library-card);
+}
+.workspace-document.active {
+  border-color: var(--library-selected-border);
+  background: var(--library-active);
+}
+.workspace-open {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  padding: 10px 8px;
+}
+.workspace-open > span {
+  display: block;
+  min-width: 0;
+}
+.workspace-open strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 500;
+}
+.workspace-open small {
+  display: block;
+  color: #8d9ab0;
+  font-size: 11px;
+  margin-top: 7px;
+}
+.workspace-document-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1px;
+  flex-wrap: wrap;
+}
+.workspace-document-actions select {
+  margin-right: auto;
+  max-width: 150px;
+  min-width: 0;
+  border: 1px solid #dfe6f1;
+  border-radius: 6px;
+  color: #72839b;
+  font-size: 11px;
+  background: transparent;
+}
+.workspace-document-actions button {
+  padding: 6px 8px;
+  min-width: 32px;
+  min-height: 34px;
+}
+.workspace-document-actions button[aria-pressed='true'] {
+  color: #4775db;
+  background: #e8effd;
+}
+.workspace-name-editor {
+  display: flex;
+  gap: 5px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.workspace-name-editor label {
+  font-size: 11px;
+  color: #7b8da8;
+  flex: 1;
+  min-width: 120px;
+}
+.workspace-name-editor input {
+  background: var(--library-input);
+  display: block;
+  width: 100%;
+  border: 1px solid #dce5f3;
+  border-radius: 7px;
+  margin-top: 5px;
+  padding: 8px;
+  font-size: 13px;
+}
+.workspace-delete {
+  padding: 12px;
+  background: var(--library-delete);
+  border-radius: 9px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.workspace-delete p {
+  margin-top: 0;
+}
+.workspace-empty {
+  text-align: center;
+  color: #93a0b6;
+  font-size: 13px;
+  padding: 30px;
+}
+@media (max-width: 650px) {
+  .workspace-library-body {
+    flex-direction: column;
+  }
+  .workspace-library-body nav {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    max-height: 160px;
+    gap: 3px;
+    border-right: 0;
+    border-bottom: 1px solid var(--library-border);
+    padding: 8px;
+  }
+  .workspace-library-body nav > button {
+    width: auto;
+  }
+  .workspace-folder {
+    max-width: 240px;
+  }
+  .workspace-manager header {
+    padding: 12px;
+  }
+  .workspace-manager header p {
+    margin-bottom: 0;
+  }
+  .workspace-library-content {
+    padding: 10px;
+  }
+}
+[data-night='true'] .workspace-manager {
+  color-scheme: dark;
+  --library-panel: #1e242f;
+  --library-nav: #1b222e;
+  --library-input: #202734;
+  --library-card: #232b38;
+  --library-active: #293851;
+  --library-border: #3a4353;
+  --library-selected-border: #55719a;
+  --library-search: #242e3e;
+  --library-delete: #3c282d;
+  scrollbar-color: #52617a #1b222e;
+}
+[data-night='true'] .workspace-library-body nav {
+  border-color: #3a4353;
+}
+[data-night='true'] .workspace-search {
+  color: #b6c2d7;
+}
+[data-night='true'] .workspace-search input {
+  background: transparent;
+  color: #e0e7f3;
+}
+[data-night='true'] .workspace-manager input::placeholder {
+  color: #a3afc2;
+}
+[data-night='true'] .workspace-library-body nav button.active,
+[data-night='true'] .workspace-document-actions button[aria-pressed='true'] {
+  background: #304468;
+  color: #c4d6ff;
+  border-color: #55719a;
+}
+[data-night='true'] .workspace-document-actions select {
+  background: #202734;
+  color: #c3d1e8;
+  border-color: #4a5770;
+}
+[data-night='true'] .workspace-name-editor input {
+  border-color: #4a5770;
+}
+[data-night='true'] .workspace-open small,
+[data-night='true'] .workspace-name-editor label {
+  color: #a7b4c9;
+}
+[data-night='true'] .workspace-delete {
+  color: #f0bec4;
+  border: 1px solid #75505a;
+}
+[data-night='true'] .workspace-manager .error {
+  color: #f2a6a6;
+}
+[data-night='true'] .workspace-manager :is(input, select, option) {
+  color: #e0e7f3;
+  background-color: var(--library-input);
+  border-color: #4a5770;
+  color-scheme: dark;
+}
+[data-night='true'] .workspace-manager .workspace-search input {
+  background: transparent;
+}
+[data-night='true'] .workspace-manager :is(.workspace-library-content, nav) {
+  scrollbar-color: #52617a #1b222e;
+}
+[data-night='true'] .workspace-manager ::-webkit-scrollbar-corner {
+  background: #1b222e;
+}

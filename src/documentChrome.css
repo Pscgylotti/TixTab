@@ -1,0 +1,372 @@
+.document-tabs {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: 2px 12px;
+  border-bottom: 1px solid var(--line);
+  background: #edf2f8;
+  min-height: 40px;
+}
+.document-tab {
+  display: flex;
+  flex-shrink: 0;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  max-width: 240px;
+  align-items: center;
+  color: #6c7c92;
+}
+.document-tab.active {
+  background: #fff;
+  border-color: #d9e2ef;
+  color: var(--accent);
+}
+.document-tab > [role='tab'] {
+  padding: 5px 9px;
+  min-height: 34px;
+  min-width: 0;
+  gap: 6px;
+}
+.document-tab > [role='tab'] > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 165px;
+}
+.document-tab .close-tab {
+  padding: 5px;
+  min-width: 30px;
+  min-height: 34px;
+  flex-shrink: 0;
+}
+.new-document-tab {
+  min-width: 40px;
+  min-height: 36px;
+  padding: 5px;
+  flex-shrink: 0;
+}
+.pdf-drop-overlay {
+  position: fixed;
+  inset: 10px;
+  z-index: 100;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 3px dashed #749ae5;
+  border-radius: 14px;
+  background: #edf4fff2;
+  color: #4775db;
+  font-size: 18px;
+}
+.pdf-drop-overlay span {
+  font-size: 14px;
+}
+.statusbar .bottom-tools-toggle {
+  flex-shrink: 0;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 4px;
+}
+.statusbar .pen-status {
+  margin-right: auto;
+}
+.statusbar.tools-collapsed {
+  height: 50px;
+  gap: 4px;
+  padding-left: 8px;
+}
+.tools-collapsed .pen-status {
+  display: none;
+}
+.tools-collapsed > .row:last-child {
+  flex-shrink: 0;
+}
+.tools-collapsed .delete-button {
+  font-size: 0;
+  gap: 0;
+  min-width: 32px;
+}
+.status-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.status-tools :is(.insert-dock, .zoom-dock, .page-navigation) {
+  position: static;
+  transform: none;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  backdrop-filter: none;
+}
+.status-tools .insert-dock button {
+  flex-direction: row;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px;
+  gap: 5px;
+  font-size: 10px;
+}
+.status-tools :is(.zoom-dock, .page-navigation) button {
+  min-width: 38px;
+  min-height: 44px;
+  padding: 5px;
+}
+.status-tools .insert-dock svg {
+  width: 17px;
+  height: 17px;
+}
+.status-tools .page-navigation span {
+  min-width: 42px;
+}
+.status-tools .zoom-dock span {
+  min-width: 35px;
+}
+.custom-color-trigger {
+  position: relative;
+}
+.custom-color-trigger i {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.ink-color-panel {
+  position: fixed;
+  z-index: 58;
+  width: 280px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #f5f8fe;
+  box-shadow: 0 8px 36px #24395a40;
+  color: #526079;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+.ink-color-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ink-color-panel button {
+  min-height: 40px;
+}
+.ink-color-panel .row {
+  gap: 4px;
+}
+.ink-color-panel .row button {
+  font-size: 12px;
+  padding: 7px;
+}
+.ink-color-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0;
+}
+.ink-color-input input {
+  min-width: 0;
+  width: 140px;
+  min-height: 40px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+}
+.ink-color-input input[type='color'] {
+  padding: 3px;
+}
+.saved-ink-colors {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.saved-ink-colors > div {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.saved-ink-colors .color-swatch {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+}
+.saved-ink-colors > div > button:last-child {
+  padding: 4px;
+  min-width: 24px;
+  min-height: 32px;
+}
+[data-night='true'] :is(.document-tabs, .ink-color-panel) {
+  background: #1e242f;
+  color: #d5dff0;
+  border-color: #394251;
+}
+[data-night='true'] .document-tab.active {
+  background: #304468;
+  color: #c4d6ff;
+  border-color: #55719a;
+}
+[data-night='true'] .pdf-drop-overlay {
+  background: #1e293bf5;
+  color: #b5caff;
+}
+@media (max-width: 1000px) {
+  .status-tools {
+    gap: 3px;
+  }
+  .status-tools .insert-dock button span {
+    display: none;
+  }
+  .status-tools .insert-dock > div {
+    display: none;
+  }
+  .status-tools :is(.zoom-dock, .page-navigation) button {
+    min-width: 36px;
+  }
+  .statusbar.tools-collapsed {
+    padding-right: 54px;
+  }
+  .tools-collapsed > .row:last-child {
+    gap: 0;
+  }
+  .tools-collapsed .status-separator {
+    display: none;
+  }
+}
+/* Fully folded reading layout shares the header restore control with the tabs. */
+.chrome-minimal {
+  position: relative;
+  --compact-row: 30px;
+}
+.chrome-minimal > .topbar.collapsed {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  z-index: 25;
+  width: 32px;
+  height: var(--compact-row);
+  padding: 0;
+  gap: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+.chrome-minimal > .topbar.collapsed > .collapsed-title {
+  display: none;
+}
+.chrome-minimal .topbar.collapsed > .chrome-toggle {
+  width: 32px;
+  min-width: 32px;
+  height: var(--compact-row);
+  min-height: var(--compact-row);
+  padding: 4px;
+}
+.chrome-minimal > .document-tabs {
+  height: var(--compact-row);
+  min-height: var(--compact-row);
+  padding: 0 42px 0 8px;
+  gap: 2px;
+  scrollbar-width: none;
+}
+.chrome-minimal .document-tab > [role='tab'],
+.chrome-minimal .document-tab .close-tab,
+.chrome-minimal .new-document-tab {
+  height: var(--compact-row);
+  min-height: var(--compact-row);
+  padding: 3px 6px;
+  font-size: 11px;
+}
+.chrome-minimal .new-document-tab {
+  min-width: 30px;
+}
+.chrome-minimal .workspace-heading {
+  height: var(--compact-row);
+  min-height: var(--compact-row);
+  padding: 0 8px;
+  gap: 4px;
+}
+.chrome-minimal .workspace-controls {
+  gap: 2px;
+}
+.chrome-minimal .workspace-heading button {
+  height: var(--compact-row);
+  min-height: var(--compact-row);
+  padding: 3px 5px;
+}
+.chrome-minimal .view-switch {
+  padding: 0;
+  background: transparent;
+}
+.chrome-minimal .workspace-heading .icon-button,
+.chrome-minimal .view-switch button {
+  min-width: 30px;
+}
+.chrome-minimal .workspace-heading .preview-toggle {
+  font-size: 0;
+  gap: 0;
+}
+.chrome-minimal .workspace-path > svg,
+.chrome-minimal .workspace-path > span {
+  display: none;
+}
+.chrome-minimal .canvas-container {
+  margin: 0 8px;
+}
+.chrome-minimal .statusbar.tools-collapsed {
+  height: var(--compact-row);
+  min-height: var(--compact-row);
+  padding-left: 4px;
+  gap: 2px;
+}
+.chrome-minimal .statusbar button,
+.chrome-minimal .status-tools :is(.insert-dock, .zoom-dock, .page-navigation) button {
+  height: var(--compact-row);
+  min-height: var(--compact-row);
+  padding: 3px 5px;
+  min-width: 30px;
+}
+.chrome-minimal .status-tools {
+  gap: 4px;
+  scrollbar-width: none;
+}
+.chrome-minimal .status-tools .insert-dock button span,
+.chrome-minimal .status-tools .insert-dock > div {
+  display: none;
+}
+.chrome-minimal .statusbar > .row:last-child > button:last-child {
+  display: none;
+}
+.chrome-minimal .keyboard-toggle {
+  height: var(--compact-row);
+  min-height: var(--compact-row);
+  padding: 3px 7px;
+}
+@media (any-pointer: coarse) {
+  .chrome-minimal {
+    --compact-row: 36px;
+  }
+}

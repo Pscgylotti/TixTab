@@ -1,0 +1,2198 @@
+import {
+  useAppearance,
+  setNight,
+  setPowerMode,
+  setOriginal,
+  setRenderQuality,
+  type RenderQuality,
+  type PowerMode,
+} from './appearance';
+import { t as tr, useLocale, setLocale, type Locale } from './i18n';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type SetStateAction,
+} from 'react';
+import { fitPageWithControls, MIN_ZOOM, MAX_ZOOM } from './pageFit';
+import {
+  MessageSquare,
+  Moon,
+  Sun,
+  Eye,
+  BookOpen,
+  FileUp,
+  Download,
+  Undo2,
+  Redo2,
+  Plus,
+  Minus,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronUp,
+  ChevronDown,
+  Maximize,
+  Settings2,
+  Shapes,
+  Sigma,
+  PanelLeftClose,
+  PanelLeft,
+  Save,
+  CircleHelp,
+  X,
+  FilePlus2,
+  Check,
+  MoveUpRight,
+  Columns2,
+  GalleryVerticalEnd,
+  File,
+  ScanText,
+} from 'lucide-react';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
+import PdfSurface, { type PenDiagnostic } from './PdfSurface';
+import { blankPage, newNotebook, uid, type Notebook, type Page, type Tool } from './model';
+import { exportPdf, importPdf, loadPdf, SignedPdfExportError, type PdfExportProgress } from './pdf';
+import { decodeProject, download, encodeProject } from './storage';
+import {
+  bootstrapWorkspace,
+  defaultView,
+  deleteWorkspaceDocument,
+  listWorkspace,
+  loadWorkspaceDocument,
+  saveWorkspaceDocument,
+  updateWorkspaceDocument,
+  type WorkspaceView,
+} from './workspaceStore';
+import PageList from './PageList';
+import InkColors, { savedInkColor } from './InkColors';
+import FullscreenButton from './FullscreenButton';
+import TouchKeyboard from './TouchKeyboard';
+import RegionCapture from './RegionCapture';
+import { imageFile, isImageFile, type ImportedImage } from './svgImport';
+
+import type { PdfDropChoice } from './PdfDropDialog';
+const PdfDropDialog = lazy(() => import('./PdfDropDialog'));
+import { capturePage, type PageRegion } from './capturePage';
+const OcrDialog = lazy(() => import('./OcrDialog'));
+const ModelManager = lazy(() => import('./ModelManager'));
+const CacheManager = lazy(() => import('./CacheManager'));
+const TaskCenter = lazy(() => import('./TaskCenter'));
+const WorkspaceManager = lazy(() => import('./WorkspaceManager'));
+const ChatPanel = lazy(() => import('./ChatPanel'));
+const ZoteroDialog = lazy(() => import('./ZoteroDialog'));
+import type { ZoteroPdf } from './ZoteroDialog';
+import ReadingView from './ReadingView';
+import SelectionFlyout, { type SelectionInfo } from './SelectionFlyout';
+import { useWritingHand, setWritingHand } from './inputPreferences';
+import type { WritingHand } from './selectionPlacement';
+import { inkTools as tools } from './inkTools';
+import PenToolWheel from './PenToolWheel';
+const SketchDialog = lazy(() => import('./SketchDialog')),
+  FormulaDialog = lazy(() => import('./FormulaDialog'));
+type DropAnchor = { pageId: string; x?: number; y?: number };
+type DocumentTab = { id: string; name: string };
+function savedTabs(): string[] {
+  try {
+    const ids: unknown = JSON.parse(localStorage.getItem('surfacetab.tabs') || '[]');
+    return Array.isArray(ids)
+      ? [...new Set(ids.filter((id): id is string => typeof id === 'string'))]
+      : [];
+  } catch {
+    return [];
+  }
+}
+function savedChrome(key: string) {
+  try {
+    return localStorage.getItem(key) === 'true';
+  } catch {
+    return false;
+  }
+}
+export default function App() {
+  const locale = useLocale();
+  const writingHand = useWritingHand();
+  const appearance = useAppearance();
+  const [notebook, setNotebook] = useState<Notebook>(newNotebook),
+    [pdf, setPdf] = useState<PDFDocumentProxy | null>(null),
+    [index, setIndex] = useState(0);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false),
+    [activeId, setActiveId] = useState('');
+  const activeRef = useRef(activeId);
+  activeRef.current = activeId;
+  const [tabs, setTabs] = useState<DocumentTab[]>([]),
+    tabsRef = useRef<DocumentTab[]>([]);
+  const operation = useRef(false),
+    busyRef = useRef(false);
+  const [dragging, setDragging] = useState(false);
+  const [pendingDrop, setPendingDrop] = useState<{
+    files: File[];
+    pdfs: File[];
+    anchor: DropAnchor;
+    documentId: string;
+  } | null>(null);
+  const [zoteroOpen, setZoteroOpen] = useState(false);
+  useEffect(() => {
+    document
+      .querySelector('[role=tab][aria-selected=true]')
+      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [activeId]);
+  const setDocumentTabs = (next: DocumentTab[]) => {
+    tabsRef.current = next;
+    setTabs(next);
+    try {
+      localStorage.setItem('surfacetab.tabs', JSON.stringify(next.map((t) => t.id)));
+    } catch {}
+  };
+  const ensureTab = (id: string, name: string) =>
+    setDocumentTabs(
+      tabsRef.current.some((t) => t.id === id)
+        ? tabsRef.current.map((t) => (t.id === id ? { id, name } : t))
+        : [...tabsRef.current, { id, name }],
+    );
+  const [tool, setTool] = useState<Tool>('pen'),
+    [color, setColor] = useState(savedInkColor),
+    [size, setSize] = useState(2.8),
+    [zoom, setZoomState] = useState(0.78),
+    [sidebar, setSidebar] = useState(true);
+  const readingObserved = useRef(false);
+  const [penWheel, setPenWheel] = useState<{ x: number; y: number; text: boolean } | null>(null);
+  const lastBarrel = useRef(-Infinity);
+  const readingPageChanged = useCallback((next: number) => {
+    readingObserved.current = true;
+    setIndex(next);
+  }, []);
+  const fitActive = useRef(false);
+  const setZoom = useCallback((value: SetStateAction<number>) => {
+    fitActive.current = false;
+    setZoomState(value);
+  }, []);
+  const [viewMode, setViewMode] = useState<'single' | 'continuous' | 'dual'>('single'),
+    [resetView, setResetView] = useState(0),
+    [selection, setSelection] = useState<SelectionInfo | null>(null);
+  const [chatOpen, setChatOpen] = useState(false),
+    [chatSelection, setChatSelection] = useState<{
+      id: number;
+      text: string;
+      pageId: string;
+      pageNumber: number;
+      documentId: string;
+    } | null>(null);
+  const [focusObjectId, setFocusObjectId] = useState<string | null>(null);
+  const [capturing, setCapturing] = useState(false),
+    [ocrImage, setOcrImage] = useState<string | null>(null);
+  const capture = async (pageId: string | null, region: PageRegion) => {
+    setCapturing(false);
+    setBusy(true);
+    try {
+      const selected = pageId ? notebook.pages.find((p) => p.id === pageId) : page;
+      if (selected) setOcrImage(await capturePage(selected, pdf, region));
+    } catch (error) {
+      notify(
+        tr(
+          '\u533A\u57DF\u622A\u56FE\u5931\u8D25\uFF1A{0}',
+          error instanceof Error ? error.message : error,
+        ),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [bottomCollapsed, setBottomCollapsed] = useState(() =>
+    savedChrome('surfacetab.bottomCollapsed'),
+  );
+  useEffect(() => {
+    try {
+      localStorage.setItem('surfacetab.bottomCollapsed', String(bottomCollapsed));
+    } catch {}
+  }, [bottomCollapsed]);
+  const [headerCollapsed, setHeaderCollapsed] = useState(() =>
+      savedChrome('surfacetab.headerCollapsed'),
+    ),
+    [toolbarCollapsed, setToolbarCollapsed] = useState(() =>
+      savedChrome('surfacetab.toolbarCollapsed'),
+    );
+  useEffect(() => {
+    try {
+      localStorage.setItem('surfacetab.headerCollapsed', String(headerCollapsed));
+      localStorage.setItem('surfacetab.toolbarCollapsed', String(toolbarCollapsed));
+    } catch {}
+  }, [headerCollapsed, toolbarCollapsed]);
+  useEffect(() => {
+    const narrow = window.matchMedia('(max-width: 1000px)');
+    const resize = () => {
+      if (narrow.matches) setSidebar(false);
+    };
+    resize();
+    narrow.addEventListener('change', resize);
+    return () => narrow.removeEventListener('change', resize);
+  }, []);
+  const [dialog, setDialog] = useState<
+      | 'sketch'
+      | 'formula'
+      | 'help'
+      | 'settings'
+      | 'models'
+      | 'tasks'
+      | 'caches'
+      | 'delete'
+      | 'signed-export'
+      | null
+    >(null),
+    [busy, setBusy] = useState(false),
+    [ready, setReady] = useState(false),
+    [saveStatus, setSaveStatus] = useState(tr('\u51C6\u5907\u4E2D')),
+    [renderStatus, setRenderStatus] = useState(tr('\u5C31\u7EEA')),
+    [message, setMessage] = useState('');
+  busyRef.current = busy;
+  const [exportProgress, setExportProgress] = useState<PdfExportProgress | null>(null),
+    exportAbort = useRef<AbortController | null>(null);
+  useEffect(
+    () => () => {
+      exportAbort.current?.abort();
+      exportAbort.current = null;
+    },
+    [],
+  );
+  useEffect(() => {
+    if (!exportProgress) return;
+    const cancel = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        exportAbort.current?.abort();
+      }
+    };
+    window.addEventListener('keydown', cancel, true);
+    return () => window.removeEventListener('keydown', cancel, true);
+  }, [!!exportProgress]);
+  const [diagnostic, setDiagnostic] = useState<PenDiagnostic>({
+    type: tr('\u7B49\u5F85\u7B14\u8F93\u5165'),
+    pressure: 0,
+    eraser: false,
+    samples: 0,
+  });
+  const history = useRef<Notebook[]>([]),
+    future = useRef<Notebook[]>([]),
+    file = useRef<HTMLInputElement>(null),
+    current = useRef(notebook),
+    pdfRef = useRef(pdf),
+    renderedSource = useRef<Uint8Array | null>(null),
+    saveQueue = useRef(Promise.resolve());
+  current.current = notebook;
+  pdfRef.current = pdf;
+  const page = notebook.pages[Math.min(index, notebook.pages.length - 1)];
+  const editingImage = page.images.find((i) => i.id === editingId);
+  const editReadingPage = useCallback((i: number) => {
+    setIndex(i);
+    setViewMode('single');
+  }, []);
+  const pageStep = viewMode === 'dual' ? 2 : 1;
+  const turnPage = (direction: number, step = pageStep) =>
+    setIndex((i) => {
+      const next = i + direction * step;
+      return next < 0 ? 0 : next >= current.current.pages.length ? i : next;
+    });
+  const notify = (s: string) => setMessage(s);
+  useEffect(() => {
+    if (message) {
+      const t = setTimeout(() => setMessage(''), 5500);
+      return () => clearTimeout(t);
+    }
+  }, [message]);
+  const viewRef = useRef<WorkspaceView>({ index, zoom, mode: viewMode });
+  viewRef.current = { index, zoom, mode: viewMode };
+  const restoredView = useRef(false);
+  useEffect(() => {
+    let dead = false;
+    void bootstrapWorkspace()
+      .then(async ({ meta, notebook: n }) => {
+        const entries = (await listWorkspace()).documents;
+        const restoredTabs = savedTabs()
+          .map((id) => entries.find((d) => d.id === id))
+          .filter((d): d is typeof meta => !!d)
+          .map((d) => ({ id: d.id, name: d.name }));
+        if (!restoredTabs.some((t) => t.id === meta.id))
+          restoredTabs.push({ id: meta.id, name: n.name });
+        const doc = n.source ? await loadPdf(n.source) : null;
+        if (dead) {
+          void doc?.destroy();
+          return;
+        }
+        setDocumentTabs(restoredTabs);
+        current.current = n;
+        pdfRef.current = doc;
+        renderedSource.current = n.source;
+        activeRef.current = meta.id;
+        restoredView.current = true;
+        setNotebook(n);
+        setPdf(doc);
+        setActiveId(meta.id);
+        setIndex(Math.min(meta.view.index, n.pages.length - 1));
+        setZoom(meta.view.zoom);
+        setViewMode(meta.view.mode);
+      })
+      .catch(() => {
+        setSaveStatus(tr('\u6062\u590D\u5931\u8D25'));
+        notify(
+          tr(
+            '\u5DE5\u4F5C\u7A7A\u95F4\u65E0\u6CD5\u6062\u590D\uFF0C\u8BF7\u5BFC\u5165\u5DF2\u4FDD\u5B58\u7684\u5DE5\u7A0B\u6587\u4EF6',
+          ),
+        );
+      })
+      .finally(() => {
+        if (!dead) setReady(true);
+      });
+    return () => {
+      dead = true;
+    };
+  }, []);
+  useEffect(() => {
+    const source = notebook.source;
+    if (source === renderedSource.current) return;
+    let dead = false;
+    void (source ? loadPdf(source) : Promise.resolve(null))
+      .then((document) => {
+        if (dead) {
+          void document?.destroy();
+          return;
+        }
+        const old = pdfRef.current;
+        renderedSource.current = source;
+        pdfRef.current = document;
+        setPdf(document);
+        if (old !== document) void old?.destroy();
+      })
+      .catch(() => {
+        if (!dead) notify(tr('无法加载 PDF 页面，请重新打开文档。'));
+      });
+    return () => {
+      dead = true;
+    };
+  }, [notebook.source]);
+  const persist = useCallback((n: Notebook, id = activeRef.current, view = viewRef.current) => {
+    if (!id)
+      return Promise.reject(new Error(tr('\u5DE5\u4F5C\u7A7A\u95F4\u5C1A\u672A\u5C31\u7EEA')));
+    saveQueue.current = saveQueue.current
+      .catch(() => {})
+      .then(() => saveWorkspaceDocument(id, n, view))
+      .then(() => {});
+    return saveQueue.current;
+  }, []);
+  useEffect(() => {
+    if (!ready || !activeId) return;
+    setSaveStatus(tr('\u4FDD\u5B58\u4E2D'));
+    const t = setTimeout(() => {
+      void persist(notebook, activeId, { index, zoom, mode: viewMode })
+        .then(() => setSaveStatus(tr('\u5DF2\u81EA\u52A8\u4FDD\u5B58')))
+        .catch(() =>
+          setSaveStatus(
+            tr('\u81EA\u52A8\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u4FDD\u5B58\u5DE5\u7A0B'),
+          ),
+        );
+    }, 450);
+    return () => clearTimeout(t);
+  }, [notebook, ready, activeId, index, zoom, viewMode, persist]);
+  useEffect(() => {
+    const hidden = () => {
+      if (document.visibilityState === 'hidden' && ready)
+        void persist(current.current).catch(() => {});
+    };
+    document.addEventListener('visibilitychange', hidden);
+    return () => document.removeEventListener('visibilitychange', hidden);
+  }, [ready, persist]);
+  useEffect(
+    () => () => {
+      void pdfRef.current?.destroy();
+    },
+    [],
+  );
+  const commit = (n: Notebook) => {
+    history.current = [...history.current.slice(-39), current.current];
+    future.current = [];
+    current.current = n;
+    setNotebook(n);
+  };
+  const updatePage = (p: Page) =>
+    commit({
+      ...current.current,
+      pages: current.current.pages.map((x) => (x.id === p.id ? p : x)),
+    });
+  const undo = () => {
+    const prev = history.current.pop();
+    if (prev) {
+      future.current.push(current.current);
+      current.current = prev;
+      setNotebook(prev);
+      setIndex((i) => {
+        const active = prev.pages.findIndex((p) => p.id === page.id);
+        return active >= 0 ? active : Math.min(i, prev.pages.length - 1);
+      });
+    }
+  };
+  const redo = () => {
+    const next = future.current.pop();
+    if (next) {
+      history.current.push(current.current);
+      current.current = next;
+      setNotebook(next);
+      setIndex((i) => {
+        const active = next.pages.findIndex((p) => p.id === page.id);
+        return active >= 0 ? active : Math.min(i, next.pages.length - 1);
+      });
+    }
+  };
+  const measurePageViewport = useCallback(() => {
+    const el = document.querySelector<HTMLElement>('.canvas-container');
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    const controls = [];
+    for (const dock of el.querySelectorAll<HTMLElement>(
+      ':scope > .insert-dock,:scope > .zoom-dock,:scope > .page-navigation',
+    )) {
+      const r = dock.getBoundingClientRect();
+      if (r.width && r.height)
+        controls.push({
+          left: r.left - rect.left,
+          right: r.right - rect.left,
+          top: r.top - rect.top,
+          bottom: r.bottom - rect.top,
+        });
+    }
+    return { el, width: el.clientWidth, height: el.clientHeight, controls };
+  }, []);
+  const fit = useCallback(() => {
+    const viewport = measurePageViewport();
+    if (!viewport) return;
+    fitActive.current = true;
+    const result = fitPageWithControls(
+      notebook.pages,
+      index,
+      viewMode,
+      viewport.width,
+      viewport.height,
+      viewport.controls,
+    );
+    viewport.el.style.setProperty('--page-controls-inset', `${result.inset}px`);
+    setZoomState(result.zoom);
+    setResetView((v) => v + 1);
+  }, [viewMode, notebook.pages, index, measurePageViewport]);
+  useLayoutEffect(() => {
+    if (readingObserved.current) return;
+    if (!ready) return;
+    if (restoredView.current) {
+      restoredView.current = false;
+      return;
+    }
+    fit();
+  }, [sidebar, ready, pdf, viewMode, page.width, page.height]);
+  const fitRef = useRef(fit);
+  fitRef.current = fit;
+  useLayoutEffect(() => {
+    if (!ready) return;
+    const el = document.querySelector('.canvas-container');
+    if (!el) return;
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        measurePageViewport();
+        if (fitActive.current) fitRef.current();
+      });
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    measure();
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [ready, bottomCollapsed, headerCollapsed, toolbarCollapsed, chatOpen, measurePageViewport]);
+  useLayoutEffect(() => {
+    if (readingObserved.current) {
+      readingObserved.current = false;
+      return;
+    }
+    if (ready && fitActive.current) fitRef.current();
+  }, [index, notebook.pages[index + 1]?.width, notebook.pages[index + 1]?.height]);
+  const selectedText = (x?: number, y?: number) => {
+    const s = window.getSelection(),
+      text = s?.toString().trim();
+    const node = s?.anchorNode?.parentElement;
+    if (!text || !node?.closest('.textLayer') || !s?.rangeCount) return;
+    const range = s.getRangeAt(0).cloneRange(),
+      rect = range.getBoundingClientRect();
+    const readingPage = node.closest<HTMLElement>('[data-page-id]');
+    const selectedIndex = readingPage
+      ? notebook.pages.findIndex((p) => p.id === readingPage.dataset.pageId)
+      : index;
+    setSelection({
+      text: text.slice(0, 10000),
+      x: x ?? rect.left,
+      y: y ?? rect.bottom,
+      range,
+      pageId: notebook.pages[selectedIndex]?.id ?? page.id,
+      pageNumber: selectedIndex >= 0 ? selectedIndex + 1 : index + 1,
+    });
+  };
+  useEffect(() => {
+    let pending: ReturnType<typeof setTimeout> | undefined;
+    const up = (e: PointerEvent) => {
+      if (document.querySelector('.pen-tool-wheel') || performance.now() - lastBarrel.current < 600)
+        return;
+      if (!(e.target instanceof Element) || !e.target.closest('.textLayer')) return;
+      clearTimeout(pending);
+      pending = setTimeout(() => selectedText(e.clientX, e.clientY), 0);
+    };
+    const context = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('.canvas-container')) {
+        e.preventDefault();
+        selectedText(e.clientX, e.clientY);
+      }
+    };
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelection(null);
+    };
+    document.addEventListener('pointerup', up);
+    document.addEventListener('contextmenu', context);
+    document.addEventListener('keydown', escape);
+    return () => {
+      clearTimeout(pending);
+      document.removeEventListener('pointerup', up);
+      document.removeEventListener('contextmenu', context);
+      document.removeEventListener('keydown', escape);
+    };
+  }, []);
+  useEffect(() => {
+    setSelection(null);
+    window.getSelection()?.removeAllRanges();
+  }, [index, viewMode, pdf]);
+  const saveProject = () => {
+    download(
+      encodeProject(current.current),
+      `${current.current.name}.surfacetab`,
+      'application/json',
+    );
+    notify(
+      tr(
+        '\u5DE5\u7A0B\u5DF2\u4FDD\u5B58\uFF0C\u5305\u542B\u539F\u59CB PDF \u548C\u53EF\u7F16\u8F91\u7B14\u8FF9',
+      ),
+    );
+  };
+  useEffect(() => {
+    const keydown = (e: KeyboardEvent) => {
+      if (
+        (e.target as HTMLElement).closest('input, textarea, select, [contenteditable="true"]') ||
+        dialog ||
+        ocrImage ||
+        workspaceOpen ||
+        zoteroOpen ||
+        pendingDrop ||
+        busy
+      )
+        return;
+      if (e.key === 'Escape') setCapturing(false);
+      if (e.key.toLowerCase() === 'o' && !e.ctrlKey && !e.metaKey) {
+        setSelection(null);
+        setCapturing(true);
+      }
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          e.shiftKey ? redo() : undo();
+        }
+        if (e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          redo();
+        }
+        if (e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          saveProject();
+        }
+        if (e.key.toLowerCase() === 'o') {
+          e.preventDefault();
+          file.current?.click();
+        }
+        return;
+      }
+      const found = tools.find((t) => t.key.toLowerCase() === e.key.toLowerCase());
+      if (found) setTool(found.id);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        turnPage(e.key === 'ArrowRight' ? 1 : -1, e.shiftKey ? 1 : pageStep);
+      }
+    };
+    window.addEventListener('keydown', keydown);
+    return () => window.removeEventListener('keydown', keydown);
+  }, [dialog, viewMode, ocrImage, workspaceOpen, zoteroOpen, pendingDrop, busy]);
+  const activate = (
+    id: string,
+    next: Notebook,
+    doc: PDFDocumentProxy | null,
+    view = defaultView,
+  ) => {
+    const old = pdfRef.current;
+    ensureTab(id, next.name);
+    viewRef.current = { ...view };
+    history.current = [];
+    future.current = [];
+    current.current = next;
+    pdfRef.current = doc;
+    renderedSource.current = next.source;
+    activeRef.current = id;
+    restoredView.current = true;
+    setActiveId(id);
+    setNotebook(next);
+    setPdf(doc);
+    setIndex(Math.min(view.index, next.pages.length - 1));
+    setZoom(view.zoom);
+    setViewMode(view.mode);
+    setSelection(null);
+    setFocusObjectId(null);
+    setEditingId(null);
+    setCapturing(false);
+    setOcrImage(null);
+    setDialog(null);
+    setResetView((v) => v + 1);
+    if (old && old !== doc) void old.destroy();
+  };
+  const documentOperation = async (action: () => Promise<void>) => {
+    if (!ready || operation.current || busyRef.current) return;
+    operation.current = true;
+    busyRef.current = true;
+    setBusy(true);
+    try {
+      await action();
+    } finally {
+      operation.current = false;
+      busyRef.current = false;
+      setBusy(false);
+    }
+  };
+  const reportOperation = (action: () => Promise<void>) => {
+    void action().catch((e) => notify(tr('打开失败：{0}', e instanceof Error ? e.message : e)));
+  };
+  const loadDocument = async (id: string) => {
+    const { meta, notebook: n } = await loadWorkspaceDocument(id);
+    const doc = n.source ? await loadPdf(n.source) : null;
+    try {
+      await persist(n, id, meta.view);
+      activate(id, n, doc, meta.view);
+    } catch (e) {
+      void doc?.destroy();
+      throw e;
+    }
+  };
+  const switchDocument = (id: string) =>
+    documentOperation(async () => {
+      await persist(current.current);
+      if (id !== activeRef.current) {
+        await loadDocument(id);
+      }
+      setWorkspaceOpen(false);
+    });
+  const closeTab = (id: string) =>
+    documentOperation(async () => {
+      await persist(current.current);
+      const remaining = tabsRef.current.filter((t) => t.id !== id);
+      if (id === activeRef.current) {
+        const at = tabsRef.current.findIndex((t) => t.id === id),
+          next = remaining[Math.min(at, remaining.length - 1)];
+        if (next) await loadDocument(next.id);
+        else {
+          const newId = uid(),
+            n = newNotebook();
+          await persist(n, newId, defaultView);
+          activate(newId, n, null);
+          remaining.push({ id: newId, name: n.name });
+        }
+      }
+      setDocumentTabs(remaining);
+    });
+  const createDocument = (folderId: string | null) =>
+    documentOperation(async () => {
+      await persist(current.current);
+      const id = uid(),
+        next = newNotebook();
+      await saveWorkspaceDocument(id, next, defaultView, folderId);
+      activate(id, next, null);
+      setWorkspaceOpen(false);
+    });
+  const removeDocument = (id: string) =>
+    documentOperation(async () => {
+      await persist(current.current);
+      if (id === activeRef.current) {
+        const next = (await listWorkspace()).documents.find((d) => d.id !== id);
+        if (next) {
+          await loadDocument(next.id);
+        } else {
+          const newId = uid(),
+            n = newNotebook();
+          await saveWorkspaceDocument(newId, n);
+          activate(newId, n, null);
+        }
+      }
+      await deleteWorkspaceDocument(id);
+      setDocumentTabs(tabsRef.current.filter((t) => t.id !== id));
+    });
+  const renameDocument = async (id: string, name: string) => {
+    await updateWorkspaceDocument(id, { name });
+    setDocumentTabs(tabsRef.current.map((t) => (t.id === id ? { ...t, name } : t)));
+    if (id === activeRef.current) {
+      current.current = { ...current.current, name };
+      setNotebook(current.current);
+    }
+  };
+  const exportDocument = async (id: string) => {
+    const n =
+      id === activeRef.current
+        ? current.current
+        : (await loadWorkspaceDocument(id, false)).notebook;
+    download(encodeProject(n), `${n.name}.surfacetab`, 'application/json');
+  };
+  const openFiles = (files: File[]) =>
+    documentOperation(async () => {
+      const supported = files.filter((f) => /\.(pdf|surfacetab)$/i.test(f.name));
+      if (!supported.length) {
+        notify(tr('请拖入 PDF 或 SurfaceTab 工程文件'));
+        return;
+      }
+      await persist(current.current);
+      const failures: string[] = [];
+      for (const f of supported) {
+        let doc: PDFDocumentProxy | null = null;
+        try {
+          let next: Notebook;
+          if (/\.pdf$/i.test(f.name)) {
+            const imported = await importPdf(new Uint8Array(await f.arrayBuffer()), f.name);
+            next = imported.notebook;
+            doc = imported.pdf;
+          } else {
+            next = decodeProject(await f.text());
+            doc = next.source ? await loadPdf(next.source) : null;
+            if (
+              doc &&
+              next.pages.some((p) => p.sourceIndex !== null && p.sourceIndex >= doc!.numPages)
+            )
+              throw new Error(tr('工程的页面索引无效'));
+          }
+          const id = uid();
+          await persist(next, id, defaultView);
+          activate(id, next, doc);
+          doc = null;
+        } catch (e) {
+          void doc?.destroy();
+          failures.push(`${f.name}: ${e instanceof Error ? e.message : e}`);
+        }
+      }
+      setWorkspaceOpen(false);
+      if (failures.length) notify(tr('部分文件导入失败：{0}', failures.join('；')));
+    });
+  const openZotero = (attachment: ZoteroPdf) =>
+    documentOperation(async () => {
+      await persist(current.current);
+      const source = attachment.source;
+      const existing =
+        source.serverId &&
+        (await listWorkspace()).documents.find(
+          (d) =>
+            d.zotero?.serverId === source.serverId &&
+            d.zotero.library === source.library &&
+            d.zotero.key === source.key,
+        );
+      if (existing) {
+        if (existing.id !== activeRef.current) await loadDocument(existing.id);
+        return;
+      }
+      const imported = await importPdf(new Uint8Array(attachment.bytes), attachment.filename);
+      const next = { ...imported.notebook, zotero: source },
+        id = uid();
+      try {
+        await persist(next, id, defaultView);
+        activate(id, next, imported.pdf);
+      } catch (e) {
+        void imported.pdf.destroy();
+        throw e;
+      }
+    });
+  const addImages = (images: ImportedImage[], anchor: DropAnchor) => {
+    const notebook = current.current;
+    const at = notebook.pages.findIndex((page) => page.id === anchor.pageId);
+    if (at < 0) throw Error(tr('目标页面已不存在。'));
+    const page = notebook.pages[at];
+    const objects = images.map((image, i) => {
+      const width = Math.min(
+        image.width / 2,
+        page.width * 0.8,
+        (page.height * 0.65 * image.width) / image.height,
+      );
+      const height = (image.height * width) / image.width;
+      return {
+        id: uid(),
+        data: image.data,
+        displayData: image.displayData,
+        kind: 'sketch' as const,
+        width,
+        height,
+        x: Math.max(
+          0,
+          Math.min(page.width - width, (anchor.x ?? page.width / 2) - width / 2 + i * 12),
+        ),
+        y: Math.max(
+          0,
+          Math.min(page.height - height, (anchor.y ?? page.height / 2) - height / 2 + i * 12),
+        ),
+      };
+    });
+    if (!objects.length) return;
+    commit({
+      ...notebook,
+      pages: notebook.pages.map((p) =>
+        p.id === page.id ? { ...p, images: [...p.images, ...objects] } : p,
+      ),
+    });
+    setIndex(at);
+    setViewMode('single');
+    setTool('object');
+    setFocusObjectId(objects.at(-1)!.id);
+  };
+  const droppedImages = async (files: File[], anchor: DropAnchor) => {
+    const supported = files.filter(isImageFile);
+    if (!supported.length) return;
+    const images: ImportedImage[] = [],
+      failures: string[] = [];
+    for (const file of supported) {
+      try {
+        images.push(await imageFile(file));
+      } catch {
+        failures.push(file.name);
+      }
+    }
+    addImages(images, anchor);
+    if (failures.length) notify(tr('图片导入失败：{0}', failures.join('、')));
+    else notify(tr('已插入 {0} 个图片对象', images.length));
+  };
+  const confirmPdfDrop = (choice: PdfDropChoice) => {
+    const request = pendingDrop;
+    setPendingDrop(null);
+    if (!request) return;
+    reportOperation(async () => {
+      if (choice.mode === 'open') {
+        await openFiles(request.files);
+        await documentOperation(() =>
+          droppedImages(request.files, {
+            pageId: current.current.pages[viewRef.current.index]?.id || current.current.pages[0].id,
+          }),
+        );
+        return;
+      }
+      await documentOperation(async () => {
+        if (activeRef.current !== request.documentId)
+          throw Error(tr('目标文档已切换，请重新拖入文件。'));
+        const notebook = current.current;
+        const at = notebook.pages.findIndex((page) => page.id === request.anchor.pageId);
+        if (at < 0) throw Error(tr('目标页面已不存在。'));
+        const inputs = [];
+        for (const [i, file] of request.pdfs.entries())
+          inputs.push({ bytes: new Uint8Array(await file.arrayBuffer()), pages: choice.pages[i] });
+        const { appendPdfSources } = await import('./pdfInsertion');
+        const merged = await appendPdfSources(notebook.source, inputs);
+        const document = await loadPdf(merged.source);
+        try {
+          const inserted: Page[] = [];
+          for (const sourceIndex of merged.indices) {
+            const view = (await document.getPage(sourceIndex + 1)).getViewport({ scale: 1 });
+            inserted.push({
+              id: uid(),
+              sourceIndex,
+              width: view.width,
+              height: view.height,
+              paper: 'plain',
+              strokes: [],
+              images: [],
+            });
+          }
+          const old = pdfRef.current;
+          renderedSource.current = merged.source;
+          pdfRef.current = document;
+          setPdf(document);
+          commit({
+            ...notebook,
+            source: merged.source,
+            pages: [
+              ...notebook.pages.slice(0, at + 1),
+              ...inserted,
+              ...notebook.pages.slice(at + 1),
+            ],
+          });
+          setIndex(at + 1);
+          void old?.destroy();
+          await droppedImages(request.files, { pageId: inserted[0].id });
+          notify(tr('已插入 {0} 页 PDF', inserted.length));
+        } catch (error) {
+          if (pdfRef.current !== document) void document.destroy();
+          throw error;
+        }
+      });
+    });
+  };
+  useEffect(() => {
+    let depth = 0;
+    const isFiles = (e: DragEvent) => e.dataTransfer?.types.includes('Files');
+    const enter = (e: DragEvent) => {
+      if (isFiles(e)) {
+        e.preventDefault();
+        depth++;
+        if (ready && !busyRef.current) setDragging(true);
+      }
+    };
+    const over = (e: DragEvent) => {
+      if (isFiles(e)) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = ready && !busyRef.current ? 'copy' : 'none';
+      }
+    };
+    const leave = (e: DragEvent) => {
+      if (isFiles(e) && --depth <= 0) {
+        depth = 0;
+        setDragging(false);
+      }
+    };
+    const reset = () => {
+      depth = 0;
+      setDragging(false);
+    };
+    const drop = (e: DragEvent) => {
+      if (!isFiles(e)) return;
+      e.preventDefault();
+      reset();
+      if (!ready || busyRef.current || pendingDrop) return;
+      const files = Array.from(e.dataTransfer?.files || []);
+      if (!files.length) return;
+      const element = e.target instanceof Element ? e.target : null;
+      const paper = element?.closest<HTMLElement>('.paper,.reading-paper');
+      const targetId = element?.closest<HTMLElement>('[data-page-id]')?.dataset.pageId;
+      const page =
+        current.current.pages.find((p) => p.id === targetId) ||
+        current.current.pages[viewRef.current.index] ||
+        current.current.pages[0];
+      const rect = paper?.getBoundingClientRect();
+      const anchor: DropAnchor = {
+        pageId: page.id,
+        ...(rect
+          ? {
+              x: ((e.clientX - rect.left) / rect.width) * page.width,
+              y: ((e.clientY - rect.top) / rect.height) * page.height,
+            }
+          : {}),
+      };
+      const pdfs = files.filter((file) => /\.pdf$/i.test(file.name));
+      if (pdfs.length) setPendingDrop({ files, pdfs, anchor, documentId: activeRef.current });
+      else if (files.some(isImageFile))
+        reportOperation(() => documentOperation(() => droppedImages(files, anchor)));
+      else reportOperation(() => openFiles(files));
+    };
+    window.addEventListener('dragenter', enter);
+    window.addEventListener('dragover', over);
+    window.addEventListener('dragleave', leave);
+    window.addEventListener('drop', drop);
+    window.addEventListener('blur', reset);
+    return () => {
+      window.removeEventListener('dragenter', enter);
+      window.removeEventListener('dragover', over);
+      window.removeEventListener('dragleave', leave);
+      window.removeEventListener('drop', drop);
+      window.removeEventListener('blur', reset);
+    };
+  }, [ready, busy, pendingDrop]);
+  useEffect(() => {
+    if (activeId)
+      setDocumentTabs(
+        tabsRef.current.map((t) => (t.id === activeId ? { ...t, name: notebook.name } : t)),
+      );
+  }, [activeId, notebook.name]);
+  const addPage = () => {
+    const n = current.current,
+      p = blankPage(page.width, page.height);
+    commit({ ...n, pages: [...n.pages.slice(0, index + 1), p, ...n.pages.slice(index + 1)] });
+    setIndex(index + 1);
+  };
+  const movePage = (from: number, to: number) => {
+    if (from === to || to < 0 || to >= current.current.pages.length) return;
+    const pages = [...current.current.pages],
+      activeId = page.id,
+      [moving] = pages.splice(from, 1);
+    pages.splice(to, 0, moving);
+    commit({ ...current.current, pages });
+    setIndex(pages.findIndex((p) => p.id === activeId));
+  };
+  const insertImage = (
+    data: string,
+    w: number,
+    h: number,
+    kind: 'sketch' | 'formula',
+    latex?: string,
+    scene?: Record<string, unknown>,
+    displayData?: string,
+    macros?: Record<string, string>,
+  ) => {
+    const width = Math.min(w / 2, page.width * 0.8, (page.height * 0.65 * w) / h),
+      height = (h * width) / w;
+    const image = editingImage
+      ? { ...editingImage, data, displayData, scene, latex, macros }
+      : {
+          id: uid(),
+          data,
+          displayData,
+          x: (page.width - width) / 2,
+          y: Math.max(20, (page.height - height) / 2),
+          width,
+          height,
+          kind,
+          latex,
+          scene,
+          macros,
+        };
+    const p = {
+      ...page,
+      images: editingImage
+        ? page.images.map((i) => (i.id === editingImage.id ? image : i))
+        : [...page.images, image],
+    };
+    commit({
+      ...current.current,
+      ...(!editingImage ? { scene: undefined } : {}),
+      pages: current.current.pages.map((x) => (x.id === page.id ? p : x)),
+    });
+    setDialog(null);
+    setEditingId(null);
+    setViewMode('single');
+    setFocusObjectId(image.id);
+    setTool('object');
+    notify(
+      editingImage
+        ? tr('\u5DF2\u66F4\u65B0\u539F\u5BF9\u8C61\uFF0C\u53EF\u64A4\u9500')
+        : tr(
+            '\u5DF2\u63D2\u5165\u5F53\u524D\u9875\uFF0C\u9009\u62E9\u5BF9\u8C61\u53EF\u79FB\u52A8\u3001\u7F29\u653E\u6216\u7F16\u8F91',
+          ),
+    );
+  };
+  const exportCurrentPdf = async (allowSignatureInvalidation = false) => {
+    if (busy || operation.current || exportAbort.current) return;
+    const controller = new AbortController(),
+      snapshot = current.current;
+    exportAbort.current = controller;
+    setBusy(true);
+    setDialog(null);
+    setExportProgress({ stage: 'preparing' });
+    try {
+      const bytes = await exportPdf(snapshot, {
+        allowSignatureInvalidation,
+        signal: controller.signal,
+        onProgress: (progress) => {
+          if (exportAbort.current === controller && !controller.signal.aborted)
+            setExportProgress(progress);
+        },
+      });
+      if (controller.signal.aborted || exportAbort.current !== controller) return;
+      download(bytes.buffer, tr('{0}-标注.pdf', snapshot.name), 'application/pdf');
+      setDialog(null);
+      notify(tr('已导出 PDF，保留源页面与标注'));
+    } catch (error) {
+      if (exportAbort.current !== controller) return;
+      if (error instanceof Error && error.name === 'AbortError') notify(tr('已取消 PDF 导出'));
+      else if (error instanceof SignedPdfExportError) setDialog('signed-export');
+      else notify(tr('导出失败：{0}', error instanceof Error ? error.message : tr('未知错误')));
+    } finally {
+      if (exportAbort.current === controller) {
+        exportAbort.current = null;
+        setExportProgress(null);
+        setBusy(false);
+      }
+    }
+  };
+  const bottomControls = (
+    <>
+      <div className="insert-dock">
+        <button
+          aria-label={tr('框选 OCR')}
+          title={tr('框选 OCR (O)')}
+          onClick={() => {
+            setSelection(null);
+            setCapturing(true);
+          }}
+        >
+          <ScanText size={20} />
+          <span>OCR</span>
+        </button>
+        <div />
+        <button
+          aria-label={tr('草图')}
+          title={tr('草图')}
+          onClick={() => {
+            setEditingId(null);
+            setDialog('sketch');
+          }}
+        >
+          <Shapes size={20} />
+          <span>{tr('草图')}</span>
+        </button>
+        <div />
+        <button
+          aria-label={tr('公式')}
+          title={tr('公式')}
+          onClick={() => {
+            setEditingId(null);
+            setDialog('formula');
+          }}
+        >
+          <Sigma size={21} />
+          <span>{tr('公式')}</span>
+        </button>
+        <div />
+        <button aria-label={tr('加页')} title={tr('加页')} onClick={addPage}>
+          <FilePlus2 size={19} />
+          <span>{tr('加页')}</span>
+        </button>
+      </div>
+      <div className="zoom-dock">
+        <button
+          aria-label={tr('缩小')}
+          onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z / 1.15))}
+        >
+          <Minus size={16} />
+        </button>
+        <span>{Math.round(zoom * 100)}%</span>
+        <button
+          aria-label={tr('放大')}
+          onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z * 1.15))}
+        >
+          <Plus size={16} />
+        </button>
+        <div />
+        <button title={tr('适合页面')} aria-label={tr('适合页面')} onClick={fit}>
+          <Maximize size={16} />
+        </button>
+      </div>
+      <div className="page-navigation">
+        <button
+          aria-label={tr('上一页')}
+          title={viewMode === 'dual' ? tr('上两页 · ←') : tr('上一页 · ←')}
+          disabled={!index}
+          onClick={() => turnPage(-1)}
+        >
+          {viewMode === 'dual' ? <ChevronsLeft size={17} /> : <ChevronLeft size={17} />}
+        </button>
+        {viewMode === 'dual' && (
+          <button
+            aria-label={tr('向前移动一页')}
+            title={tr('向前移动一页 · Shift+←')}
+            disabled={!index}
+            onClick={() => turnPage(-1, 1)}
+          >
+            <ChevronLeft size={17} />
+          </button>
+        )}
+        <span>
+          {index + 1} <i>/ {notebook.pages.length}</i>
+        </span>
+        {viewMode === 'dual' && (
+          <button
+            aria-label={tr('向后移动一页')}
+            title={tr('向后移动一页 · Shift+→')}
+            disabled={index + 1 >= notebook.pages.length}
+            onClick={() => turnPage(1, 1)}
+          >
+            <ChevronRight size={17} />
+          </button>
+        )}
+        <button
+          aria-label={tr('下一页')}
+          title={viewMode === 'dual' ? tr('下两页 · →') : tr('下一页 · →')}
+          disabled={index + pageStep >= notebook.pages.length}
+          onClick={() => turnPage(1)}
+        >
+          {viewMode === 'dual' ? <ChevronsRight size={17} /> : <ChevronRight size={17} />}
+        </button>
+      </div>
+    </>
+  );
+  const renderTools = (compact = false) => (
+    <div
+      className={`tool-group${compact ? ' compact-tools' : ''}`}
+      role="group"
+      aria-label={tr('标注工具')}
+    >
+      {tools.map(({ id, label, icon: Icon, key }) => (
+        <button
+          key={id}
+          className={`tool-button ${tool === id ? 'active' : ''}`}
+          title={`${tr(label)} (${key})`}
+          aria-label={tr(label)}
+          aria-pressed={tool === id}
+          onClick={() => {
+            setTool(id);
+            if (id === 'highlighter') setSize(18);
+            else if (size >= 10) setSize(2.8);
+          }}
+        >
+          <Icon size={compact ? 16 : 20} />
+          {!compact && <span>{tr(label)}</span>}
+          {id === 'ballpoint' && <span className="ballpoint-dot" aria-hidden="true" />}
+        </button>
+      ))}
+    </div>
+  );
+  return (
+    <div
+      className={`app-shell ${headerCollapsed && toolbarCollapsed && bottomCollapsed ? 'chrome-minimal' : ''}`}
+      onPointerDownCapture={(event) => {
+        if (
+          event.pointerType !== 'pen' ||
+          !(event.button === 2 || event.buttons & 2) ||
+          !(event.target as HTMLElement).closest('.canvas-container')
+        )
+          return;
+        event.preventDefault();
+        event.stopPropagation();
+        lastBarrel.current = performance.now();
+        setSelection(null);
+        const selection = window.getSelection();
+        const text =
+          !!selection?.toString().trim() &&
+          !!selection.anchorNode?.parentElement?.closest('.textLayer');
+        setPenWheel({ x: event.clientX, y: event.clientY, text });
+      }}
+      onContextMenuCapture={(event) => {
+        if (
+          (penWheel || performance.now() - lastBarrel.current < 1000) &&
+          (event.target as HTMLElement).closest('.canvas-container')
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }}
+    >
+      {penWheel && (
+        <PenToolWheel
+          x={penWheel.x}
+          y={penWheel.y}
+          tool={tool}
+          onClose={() => setPenWheel(null)}
+          onSelect={(id) => {
+            setTool(id);
+            if (id === 'highlighter') setSize(18);
+            else if (size >= 10) setSize(2.8);
+            setPenWheel(null);
+          }}
+          onText={
+            penWheel.text
+              ? () => {
+                  selectedText(penWheel.x, penWheel.y);
+                  setPenWheel(null);
+                }
+              : undefined
+          }
+        />
+      )}
+      <TouchKeyboard chatOpen={chatOpen} onModels={() => setDialog('models')} />
+      {pendingDrop && (
+        <Suspense fallback={null}>
+          <PdfDropDialog
+            files={pendingDrop.pdfs}
+            onClose={() => setPendingDrop(null)}
+            onConfirm={confirmPdfDrop}
+          />
+        </Suspense>
+      )}
+      {dialog === 'signed-export' && (
+        <div className="modal-scrim">
+          <section
+            className="modal small-modal signed-export"
+            role="dialog"
+            aria-modal="true"
+            aria-label={tr('导出含签名的修改副本')}
+          >
+            <header>
+              <h2>{tr('导出含签名的修改副本')}</h2>
+              <button
+                className="icon-button"
+                aria-label={tr('关闭')}
+                disabled={busy}
+                onClick={() => setDialog(null)}
+              >
+                <X size={20} />
+              </button>
+            </header>
+            <div className="small-modal-body">
+              <p>
+                {tr(
+                  '此 PDF 含数字签名。修改页面或添加标注后重新保存，签名将不再有效。原文件和工程内的源 PDF 保持不变。',
+                )}
+              </p>
+              <p>{tr('未修改的文档会直接导出原始文件；修改副本需要重新签名。')}</p>
+              <div className="row">
+                <button disabled={busy} onClick={() => setDialog(null)}>
+                  {tr('取消')}
+                </button>
+                <button
+                  className="primary"
+                  disabled={busy}
+                  onClick={() => void exportCurrentPdf(true)}
+                >
+                  {tr('导出修改副本')}
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+      <input
+        type="file"
+        ref={file}
+        hidden
+        multiple
+        accept=".pdf,.surfacetab"
+        onChange={(e) => {
+          const files = Array.from(e.target.files || []);
+          e.target.value = '';
+          if (files.length) reportOperation(() => openFiles(files));
+        }}
+      />
+      <header className={`topbar ${headerCollapsed ? 'collapsed' : ''}`}>
+        <span className="collapsed-title">{notebook.name}</span>
+        <div className="brand">
+          <span className="brand-mark">
+            <BookOpen size={23} />
+          </span>
+          <span>
+            Surface<span className="brand-light">Tab</span>
+          </span>
+          <span className="version">PREVIEW</span>
+        </div>
+        <div className="document-title">
+          <span className="document-dot" />
+          <input
+            aria-label={tr('文档名称')}
+            value={notebook.name}
+            onChange={(e) =>
+              setNotebook((n) => ({ ...n, name: e.target.value || tr('未命名笔记') }))
+            }
+          />
+          <span className="save-state">
+            <Check size={12} />
+            {tr(saveStatus)}
+          </span>
+        </div>
+        <div className="top-actions">
+          <FullscreenButton />
+          <button onClick={() => file.current?.click()} disabled={busy || !ready}>
+            <FileUp size={17} />
+            {tr('打开')}
+          </button>
+          <button
+            className="icon-button"
+            title={tr('保存可编辑工程 (Ctrl+S)')}
+            aria-label={tr('保存工程')}
+            onClick={saveProject}
+          >
+            <Save size={18} />
+          </button>
+          <button
+            className="primary"
+            disabled={busy || !ready}
+            onClick={() => void exportCurrentPdf()}
+          >
+            <Download size={16} />
+            {tr('导出 PDF')}
+          </button>
+        </div>
+        <button
+          className="icon-button chrome-toggle"
+          aria-label={headerCollapsed ? tr('展开顶部区域') : tr('收起顶部区域')}
+          title={headerCollapsed ? tr('展开顶部区域') : tr('收起顶部区域')}
+          aria-expanded={!headerCollapsed}
+          onClick={() => setHeaderCollapsed((v) => !v)}
+        >
+          {headerCollapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}
+        </button>
+      </header>
+      <div className="document-tabs" role="tablist" aria-label={tr('文档标签页')}>
+        {tabs.map((tab) => (
+          <div className={`document-tab ${tab.id === activeId ? 'active' : ''}`} key={tab.id}>
+            <button
+              role="tab"
+              aria-selected={tab.id === activeId}
+              disabled={busy || !ready}
+              title={tab.name}
+              onClick={() => reportOperation(() => switchDocument(tab.id))}
+              onKeyDown={(e) => {
+                if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+                  e.preventDefault();
+                  const at = tabs.findIndex((t) => t.id === tab.id),
+                    target =
+                      e.key === 'Home'
+                        ? 0
+                        : e.key === 'End'
+                          ? tabs.length - 1
+                          : (at + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+                  const buttons = e.currentTarget
+                    .closest('[role=tablist]')!
+                    .querySelectorAll<HTMLButtonElement>('[role=tab]');
+                  buttons[target]?.focus();
+                  reportOperation(() => switchDocument(tabs[target].id));
+                }
+              }}
+            >
+              <File size={14} />
+              <span>{tab.name}</span>
+            </button>
+            <button
+              className="close-tab"
+              aria-label={tr('关闭标签 {0}', tab.name)}
+              title={tr('关闭标签，保留文档')}
+              disabled={busy || !ready}
+              onClick={() => reportOperation(() => closeTab(tab.id))}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ))}
+        <button
+          className="new-document-tab"
+          disabled={busy || !ready}
+          aria-label={tr('打开 Zotero 资料库')}
+          title={tr('打开 Zotero 资料库')}
+          onClick={() => setZoteroOpen(true)}
+        >
+          <BookOpen size={16} />
+          <span>Zotero</span>
+        </button>
+        <button
+          className="new-document-tab"
+          disabled={busy || !ready}
+          aria-label={tr('新建文档标签')}
+          onClick={() => reportOperation(() => createDocument(null))}
+        >
+          <Plus size={17} />
+        </button>
+      </div>
+      {dragging && (
+        <div className="pdf-drop-overlay">
+          <FileUp size={36} />
+          <strong>{tr('松开以导入文档')}</strong>
+          <span>{tr('PDF 可新开标签或插入页面；图片和 SVG 插入为对象')}</span>
+        </div>
+      )}
+      <div className="workspace">
+        {sidebar && (
+          <aside className="sidebar">
+            <div className="sidebar-heading">
+              <span>{tr('页面')}</span>
+              <span className="count">{notebook.pages.length}</span>
+              <button
+                className="icon-button"
+                aria-label={tr('收起页面栏')}
+                onClick={() => setSidebar(false)}
+              >
+                <PanelLeftClose size={17} />
+              </button>
+            </div>
+            <PageList
+              pages={notebook.pages}
+              pdf={pdf}
+              index={index}
+              onSelect={setIndex}
+              onMove={movePage}
+              onDelete={(i) => {
+                setIndex(i);
+                setDialog('delete');
+              }}
+            />
+            <button className="add-page" onClick={addPage}>
+              <Plus size={16} />
+              {tr('插入空白页')}
+            </button>
+            <div className="sidebar-bottom">
+              <span className="local-dot" />
+              {tr('本地工作空间')}
+              <span>{tr('你的笔记，留在设备上')}</span>
+            </div>
+          </aside>
+        )}
+        <main className="main-workspace">
+          <div className={`workspace-heading${toolbarCollapsed ? ' tools-inline' : ''}`}>
+            <div className="row workspace-path">
+              {!sidebar && (
+                <button
+                  className="icon-button"
+                  title={tr('展开页面栏')}
+                  aria-label={tr('展开页面栏')}
+                  onClick={() => setSidebar(true)}
+                >
+                  <PanelLeft size={18} />
+                </button>
+              )}
+              <button
+                className="breadcrumb workspace-library-button"
+                aria-label={tr('管理工作空间')}
+                disabled={busy || !ready}
+                onClick={() => {
+                  void persist(current.current)
+                    .then(() => setWorkspaceOpen(true))
+                    .catch(() => notify(tr('保存失败，请先保存工程后再管理工作空间')));
+                }}
+              >
+                {toolbarCollapsed && <BookOpen size={16} />}
+                <span>{tr('工作空间')}</span>
+              </button>
+            </div>
+            {toolbarCollapsed && renderTools(true)}
+            <div className="row workspace-controls">
+              <button
+                className="icon-button"
+                aria-label={tr('打开 ChatGPT 聊天')}
+                title={tr('打开 ChatGPT 聊天')}
+                aria-pressed={chatOpen}
+                onClick={() => {
+                  setChatSelection(null);
+                  setChatOpen((v) => !v);
+                }}
+              >
+                <MessageSquare size={18} />
+              </button>
+              <button
+                className="icon-button toolbar-toggle"
+                aria-label={toolbarCollapsed ? tr('展开工具栏') : tr('收起工具栏')}
+                title={toolbarCollapsed ? tr('展开工具栏') : tr('收起工具栏')}
+                aria-expanded={!toolbarCollapsed}
+                aria-controls="drawing-toolbar"
+                onClick={() => setToolbarCollapsed((v) => !v)}
+              >
+                {toolbarCollapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}
+              </button>
+              <div className="view-switch" role="group" aria-label={tr('页面预览方式')}>
+                <button
+                  className={viewMode === 'single' ? 'active' : ''}
+                  title={tr('单页标注')}
+                  aria-label={tr('单页标注')}
+                  onClick={() => setViewMode('single')}
+                >
+                  <File size={16} />
+                </button>
+                <button
+                  className={viewMode === 'continuous' ? 'active' : ''}
+                  title={tr('连续页面预览')}
+                  aria-label={tr('连续页面预览')}
+                  onClick={() => setViewMode('continuous')}
+                >
+                  <GalleryVerticalEnd size={16} />
+                </button>
+                <button
+                  className={viewMode === 'dual' ? 'active' : ''}
+                  title={tr('双页预览')}
+                  aria-label={tr('双页预览')}
+                  onClick={() => setViewMode('dual')}
+                >
+                  <Columns2 size={16} />
+                </button>
+              </div>
+              {appearance.night && (
+                <button
+                  className="night-original-toggle"
+                  aria-pressed={appearance.original}
+                  aria-label={appearance.original ? tr('恢复夜间颜色') : tr('查看原色')}
+                  title={appearance.original ? tr('恢复夜间颜色') : tr('查看原色')}
+                  onClick={() => setOriginal(!appearance.original)}
+                >
+                  {toolbarCollapsed ? (
+                    <Eye size={16} />
+                  ) : appearance.original ? (
+                    tr('恢复夜间颜色')
+                  ) : (
+                    tr('查看原色')
+                  )}
+                </button>
+              )}
+              <button
+                className={`icon-button night-toggle ${appearance.night ? 'active' : ''}`}
+                aria-label={tr('实验性夜间模式')}
+                title={tr('实验性夜间模式')}
+                aria-pressed={appearance.night}
+                onClick={() => setNight(!appearance.night)}
+              >
+                {appearance.night ? <Sun size={17} /> : <Moon size={17} />}
+              </button>
+              <button
+                className="icon-button"
+                title={tr('设置与笔诊断')}
+                aria-label={tr('设置')}
+                onClick={() => setDialog('settings')}
+              >
+                <Settings2 size={18} />
+              </button>
+            </div>
+          </div>
+          <div id="drawing-toolbar" className="toolbar" hidden={toolbarCollapsed}>
+            {!toolbarCollapsed && renderTools()}
+            <div className="toolbar-divider" />
+            <InkColors color={color} onChange={setColor} />
+            <div className="toolbar-divider" />
+            <label className="size-control">
+              <span style={{ width: Math.min(12, size + 2), height: Math.min(12, size + 2) }} />
+              <input
+                aria-label={tr('笔触粗细')}
+                type="range"
+                min=".6"
+                max={tool === 'highlighter' ? 32 : 12}
+                step=".2"
+                value={size}
+                onChange={(e) => setSize(Number(e.target.value))}
+              />
+              <output>{size.toFixed(1)}</output>
+            </label>
+            <div className="toolbar-divider" />
+            <div className="row history-buttons">
+              <button
+                className="icon-button"
+                title={tr('撤销 (Ctrl+Z)')}
+                aria-label={tr('撤销')}
+                disabled={!history.current.length}
+                onClick={undo}
+              >
+                <Undo2 size={19} />
+              </button>
+              <button
+                className="icon-button"
+                title={tr('重做 (Ctrl+Y)')}
+                aria-label={tr('重做')}
+                disabled={!future.current.length}
+                onClick={redo}
+              >
+                <Redo2 size={19} />
+              </button>
+            </div>
+          </div>
+          <div className="canvas-container">
+            {viewMode === 'single' ? (
+              <PdfSurface
+                page={page}
+                pdf={pdf}
+                tool={tool}
+                color={color}
+                size={size}
+
+                zoom={zoom}
+                resetView={resetView}
+                setZoom={setZoom}
+                onChange={updatePage}
+                onDiagnostic={setDiagnostic}
+                onRender={setRenderStatus}
+                onContext={selectedText}
+                focusObjectId={focusObjectId}
+                onEditObject={(id) => {
+                  setEditingId(id);
+                  setDialog(
+                    page.images.find((i) => i.id === id)?.kind === 'formula' ? 'formula' : 'sketch',
+                  );
+                }}
+              />
+            ) : (
+              <ReadingView
+                pages={notebook.pages}
+                pdf={pdf}
+                mode={viewMode}
+                index={index}
+                tool={tool}
+                zoom={zoom}
+                setZoom={setZoom}
+                resetView={resetView}
+
+                onEdit={editReadingPage}
+                onPageChange={readingPageChanged}
+              />
+            )}
+            {capturing && <RegionCapture onCapture={capture} onClose={() => setCapturing(false)} />}
+            {viewMode === 'single' &&
+              !notebook.source &&
+              page.strokes.length === 0 &&
+              page.images.length === 0 &&
+              index === 0 && (
+                <div className="welcome-note">
+                  <span className="eyebrow">A SPACE FOR YOUR THOUGHTS</span>
+                  <h1>{tr('思考，从这一笔开始。')}</h1>
+                  <p>
+                    {tr('拿起笔，自由书写。')}
+                    <br />
+                    {tr('或打开一份 PDF，让想法落在纸上。')}
+                  </p>
+                  <button onClick={() => file.current?.click()}>
+                    {tr('打开 PDF')}
+                    <MoveUpRight size={15} />
+                  </button>
+                  <span className="welcome-foot">{tr('灵感无需等待，笔记自动保存。')}</span>
+                </div>
+              )}
+            {!bottomCollapsed && bottomControls}
+          </div>
+          <footer className={`statusbar ${bottomCollapsed ? 'tools-collapsed' : ''}`}>
+            <button
+              className="icon-button bottom-tools-toggle"
+              aria-label={tr(bottomCollapsed ? '展开底部工具' : '收起底部工具')}
+              title={tr(bottomCollapsed ? '展开底部工具' : '收起底部工具')}
+              aria-expanded={!bottomCollapsed}
+              onClick={() => setBottomCollapsed((v) => !v)}
+            >
+              {bottomCollapsed ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+            </button>
+            {bottomCollapsed && (
+              <div className="status-tools" aria-label={tr('底部工具')}>
+                {bottomControls}
+              </div>
+            )}
+            <div className="row pen-status">
+              <span className={`status-dot ${diagnostic.eraser ? 'orange' : ''}`} />
+              <span>
+                {diagnostic.eraser
+                  ? tr('背面笔擦')
+                  : diagnostic.type === 'pen'
+                    ? 'Surface Pen'
+                    : tr('笔输入就绪')}
+              </span>
+              <span className="status-separator" />
+              <span>
+                {tr('压感')}
+                {diagnostic.pressure.toFixed(2)}
+              </span>
+              <span className="pressure-meter">
+                <span style={{ width: `${diagnostic.pressure * 100}%` }} />
+              </span>
+            </div>
+            <div className="row">
+              <span className="sr-only" aria-live="polite">
+                {tr(renderStatus)}
+              </span>
+              <span className="status-separator" />
+              <button
+                className="delete-button"
+                disabled={notebook.pages.length <= 1}
+                onClick={() => setDialog('delete')}
+              >
+                <Trash2 size={13} />
+                {tr('删除当前页')}
+              </button>
+              <button
+                className="icon-button"
+                aria-label={tr('使用帮助')}
+                onClick={() => setDialog('help')}
+              >
+                <CircleHelp size={15} />
+              </button>
+            </div>
+          </footer>
+        </main>
+        {chatOpen && (
+          <Suspense fallback={null}>
+            <ChatPanel
+              onModels={() => setDialog('models')}
+              onSvgInsert={(image) => {
+                if (activeRef.current === activeId)
+                  addImages([image], {
+                    pageId:
+                      current.current.pages[viewRef.current.index]?.id ||
+                      current.current.pages[0].id,
+                  });
+              }}
+              key={activeId}
+              documentId={activeId}
+              source={notebook.source}
+              name={notebook.name}
+              pages={notebook.pages}
+              page={page}
+              pdf={pdf}
+              index={index}
+              selection={chatSelection?.documentId === activeId ? chatSelection : null}
+              onClose={() => setChatOpen(false)}
+              onNavigate={(id) => {
+                const at = notebook.pages.findIndex((p) => p.id === id);
+                if (at >= 0) setIndex(at);
+              }}
+            />
+          </Suspense>
+        )}
+      </div>
+      {message && (
+        <div className="toast" role="status">
+          {tr(message)}
+          <button
+            className="icon-button"
+            aria-label={tr('关闭提示')}
+            onClick={() => setMessage('')}
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
+      {selection && (
+        <SelectionFlyout
+          selection={selection}
+          onAsk={() => {
+            setChatSelection({
+              id: Date.now(),
+              documentId: activeId,
+              text: selection.text,
+              pageId: selection.pageId ?? page.id,
+              pageNumber: selection.pageNumber ?? index + 1,
+            });
+            setChatOpen(true);
+            setSelection(null);
+            window.getSelection()?.removeAllRanges();
+          }}
+          onClose={() => {
+            setSelection(null);
+            window.getSelection()?.removeAllRanges();
+          }}
+        />
+      )}
+      {(busy || !ready) &&
+        (exportProgress ? (
+          <div className="busy-overlay pdf-export-overlay">
+            <section
+              className="modal pdf-export-progress"
+              role="dialog"
+              aria-modal="true"
+              aria-label={tr('PDF 导出进度')}
+            >
+              <h2>{tr('正在导出 PDF')}</h2>
+              <div className="row" role="status">
+                <span className="spinner" />
+                <span>
+                  {tr(
+                    {
+                      preparing: '准备导出数据…',
+                      loading: '读取源 PDF…',
+                      structure: '整理页面与文档结构…',
+                      annotations: '写入标注…',
+                      saving: '保存 PDF…',
+                    }[exportProgress.stage],
+                  )}
+                </span>
+              </div>
+              {exportProgress.stage === 'annotations' && (
+                <>
+                  <progress
+                    aria-label={tr('标注页面进度')}
+                    max={exportProgress.total}
+                    value={exportProgress.completed}
+                  />
+                  <p>{tr('已处理 {0} / {1} 页', exportProgress.completed, exportProgress.total)}</p>
+                </>
+              )}
+              <button onClick={() => exportAbort.current?.abort()}>{tr('取消导出')}</button>
+            </section>
+          </div>
+        ) : (
+          <div className="busy-overlay">
+            <span className="spinner" />
+            <span>{!ready ? tr('恢复工作空间…') : tr('正在处理文档…')}</span>
+          </div>
+        ))}
+      <Suspense
+        fallback={
+          <div className="busy-overlay">
+            <span className="spinner" />
+            {tr('加载工具…')}
+          </div>
+        }
+      >
+        {dialog === 'tasks' && <TaskCenter onClose={() => setDialog('settings')} />}
+        {dialog === 'models' && <ModelManager onClose={() => setDialog('settings')} />}
+        {dialog === 'caches' && <CacheManager onClose={() => setDialog('settings')} />}
+        {zoteroOpen && (
+          <ZoteroDialog
+            current={notebook.zotero}
+            onOpen={openZotero}
+            onClose={() => setZoteroOpen(false)}
+          />
+        )}
+        {workspaceOpen && (
+          <WorkspaceManager
+            activeId={activeId}
+            onOpen={switchDocument}
+            onCreate={createDocument}
+            onDelete={removeDocument}
+            onRename={renameDocument}
+            onExport={exportDocument}
+            onImport={() => file.current?.click()}
+            onClose={() => setWorkspaceOpen(false)}
+          />
+        )}
+        {ocrImage && (
+          <OcrDialog
+            image={ocrImage}
+            onClose={() => setOcrImage(null)}
+            onRead={(text) => {
+              setOcrImage(null);
+              setSelection({ text, x: window.innerWidth / 2 - 200, y: 100 });
+            }}
+          />
+        )}
+        {dialog === 'sketch' && (
+          <SketchDialog
+            scene={editingImage ? editingImage.scene : notebook.scene}
+            bitmap={editingImage && !editingImage.scene ? editingImage : undefined}
+            editing={!!editingImage}
+            onClose={(scene) => {
+              if (scene && !editingImage) commit({ ...current.current, scene });
+              setDialog(null);
+              setEditingId(null);
+            }}
+            onInsert={(data, w, h, scene, displayData) =>
+              insertImage(data, w, h, 'sketch', undefined, scene, displayData)
+            }
+          />
+        )}
+        {dialog === 'formula' && (
+          <FormulaDialog
+            initialLatex={editingImage?.latex}
+            initialMacros={editingImage?.macros}
+            editing={!!editingImage}
+            onClose={() => {
+              setDialog(null);
+              setEditingId(null);
+            }}
+            onInsert={(data, w, h, latex, macros) =>
+              insertImage(data, w, h, 'formula', latex, undefined, undefined, macros)
+            }
+          />
+        )}
+      </Suspense>
+      {(dialog === 'help' || dialog === 'settings' || dialog === 'delete') && (
+        <div className="modal-scrim">
+          <section
+            className="modal small-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={
+              dialog === 'settings'
+                ? tr('设置与笔诊断')
+                : dialog === 'delete'
+                  ? tr('删除页面')
+                  : tr('使用帮助')
+            }
+          >
+            <header>
+              <h2>
+                {dialog === 'settings'
+                  ? tr('纸张与笔输入')
+                  : dialog === 'delete'
+                    ? tr('删除这一页？')
+                    : tr('像在纸上一样自然')}
+              </h2>
+              <button
+                className="icon-button"
+                aria-label={tr('关闭')}
+                onClick={() => setDialog(null)}
+              >
+                <X size={20} />
+              </button>
+            </header>
+            <div className="small-modal-body">
+              {dialog === 'settings' ? (
+                <>
+                  <button
+                    className="zotero-open"
+                    onClick={() => {
+                      setDialog(null);
+                      setZoteroOpen(true);
+                    }}
+                  >
+                    Zotero
+                  </button>
+                  <button className="task-center-open" onClick={() => setDialog('tasks')}>
+                    {tr('任务与后端')}
+                  </button>
+                  <button className="model-manager-open" onClick={() => setDialog('models')}>
+                    {tr('本地模型管理')}
+                  </button>
+                  <button className="cache-manager-open" onClick={() => setDialog('caches')}>
+                    {tr('磁盘缓存管理')}
+                  </button>
+                  <p className="appearance-note">
+                    SurfaceTab · AGPL-3.0-only ·{' '}
+                    <a
+                      href="https://github.com/Pscgylotti/SurfaceTab"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {tr('源码与许可')}
+                    </a>
+                  </p>
+                  <label className="language-setting">
+                    界面语言 / Interface language
+                    <select
+                      aria-label="界面语言 / Interface language"
+                      value={locale}
+                      onChange={(e) => setLocale(e.target.value as Locale)}
+                    >
+                      <option value="zh-CN">简体中文</option>
+                      <option value="en">English</option>
+                    </select>
+                  </label>
+                  <label className="writing-hand-setting">
+                    {tr('书写惯用手')}
+                    <select
+                      aria-label={tr('书写惯用手')}
+                      value={writingHand}
+                      onChange={(e) => setWritingHand(e.target.value as WritingHand)}
+                    >
+                      <option value="right">{tr('右手')}</option>
+                      <option value="left">{tr('左手')}</option>
+                    </select>
+                  </label>
+                  <p className="appearance-note">
+                    {tr('划词浮窗优先放在惯用手另一侧；空间不足时移到选区上方或下方。')}
+                  </p>
+                  <label className="appearance-setting">
+                    <span>
+                      <input
+                        type="checkbox"
+                        checked={appearance.night}
+                        onChange={(e) => setNight(e.target.checked)}
+                      />{' '}
+                      {tr('实验性夜间模式')}
+                    </span>
+                  </label>
+                  <p className="appearance-note">
+                    {tr(
+                      '文字与矢量内容调整为暗底亮色，位图降亮度。移动工具下点击图片角标查看原图；顶部可查看整页原色。复杂裁剪、透明图和图上文字可能不准确，不影响导出与 OCR。',
+                    )}
+                  </p>
+                  <label className="appearance-setting">
+                    {tr('渲染与能耗')}
+                    <select
+                      aria-label={tr('渲染与能耗')}
+                      value={appearance.mode}
+                      onChange={(e) => setPowerMode(e.target.value as PowerMode)}
+                    >
+                      <option value="auto">{tr('自动（电池供电时节能）')}</option>
+                      <option value="eco">{tr('节能优先')}</option>
+                      <option value="quality">{tr('画质优先')}</option>
+                    </select>
+                  </label>
+                  <label className="appearance-setting">
+                    {tr('PDF 渲染清晰度')}
+                    <select
+                      aria-label={tr('PDF 渲染清晰度')}
+                      value={appearance.quality}
+                      onChange={(e) => setRenderQuality(e.target.value as RenderQuality)}
+                    >
+                      <option value="standard">{tr('标准')}</option>
+                      <option value="high">{tr('高清（推荐）')}</option>
+                      <option value="ultra">{tr('超清')}</option>
+                    </select>
+                  </label>
+                  <p className="appearance-note">
+                    {tr('缩小页面时使用更高采样密度，停下后补绘。超清会增加内存与耗电。')}
+                  </p>
+                  <p className="appearance-note">
+                    {tr(
+                      '节能档降低补绘并行度与像素预算；交互期间复用已有画面，窗口隐藏时暂停 PDF 绘制。',
+                    )}
+                    {appearance.battery
+                      ? tr('当前使用电池。')
+                      : tr('当前连接电源或未报告电池状态。')}
+                  </p>
+                  <p>{tr('默认用笔书写、手指移动。书写时忽略触摸，减少手掌误触。')}</p>
+                  <label className="field-label">{tr('空白页纸张')}</label>
+                  <div className="row">
+                    {(['plain', 'dots', 'lines'] as const).map((p, i) => (
+                      <button
+                        key={p}
+                        disabled={page.sourceIndex !== null}
+                        className={page.paper === p ? 'primary' : ''}
+                        onClick={() => updatePage({ ...page, paper: p })}
+                      >
+                        {[tr('纯白'), tr('点阵'), tr('横线')][i]}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="diagnostic-card">
+                    <span>{tr('最近输入')}</span>
+                    <strong>{diagnostic.type}</strong>
+                    <span>{tr('原始压感')}</span>
+                    <strong>{diagnostic.pressure.toFixed(4)}</strong>
+                    <span>{tr('背面擦除')}</span>
+                    <strong>{diagnostic.eraser ? tr('已检测') : tr('未激活')}</strong>
+                    <span>{tr('当前笔划采样')}</span>
+                    <strong>{diagnostic.samples}</strong>
+                    <span>{tr('屏幕像素比例')}</span>
+                    <strong>{window.devicePixelRatio.toFixed(2)}×</strong>
+                  </div>
+                  <p className="muted">
+                    {tr(
+                      '支持标准笔擦信号 button=5 / buttons=32；实际压感与笔擦需由 Surface 驱动上报。',
+                    )}
+                  </p>
+                </>
+              ) : dialog === 'delete' ? (
+                <>
+                  <p>{tr('删除第 {0} 页及其标注？可通过撤销恢复。', index + 1)}</p>
+                  <button
+                    className="danger"
+                    onClick={() => {
+                      commit({
+                        ...current.current,
+                        pages: current.current.pages.filter((p) => p.id !== page.id),
+                      });
+                      setIndex(Math.max(0, index - 1));
+                      setDialog(null);
+                    }}
+                  >
+                    {tr('删除当前页')}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p>
+                    {tr(
+                      '笔尖直接书写，翻转 Surface Slim Pen 使用背面橡皮擦。橡皮擦滑过新增笔迹和插入对象时先高亮，松手删除；保留原始 PDF 内容。',
+                    )}
+                  </p>
+                  <p>
+                    {tr(
+                      '单指拖动页面，双指缩放与拖动，按钮左右翻页。鼠标滚轮平移，Ctrl + 滚轮缩放。复杂页面可开启“快速预览”，固定低清背景。',
+                    )}
+                  </p>
+                  <p>{tr('框选多个对象，拖动选中对象统一移动；Shift 可加选或取消。')}</p>
+                  <p>
+                    {tr(
+                      'S 选择对象 · T 选择文字 · Delete 删除选中对象 · Ctrl+Z 撤销 · Ctrl+Y 重做 · Ctrl+S 保存工程 · Ctrl+O 打开',
+                    )}
+                  </p>
+                  <p>
+                    {tr(
+                      '工程保留可编辑笔迹；导出 PDF 合入笔迹与草图。基础版支持标注和页面管理，尚不支持修改原 PDF 的文字。',
+                    )}
+                  </p>
+                  <p>
+                    {tr(
+                      'Texo 公式识别与中英翻译在本机运行。选文后可复制、翻译和朗读；按笔侧键或右键打开工具。',
+                    )}
+                  </p>
+                </>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}

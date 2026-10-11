@@ -1,0 +1,9 @@
+{
+  "version": "3.10.22",
+  "revision": "20261009",
+  "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261009/cpython-3.10.22%2B20261009-x86_64-pc-windows-msvc-install_only_stripped.tar.gz",
+  "bytes": 22008461,
+  "sha256": "f20288c45ff11e7fe026f40ddcfb2acfe695cec18860746639e289142a589745",
+  "source": "https://github.com/astral-sh/python-build-standalone",
+  "license": "Python and bundled component licenses are retained in the downloaded distribution."
+}

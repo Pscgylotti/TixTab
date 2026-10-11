@@ -1,0 +1,78 @@
+# ChatGPT 阅读助手（实验性）
+
+点击阅读区上方的聊天图标，再点 **Continue with ChatGPT**。在系统浏览器中登录现有 ChatGPT 账号并授权 SurfaceTab，完成后返回应用。无需填写 API Key。
+
+实现遵循 OpenAI 官方本地应用授权流程。实际可用性取决于用户、工作空间、地区、订阅和平台开放情况；并非所有账号都保证可用。模型列表由授权账号实时返回，不固定写死模型名称。未授权订阅额度时会保留登录，并显示“启用 ChatGPT 订阅额度”。不会自动改用其它计费方式。
+
+## 阅读与提问
+
+- 选中文字，在划词浮窗点击“询问 ChatGPT”，然后输入问题并发送。
+- “附加页面文字”提取当前页文字及插入的 LaTeX；不包含手写线条和图表。
+- “附加页面图片”发送当前页截图，包含 PDF、笔迹和插入对象。使用白天原色，适用于扫描页、公式和图表；需要账号中的模型支持图片输入。
+- 可以连续追问、停止回答、复制消息，以及点击页码返回来源页。只在按发送后传输问题及附加内容。
+- 对话按文档和账号分别保存在本机 IndexedDB。清空按钮只删除当前文档、当前账号的对话。聊天记录独立于 PDF 和 `.surfacetab` 工程，不同步至 ChatGPT 网页历史；关闭窗口、切换文档或账号后不继续生成。
+- 图片只保留于本次消息内存；后续问题或重新打开对话需要分析图形时，请重新附加图片。页面缓存最多三张，每张约 120 万像素。
+
+## 账号与用量
+
+登录入口使用系统浏览器和本机临时回调，带 PKCE、state、nonce 及签名身份验证。应用不会读取浏览器 Cookie、已有 ChatGPT/Codex 登录文件或网页聊天记录。访问令牌和续期令牌仅在桌面主进程中使用，并用系统凭据保护加密保存；系统加密不可用时只保留本次会话。退出账号会尝试撤销远程续期会话，再清除本机令牌；无法确认远程撤销时，界面提示在 ChatGPT 设置中手动断开。
+
+使用“管理 ChatGPT 用量”查看平台额度和对本应用的用量限制。使用额度可能与其它应用共享，不是独立的无限额度。网络或额度错误不会自动换成 API Key 计费。
+
+## 实现与验证范围
+
+推理采用 `POST https://api.openai.com/v1/responses`，每次设置 `store:false`、`stream:true`。会话历史由本机提供；不使用 ChatGPT 私有网页接口。页面提取、截图、模型刷新和聊天均按用户操作执行，没有后台截图循环。聊天代码按需加载，收起时取消进行中的请求并释放页面图片缓存。流式文本更新最多约每 100 毫秒一次。
+
+验证覆盖模拟 OAuth 的真实本机回调、签名和权限检查、令牌更新、流式失败/完成、账号隔离、Windows 加密存储、Electron IPC 和重启恢复。正式账号的浏览器授权和订阅推理需要用户首次登录完成，测试未代用现有账号或消耗订阅额度。
+
+参考官方 OpenAI 文档：
+
+- [注册与登录](https://developers.openai.com/siwc/token-sharing-open-source/sign-in)
+- [模型与推理](https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference)
+- [账号与会话](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions)
+- [预览限制](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations)
+
+## 紧凑布局、整篇总结与听写
+
+账号与模型区域可折叠，订阅状态和用量入口一起收起，偏好在本机保留。输入区改为两行，页码、文字、图片、PDF 总结入口共用一行，扩大聊天记录显示面积。
+
+连续阅读时底部页码和聊天附件页码随滚动更新，可直接输入聊天附件页码跳转。已选择的整页附件随当前页切换，发送时才准备最新页面内容，不在滚动过程中持续截图；选中文字保留原始页码。历史消息中的页码仍跳到原页面。
+
+“总结 PDF”直接发送导入的原始 PDF 和先总结的指令（小于 50 MB、需要支持文件输入的模型），不包含后续插入页和标注。采用官方 inline input_file，不调用该登录路径不支持的 Files 上传接口。原文件不写入聊天记录，也不会在每次追问时重复上传；追问使用已有总结和对话，必要时再次点击发送原 PDF，或附加具体页面。
+
+麦克风使用 Windows System.Speech 已安装的中文或英文离线识别引擎（跟随应用语言），不下载大模型，不上传音频，不占用 ChatGPT 语音额度。点击开始，再次点击停止，最长两分钟；关闭聊天或切换文档会停止。识别结果进入输入框，可修改后手动发送。缺少语言包时在 Windows 设置中安装对应语音识别语言；麦克风受系统权限和默认输入设备控制。这是听写输入，尚不是双向语音通话。
+
+流式回答兼容终止事件中的完整文字、独立 event 字段及结束标记；只有 response.completed 才标为完成。异常时展开“连接诊断”可查看 HTTP 状态、内容类型、字节数和事件类型，不包含令牌、提问、PDF 或回答正文。截图中的旧“回答中断”本身不能区分服务器中断与格式问题，需新版诊断进一步确定。
+
+验证包括 Windows 真实离线引擎对合成测试 WAV 的识别（不打开麦克风）；实际人声、噪声和笔记设备上的识别准确率需使用时评估。
+
+- [OpenAI 文件输入格式与限制](https://developers.openai.com/api/docs/guides/file-inputs)
+- [Microsoft 离线识别引擎](https://learn.microsoft.com/en-us/dotnet/api/system.speech.recognition.speechrecognitionengine?view=netframework-4.8.1)
+
+### 0.2.30 语音增强
+
+麦克风旁可独立选择中文或英文，与界面语言分开保存；听写过程中切换会结束旧识别引擎并启动新语言，已识别文字保留。听写时显示真实音量的滚动波形（幅度包络），静音时为平线。波形复用识别引擎 AudioLevelUpdated 信号，限制为约每秒 10 次更新，不另行录音或上传。最后一次失败的连接诊断写入应用用户目录的 chatgpt-last-error.json，界面中也可直接复制；不保存聊天、PDF 或凭据。
+
+### 0.2.31 回答流格式修复
+
+本机实际诊断发现 HTTP 200 回应缺少 Content-Type，旧客户端在读取正文前就拒绝了响应。现在根据有界响应正文检测 SSE，不依赖该标头；诊断记录实际读取字节数与 sse/json/other 类型。空响应与非流式 JSON 错误分别提示，仍要求明确完成事件。
+
+### 0.2.32 Markdown 与聊天界面
+
+新回答与本地恢复的历史回答支持标题、粗体、列表、引用、表格、代码块和 LaTeX。支持 `$...$`、`$$...$$`、`\(...\)` 与 `\[...\]` 公式；代码示例内的数学分隔符保持原样。长公式、表格和代码在各自区域横向滚动，不撑宽面板。代码可单独复制；复制整条消息仍保留原始 Markdown。
+
+界面采用轻量回答排版、提问气泡、统一输入框、紧凑账号栏和页面分析建议，兼容中英文、夜间和窄屏。建议按钮只附加当前页文字并填写提问，不自动发送。已完成回答使用记忆化渲染；流式回答延迟调度排版，用户向上阅读时不强制拉回底部。节能模式关闭背景模糊。
+
+链接通过点击在系统浏览器打开，仅接受 HTTP/HTTPS；不执行回答中的原始 HTML，远程图片只显示可点击链接。使用 [react-markdown](https://github.com/remarkjs/react-markdown)、[remark-math / rehype-katex](https://github.com/remarkjs/remark-math) 和 remark-gfm；依赖许可见 CHAT-MARKDOWN-NOTICES.txt。
+
+### 0.2.33 本地语音识别
+
+聊天输入框旁的滑杆按钮打开“语音设置”。可选择 SenseVoiceSmall INT8、Whisper small INT8 或 Windows 系统听写。首次使用可在此下载所选模型，并点击“安装本地语音运行时”；0.2.35 起会自动下载并校验独立 Python，无需预装。运行时独立放在 `%USERPROFILE%/.surfacetab/asr-runtime`，不会修改公式、翻译或 OCR 的 Python 环境。也可以运行随包附带的 `backend/start-asr.ps1 -Install` 安装依赖。
+
+SenseVoiceSmall 默认使用 CPU 双线程，权重约 228 MiB；Whisper small 约 245 MiB，通过 OpenVINO GenAI 支持 Intel NPU/GPU/CPU。Whisper AUTO 依次尝试 NPU、GPU、CPU；手选设备初始化失败时尝试 CPU，录音状态栏显示实际设备与回退情况。首次 NPU 编译可能需要几十秒，后续复用磁盘编译缓存。模型固定版本并核对 SHA256，不在打开聊天时自动下载。新增语音模型均为按需下载，不随完整/轻量 EXE 重复携带。
+
+中文/English 与应用界面语言独立。WebRTC VAD 在停顿约 720 ms 后提交片段，持续说话最多约 20 秒一段；这两种模型属于分段离线识别，不会逐字实时修订。录音与推理分别运行，波形来自实际麦克风音量。停止录音后，最后一句识别完才结束；过载会明确提示，不默默丢弃排队片段。识别内容仅进入可编辑草稿，仍需点击发送才交给聊天模型。隐藏或关闭聊天立即取消麦克风。
+
+音频只保留在本机内存，不写录音文件、不上传；录音最长两分钟。同一引擎在结束后保温约 90 秒，再自动释放；更换引擎或退出应用释放旧进程。Whisper 缓存有 768 MiB 软上限，并可在缓存管理中清理。SenseVoice 的模型权重适用 FunASR 模型许可，见 SENSEVOICE-MODEL-LICENSE.txt；推理依赖及来源见 ASR-NOTICES.md。
+
+本机 Core Ultra 5 238V / Arc 130V / Intel AI Boost，OpenVINO 2026.2，使用公开的 5.592 秒中文、7.152 秒英文音频验证：SenseVoice CPU 推理约 0.13–0.17 秒；Whisper CPU 约 1.22–1.42 秒、GPU 约 0.16–0.60 秒、NPU 约 0.17–0.36 秒。Whisper 两种语言均成功使用真实 NPU，首次 NPU 加载约 40 秒，缓存后约 2 秒。以上为小样本延迟测试，不代表识别准确率或实测功耗；真实麦克风、口音、距离和噪声需结合使用环境评估。在这组样本中 Whisper 的转写比 SenseVoice 更准确。

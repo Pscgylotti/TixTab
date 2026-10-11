@@ -1,0 +1,47 @@
+{
+  "model": {
+    "id": "unimumer-qwen3-vl-2b",
+    "name": "Uni-MuMER Qwen3-VL-2B · Q4_K_M",
+    "feature": "formula",
+    "revision": "553ef381d62eba4490c2e7e28338435a1ead619c",
+    "license": "Apache-2.0; community quantization of phxember/Uni-MuMER-Qwen3-VL-2B",
+    "source": "https://huggingface.co/phxember/Uni-MuMER-Qwen3-VL-2B",
+    "device": "Intel GPU (Vulkan) / CPU · experimental",
+    "optional": true,
+    "files": [
+      {
+        "path": "unimumer/Uni-MuMER-Qwen3-VL-2B.Q4_K_M.gguf",
+        "bytes": 1107411136,
+        "sha256": "58c2c1bef97e81f930709b5d4bf9a6c4e07ae6d2717b111afccb38e4af15293c",
+        "url": "https://huggingface.co/mradermacher/Uni-MuMER-Qwen3-VL-2B-GGUF/resolve/553ef381d62eba4490c2e7e28338435a1ead619c/Uni-MuMER-Qwen3-VL-2B.Q4_K_M.gguf"
+      },
+      {
+        "path": "unimumer/Uni-MuMER-Qwen3-VL-2B.mmproj-Q8_0.gguf",
+        "bytes": 445053984,
+        "sha256": "c3707b03a9e36ea82d90507a1d4e82f56528a3f19610696352b19c42ad2e750b",
+        "url": "https://huggingface.co/mradermacher/Uni-MuMER-Qwen3-VL-2B-GGUF/resolve/553ef381d62eba4490c2e7e28338435a1ead619c/Uni-MuMER-Qwen3-VL-2B.mmproj-Q8_0.gguf"
+      }
+    ],
+    "bytes": 1552465120
+  },
+  "runtime": {
+    "id": "unimumer-runtime",
+    "name": "Uni-MuMER · llama.cpp Vulkan runtime",
+    "feature": "formula",
+    "revision": "b11429",
+    "license": "MIT; bundled third-party notices retained",
+    "source": "https://github.com/ggml-org/llama.cpp",
+    "device": "Windows x64 · Vulkan / CPU",
+    "optional": true,
+    "files": [
+      {
+        "path": "unimumer-runtime/llama-b11429-bin-win-vulkan-x64.zip",
+        "bytes": 33337769,
+        "sha256": "1bfe78ad9168b79fa02bf67f6af9f5e17a966d824d77238517f7bef12ac73b36",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-bin-win-vulkan-x64.zip"
+      }
+    ],
+    "bytes": 33337769
+  },
+  "officialRevision": "26d57451c9182b68c60aef78634bfea20c41a866"
+}

@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "texo-compiled",
+      "path": "openvino-cache",
+      "label": "Texo 编译缓存",
+      "pattern": "^[a-zA-Z0-9_./-]+\\.(blob|cl_cache)$"
+    },
+    {
+      "id": "opus-compiled",
+      "path": "opus-openvino-cache",
+      "label": "OPUS 编译缓存",
+      "pattern": "^[a-zA-Z0-9_./-]+\\.(blob|cl_cache)$"
+    },
+    {
+      "id": "ocr-compiled",
+      "path": "ocr-openvino-cache",
+      "label": "OCR 编译缓存",
+      "pattern": "^[a-zA-Z0-9_./-]+\\.(blob|cl_cache)$"
+    },
+    {
+      "id": "piper-compiled",
+      "path": "piper-openvino-cache",
+      "label": "Piper 编译缓存",
+      "pattern": "^[a-zA-Z0-9_./-]+\\.(blob|cl_cache)$"
+    },
+    {
+      "id": "whisper-compiled",
+      "path": "whisper-openvino-cache",
+      "label": "Whisper 编译缓存",
+      "pattern": "^[a-zA-Z0-9_./-]+\\.(blob|cl_cache)$"
+    },
+    {
+      "id": "extracted",
+      "path": "native-models",
+      "label": "原生解包权重副本",
+      "pattern": "^([a-f0-9]{40}/(config\\.json|tokenizer\\.json|manifest\\.json|onnx/(encoder_model|decoder_model_merged)\\.onnx)|(opus-en-zh|opus-zh-en)/[a-f0-9]{40}/(manifest\\.json|config\\.json|generation_config\\.json|tokenizer.*\\.json|vocab\\.json|source\\.spm|target\\.spm|onnx/(encoder_model|decoder_model_merged).*\\.onnx)|ppocrv4/rapidocr[0-9]+/(manifest\\.json|ch_PP-OCRv4_(det|rec)_mobile\\.onnx|ch_ppocr_mobile_v2\\.0_cls_mobile\\.onnx)|piper/[a-f0-9]{40}/(en_US-lessac-low|zh_CN-huayan-x_low)/[a-zA-Z0-9_-]+\\.onnx(\\.json)?)$"
+    }
+  ]
+}

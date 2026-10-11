@@ -1,0 +1,13 @@
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './styles.css';
+import './chrome.css';
+import './night.css';
+import './documentChrome.css';
+import './pageFit.css';
+import './compactTools.css';
+import { initializeAppearance } from './appearance';
+import { initializeRenderScheduler } from './pdfRenderCache';
+initializeAppearance();
+initializeRenderScheduler();
+ReactDOM.createRoot(document.getElementById('root')!).render(<App />);

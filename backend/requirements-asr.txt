@@ -1,0 +1,12 @@
+numpy==2.2.6
+sherpa-onnx==1.13.8
+sherpa-onnx-core==1.13.8
+sounddevice==0.5.3
+soxr==1.0.0
+webrtcvad-wheels==2.0.14.post1
+openvino==2026.2.0
+openvino-genai==2026.2.0.0
+openvino-tokenizers==2026.2.0.0
+cffi==2.1.1
+pycparser==3.11
+openvino-telemetry==2025.2.0

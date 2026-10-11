@@ -1,0 +1,229 @@
+import { newNotebook, uid, validNotebook, type Notebook, type Page } from './model';
+import { restore } from './storage';
+
+export interface WorkspaceView {
+  index: number;
+  zoom: number;
+  mode: 'single' | 'continuous' | 'dual';
+}
+export interface WorkspaceDocument {
+  id: string;
+  name: string;
+  folderId: string | null;
+  pinned: boolean;
+  createdAt: number;
+  updatedAt: number;
+  pageIds: string[];
+  view: WorkspaceView;
+  scene?: Record<string, unknown>;
+  zotero?: Notebook['zotero'];
+}
+export interface WorkspaceFolder {
+  id: string;
+  name: string;
+}
+export const defaultView: WorkspaceView = { index: 0, zoom: 0.78, mode: 'single' };
+let connection: Promise<IDBDatabase> | undefined;
+// Only keep the active document's immutable references. Sources are stored once,
+// and unchanged pages never go through structured cloning on a pen autosave.
+let saved: { id: string; notebook: Notebook } | undefined;
+const request = <T>(r: IDBRequest<T>) =>
+  new Promise<T>((resolve, reject) => {
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+function finished(tx: IDBTransaction) {
+  const done = new Promise<void>((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onabort = () => reject(tx.error ?? new Error('保存事务已取消'));
+    tx.onerror = () => {};
+  });
+  void done.catch(() => {});
+  return done;
+}
+function database() {
+  return (connection ??= new Promise<IDBDatabase>((resolve, reject) => {
+    const r = indexedDB.open('surfacetab-workspaces', 1);
+    r.onupgradeneeded = () => {
+      const db = r.result;
+      db.createObjectStore('documents', { keyPath: 'id' });
+      db.createObjectStore('sources', { keyPath: 'documentId' });
+      db.createObjectStore('pages', { keyPath: ['documentId', 'pageId'] }).createIndex(
+        'documentId',
+        'documentId',
+      );
+      db.createObjectStore('folders', { keyPath: 'id' });
+      db.createObjectStore('preferences');
+    };
+    r.onsuccess = () => {
+      const db = r.result;
+      db.onversionchange = () => {
+        db.close();
+        connection = undefined;
+      };
+      resolve(db);
+    };
+    r.onerror = () => {
+      connection = undefined;
+      reject(r.error);
+    };
+  }));
+}
+export async function listWorkspace() {
+  const db = await database(),
+    tx = db.transaction(['documents', 'folders'], 'readonly');
+  const [documents, folders] = await Promise.all([
+    request<WorkspaceDocument[]>(tx.objectStore('documents').getAll()),
+    request<WorkspaceFolder[]>(tx.objectStore('folders').getAll()),
+  ]);
+  documents.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt);
+  return { documents, folders };
+}
+export async function saveWorkspaceDocument(
+  id: string,
+  notebook: Notebook,
+  view = defaultView,
+  folderId?: string | null,
+) {
+  const db = await database(),
+    tx = db.transaction(['documents', 'pages', 'sources', 'preferences'], 'readwrite'),
+    done = finished(tx);
+  try {
+    const store = tx.objectStore('documents'),
+      old = await request<WorkspaceDocument | undefined>(store.get(id));
+    const previous = saved?.id === id ? saved.notebook : undefined,
+      oldPages = new Map(previous?.pages.map((p) => [p.id, p]));
+    const pageIds = notebook.pages.map((p) => p.id),
+      present = new Set(pageIds);
+    let pageWrites = 0;
+    for (const page of notebook.pages)
+      if (oldPages.get(page.id) !== page) {
+        tx.objectStore('pages').put({ documentId: id, pageId: page.id, page });
+        pageWrites++;
+      }
+    for (const pageId of old?.pageIds ?? [])
+      if (!present.has(pageId)) tx.objectStore('pages').delete([id, pageId]);
+    const sourceWrites = !old || !previous || previous.source !== notebook.source ? 1 : 0;
+    if (sourceWrites) tx.objectStore('sources').put({ documentId: id, source: notebook.source });
+    const now = Date.now();
+    const record: WorkspaceDocument = {
+      id,
+      name: notebook.name,
+      createdAt: old?.createdAt ?? now,
+      updatedAt: previous === notebook ? (old?.updatedAt ?? now) : now,
+      folderId: folderId === undefined ? (old?.folderId ?? null) : folderId,
+      pinned: old?.pinned ?? false,
+      pageIds,
+      view: { ...view },
+      scene: notebook.scene,
+      zotero: notebook.zotero,
+    };
+    store.put(record);
+    tx.objectStore('preferences').put(id, 'activeDocument');
+    await done;
+    saved = { id, notebook };
+    return { pageWrites, sourceWrites };
+  } catch (error) {
+    try {
+      tx.abort();
+    } catch {}
+    await done.catch(() => {});
+    throw error;
+  }
+}
+export async function loadWorkspaceDocument(id: string, track = true) {
+  const db = await database(),
+    tx = db.transaction(['documents', 'pages', 'sources'], 'readonly');
+  const metaPromise = request<WorkspaceDocument | undefined>(tx.objectStore('documents').get(id));
+  const pagesPromise = request<{ page: Page }[]>(
+    tx.objectStore('pages').index('documentId').getAll(id),
+  );
+  const sourcePromise = request<{ source: Uint8Array | null } | undefined>(
+    tx.objectStore('sources').get(id),
+  );
+  const [meta, records, source] = await Promise.all([metaPromise, pagesPromise, sourcePromise]);
+  if (!meta || !source) throw new Error('文档不存在或数据不完整');
+  const pages = new Map(records.map((r) => [r.page.id, r.page]));
+  const notebook: Notebook = {
+    version: 1,
+    name: meta.name,
+    source: source.source,
+    pages: meta.pageIds.map((id) => pages.get(id)!),
+    scene: meta.scene,
+    zotero: meta.zotero,
+  };
+  if (
+    !validNotebook(notebook) ||
+    (notebook.pages.some((p) => p.sourceIndex !== null) && !(notebook.source instanceof Uint8Array))
+  )
+    throw new Error('文档数据无法恢复');
+  if (track) saved = { id, notebook };
+  return { meta, notebook };
+}
+export async function bootstrapWorkspace() {
+  const db = await database(),
+    active = await request<string | undefined>(
+      db.transaction('preferences').objectStore('preferences').get('activeDocument'),
+    );
+  const { documents } = await listWorkspace();
+  if (documents.length)
+    return loadWorkspaceDocument(documents.find((d) => d.id === active)?.id ?? documents[0].id);
+  const legacy = await restore(),
+    id = uid();
+  await saveWorkspaceDocument(id, legacy ?? newNotebook());
+  return loadWorkspaceDocument(id);
+}
+export async function updateWorkspaceDocument(
+  id: string,
+  change: Partial<Pick<WorkspaceDocument, 'name' | 'folderId' | 'pinned'>>,
+) {
+  const db = await database(),
+    tx = db.transaction('documents', 'readwrite'),
+    done = finished(tx),
+    store = tx.objectStore('documents');
+  const meta = await request<WorkspaceDocument | undefined>(store.get(id));
+  if (!meta) throw new Error('文档已被删除');
+  store.put({ ...meta, ...change });
+  await done;
+}
+export async function createWorkspaceFolder(name: string) {
+  const db = await database(),
+    tx = db.transaction('folders', 'readwrite'),
+    done = finished(tx);
+  const folder = { id: uid(), name: name.trim().slice(0, 80) };
+  if (!folder.name) throw new Error('请输入分组名称');
+  tx.objectStore('folders').put(folder);
+  await done;
+  return folder;
+}
+export async function renameWorkspaceFolder(id: string, name: string) {
+  if (!name.trim()) throw new Error('请输入分组名称');
+  const db = await database(),
+    tx = db.transaction('folders', 'readwrite'),
+    done = finished(tx);
+  tx.objectStore('folders').put({ id, name: name.trim().slice(0, 80) });
+  await done;
+}
+export async function deleteWorkspaceFolder(id: string) {
+  const db = await database(),
+    tx = db.transaction(['documents', 'folders'], 'readwrite'),
+    done = finished(tx);
+  const documents = await request<WorkspaceDocument[]>(tx.objectStore('documents').getAll());
+  for (const doc of documents)
+    if (doc.folderId === id) tx.objectStore('documents').put({ ...doc, folderId: null });
+  tx.objectStore('folders').delete(id);
+  await done;
+}
+export async function deleteWorkspaceDocument(id: string) {
+  const db = await database(),
+    tx = db.transaction(['documents', 'pages', 'sources'], 'readwrite'),
+    done = finished(tx);
+  const keys = await request<IDBValidKey[]>(
+    tx.objectStore('pages').index('documentId').getAllKeys(id),
+  );
+  for (const key of keys) tx.objectStore('pages').delete(key);
+  tx.objectStore('documents').delete(id);
+  tx.objectStore('sources').delete(id);
+  await done;
+  if (saved?.id === id) saved = undefined;
+}

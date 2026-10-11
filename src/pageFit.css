@@ -1,0 +1,18 @@
+.canvas-container > .surface,
+.canvas-container > .reading-view {
+  bottom: 0;
+  z-index: 0;
+  isolation: isolate;
+}
+.canvas-container > .surface .paper-position {
+  top: calc((100% - var(--page-controls-inset, 0px)) / 2);
+}
+.canvas-container > :is(.insert-dock, .zoom-dock, .page-navigation) {
+  z-index: 4;
+}
+.reading-pages {
+  padding: 8px 8px 8px;
+}
+.reading-dual > .reading-pages {
+  padding-bottom: calc(8px + var(--page-controls-inset, 0px));
+}
