@@ -49,6 +49,11 @@ npm start
 
 Source layout: `src/` UI/PDF/workers; `electron/` desktop bridges/downloads/installers; `backend/` optional Python engines; `scripts/` preparation/verification; `tests/` browser regressions; `docs/` feature notes/licenses. [Runtime setup](docs/RUNTIME-SETUP.md) · [Historical notes](docs/CHANGELOG.zh-CN.md).
 
+## Contributors
+
+- [Pscgylotti](https://github.com/Pscgylotti) — project creator and maintainer.
+- [Codex](https://developers.openai.com/codex/) by OpenAI — AI coding assistant contributing to implementation, debugging, tests and documentation.
+
 ## License
 
 Application code: **AGPL-3.0-only**. Third-party code and weights retain their own terms. The public lite release excludes model weights, including the Huayan Chinese voice whose dataset redistribution terms are unclear. Optional downloads do not grant commercial or redistribution rights. See [distribution notes](docs/DISTRIBUTION.md), [model terms](docs/MODELS.md) and [third-party notices](THIRD_PARTY_NOTICES.md).

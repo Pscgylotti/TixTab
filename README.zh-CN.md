@@ -48,6 +48,11 @@ npm start
 
 目录：`src/` 界面、PDF 与 Worker；`electron/` 桌面桥接、下载与安装；`backend/` 可选 Python 后端；`scripts/` 准备/验证；`tests/` 浏览器回归；`docs/` 功能和许可。[自动安装](docs/RUNTIME-SETUP.md) · [历史记录](docs/CHANGELOG.zh-CN.md)。
 
+## 贡献者
+
+- [Pscgylotti](https://github.com/Pscgylotti) — 项目发起人与维护者。
+- OpenAI [Codex](https://developers.openai.com/codex/) — AI 编程助手，参与功能实现、问题修复、测试与文档整理。
+
 ## 许可
 
 应用代码采用 **AGPL-3.0-only**，第三方代码与模型保留原协议。公开轻量包不带模型权重，也不分发数据许可尚不明确的 Huayan 中文声音。按需下载不等于获得商用或再分发许可。详见 [发布与许可](docs/DISTRIBUTION.md)、[模型条款](docs/MODELS.md) 和 [第三方清单](THIRD_PARTY_NOTICES.md)。
