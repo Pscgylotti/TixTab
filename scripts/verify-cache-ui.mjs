@@ -8,7 +8,7 @@ export async function verifyCacheUi(page) {
   await page.getByRole('button', { name: '磁盘缓存管理', exact: true }).click();
   assert.equal(await page.locator('.cache-card').count(), 0);
   await page.getByRole('button', { name: '统计缓存', exact: true }).click();
-  await expect(page.locator('.cache-card')).toHaveCount(8, { timeout: 35000 });
+  await expect(page.locator('.cache-card')).toHaveCount(9, { timeout: 35000 });
   assert.deepEqual(
     (
       await page.locator('.cache-card').evaluateAll((els) => els.map((el) => el.dataset.cacheId))
@@ -18,6 +18,7 @@ export async function verifyCacheUi(page) {
       'opus-compiled',
       'ocr-compiled',
       'piper-compiled',
+      'whisper-compiled',
       'extracted',
       'browser-transformers',
       'browser-tesseract',

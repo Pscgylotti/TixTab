@@ -10,11 +10,11 @@ async function pen(
   eraser = false,
   cancel = false,
 ) {
-  await page.locator('.surface').evaluate(
+  await page.locator('.page-editor').evaluate(
     (el, { points, eraser, cancel }) => {
       // Synthetic protocol coverage only. Hardware mapping is tested separately on the Surface.
       el.setPointerCapture = () => {};
-      const r = el.querySelector('.paper')!.getBoundingClientRect();
+      const r = el.closest('.paper')!.getBoundingClientRect();
       const events = points.map((p) => ({
         pointerId: 9,
         pointerType: 'pen',
@@ -555,7 +555,7 @@ test('连续和双页预览、PDF 选文、笔侧键与翻译浮窗', async ({ p
     .getByRole('button', { name: '在此页标注', exact: true })
     .click();
   await page.getByRole('button', { name: '选文', exact: true }).click();
-  await expect(page.locator('.textLayer')).toContainText('Surface page 1');
+  await expect(page.locator('.textLayer').first()).toContainText('Surface page 1');
   await page
     .locator('.textLayer span')
     .first()
@@ -565,7 +565,7 @@ test('连续和双页预览、PDF 选文、笔侧键与翻译浮窗', async ({ p
       window.getSelection()!.removeAllRanges();
       window.getSelection()!.addRange(range);
     });
-  await page.locator('.surface').evaluate((el) => {
+  await page.locator('.reading-view').evaluate((el) => {
     el.dispatchEvent(
       new PointerEvent('pointerdown', {
         pointerType: 'pen',
@@ -1028,10 +1028,10 @@ test('尾部橡皮先高亮，松手一次删除，取消保留，撤销恢复',
     { x: 300, y: 260, pressure: 0.7 },
   ]);
   const erase = (type: string, y: number) =>
-    page.locator('.surface').evaluate(
+    page.locator('.page-editor').evaluate(
       (el, { type, y }) => {
         el.setPointerCapture = () => {};
-        const r = el.querySelector('.paper')!.getBoundingClientRect();
+        const r = el.closest('.paper')!.getBoundingClientRect();
         el.dispatchEvent(
           new PointerEvent(type, {
             pointerId: 10,
@@ -1049,10 +1049,10 @@ test('尾部橡皮先高亮，松手一次删除，取消保留，撤销恢复',
     );
   await erase('pointerdown', 180);
   await erase('pointermove', 280);
-  await expect(page.locator('.surface')).toHaveAttribute('data-pending-erase', '2');
+  await expect(page.locator('.page-editor')).toHaveAttribute('data-pending-erase', '2');
   expect((await project(page)).pages[0].strokes).toHaveLength(2);
   await erase('pointercancel', 280);
-  await expect(page.locator('.surface')).toHaveAttribute('data-pending-erase', '0');
+  await expect(page.locator('.page-editor')).toHaveAttribute('data-pending-erase', '0');
   expect((await project(page)).pages[0].strokes).toHaveLength(2);
   await erase('pointerdown', 180);
   await erase('pointermove', 280);

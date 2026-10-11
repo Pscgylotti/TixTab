@@ -1679,3 +1679,28 @@ fieldset.provider-config {
   --chat-user: #293b56;
   --chat-accent: #9bbcf4;
 }
+
+/* A shared, page-local input layer; touch gestures bubble to the outer viewport. */
+.page-editor {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  cursor: crosshair;
+}
+.page-editor.tool-hand {
+  cursor: grab;
+}
+.page-editor.tool-object {
+  cursor: default;
+}
+.page-editor.tool-select {
+  user-select: text;
+  cursor: text;
+}
+.page-editor > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}

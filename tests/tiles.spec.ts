@@ -269,9 +269,7 @@ test('2× DPI 高清细节不遮挡插图和笔迹，各模式图层正确，保
           }),
         );
       });
-      const object = page
-        .locator(mode === '单页标注' ? '.placed-object img' : '.reading-content>img')
-        .first();
+      const object = page.locator('.placed-object img').first();
       await object.scrollIntoViewIfNeeded();
       await expect
         .poll(() => page.locator('.pdf-detail-tile[data-ready=true]').count())

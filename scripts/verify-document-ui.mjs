@@ -68,9 +68,9 @@ export async function verifyDocumentUi(page) {
   await page.getByRole('button', { name: '保存常用颜色', exact: true }).click();
   await page.getByRole('button', { name: '应用颜色', exact: true }).click();
   await page.getByRole('button', { name: '钢笔', exact: true }).click();
-  await page.locator('.surface').evaluate((el) => {
+  await page.locator('.page-editor').evaluate((el) => {
     el.setPointerCapture = () => {};
-    const r = el.querySelector('.paper').getBoundingClientRect(),
+    const r = el.closest('.paper').getBoundingClientRect(),
       base = {
         bubbles: true,
         pointerType: 'pen',

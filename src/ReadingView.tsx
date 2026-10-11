@@ -15,11 +15,11 @@ import {
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { PenLine } from 'lucide-react';
 import { PanZoomPointers } from './gestures';
-import PdfTextLayer from './PdfTextLayer';
+import PageEditor from './PageEditor';
+import type { PenDiagnostic } from './PdfSurface';
 import PdfDetailLayer from './PdfDetailLayer';
 import { requestPdfBitmap, renderingCancelled } from './pdfRenderCache';
-import { finalInkPath } from './ink';
-import { isPicture, type Page } from './model';
+import type { Page, Tool } from './model';
 import { makeLayout, visibleRange, itemAt } from './virtualLayout';
 import { useScrollViewport } from './useScrollViewport';
 import { zoomReadingPoint } from './readingZoom';
@@ -28,7 +28,16 @@ const ReadingPage = memo(function ReadingPage({
   page,
   pdf,
   number,
-  selectable,
+  tool,
+  color,
+  size,
+  onChange,
+  onDiagnostic,
+  onContext,
+  onEditObject,
+  focusObjectId,
+  active,
+  onActivate,
   onEdit,
   width,
 
@@ -39,7 +48,16 @@ const ReadingPage = memo(function ReadingPage({
   page: Page;
   pdf: PDFDocumentProxy | null;
   number: number;
-  selectable: boolean;
+  tool: Tool;
+  color: string;
+  size: number;
+  onChange: (page: Page) => void;
+  onDiagnostic: (d: PenDiagnostic) => void;
+  onContext: (x: number, y: number) => void;
+  onEditObject: (page: Page, id: string) => void;
+  focusObjectId: string | null;
+  active: boolean;
+  onActivate: (id: string) => void;
   onEdit: (i: number) => void;
   width: number;
 
@@ -145,7 +163,7 @@ const ReadingPage = memo(function ReadingPage({
         style={{ width, height: page.height * scale }}
       >
         <div
-          className={`reading-content ${selectable ? 'selectable' : ''}`}
+          className={`reading-content ${tool === 'select' ? 'selectable' : ''}`}
           data-pdf-night={pdfNight}
           style={{ width: page.width, height: page.height, transform: `scale(${scale})` }}
         >
@@ -172,39 +190,23 @@ const ReadingPage = memo(function ReadingPage({
           {visible && (
             <>
               <PdfOriginalImages pdf={pdf} sourceIndex={page.sourceIndex} enabled={hand} />
-              {page.images.map((i) => (
-                <img
-                  key={i.id}
-                  src={i.displayData ?? i.data}
-                  data-night-ink={!isPicture(i)}
-                  alt={
-                    i.kind === 'text'
-                      ? i.textBox?.content
-                      : isPicture(i)
-                        ? tr('图片')
-                        : i.latex || tr('草图')
-                  }
-                  style={{
-                    position: 'absolute',
-                    left: i.x,
-                    top: i.y,
-                    width: i.width,
-                    height: i.height,
-                    pointerEvents: 'none',
-                  }}
-                />
-              ))}
-              <svg viewBox={`0 0 ${page.width} ${page.height}`} className="reading-ink">
-                {page.strokes.map((s) => (
-                  <path
-                    key={s.id}
-                    d={finalInkPath(s)}
-                    fill={s.color}
-                    opacity={s.tool === 'highlighter' ? 0.28 : s.tool === 'pencil' ? 0.65 : 1}
-                  />
-                ))}
-              </svg>
-              {selectable && <PdfTextLayer pdf={pdf} sourceIndex={page.sourceIndex} />}
+              <PageEditor
+                page={page}
+                pdf={pdf}
+                tool={tool}
+                color={color}
+                size={size}
+                zoom={scale}
+                onChange={onChange}
+                onDiagnostic={onDiagnostic}
+                onContext={onContext}
+                onEditObject={(id) => onEditObject(page, id)}
+                focusObjectId={focusObjectId}
+                viewport={viewport}
+                active={active}
+                onActivate={() => onActivate(page.id)}
+                reading
+              />
             </>
           )}
         </div>
@@ -218,6 +220,13 @@ export default function ReadingView({
   mode,
   index,
   tool,
+  color,
+  size,
+  onChange,
+  onDiagnostic,
+  onContext,
+  onEditObject,
+  focusObjectId,
 
   zoom,
   setZoom,
@@ -229,7 +238,14 @@ export default function ReadingView({
   pdf: PDFDocumentProxy | null;
   mode: 'continuous' | 'dual';
   index: number;
-  tool: import('./model').Tool;
+  tool: Tool;
+  color: string;
+  size: number;
+  onChange: (page: Page) => void;
+  onDiagnostic: (d: PenDiagnostic) => void;
+  onContext: (x: number, y: number) => void;
+  onEditObject: (page: Page, id: string) => void;
+  focusObjectId: string | null;
 
   zoom: number;
   setZoom: (zoom: number) => void;
@@ -242,6 +258,13 @@ export default function ReadingView({
     content = useRef<HTMLDivElement>(null),
     pointers = useRef(new PanZoomPointers()),
     frame = useRef(0);
+  const [activePageId, setActivePageId] = useState(pages[index]?.id);
+  const penTime = useRef(-Infinity);
+  useEffect(() => {
+    const page = pages.find((p) => p.images.some((i) => i.id === focusObjectId));
+    if (page) setActivePageId(page.id);
+  }, [focusObjectId]);
+
   const kinetic = useRef(0),
     velocity = useRef(new ScrollVelocity()),
     touches = useRef(new Set<number>()),
@@ -298,7 +321,8 @@ export default function ReadingView({
     Math.max(400, viewport.height),
   );
   const observedIndex = useRef<number | null>(null),
-    lastReset = useRef(resetView);
+    lastReset = useRef(resetView),
+    lastMode = useRef<typeof mode | null>(null);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
   const anchor = useRef<{ x: number; y: number; contentX: number; contentY: number } | null>(null);
@@ -406,8 +430,14 @@ export default function ReadingView({
   }, []);
   useLayoutEffect(() => {
     const el = root.current!;
-    if (mode === 'continuous' && observedIndex.current === index && lastReset.current === resetView)
+    if (
+      mode === 'continuous' &&
+      lastMode.current === mode &&
+      observedIndex.current === index &&
+      lastReset.current === resetView
+    )
       return;
+    lastMode.current = mode;
     lastReset.current = resetView;
     observedIndex.current = index;
     stopInertia();
@@ -445,6 +475,7 @@ export default function ReadingView({
     stopInertia();
     if (
       (e.target as HTMLElement).closest('button,a') ||
+      (e.pointerType === 'touch' && performance.now() - penTime.current < 650) ||
       !(e.pointerType === 'touch' || (tool === 'hand' && e.button === 0) || e.button === 1)
     )
       return;
@@ -501,6 +532,13 @@ export default function ReadingView({
       className={`reading-view reading-${mode} tool-${tool}`}
       ref={root}
       onKeyDown={stopInertia}
+      onPointerDownCapture={(e) => {
+        stopInertia();
+        if (e.pointerType === 'pen') penTime.current = performance.now();
+      }}
+      onPointerMoveCapture={(e) => {
+        if (e.pointerType === 'pen') penTime.current = performance.now();
+      }}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={(e) => end(e)}
@@ -525,7 +563,16 @@ export default function ReadingView({
             page={page}
             pdf={pdf}
             number={start + i + 1}
-            selectable={tool === 'select'}
+            tool={tool}
+            color={color}
+            size={size}
+            onChange={onChange}
+            onDiagnostic={onDiagnostic}
+            onContext={onContext}
+            onEditObject={onEditObject}
+            focusObjectId={focusObjectId}
+            active={activePageId === page.id}
+            onActivate={setActivePageId}
 
             width={page.width * zoom}
             top={mode === 'continuous' ? 8 + layout.offsets[start + i] : undefined}

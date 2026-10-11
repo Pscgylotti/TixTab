@@ -73,6 +73,7 @@ try {
   assert.equal(await page.locator('.chat-account-toggle').getAttribute('aria-expanded'), 'false');
   assert.equal(await page.getByLabel('语音输入语言').inputValue(), 'en-US');
   await page.getByRole('button', { name: '实验性夜间模式', exact: true }).click();
+  await page.waitForFunction(() => document.documentElement.dataset.night === 'true');
   assert.equal(await page.locator('html').getAttribute('data-night'), 'true');
   const raw = execFileSync(
     'powershell.exe',

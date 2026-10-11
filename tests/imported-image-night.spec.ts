@@ -67,7 +67,7 @@ test('night dims imported and legacy pictures without inversion in all layouts a
       .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).filter));
   for (const view of ['单页标注', '连续页面预览', '双页预览']) {
     await page.getByRole('button', { name: view, exact: true }).click();
-    const selector = view === '单页标注' ? '.placed-object img' : '.reading-content > img';
+    const selector = '.placed-object img';
     await expect(page.locator(selector)).toHaveCount(4);
     const colors = await filters(selector);
     expect(colors.slice(0, 2)).toEqual(['brightness(0.62)', 'brightness(0.62)']);

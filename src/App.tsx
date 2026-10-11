@@ -293,10 +293,33 @@ export default function App() {
   current.current = notebook;
   pdfRef.current = pdf;
   const page = notebook.pages[Math.min(index, notebook.pages.length - 1)];
-  const editingImage = page.images.find((i) => i.id === editingId);
+  const insertionPage =
+    viewMode === 'dual' &&
+    pasteAnchor.current?.documentId === activeId &&
+    pasteAnchor.current.pageId === notebook.pages[index + 1]?.id
+      ? notebook.pages[index + 1]
+      : page;
+  const editingPage =
+    notebook.pages.find((p) => p.images.some((i) => i.id === editingId)) ?? insertionPage;
+  const editingImage = editingPage.images.find((i) => i.id === editingId);
+  const editObject = useCallback((p: Page, id: string) => {
+    setEditingId(id);
+    setDialog(
+      p.images.find((i) => i.id === id)?.kind === 'text'
+        ? 'text'
+        : p.images.find((i) => i.id === id)?.kind === 'formula'
+          ? 'formula'
+          : 'sketch',
+    );
+  }, []);
   const editReadingPage = useCallback((i: number) => {
-    setIndex(i);
-    setViewMode('single');
+    if (
+      viewRef.current.mode !== 'dual' ||
+      i < viewRef.current.index ||
+      i > viewRef.current.index + 1
+    )
+      setIndex(i);
+    setTool('pen');
   }, []);
   const pageStep = viewMode === 'dual' ? 2 : 1;
   const turnPage = (direction: number, step = pageStep) =>
@@ -418,17 +441,20 @@ export default function App() {
     },
     [],
   );
-  const commit = (n: Notebook) => {
+  const commit = useCallback((n: Notebook) => {
     history.current = [...history.current.slice(-39), current.current];
     future.current = [];
     current.current = n;
     setNotebook(n);
-  };
-  const updatePage = (p: Page) =>
-    commit({
-      ...current.current,
-      pages: current.current.pages.map((x) => (x.id === p.id ? p : x)),
-    });
+  }, []);
+  const updatePage = useCallback(
+    (p: Page) =>
+      commit({
+        ...current.current,
+        pages: current.current.pages.map((x) => (x.id === p.id ? p : x)),
+      }),
+    [commit],
+  );
   const undo = () => {
     const prev = history.current.pop();
     if (prev) {
@@ -526,7 +552,10 @@ export default function App() {
     }
     if (ready && fitActive.current) fitRef.current();
   }, [index, notebook.pages[index + 1]?.width, notebook.pages[index + 1]?.height]);
-  const selectedText = (x?: number, y?: number) => {
+  const selectedText = useCallback((x?: number, y?: number) => {
+    const notebook = current.current,
+      index = viewRef.current.index,
+      page = notebook.pages[index];
     const s = window.getSelection(),
       text = s?.toString().trim();
     const node = s?.anchorNode?.parentElement;
@@ -545,7 +574,7 @@ export default function App() {
       pageId: notebook.pages[selectedIndex]?.id ?? page.id,
       pageNumber: selectedIndex >= 0 ? selectedIndex + 1 : index + 1,
     });
-  };
+  }, []);
   useEffect(() => {
     let pending: ReturnType<typeof setTimeout> | undefined;
     const up = (e: PointerEvent) => {
@@ -863,8 +892,12 @@ export default function App() {
         p.id === page.id ? { ...p, images: [...p.images, ...objects] } : p,
       ),
     });
-    setIndex(at);
-    setViewMode('single');
+    if (
+      viewRef.current.mode !== 'dual' ||
+      at < viewRef.current.index ||
+      at > viewRef.current.index + 1
+    )
+      setIndex(at);
     setTool('object');
     setFocusObjectId(objects.at(-1)!.id);
   };
@@ -969,7 +1002,9 @@ export default function App() {
       const page = current.current.pages[viewRef.current.index] || current.current.pages[0];
       const anchor =
         pasteAnchor.current?.documentId === activeRef.current &&
-        pasteAnchor.current.pageId === page.id
+        (pasteAnchor.current.pageId === page.id ||
+          (viewRef.current.mode === 'dual' &&
+            pasteAnchor.current.pageId === current.current.pages[viewRef.current.index + 1]?.id))
           ? pasteAnchor.current
           : { pageId: page.id };
       setSelection(null);
@@ -1088,7 +1123,7 @@ export default function App() {
     displayData?: string,
     macros?: Record<string, string>,
   ) => {
-    const width = Math.min(w / 2, page.width * 0.8, (page.height * 0.65 * w) / h),
+    const width = Math.min(w / 2, editingPage.width * 0.8, (editingPage.height * 0.65 * w) / h),
       height = (h * width) / w;
     const image = editingImage
       ? { ...editingImage, data, displayData, scene, latex, macros }
@@ -1096,8 +1131,8 @@ export default function App() {
           id: uid(),
           data,
           displayData,
-          x: (page.width - width) / 2,
-          y: Math.max(20, (page.height - height) / 2),
+          x: (editingPage.width - width) / 2,
+          y: Math.max(20, (editingPage.height - height) / 2),
           width,
           height,
           kind,
@@ -1106,19 +1141,18 @@ export default function App() {
           macros,
         };
     const p = {
-      ...page,
+      ...editingPage,
       images: editingImage
-        ? page.images.map((i) => (i.id === editingImage.id ? image : i))
-        : [...page.images, image],
+        ? editingPage.images.map((i) => (i.id === editingImage.id ? image : i))
+        : [...editingPage.images, image],
     };
     commit({
       ...current.current,
       ...(!editingImage ? { scene: undefined } : {}),
-      pages: current.current.pages.map((x) => (x.id === page.id ? p : x)),
+      pages: current.current.pages.map((x) => (x.id === editingPage.id ? p : x)),
     });
     setDialog(null);
     setEditingId(null);
-    setViewMode('single');
     setFocusObjectId(image.id);
     setTool('object');
     notify(
@@ -1769,16 +1803,7 @@ export default function App() {
                 onRender={setRenderStatus}
                 onContext={selectedText}
                 focusObjectId={focusObjectId}
-                onEditObject={(id) => {
-                  setEditingId(id);
-                  setDialog(
-                    page.images.find((i) => i.id === id)?.kind === 'text'
-                      ? 'text'
-                      : page.images.find((i) => i.id === id)?.kind === 'formula'
-                        ? 'formula'
-                        : 'sketch',
-                  );
-                }}
+                onEditObject={(id) => editObject(page, id)}
               />
             ) : (
               <ReadingView
@@ -1791,6 +1816,13 @@ export default function App() {
                 setZoom={setZoom}
                 resetView={resetView}
 
+                color={color}
+                size={size}
+                onChange={updatePage}
+                onDiagnostic={setDiagnostic}
+                onContext={selectedText}
+                onEditObject={editObject}
+                focusObjectId={focusObjectId}
                 onEdit={editReadingPage}
                 onPageChange={readingPageChanged}
               />
@@ -2046,13 +2078,13 @@ export default function App() {
               if (editingImage) {
                 const width = Math.min(
                     image.width / 2,
-                    page.width * 0.8,
-                    (page.height * 0.8 * image.width) / image.height,
+                    editingPage.width * 0.8,
+                    (editingPage.height * 0.8 * image.width) / image.height,
                   ),
                   height = (width * image.height) / image.width;
                 updatePage({
-                  ...page,
-                  images: page.images.map((i) =>
+                  ...editingPage,
+                  images: editingPage.images.map((i) =>
                     i.id === editingImage.id
                       ? {
                           ...i,
@@ -2061,13 +2093,13 @@ export default function App() {
                           textBox: image.textBox,
                           width,
                           height,
-                          x: Math.max(0, Math.min(page.width - width, i.x)),
-                          y: Math.max(0, Math.min(page.height - height, i.y)),
+                          x: Math.max(0, Math.min(editingPage.width - width, i.x)),
+                          y: Math.max(0, Math.min(editingPage.height - height, i.y)),
                         }
                       : i,
                   ),
                 });
-              } else addImages([image], { pageId: page.id });
+              } else addImages([image], { pageId: editingPage.id });
               setDialog(null);
               setEditingId(null);
               setTool('object');

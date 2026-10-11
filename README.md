@@ -17,7 +17,7 @@
 
 - Pressure-sensitive ink, pen eraser, custom colors, object selection/movement/resizing, multi-object selection and editable Excalidraw sketches.
 - Pen barrel button opens a radial tool menu over the PDF; its center opens text actions when text is selected. This needs right-click pointer events from the Windows pen driver, usually by holding the barrel button and tapping the page.
-- Single, continuous and two-page views, inertial touch scrolling, page thumbnails/reordering, blank pages, fullscreen and collapsible controls.
+- Direct ink and object editing in single, continuous and two-page views, inertial touch scrolling, page thumbnails/reordering, blank pages, fullscreen and collapsible controls.
 - Configurable rendering clarity, automatic detail rendering, experimental PDF night colors and bounded caches.
 - Texo formula-to-LaTeX, multiline formulas and saved macros; optional Uni-MuMER Qwen3-VL-2B backend.
 - Text selection/copy, translation, OCR and TTS; local models plus web/LLM API providers.

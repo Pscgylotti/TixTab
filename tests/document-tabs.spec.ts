@@ -166,9 +166,9 @@ test('自定义颜色应用于实际笔迹并保存常用色，校验输入和�
     'true',
   );
   await page.getByRole('button', { name: '应用颜色' }).click();
-  await page.locator('.surface').evaluate((el) => {
+  await page.locator('.page-editor').evaluate((el) => {
     el.setPointerCapture = () => {};
-    const r = el.querySelector('.paper')!.getBoundingClientRect();
+    const r = el.closest('.paper')!.getBoundingClientRect();
     const base = {
       bubbles: true,
       pointerType: 'pen',
