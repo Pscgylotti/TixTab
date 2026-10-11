@@ -53,4 +53,3 @@ npm start
 应用代码采用 **AGPL-3.0-only**，第三方代码与模型保留原协议。公开轻量包不带模型权重，也不分发数据许可尚不明确的 Huayan 中文声音。按需下载不等于获得商用或再分发许可。详见 [发布与许可](docs/DISTRIBUTION.md)、[模型条款](docs/MODELS.md) 和 [第三方清单](THIRD_PARTY_NOTICES.md)。
 
 拖入 PDF 会询问：新标签页打开，或在当前页之后插入全部/指定页面（例如 `1-3, 5`）。拖入 PNG/JPG/WebP/GIF/BMP/AVIF/SVG 则插为图片对象。ChatGPT 助手可切换到独立 Windows 悬浮窗，并根据描述生成 SVG、预览后插入页面。SVG 会移除脚本和外部资源引用，界面保留矢量显示，导出 PDF 使用有像素上限的高清 PNG；动图插入静态帧。合并 PDF 会使原签名失效，导入页的表单转为静态外观。
-
