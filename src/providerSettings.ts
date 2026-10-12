@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 export type ProviderFeature = 'translation' | 'speech' | 'ocr' | 'formula';
+export type ProviderSettingsFeature = ProviderFeature | 'chat';
 export type StorageStatus = 'loading' | 'pending' | 'encrypted' | 'session' | 'error';
 export interface ProviderProfile {
   url: string;
@@ -10,6 +11,7 @@ export interface ProviderProfile {
   timeoutSeconds: number;
   fallback: boolean;
   stream: boolean;
+  pdfInput?: 'text' | 'file';
 }
 export interface ProviderRecord {
   selected: string;
@@ -18,28 +20,30 @@ export interface ProviderRecord {
 export interface ProviderConfig extends ProviderProfile {
   type: string;
 }
-export const providerTypes: Record<ProviderFeature, string[]> = {
+export const providerTypes: Record<ProviderSettingsFeature, string[]> = {
+  chat: ['llm'],
   translation: ['local', 'local-native', 'local-service', 'google', 'web', 'llm'],
   speech: ['native', 'local', 'system', 'web', 'llm'],
   ocr: ['native', 'local', 'texo', 'web', 'llm'],
   formula: ['texo-native', 'texo-cpu', 'texo-gpu', 'unimumer', 'pix2text', 'web', 'llm'],
 };
 export const googleEndpoint = 'https://translation.googleapis.com/language/translate/v2';
-export function defaultProfile(feature: ProviderFeature, type: string): ProviderProfile {
+export function defaultProfile(feature: ProviderSettingsFeature, type: string): ProviderProfile {
   return {
     url:
       type === 'google'
         ? googleEndpoint
         : type === 'llm'
           ? ''
-          : `http://127.0.0.1:8765/${{ translation: 'translate', speech: 'tts', ocr: 'ocr', formula: 'recognize' }[feature]}`,
+          : `http://127.0.0.1:8765/${{ translation: 'translate', speech: 'tts', ocr: 'ocr', formula: 'recognize', chat: 'chat' }[feature]}`,
     model: '',
     voice: 'alloy',
     key: '',
     headers: '',
-    timeoutSeconds: 15,
+    timeoutSeconds: feature === 'chat' ? 120 : 15,
     fallback: true,
-    stream: false,
+    stream: feature === 'chat',
+    ...(feature === 'chat' ? { pdfInput: 'text' as const } : {}),
   };
 }
 function publicUrl(raw: string) {
@@ -66,7 +70,7 @@ export function publicProviderRecord(record: ProviderRecord): ProviderRecord {
   };
 }
 export function normalizeRecord(
-  feature: ProviderFeature,
+  feature: ProviderSettingsFeature,
   raw: unknown,
   fallback: string,
 ): ProviderRecord {
@@ -90,6 +94,8 @@ export function normalizeRecord(
         p.timeoutSeconds = Math.max(2, Math.min(180, source.timeoutSeconds));
       if (typeof source.fallback === 'boolean') p.fallback = source.fallback;
       if (typeof source.stream === 'boolean') p.stream = source.stream;
+      if (feature === 'chat' && ['text', 'file'].includes(source.pdfInput ?? ''))
+        p.pdfInput = source.pdfInput;
     }
     if (type === 'google') p.url = googleEndpoint;
     profiles[type] = p;
@@ -131,15 +137,15 @@ interface Entry {
   publicJson?: string;
   origins: Record<string, string>;
 }
-const entries = new Map<ProviderFeature, Entry>();
-function storageKey(feature: ProviderFeature) {
+const entries = new Map<ProviderSettingsFeature, Entry>();
+function storageKey(feature: ProviderSettingsFeature) {
   return `surfacetab.providers.v1.${feature}`;
 }
 function emit(e: Entry) {
   e.snapshot++;
   e.listeners.forEach((fn) => fn());
 }
-function metadata(feature: ProviderFeature, e: Entry) {
+function metadata(feature: ProviderSettingsFeature, e: Entry) {
   try {
     const json = JSON.stringify(publicProviderRecord(e.record));
     if (json === e.publicJson) return;
@@ -149,7 +155,7 @@ function metadata(feature: ProviderFeature, e: Entry) {
     /* Session settings remain usable. */
   }
 }
-function entry(feature: ProviderFeature, fallback: string) {
+function entry(feature: ProviderSettingsFeature, fallback: string) {
   let e = entries.get(feature);
   if (e) return e;
   let saved: unknown;
@@ -194,7 +200,7 @@ function entry(feature: ProviderFeature, fallback: string) {
   }
   return e;
 }
-async function persist(feature: ProviderFeature, e: Entry) {
+async function persist(feature: ProviderSettingsFeature, e: Entry) {
   clearTimeout(e.timer);
   e.timer = undefined;
   await e.loading;
@@ -222,7 +228,7 @@ async function persist(feature: ProviderFeature, e: Entry) {
   e.writing = job;
   await job;
 }
-export function useProviderConfig(feature: ProviderFeature, fallback: string) {
+export function useProviderConfig(feature: ProviderSettingsFeature, fallback: string) {
   const e = entry(feature, fallback);
   useSyncExternalStore(
     (fn) => {

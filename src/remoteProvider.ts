@@ -1,11 +1,11 @@
 import { t } from './i18n';
-import type { ProviderConfig, ProviderFeature } from './providerSettings';
+import type { ProviderConfig, ProviderFeature, ProviderSettingsFeature } from './providerSettings';
 import {
   providerFetch,
   ProviderTransportInputError as ProviderInputError,
 } from './providerTransport';
 export { ProviderInputError };
-export function endpoint(config: ProviderConfig, feature: ProviderFeature) {
+export function endpoint(config: ProviderConfig, feature: ProviderSettingsFeature) {
   let url: URL;
   try {
     url = new URL(config.url);
@@ -64,7 +64,7 @@ export function requestHeaders(config: ProviderConfig) {
     }
   return headers;
 }
-export function destination(config: ProviderConfig, feature: ProviderFeature) {
+export function destination(config: ProviderConfig, feature: ProviderSettingsFeature) {
   try {
     const url = endpoint(config, feature);
     return url.origin + url.pathname;
@@ -84,7 +84,7 @@ function signalFor(config: ProviderConfig, signal: AbortSignal) {
     AbortSignal.timeout(Math.round(Math.max(2, Math.min(180, config.timeoutSeconds)) * 1000)),
   ]);
 }
-async function limitedBytes(response: Response, max: number, signal: AbortSignal) {
+export async function limitedBytes(response: Response, max: number, signal: AbortSignal) {
   const reader = response.body?.getReader();
   if (!reader) throw new Error('Empty response');
   let size = 0;
@@ -127,7 +127,7 @@ export async function checkProviderConnection(
     throw new Error(`HTTP ${response.status}`);
   return { status: response.status };
 }
-async function sseText(
+export async function sseText(
   response: Response,
   signal: AbortSignal,
   onPartial?: (text: string) => void,
@@ -152,14 +152,14 @@ async function sseText(
     }
     const item = JSON.parse(source);
     if (item.error) throw new Error('Stream error');
+    const value = item.choices?.[0]?.delta?.content ?? item.choices?.[0]?.message?.content;
+    if (typeof value === 'string') text += value;
+    if (text.length > 100000) throw new Error('Text limit');
     if (item.choices?.[0]?.finish_reason) {
       if (!['stop', 'end_turn'].includes(item.choices[0].finish_reason))
         throw new Error('Incomplete stream');
       finished = true;
     }
-    const value = item.choices?.[0]?.delta?.content ?? item.choices?.[0]?.message?.content;
-    if (typeof value === 'string') text += value;
-    if (text.length > 100000) throw new Error('Text limit');
     if (performance.now() - last > 100) {
       onPartial?.(text);
       last = performance.now();
@@ -197,6 +197,9 @@ async function sseText(
     signal.throwIfAborted();
     onPartial?.(text);
     return text;
+  } catch (error) {
+    if (text && text.length <= 100000) onPartial?.(text);
+    throw error;
   } finally {
     await reader.cancel().catch(() => {});
   }

@@ -133,7 +133,7 @@ it('all supported profiles can reach their allowed field sizes and still reopen'
   fixture(async (file) => {
     const safeStorage = crypto(),
       vault = createProviderVault({ file, safeStorage });
-    for (const feature of ['translation', 'speech', 'ocr', 'formula'] as const) {
+    for (const feature of ['translation', 'speech', 'ocr', 'formula', 'chat'] as const) {
       const profiles = Object.fromEntries(
         providerTypes[feature].map((type) => [
           type,
@@ -147,4 +147,6 @@ it('all supported profiles can reach their allowed field sizes and still reopen'
     expect(bytes.length).toBeLessThan(1048576);
     const reopened = createProviderVault({ file, safeStorage });
     expect((await reopened.read('formula')).data.profiles.llm.key).toHaveLength(8192);
+    expect((await reopened.read('chat')).data.profiles.llm.pdfInput).toBe('text');
+    expect((await reopened.read('chat')).data.profiles.llm.key).toHaveLength(8192);
   }));

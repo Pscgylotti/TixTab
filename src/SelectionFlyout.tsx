@@ -21,6 +21,8 @@ import {
   setNativeOpusEnabled,
 } from './nativeOpus';
 import { normalizeTranslationText } from './translationText';
+import { translationReady } from './translate';
+import { nativeTexoHealth } from './nativeTexo';
 import { useSpeech } from './useSpeech';
 import { useProviderConfig } from './providerSettings';
 import { ProviderAdvanced } from './ProviderAdvanced';
@@ -80,16 +82,23 @@ export default function SelectionFlyout({
     setFallback = (value: boolean) => patch({ fallback: value });
   const [opusDevice, setOpusDevice] = useState(loadOpusDevice);
   const abort = useRef<AbortController | null>(null);
+  const warmCheck = useRef<AbortController | null>(null);
+  useEffect(() => {
+    warmCheck.current?.abort();
+  }, [provider.type, target]);
   useEffect(() => {
     abort.current?.abort();
+    warmCheck.current?.abort();
     stop();
     setBusy(false);
+    setExpanded(false);
     setTranslation('');
     setStatus('');
   }, [selection.text]);
   useEffect(
     () => () => {
       abort.current?.abort();
+      warmCheck.current?.abort();
       speechSynthesis?.cancel();
     },
     [],
@@ -105,6 +114,7 @@ export default function SelectionFlyout({
         setStatus(tr('\u590D\u5236\u5931\u8D25\uFF0C\u8BF7\u624B\u52A8\u9009\u62E9\u6587\u672C')),
       );
   const translate = async () => {
+    if (busy || !api.ready) return;
     const text = normalizeTranslationText(selection.text);
     if (provider.type === 'google' && !provider.key.trim() && navigator.onLine) {
       window.open(
@@ -156,6 +166,33 @@ export default function SelectionFlyout({
       if (abort.current === controller) setBusy(false);
     }
   };
+  const revealTranslation = async () => {
+    warmCheck.current?.abort();
+    setExpanded(!expanded);
+    if (
+      expanded ||
+      translation ||
+      busy ||
+      !api.ready ||
+      !['local', 'local-native'].includes(provider.type)
+    )
+      return;
+    const controller = new AbortController();
+    warmCheck.current = controller;
+    let ready = translationReady(target);
+    if (!ready && provider.type === 'local-native') {
+      try {
+        const health = await nativeTexoHealth(controller.signal);
+        ready =
+          health.loaded &&
+          health.modelKind?.[0] === 'opus' &&
+          health.modelKind[1] === (target === 'en' ? 'zh-en' : 'en-zh');
+      } catch {
+        /* Do not start a backend merely to expand the flyout. */
+      }
+    }
+    if (ready && !controller.signal.aborted) void translate();
+  };
   return (
     <div
       ref={ref}
@@ -183,7 +220,7 @@ export default function SelectionFlyout({
         >
           {copied ? <span className="copy-done">{tr('已复制')}</span> : <Copy size={16} />}
         </button>
-        <button onClick={() => setExpanded(!expanded)}>
+        <button disabled={!api.ready} onClick={() => void revealTranslation()}>
           <Languages size={16} />
           {tr('翻译')}
         </button>

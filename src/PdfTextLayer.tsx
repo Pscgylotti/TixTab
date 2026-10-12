@@ -64,7 +64,10 @@ export default function PdfTextLayer({
       onPointerDown={(e) => {
         if (e.pointerType === 'touch' || e.button !== 0 || e.buttons & 34) return;
         const hit = glyphAtPoint(e.currentTarget, e.clientX, e.clientY, true);
-        if (!hit) return;
+        if (!hit) {
+          getSelection()?.removeAllRanges();
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         e.currentTarget.setPointerCapture(e.pointerId);

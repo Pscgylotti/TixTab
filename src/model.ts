@@ -81,6 +81,22 @@ export const newNotebook = (): Notebook => ({
   source: null,
   pages: [blankPage()],
 });
+export function isEmptyStarterNotebook(n: Notebook) {
+  const p = n.pages[0];
+  return (
+    n.name === '未命名笔记' &&
+    n.source === null &&
+    !n.scene &&
+    !n.zotero &&
+    n.pages.length === 1 &&
+    p.sourceIndex === null &&
+    p.paper === 'dots' &&
+    p.width === 595.28 &&
+    p.height === 841.89 &&
+    !p.strokes.length &&
+    !p.images.length
+  );
+}
 export const isEraser = (e: { pointerType: string; buttons: number; button: number }) =>
   e.pointerType === 'pen' && ((e.buttons & 32) !== 0 || e.button === 5);
 export function segmentDistance(p: Point, a: Point, b: Point) {

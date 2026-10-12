@@ -165,6 +165,7 @@ test('dual: copied editable text pastes onto right page; normal text replaces ob
   await page.keyboard.press('Control+v');
   await expect(field).toHaveValue('中文 & <hello>');
   await page.getByRole('button', { name: '保存文本框', exact: true }).click();
+  await expect(page.getByLabel('文本框内容', { exact: true })).toHaveCount(0);
   await page.evaluate(() => navigator.clipboard.writeText('External new text'));
   await page.keyboard.press('Control+v');
   await expect(right.locator('.placed-object')).toHaveCount(5);

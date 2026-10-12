@@ -2,6 +2,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const TYPES = {
+  chat: ['llm'],
   translation: ['local', 'local-native', 'local-service', 'google', 'web', 'llm'],
   speech: ['native', 'local', 'system', 'web', 'llm'],
   ocr: ['native', 'local', 'texo', 'web', 'llm'],
@@ -44,6 +45,11 @@ function validate(feature, data) {
     result.timeoutSeconds = p.timeoutSeconds;
     result.fallback = p.fallback;
     result.stream = p.stream;
+    if (feature === 'chat') {
+      if (p.pdfInput !== undefined && !['text', 'file'].includes(p.pdfInput))
+        throw new Error('Invalid PDF input mode');
+      result.pdfInput = p.pdfInput ?? 'text';
+    }
     profiles[type] = result;
   }
   return { selected: data.selected, profiles };

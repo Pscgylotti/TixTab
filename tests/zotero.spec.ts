@@ -94,7 +94,7 @@ test('Zotero browsing, search, group collection, tabs, association, dedup and re
   await expect(modal.getByRole('status')).toHaveText('BibTeX 已复制');
   await modal.locator('.zotero-attachment').click();
   await expect(modal).toHaveCount(0);
-  await expect(page.getByRole('tab')).toHaveCount(original + 1);
+  await expect(page.getByRole('tab')).toHaveCount(original);
   await page.getByRole('button', { name: '选文', exact: true }).click();
   await expect(page.locator('.textLayer')).toContainText('Zotero linked document');
   await page.reload();
@@ -107,7 +107,7 @@ test('Zotero browsing, search, group collection, tabs, association, dedup and re
   await page.locator('.zotero-item').click();
   await page.locator('.zotero-attachment').click();
   await expect(modal).toHaveCount(0);
-  await expect(page.getByRole('tab')).toHaveCount(original + 1);
+  await expect(page.getByRole('tab')).toHaveCount(original);
   // Association survives the user-facing project export as well as IndexedDB.
   const save = page.waitForEvent('download');
   await page.getByRole('button', { name: '保存工程', exact: true }).click();

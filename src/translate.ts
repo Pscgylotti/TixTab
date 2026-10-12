@@ -2,6 +2,7 @@ import { scheduleModelIdle } from './modelIdle';
 import { isLocalTranslationNoop, normalizeTranslationText } from './translationText';
 import { requireLocalModels } from './modelLibrary';
 let worker: Worker | null = null,
+  loadedDirection = '',
   idle: (() => void) | undefined,
   cancel: (() => void) | undefined;
 export function releaseTranslation() {
@@ -9,8 +10,11 @@ export function releaseTranslation() {
   cancel = undefined;
   worker?.terminate();
   worker = null;
+  loadedDirection = '';
   idle?.();
 }
+export const translationReady = (target: string) =>
+  !!worker && !cancel && loadedDirection === (target === 'en' ? 'zh-en' : 'en-zh');
 export async function localTranslate(
   text: string,
   target: string,
@@ -39,6 +43,7 @@ export async function localTranslate(
       cleanup();
       worker?.terminate();
       worker = null;
+      loadedDirection = '';
       reject(new DOMException('翻译已取消', 'AbortError'));
     };
     const timer = setTimeout(abort, 180000);
@@ -52,6 +57,7 @@ export async function localTranslate(
       cleanup();
       worker?.terminate();
       worker = null;
+      loadedDirection = '';
       reject(new Error(e.message || '翻译模型启动失败'));
     };
     worker!.onmessage = ({ data }) => {
@@ -61,8 +67,13 @@ export async function localTranslate(
       }
       cleanup();
       idle = scheduleModelIdle(releaseTranslation);
-      if (data.type === 'result') resolve(data);
-      else reject(new Error(data.error));
+      if (data.type === 'result') {
+        loadedDirection = direction;
+        resolve(data);
+      } else {
+        loadedDirection = '';
+        reject(new Error(data.error));
+      }
     };
     worker!.postMessage({
       text,

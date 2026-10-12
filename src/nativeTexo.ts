@@ -11,6 +11,7 @@ type Health = {
   loaded: boolean;
   encoderDevice: string | null;
   capabilities?: string[];
+  modelKind?: [string, string | null] | null;
 };
 type Result = { latex: string; elapsed: number; device: string; fallback: boolean };
 class NativeInputError extends RejectedProviderRequest {}

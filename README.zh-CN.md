@@ -6,7 +6,7 @@
 
 ## 快速开始
 
-1. 从 Releases 下载 `TixTab-0.2.35-lite-x64.exe`，直接运行。基础 PDF 功能不需要预装 Node.js 或 Python。
+1. 从 Releases 下载 `TixTab-0.2.36-lite-x64.exe`，直接运行。基础 PDF 功能不需要预装 Node.js 或 Python。
 2. 打开 PDF，或拖入后选择新标签页打开、插入全部/指定页；拖入图片/SVG 可插为对象。
 3. 需要本地 AI 时，进入 **设置 → 本地模型管理**，下载所需模型；点击 **自动安装**，准备独立 Python 和加速/语音运行时。
 4. 设置中可切换中英文界面；悬浮键盘包含英文、离线中文拼音、LaTeX 与语音四种模式；语音支持中英文、实时波形和本地引擎，识别文字插入当前光标处。
@@ -24,7 +24,7 @@
 - Texo 手写公式转 LaTeX、多行公式与常用宏，可选 Uni-MuMER Qwen3-VL-2B。
 - 选文复制、翻译、OCR 和朗读，支持本地模型、网页服务和 LLM API。
 - 中英文语音输入及录音波形，可选 SenseVoiceSmall、Whisper small 或 Windows 系统识别。
-- Zotero 本机资料库联动，以及支持附加页面/原文件的实验性 ChatGPT 阅读助手。
+- Zotero 本机资料库联动，以及支持附加页面/原文件的实验性阅读助手，可选 ChatGPT 账号或 OpenAI 兼容 LLM API。API 入口在“账号与模型”，使用对应服务的独立 API 额度。
 
 ## 注意事项
 

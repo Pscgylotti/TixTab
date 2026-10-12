@@ -11,12 +11,14 @@ interface Window {
     caches?: import('./cacheLibrary').CacheLibraryBridge;
     models?: import('./modelLibrary').ModelLibraryBridge;
     providerHttp?: import('./providerTransport').ProviderHttpBridge;
-    loadProviderSettings?: (feature: import('./providerSettings').ProviderFeature) => Promise<{
+    loadProviderSettings?: (
+      feature: import('./providerSettings').ProviderSettingsFeature,
+    ) => Promise<{
       status: 'encrypted' | 'session' | 'error';
       data: import('./providerSettings').ProviderRecord | null;
     }>;
     saveProviderSettings?: (
-      feature: import('./providerSettings').ProviderFeature,
+      feature: import('./providerSettings').ProviderSettingsFeature,
       data: import('./providerSettings').ProviderRecord,
     ) => Promise<{ status: 'encrypted' | 'session' | 'error' }>;
     getWindowVisible?: () => Promise<boolean>;

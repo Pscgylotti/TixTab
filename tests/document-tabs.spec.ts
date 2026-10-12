@@ -103,13 +103,13 @@ test('多选导入隔离损坏文件，关闭最后标签保留原始文档', as
       await fixture('Last'),
     ]);
   await idle(page);
-  await expect(page.getByRole('tab')).toHaveCount(3);
+  await expect(page.getByRole('tab')).toHaveCount(2);
   await expect(page.locator('.toast')).toContainText('broken.pdf');
   await expect(page.getByRole('tab', { name: 'Last', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',
   );
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
     await page.locator('.close-tab').last().click();
     await idle(page);
   }

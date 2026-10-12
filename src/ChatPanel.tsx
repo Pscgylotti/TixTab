@@ -37,7 +37,11 @@ import {
   type ChatModel,
 } from './chatgpt';
 import { pageChatContext, clearChatImages, type ChatContext } from './chatContext';
-import { originalPdfFile } from './chatFile';
+import { originalPdfFile, originalPdfText } from './chatFile';
+import ChatApiSettings from './ChatApiSettings';
+import { useProviderConfig } from './providerSettings';
+import { apiChat, chatApiError, chatApiIdentity } from './chatApi';
+import { endpoint, ProviderInputError } from './remoteProvider';
 import DictationButton from './DictationButton';
 import ChatMarkdown from './ChatMarkdown';
 import './chat.css';
@@ -70,6 +74,20 @@ export default function ChatPanel({
 }) {
   useLocale();
   const floating = useChatWindow();
+  const api = useProviderConfig('chat', 'llm');
+  const [mode, setMode] = useState<'chatgpt' | 'api'>(() => {
+    try {
+      return localStorage.getItem('surfacetab.chat.mode') === 'api' ? 'api' : 'chatgpt';
+    } catch {
+      return 'chatgpt';
+    }
+  });
+  const apiMode = mode === 'api';
+  useEffect(() => {
+    try {
+      localStorage.setItem('surfacetab.chat.mode', mode);
+    } catch {}
+  }, [mode]);
   const [accountCollapsed, setAccountCollapsed] = useState(() => {
     try {
       return localStorage.getItem('surfacetab.chat.accountCollapsed') === 'true';
@@ -108,10 +126,22 @@ export default function ChatPanel({
     queue = useRef(Promise.resolve()),
     loadGeneration = useRef(0);
   history.current = messages;
-  const active = account?.accounts.find((a) => a.id === account.active),
-    key = `surfacetab.chat.v1:${documentId}:${account?.active || ''}`;
+  const active = account?.accounts.find((a) => a.id === account.active);
+  const selectedModel = apiMode ? api.provider.model.trim() : model;
+  let apiConfigured = false;
+  try {
+    endpoint(api.provider, 'chat');
+    apiConfigured = !!selectedModel;
+  } catch {}
+  const canChat = apiMode
+    ? api.ready && apiConfigured
+    : !!active?.signedIn && !!active.enabled && !!model;
+  const key = apiMode
+    ? `surfacetab.chat.api.v1:${documentId}:${chatApiIdentity(api.provider)}`
+    : `surfacetab.chat.v1:${documentId}:${account?.active || ''}`;
   const showError = (e: unknown) => {
-    if (mounted.current) setStatus(chatError(e instanceof Error ? e.message : 'network'));
+    if (mounted.current)
+      setStatus(apiMode ? chatApiError(e) : chatError(e instanceof Error ? e.message : 'network'));
   };
   const update = (value: ChatMessage[]) => {
     history.current = value;
@@ -139,18 +169,27 @@ export default function ChatPanel({
   };
   useEffect(() => {
     mounted.current = true;
-    void chatRequest<ChatStatus>({ action: 'status' })
-      .then((s) => {
-        if (mounted.current) setAccount(s);
-      })
-      .catch(showError);
+    let dead = false;
+    if (!apiMode)
+      void chatRequest<ChatStatus>({ action: 'status' })
+        .then((s) => {
+          if (mounted.current && !dead) setAccount(s);
+        })
+        .catch((e) => {
+          if (!dead) showError(e);
+        });
     return () => {
+      dead = true;
       mounted.current = false;
       abort.current?.abort();
-      void chatRequest({ action: 'cancel' }).catch(() => {});
+      if (!apiMode) void chatRequest({ action: 'cancel' }).catch(() => {});
       clearChatImages();
     };
-  }, []);
+  }, [apiMode]);
+  useEffect(() => {
+    if (floating.target)
+      floating.target.ownerDocument.title = `TixTab · ${apiMode ? 'LLM API' : 'ChatGPT'}`;
+  }, [apiMode, floating.target]);
   useEffect(() => {
     const generation = ++loadGeneration.current;
     setModels([]);
@@ -159,7 +198,7 @@ export default function ChatPanel({
     setLoading(true);
     setContext(null);
     setStatus('');
-    if (!account?.active) {
+    if (!apiMode && !account?.active) {
       setLoading(false);
       return;
     }
@@ -187,7 +226,7 @@ export default function ChatPanel({
       .finally(() => {
         if (mounted.current && generation === loadGeneration.current) setLoading(false);
       });
-    if (active?.signedIn && active.enabled) void refreshModels();
+    if (!apiMode && active?.signedIn && active.enabled) void refreshModels();
   }, [key, active?.signedIn]);
   useEffect(() => {
     if (selection) {
@@ -244,7 +283,7 @@ export default function ChatPanel({
   };
   const stop = () => {
     abort.current?.abort();
-    void chatRequest({ action: 'cancel' }).catch(showError);
+    if (!apiMode) void chatRequest({ action: 'cancel' }).catch(showError);
   };
   useEffect(() => {
     setContext((c) =>
@@ -287,15 +326,7 @@ export default function ChatPanel({
     }
   };
   const send = async (original = false, generateSvg = false) => {
-    if (
-      job.current ||
-      (!original && !prompt.trim()) ||
-      !model ||
-      !active?.signedIn ||
-      !active.enabled ||
-      loading
-    )
-      return;
+    if (job.current || (!original && !prompt.trim()) || !canChat || loading) return;
     setDiagnostic('');
     job.current = true;
     const controller = new AbortController();
@@ -308,12 +339,31 @@ export default function ChatPanel({
       assistant: ChatMessage | undefined,
       flush: ReturnType<typeof setTimeout> | undefined;
     try {
-      const attached = original
+      let attached = original
         ? null
         : context?.kind
           ? await pageChatContext(page, pdf, index, context.kind, controller.signal)
           : context;
-      const file = original ? await originalPdfFile(source, name, controller.signal) : undefined;
+      if (original && apiMode && api.provider.pdfInput !== 'file') {
+        attached = {
+          label: t('原 PDF 文字'),
+          text: await originalPdfText(source, controller.signal),
+          pageId: page.id,
+          pageNumber: index + 1,
+        };
+      }
+      if (
+        original &&
+        apiMode &&
+        api.provider.pdfInput === 'file' &&
+        source &&
+        source.byteLength > 16_000_000
+      )
+        throw new ProviderInputError(t('API 原 PDF 限制为 16 MB，请改用文字模式或页面附件。'));
+      const file =
+        original && (!apiMode || api.provider.pdfInput === 'file')
+          ? await originalPdfFile(source, name, controller.signal)
+          : undefined;
       if (!mounted.current || controller.signal.aborted) throw new Error('cancelled');
       const user: ChatMessage = {
         id: crypto.randomUUID(),
@@ -352,35 +402,46 @@ export default function ChatPanel({
         setContext(null);
       }
       setStatus(t('正在回答…'));
-      const started = await chatRequest<{ id: string }>({
-        action: 'start',
-        model,
-        messages: conversationInput(turns),
-      });
-      if (controller.signal.aborted) {
-        void chatRequest({ action: 'cancel' });
-        throw new Error('cancelled');
-      }
-      for (;;) {
-        const next = await chatRequest<{
-          delta: string;
-          done: boolean;
-          error: string;
-          diagnostic?: unknown;
-        }>({ action: 'read', id: started.id });
-        if (controller.signal.aborted) throw new Error('cancelled');
-        assistant.text += next.delta;
-        if (!flush)
-          flush = setTimeout(() => {
-            flush = undefined;
-            if (mounted.current && !controller.signal.aborted) update([...output]);
-          }, 100);
-        if (next.done) {
-          if (next.error) {
-            setDiagnostic(JSON.stringify(next.diagnostic || {}, null, 2));
-            throw new Error(next.error);
+      if (apiMode) {
+        await apiChat(api.provider, conversationInput(turns), controller.signal, (text) => {
+          assistant!.text = text;
+          if (!flush)
+            flush = setTimeout(() => {
+              flush = undefined;
+              if (mounted.current && !controller.signal.aborted) update([...output]);
+            }, 100);
+        });
+      } else {
+        const started = await chatRequest<{ id: string }>({
+          action: 'start',
+          model: selectedModel,
+          messages: conversationInput(turns),
+        });
+        if (controller.signal.aborted) {
+          void chatRequest({ action: 'cancel' });
+          throw new Error('cancelled');
+        }
+        for (;;) {
+          const next = await chatRequest<{
+            delta: string;
+            done: boolean;
+            error: string;
+            diagnostic?: unknown;
+          }>({ action: 'read', id: started.id });
+          if (controller.signal.aborted) throw new Error('cancelled');
+          assistant.text += next.delta;
+          if (!flush)
+            flush = setTimeout(() => {
+              flush = undefined;
+              if (mounted.current && !controller.signal.aborted) update([...output]);
+            }, 100);
+          if (next.done) {
+            if (next.error) {
+              setDiagnostic(JSON.stringify(next.diagnostic || {}, null, 2));
+              throw new Error(next.error);
+            }
+            break;
           }
-          break;
         }
       }
       if (mounted.current) setStatus('');
@@ -409,12 +470,16 @@ export default function ChatPanel({
     setStatus('');
   };
   const content = (
-    <aside className="chat-panel" role="complementary" aria-label={t('ChatGPT 阅读助手')}>
+    <aside
+      className="chat-panel"
+      role="complementary"
+      aria-label={t(apiMode ? 'AI 阅读助手' : 'ChatGPT 阅读助手')}
+    >
       <header className="chat-heading">
         <span className="chat-heading-mark">
           <Sparkles size={17} />
         </span>
-        <strong>{t('ChatGPT 阅读助手')}</strong>
+        <strong>{t(apiMode ? 'AI 阅读助手' : 'ChatGPT 阅读助手')}</strong>
         <span>{t('实验性')}</span>
         <button
           className="icon-button"
@@ -437,133 +502,160 @@ export default function ChatPanel({
           aria-expanded={!accountCollapsed}
           aria-controls="chat-account-details"
           onClick={() => setAccountCollapsed((v) => !v)}
-          title={active?.email || t('ChatGPT 账号')}
+          title={apiMode ? t('LLM API（OpenAI 兼容）') : active?.email || t('ChatGPT 账号')}
         >
           <span>
             {t('账号与模型')}
-            {accountCollapsed && active?.signedIn ? ` · ${active.email || active.name}` : ''}
+            {accountCollapsed
+              ? apiMode
+                ? ` · API · ${api.provider.model}`
+                : active?.signedIn
+                  ? ` · ${active.email || active.name}`
+                  : ''
+              : ''}
           </span>
           {accountCollapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
         </button>
         <div id="chat-account-details" hidden={accountCollapsed}>
-          {account?.accounts.length ? (
+          <label>
+            {t('聊天接入方式')}
+            <select
+              aria-label={t('聊天接入方式')}
+              value={mode}
+              disabled={busy || loginBusy}
+              onChange={(e) => setMode(e.target.value as 'chatgpt' | 'api')}
+            >
+              <option value="chatgpt">{t('ChatGPT 账号')}</option>
+              <option value="api">{t('LLM API（OpenAI 兼容）')}</option>
+            </select>
+          </label>
+          {apiMode ? (
+            <ChatApiSettings {...api} disabled={busy || loginBusy} />
+          ) : (
             <>
-              <label>
-                {t('ChatGPT 账号')}
-                <select
-                  aria-label={t('ChatGPT 账号')}
-                  disabled={busy || loginBusy}
-                  value={account.active}
-                  onChange={(e) => {
-                    setStatus('');
-                    void chatRequest<ChatStatus>({ action: 'select', id: e.target.value })
-                      .then(setAccount)
-                      .catch(showError);
-                  }}
+              {account?.accounts.length ? (
+                <>
+                  <label>
+                    {t('ChatGPT 账号')}
+                    <select
+                      aria-label={t('ChatGPT 账号')}
+                      disabled={busy || loginBusy}
+                      value={account.active}
+                      onChange={(e) => {
+                        setStatus('');
+                        void chatRequest<ChatStatus>({ action: 'select', id: e.target.value })
+                          .then(setAccount)
+                          .catch(showError);
+                      }}
+                    >
+                      {account.accounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.email || a.name || t('ChatGPT 账号')} · {a.id.slice(-6)}
+                          {!a.signedIn ? ` · ${t('已退出')}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="chat-account-actions">
+                    <button disabled={busy || loginBusy} onClick={() => void login()}>
+                      <Plus size={14} />
+                      {t('添加账号')}
+                    </button>
+                    {active?.signedIn ? (
+                      <button
+                        disabled={busy || loginBusy}
+                        onClick={() => {
+                          setLoginBusy(true);
+                          void chatRequest<ChatStatus>({ action: 'logout', id: account.active })
+                            .then((s) => {
+                              setAccount(s);
+                              if (!s.revoked)
+                                setStatus(
+                                  t('已在本机退出，未确认远程撤销，请在 ChatGPT 设置中断开连接。'),
+                                );
+                            })
+                            .catch(showError)
+                            .finally(() => setLoginBusy(false));
+                        }}
+                      >
+                        {t('退出登录')}
+                      </button>
+                    ) : (
+                      <button
+                        disabled={busy || loginBusy}
+                        onClick={() => void login(account.active)}
+                      >
+                        Continue with ChatGPT
+                      </button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <button
+                  className="chat-signin"
+                  disabled={loginBusy || !window.surfaceDesktop?.chatgpt}
+                  onClick={() => void login()}
                 >
-                  {account.accounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.email || a.name || t('ChatGPT 账号')} · {a.id.slice(-6)}
-                      {!a.signedIn ? ` · ${t('已退出')}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="chat-account-actions">
-                <button disabled={busy || loginBusy} onClick={() => void login()}>
-                  <Plus size={14} />
-                  {t('添加账号')}
+                  Continue with ChatGPT
                 </button>
-                {active?.signedIn ? (
+              )}
+              {!active?.signedIn && (
+                <p>{t('登录现有 ChatGPT 账号，授权后使用可用的订阅额度。无需 API Key。')}</p>
+              )}
+              {loginBusy && <button onClick={stop}>{t('取消登录')}</button>}
+              {account?.storage === 'session' && (
+                <small>{t('系统安全存储不可用，本次登录仅保留到退出应用。')}</small>
+              )}
+              {active?.signedIn && !active.enabled && (
+                <button disabled={busy || loginBusy} onClick={() => void login(active.id, true)}>
+                  {t('启用 ChatGPT 订阅额度')}
+                </button>
+              )}
+              {active?.signedIn && active.enabled && (
+                <div className="chat-model">
+                  <label>
+                    {t('聊天模型')}
+                    <select
+                      aria-label={t('聊天模型')}
+                      disabled={busy || !models.length}
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                    >
+                      {models.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <button
+                    className="icon-button"
+                    aria-label={t('刷新聊天模型')}
                     disabled={busy || loginBusy}
-                    onClick={() => {
-                      setLoginBusy(true);
-                      void chatRequest<ChatStatus>({ action: 'logout', id: account.active })
-                        .then((s) => {
-                          setAccount(s);
-                          if (!s.revoked)
-                            setStatus(
-                              t('已在本机退出，未确认远程撤销，请在 ChatGPT 设置中断开连接。'),
-                            );
-                        })
-                        .catch(showError)
-                        .finally(() => setLoginBusy(false));
-                    }}
+                    onClick={() => void refreshModels()}
                   >
-                    {t('退出登录')}
+                    <RefreshCw size={15} />
                   </button>
-                ) : (
-                  <button disabled={busy || loginBusy} onClick={() => void login(account.active)}>
-                    Continue with ChatGPT
-                  </button>
-                )}
+                </div>
+              )}
+              <div className="chat-plan">
+                <span>
+                  {active?.signedIn && active.enabled
+                    ? t('使用 ChatGPT 订阅额度')
+                    : t('登录后开始聊天')}
+                </span>
+                <button
+                  className="chat-usage"
+                  onClick={() => void chatRequest({ action: 'usage' }).catch(showError)}
+                >
+                  {t('管理 ChatGPT 用量')}
+                </button>
               </div>
             </>
-          ) : (
-            <button
-              className="chat-signin"
-              disabled={loginBusy || !window.surfaceDesktop?.chatgpt}
-              onClick={() => void login()}
-            >
-              Continue with ChatGPT
-            </button>
           )}
-          {!active?.signedIn && (
-            <p>{t('登录现有 ChatGPT 账号，授权后使用可用的订阅额度。无需 API Key。')}</p>
-          )}
-          {loginBusy && <button onClick={stop}>{t('取消登录')}</button>}
-          {account?.storage === 'session' && (
-            <small>{t('系统安全存储不可用，本次登录仅保留到退出应用。')}</small>
-          )}
-          {active?.signedIn && !active.enabled && (
-            <button disabled={busy || loginBusy} onClick={() => void login(active.id, true)}>
-              {t('启用 ChatGPT 订阅额度')}
-            </button>
-          )}
-          {active?.signedIn && active.enabled && (
-            <div className="chat-model">
-              <label>
-                {t('聊天模型')}
-                <select
-                  aria-label={t('聊天模型')}
-                  disabled={busy || !models.length}
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                >
-                  {models.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                className="icon-button"
-                aria-label={t('刷新聊天模型')}
-                disabled={busy || loginBusy}
-                onClick={() => void refreshModels()}
-              >
-                <RefreshCw size={15} />
-              </button>
-            </div>
-          )}
-          <div className="chat-plan">
-            <span>
-              {active?.signedIn && active.enabled
-                ? t('使用 ChatGPT 订阅额度')
-                : t('登录后开始聊天')}
-            </span>
-            <button
-              className="chat-usage"
-              onClick={() => void chatRequest({ action: 'usage' }).catch(showError)}
-            >
-              {t('管理 ChatGPT 用量')}
-            </button>
-          </div>
         </div>
       </div>
-      {account?.welcome && (
+      {!apiMode && account?.welcome && (
         <div className="chat-welcome" role="dialog" aria-label={t('正在使用 ChatGPT 订阅额度')}>
           <strong>{t('正在使用 ChatGPT 订阅额度')}</strong>
           <p>{t('此处符合条件的请求使用你的 ChatGPT 额度，可在 ChatGPT 设置中管理用量。')}</p>
@@ -599,7 +691,7 @@ export default function ChatPanel({
                   (text) => (
                     <button
                       key={text}
-                      disabled={busy || loginBusy || !active?.signedIn || !active.enabled}
+                      disabled={busy || loginBusy || !canChat}
                       onClick={() => {
                         setPrompt(t(text));
                         void attach('text');
@@ -617,7 +709,9 @@ export default function ChatPanel({
             <article key={m.id} className={`chat-message ${m.role}`}>
               <div className="chat-message-meta">
                 {m.role === 'assistant' && <Sparkles size={13} />}
-                <b>{m.role === 'user' ? t('你') : 'ChatGPT'}</b>
+                <b>
+                  {m.role === 'user' ? t('你') : apiMode ? api.provider.model || 'LLM' : 'ChatGPT'}
+                </b>
                 {m.pageId && (
                   <button onClick={() => onNavigate(m.pageId!)}>
                     {t('第 {0} 页', m.pageNumber)}
@@ -706,15 +800,7 @@ export default function ChatPanel({
           <button
             aria-label={t('根据描述生成 SVG')}
             title={t('根据输入框中的描述生成 SVG 矢量图')}
-            disabled={
-              busy ||
-              loading ||
-              loginBusy ||
-              !prompt.trim() ||
-              !model ||
-              !active?.signedIn ||
-              !active.enabled
-            }
+            disabled={busy || loading || loginBusy || !prompt.trim() || !canChat}
             onClick={() => void send(false, true)}
           >
             <Shapes size={15} />
@@ -724,15 +810,7 @@ export default function ChatPanel({
             className="chat-original"
             aria-label={t('发送原 PDF 并总结')}
             title={t('发送导入的原 PDF，先进行总结；不包含后续标注。')}
-            disabled={
-              busy ||
-              loading ||
-              loginBusy ||
-              !source ||
-              !model ||
-              !active?.signedIn ||
-              !active.enabled
-            }
+            disabled={busy || loading || loginBusy || !source || !canChat}
             onClick={() => void send(true)}
           >
             <Send size={13} />
@@ -749,7 +827,9 @@ export default function ChatPanel({
         </div>
         {confirmClear && (
           <div className="chat-clear">
-            <span>{t('删除此文档当前账号的本地对话？')}</span>
+            <span>
+              {t(apiMode ? '删除此文档当前 API 的本地对话？' : '删除此文档当前账号的本地对话？')}
+            </span>
             <button onClick={() => void clear().catch(showError)}>{t('删除')}</button>
             <button onClick={() => setConfirmClear(false)}>{t('取消')}</button>
           </div>
@@ -772,7 +852,7 @@ export default function ChatPanel({
         )}
         <div className="chat-input">
           <textarea
-            aria-label={t('向 ChatGPT 提问')}
+            aria-label={t(apiMode ? '向 LLM 提问' : '向 ChatGPT 提问')}
             placeholder={t('解释这一段，或检查公式推导…')}
             rows={2}
             maxLength={8000}
@@ -813,14 +893,7 @@ export default function ChatPanel({
             ) : (
               <button
                 className="primary"
-                disabled={
-                  !prompt.trim() ||
-                  !model ||
-                  !active?.signedIn ||
-                  !active.enabled ||
-                  loading ||
-                  loginBusy
-                }
+                disabled={!prompt.trim() || !canChat || loading || loginBusy}
                 onClick={() => void send()}
               >
                 <Send size={15} />

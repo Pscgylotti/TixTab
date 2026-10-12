@@ -59,6 +59,76 @@ async function checkGeometry(page: Page) {
     )
     .toBe(true);
 }
+
+test('blank page clicks dismiss selection flyout; controls preserve it in every view', async ({
+  page,
+}) => {
+  await prepare(page);
+  for (const mode of ['单页标注', '连续页面预览', '双页预览']) {
+    await page.getByRole('button', { name: mode, exact: true }).click();
+    await select(page);
+    await page.getByRole('button', { name: '翻译', exact: true }).click();
+    await page.getByRole('button', { name: '翻译后端设置', exact: true }).click();
+    await expect(page.locator('.selection-flyout')).toBeVisible();
+    expect(await page.evaluate(() => getSelection()?.toString())).toBe('competitive');
+    const blank = (await page.locator('.textLayer').first().boundingBox())!;
+    await page.mouse.click(blank.x + blank.width - 25, blank.y + 25);
+    await expect(page.locator('.selection-flyout')).toHaveCount(0);
+    expect(await page.evaluate(() => getSelection()?.toString())).toBe('');
+    await select(page);
+    await page
+      .locator('.textLayer')
+      .first()
+      .evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const init = {
+          bubbles: true,
+          pointerType: 'pen',
+          pointerId: 78,
+          button: 0,
+          clientX: r.right - 25,
+          clientY: r.top + 25,
+        };
+        el.dispatchEvent(new PointerEvent('pointerdown', { ...init, buttons: 1, pressure: 0.5 }));
+        el.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0, pressure: 0 }));
+      });
+    await expect(page.locator('.selection-flyout')).toHaveCount(0);
+  }
+});
+
+test('resident native translation starts on the first flyout Translate click', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('surfacetab.opusExperimental', 'true'));
+  let translations = 0;
+  await page.route('http://127.0.0.1:8766/**', async (route) => {
+    if (route.request().url().endsWith('/health'))
+      await route.fulfill({
+        json: {
+          ok: true,
+          engine: 'Texo OpenVINO',
+          devices: [],
+          capabilities: ['translate-experimental'],
+          loaded: true,
+          modelKind: ['opus', 'en-zh'],
+        },
+      });
+    else if (route.request().url().endsWith('/translate')) {
+      translations++;
+      await route.fulfill({
+        json: {
+          translation: '有竞争力的',
+          encoderDevice: 'NPU',
+          decoderDevice: 'CPU',
+          timing: { totalMs: 1 },
+        },
+      });
+    } else await route.fulfill({ json: {} });
+  });
+  await prepare(page);
+  await select(page);
+  await page.getByRole('button', { name: '翻译', exact: true }).click();
+  await expect(page.locator('.translation-result')).toContainText('有竞争力的');
+  expect(translations).toBe(1);
+});
 test('writing hand switches panel side, survives reload and preserves selection during controls', async ({
   page,
 }) => {

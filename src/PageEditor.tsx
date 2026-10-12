@@ -144,7 +144,7 @@ export default function PageEditor({
   const orderSelected = (order: ObjectOrder) => {
     const next = reorderPageLayers(page, selected, order, inkSelected);
     if (next !== page) onChange(next);
-    setOrderOpen(false);
+    if (order === 'front' || order === 'back') setOrderOpen(false);
   };
   useEffect(() => {
     const key = (e: KeyboardEvent) => {

@@ -118,6 +118,39 @@
 }
 #chat-account-details {
   padding: 6px 0;
+  max-height: min(340px, 42vh);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.chat-api-settings {
+  border: 0;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.chat-api-settings input:not([type='checkbox']) {
+  background: var(--chat-card);
+  color: var(--chat-ink);
+  border: 1px solid var(--chat-line);
+  border-radius: 9px;
+  padding: 8px;
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+}
+.chat-api-settings details > label {
+  margin-top: 8px;
+}
+.chat-api-settings .chat-api-checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+.chat-api-settings summary {
+  color: var(--chat-muted);
+  cursor: pointer;
+  padding: 5px 0;
 }
 .chat-panel label {
   display: flex;

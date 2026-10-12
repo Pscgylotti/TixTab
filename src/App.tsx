@@ -58,7 +58,15 @@ import {
 } from 'lucide-react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfSurface, { type PenDiagnostic } from './PdfSurface';
-import { blankPage, newNotebook, uid, type Notebook, type Page, type Tool } from './model';
+import {
+  blankPage,
+  newNotebook,
+  isEmptyStarterNotebook,
+  uid,
+  type Notebook,
+  type Page,
+  type Tool,
+} from './model';
 import { exportPdf, importPdf, loadPdf, SignedPdfExportError, type PdfExportProgress } from './pdf';
 import { decodeProject, download, encodeProject } from './storage';
 import {
@@ -416,9 +424,10 @@ export default function App() {
     return saveQueue.current;
   }, []);
   useEffect(() => {
-    if (!ready || !activeId) return;
+    if (!ready || !activeId || busy) return;
     setSaveStatus(tr('\u4FDD\u5B58\u4E2D'));
     const t = setTimeout(() => {
+      if (operation.current) return;
       void persist(notebook, activeId, { index, zoom, mode: viewMode })
         .then(() => setSaveStatus(tr('\u5DF2\u81EA\u52A8\u4FDD\u5B58')))
         .catch(() =>
@@ -428,10 +437,10 @@ export default function App() {
         );
     }, 450);
     return () => clearTimeout(t);
-  }, [notebook, ready, activeId, index, zoom, viewMode, persist]);
+  }, [notebook, ready, activeId, index, zoom, viewMode, busy, persist]);
   useEffect(() => {
     const hidden = () => {
-      if (document.visibilityState === 'hidden' && ready)
+      if (document.visibilityState === 'hidden' && ready && !operation.current)
         void persist(current.current).catch(() => {});
     };
     document.addEventListener('visibilitychange', hidden);
@@ -561,7 +570,10 @@ export default function App() {
     const s = window.getSelection(),
       text = s?.toString().trim();
     const node = s?.anchorNode?.parentElement;
-    if (!text || !node?.closest('.textLayer') || !s?.rangeCount) return;
+    if (!text || !node?.closest('.textLayer') || !s?.rangeCount) {
+      setSelection(null);
+      return;
+    }
     const range = s.getRangeAt(0).cloneRange(),
       rect = range.getBoundingClientRect();
     const readingPage = node.closest<HTMLElement>('[data-page-id]');
@@ -582,7 +594,12 @@ export default function App() {
     const up = (e: PointerEvent) => {
       if (document.querySelector('.pen-tool-wheel') || performance.now() - lastBarrel.current < 600)
         return;
-      if (!(e.target instanceof Element) || !e.target.closest('.textLayer')) return;
+      if (!(e.target instanceof Element)) return;
+      if (!e.target.closest('.textLayer')) {
+        if (e.target.closest('.canvas-container') && !window.getSelection()?.toString().trim())
+          setSelection(null);
+        return;
+      }
       clearTimeout(pending);
       pending = setTimeout(() => selectedText(e.clientX, e.clientY), 0);
     };
@@ -797,6 +814,9 @@ export default function App() {
       }
       await persist(current.current);
       const failures: string[] = [];
+      let starterId: string | null = isEmptyStarterNotebook(current.current)
+        ? activeRef.current
+        : null;
       for (const f of supported) {
         let doc: PDFDocumentProxy | null = null;
         try {
@@ -814,9 +834,10 @@ export default function App() {
             )
               throw new Error(tr('工程的页面索引无效'));
           }
-          const id = uid();
+          const id = starterId || uid();
           await persist(next, id, defaultView);
           activate(id, next, doc);
+          starterId = null;
           doc = null;
         } catch (e) {
           void doc?.destroy();
@@ -844,7 +865,7 @@ export default function App() {
       }
       const imported = await importPdf(new Uint8Array(attachment.bytes), attachment.filename);
       const next = { ...imported.notebook, zotero: source },
-        id = uid();
+        id = isEmptyStarterNotebook(current.current) ? activeRef.current : uid();
       try {
         await persist(next, id, defaultView);
         activate(id, next, imported.pdf);

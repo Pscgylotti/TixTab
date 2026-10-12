@@ -85,6 +85,11 @@ for (const mode of ['single', 'continuous', 'dual'])
     await expect.poll(() => visiblePixel(page, 150)).toEqual([255, 0, 0]);
     await editor(page).locator('.placed-object').click();
     await page.getByRole('button', { name: '排列顺序', exact: true }).click();
+    await page.getByRole('button', { name: '上移一层', exact: true }).click();
+    await expect(page.getByRole('button', { name: '下移一层', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: '下移一层', exact: true }).click();
+    await expect.poll(() => visiblePixel(page, 150)).toEqual([255, 0, 0]);
+    await expect(page.getByRole('button', { name: '上移一层', exact: true })).toBeVisible();
     await page.getByRole('button', { name: '置于顶层', exact: true }).click();
     await expect.poll(() => visiblePixel(page, 150)).toEqual([0, 0, 255]);
     await expect.poll(() => visiblePixel(page, 170)).toEqual([0, 0, 255]);

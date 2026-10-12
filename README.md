@@ -6,7 +6,7 @@
 
 ## Get started
 
-1. Download `TixTab-0.2.35-lite-x64.exe` from Releases and run it. This portable app needs no Node.js or Python for basic PDF features.
+1. Download `TixTab-0.2.36-lite-x64.exe` from Releases and run it. This portable app needs no Node.js or Python for basic PDF features.
 2. Open PDFs in tabs, or drop a PDF and choose to open it in new tabs or insert all/selected pages after the current page. Drop PNG/JPEG/WebP/GIF/BMP/AVIF/SVG files to insert image objects.
 3. For local AI, open **Settings → Local model library**, download the models you need, and click **Set up** to prepare managed Python and optional acceleration/speech dependencies.
 4. Switch the interface language in Settings. English, offline Chinese Pinyin, LaTeX and voice keyboard modes are included. Voice input supports Chinese/English, a live waveform and local engines, and inserts at the current text caret.
@@ -24,7 +24,7 @@
 - Texo formula-to-LaTeX, multiline formulas and saved macros; optional Uni-MuMER Qwen3-VL-2B backend.
 - Text selection/copy, translation, OCR and TTS; local models plus web/LLM API providers.
 - Chinese/English dictation with a waveform: SenseVoiceSmall, Whisper small or Windows recognition.
-- Zotero local-library integration and an experimental ChatGPT reading assistant with page/file attachments, a detachable native window, and SVG generation/preview/insertion.
+- Zotero local-library integration and an experimental reading assistant with ChatGPT account or OpenAI-compatible LLM API mode, page/file attachments, a detachable native window, and SVG generation/preview/insertion. API usage is billed separately; configure it under Account and model.
 
 ## Notes
 

@@ -3,10 +3,17 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   base: './',
   plugins: [react()],
-  server: { port: 5173, strictPort: true },
+  server: {
+    port: 5173,
+    strictPort: true,
+    watch: {
+      ignored: ['**/.cache/**', '**/.venv*/**', '**/release/**', '**/test-results/**', '**/tmp/**'],
+    },
+  },
   // Worker-only dependencies must be ready before the first feature is opened;
   // otherwise Vite's optimizer can reload the active editor during development.
   optimizeDeps: {
+    entries: ['index.html'],
     include: [
       'pdf-lib',
       '@huggingface/transformers',
