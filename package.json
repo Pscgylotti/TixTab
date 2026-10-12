@@ -1,6 +1,6 @@
 {
   "name": "tixtab",
-  "version": "0.2.37",
+  "version": "0.2.38",
   "private": true,
   "description": "Surface-first PDF ink workspace",
   "type": "module",
@@ -69,7 +69,7 @@
     "electronDist": "node_modules/electron/dist",
     "npmRebuild": false,
     "directories": {
-      "output": "release/0.2.37"
+      "output": "release/0.2.38"
     },
     "files": [
       "dist/**/*",

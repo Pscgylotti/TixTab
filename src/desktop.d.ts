@@ -1,5 +1,8 @@
 interface Window {
   surfaceDesktop?: {
+    editCommand?: (
+      command: 'selectAll' | 'cut' | 'copy' | 'paste' | 'undo' | 'redo',
+    ) => Promise<boolean>;
     runtimes?: import('./runtimeBridge').RuntimeBridge;
     dictation?: {
       run: (

@@ -1,4 +1,9 @@
 {
+  "编辑快捷键": "Editing shortcuts",
+  "全选": "Select all",
+  "剪切": "Cut",
+  "粘贴": "Paste",
+  "快捷操作失败，请重试或检查剪贴板权限。": "Editing failed. Retry or check clipboard permissions.",
   "钢笔": "Fountain pen",
   "圆珠笔": "Ballpoint",
   "铅笔": "Pencil",

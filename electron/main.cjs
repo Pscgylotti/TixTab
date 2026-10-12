@@ -79,6 +79,21 @@ app.whenReady().then(() => {
   });
   const providerSender = (event) =>
     event.senderFrame === event.sender.mainFrame && trusted(event.senderFrame.url);
+  const editWindows = new Set();
+  ipcMain.handle('edit:command', (event, command) => {
+    if (
+      !(
+        providerSender(event) ||
+        (editWindows.has(event.sender.id) &&
+          event.senderFrame === event.sender.mainFrame &&
+          event.senderFrame.url === 'about:blank')
+      ) ||
+      !['selectAll', 'cut', 'copy', 'paste', 'undo', 'redo'].includes(command)
+    )
+      return false;
+    event.sender[command]();
+    return true;
+  });
   const chatgpt = createChatGPT({
     fetch: (url, options) => net.fetch(url, options),
     shell,
@@ -414,6 +429,12 @@ app.whenReady().then(() => {
           title: 'TixTab · ChatGPT',
           autoHideMenuBar: true,
           backgroundMaterial: 'mica',
+          webPreferences: {
+            preload: path.join(__dirname, 'preload.cjs'),
+            contextIsolation: true,
+            nodeIntegration: false,
+            sandbox: true,
+          },
         },
       };
     }
@@ -430,9 +451,12 @@ app.whenReady().then(() => {
   win.webContents.on('did-create-window', (child, details) => {
     if (details.frameName !== 'surfacetab-chat-floating') return;
     chatWindow = child;
+    editWindows.add(child.webContents.id);
+    const editWindowId = child.webContents.id;
     child.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     child.webContents.on('will-navigate', (event) => event.preventDefault());
     child.once('closed', () => {
+      editWindows.delete(editWindowId);
       chatWindow = null;
     });
   });

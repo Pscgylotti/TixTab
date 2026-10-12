@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Keyboard from 'simple-keyboard';
 import DictationButton from './DictationButton';
+import { copyText } from './clipboard';
 import './chat.css';
 import {
   Keyboard as KeyboardIcon,
@@ -17,36 +18,44 @@ import 'simple-keyboard/build/css/index.css';
 type Field = HTMLInputElement | HTMLTextAreaElement;
 type Mode = 'latex' | 'en' | 'pinyin' | 'voice';
 type Candidate = { word: string; matchedLength: number };
+const shortcuts = [
+  ['selectAll', 'A', '全选'],
+  ['cut', 'X', '剪切'],
+  ['copy', 'C', '复制'],
+  ['paste', 'V', '粘贴'],
+  ['undo', 'Z', '撤销'],
+  ['redo', 'Y', '重做'],
+] as const;
 const latex = {
   default: [
-    '1 2 3 4 5 6 7 8 9 0 {bksp}',
-    'q w e r t y u i o p',
+    '{esc} 1 2 3 4 5 6 7 8 9 0 {bksp}',
+    '{tab} q w e r t y u i o p',
     'a s d f g h j k l',
     '{shift} z x c v b n m {enter}',
-    '\\ ^ _ { } ( ) + - = {space} {left} {right}',
+    '{ctrl} \\ ^ _ { } ( ) + - = {space} {left} {right}',
   ],
   shift: [
-    '! @ # $ % ^ & * ( ) {bksp}',
-    'Q W E R T Y U I O P',
+    '{esc} ! @ # $ % ^ & * ( ) {bksp}',
+    '{tab} Q W E R T Y U I O P',
     'A S D F G H J K L',
     '{shift} Z X C V B N M {enter}',
-    '| ~ _ [ ] < > * / + {space} {left} {right}',
+    '{ctrl} | ~ _ [ ] < > * / + {space} {left} {right}',
   ],
 };
 const english = {
   default: [
-    '1 2 3 4 5 6 7 8 9 0 {bksp}',
-    'q w e r t y u i o p',
+    '{esc} 1 2 3 4 5 6 7 8 9 0 {bksp}',
+    '{tab} q w e r t y u i o p',
     "a s d f g h j k l ; '",
     '{shift} z x c v b n m , . / {enter}',
-    '` - = [ ] \\ {space} {left} {right}',
+    '{ctrl} ` - = [ ] \\ {space} {left} {right}',
   ],
   shift: [
-    '! @ # $ % ^ & * ( ) {bksp}',
-    'Q W E R T Y U I O P',
+    '{esc} ! @ # $ % ^ & * ( ) {bksp}',
+    '{tab} Q W E R T Y U I O P',
     'A S D F G H J K L : "',
     '{shift} Z X C V B N M < > ? {enter}',
-    '~ _ + { } | {space} {left} {right}',
+    '{ctrl} ~ _ + { } | {space} {left} {right}',
   ],
 };
 function editable(el: EventTarget | null): el is Field {
@@ -88,6 +97,7 @@ export default function TouchKeyboard({
   });
   const [fieldReady, setFieldReady] = useState(false),
     [voiceStatus, setVoiceStatus] = useState('');
+  const [shortcutError, setShortcutError] = useState('');
   const [settings, setSettings] = useState(false),
     [position, setPosition] = useState({ x: 20, y: Math.max(70, view.innerHeight - 310) });
   const [right, setRight] = useState(10),
@@ -101,7 +111,8 @@ export default function TouchKeyboard({
     keyboard = useRef<Keyboard | null>(null),
     field = useRef<Field | null>(null),
     pointerType = useRef('mouse'),
-    shifted = useRef(false);
+    shifted = useRef(false),
+    controlled = useRef(false);
   const worker = useRef<Worker | null>(null),
     input = useRef(''),
     request = useRef(0),
@@ -206,10 +217,96 @@ export default function TouchKeyboard({
     if (el.maxLength >= 0)
       content = content.slice(0, Math.max(0, el.maxLength - (el.value.length - (end - from))));
     const next = el.value.slice(0, from) + content + el.value.slice(end);
+    // Native editing records undo history; assigning value directly does not.
+    el.focus({ preventScroll: true });
+    selection(el, from, end);
+    if (hostDocument.execCommand('insertText', false, content)) return;
     Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')!.set!.call(el, next);
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.focus({ preventScroll: true });
     selection(el, from + content.length);
+  };
+  const shortcut = async (command: (typeof shortcuts)[number][0], key: string) => {
+    setShortcutError('');
+    if (input.current) accept();
+    const active = hostDocument.activeElement;
+    const target = editable(active)
+      ? active
+      : active?.closest('.touch-keyboard') && field.current?.isConnected
+        ? field.current
+        : null;
+    if (target) target.focus({ preventScroll: true });
+    // Object copy/cut and PDF undo/redo are handled by application key listeners.
+    if (
+      !target &&
+      !active?.closest('[contenteditable="true"]') &&
+      ['cut', 'copy', 'undo', 'redo'].includes(command)
+    ) {
+      const event = new KeyboardEvent('keydown', {
+        key,
+        ctrlKey: true,
+        shiftKey: command === 'redo' && key === 'z',
+        bubbles: true,
+        cancelable: true,
+      });
+      hostDocument.body.dispatchEvent(event);
+      if (event.defaultPrevented || command === 'undo' || command === 'redo') return;
+    }
+    try {
+      if (view.surfaceDesktop?.editCommand) {
+        if (!(await view.surfaceDesktop.editCommand(command))) throw Error('edit');
+        return;
+      }
+      if (command === 'selectAll' && target) {
+        selection(target, 0, target.value.length);
+        return;
+      }
+      if ((command === 'cut' || command === 'copy') && target) {
+        const start = target.selectionStart ?? 0,
+          end = target.selectionEnd ?? start;
+        if (target.type === 'password' || start === end) return;
+        await copyText(target.value.slice(start, end));
+        if (command === 'cut' && !target.readOnly && !target.disabled) {
+          if (
+            hostDocument.activeElement !== target ||
+            target.selectionStart !== start ||
+            target.selectionEnd !== end
+          )
+            return;
+          field.current = target;
+          write('');
+        }
+        return;
+      }
+      if (command === 'paste') {
+        if (target) {
+          const text = await view.navigator.clipboard.readText();
+          if (!target.isConnected || hostDocument.activeElement !== target) return;
+          field.current = target;
+          write(text);
+        } else if (active?.closest('[contenteditable="true"]')) {
+          const text = await view.navigator.clipboard.readText();
+          if (
+            hostDocument.activeElement === active &&
+            !hostDocument.execCommand('insertText', false, text)
+          )
+            throw Error('edit');
+        } else {
+          const data = new DataTransfer();
+          for (const item of await view.navigator.clipboard.read())
+            for (const type of item.types)
+              if (type === 'text/plain' || type === 'text/html')
+                data.setData(type, await (await item.getType(type)).text());
+              else if (type === 'image/png')
+                data.items.add(new File([await item.getType(type)], 'Clipboard.png', { type }));
+          hostDocument.dispatchEvent(
+            new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }),
+          );
+        }
+      } else if (!hostDocument.execCommand(command)) throw Error('edit');
+    } catch {
+      setShortcutError(tr('快捷操作失败，请重试或检查剪贴板权限。'));
+    }
   };
   const accept = (item?: Candidate, suffix?: string) => {
     const raw = input.current,
@@ -218,14 +315,59 @@ export default function TouchKeyboard({
     updateComposition(suffix !== undefined ? '' : remaining);
   };
   acceptRef.current = accept;
+  const control = (active: boolean) => {
+    controlled.current = active;
+    host.current?.querySelectorAll<HTMLElement>('[data-skbtn="{ctrl}"]').forEach((button) => {
+      button.classList.toggle('keyboard-modifier-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+  };
   const insert = (key: string) => {
-    const el = field.current;
-    if (!el?.isConnected || el.disabled || el.readOnly) return;
     if (key === '{shift}') {
       shifted.current = !shifted.current;
       keyboard.current?.setOptions({ layoutName: shifted.current ? 'shift' : 'default' });
       return;
     }
+    if (key === '{ctrl}') {
+      control(!controlled.current);
+      return;
+    }
+    if (key === '{esc}') {
+      control(false);
+      if (input.current) updateComposition('');
+      else setOpen(false);
+      return;
+    }
+    if (controlled.current && key !== '{shift}') {
+      control(false);
+      const action = shortcuts.find(([, letter]) => letter.toLowerCase() === key.toLowerCase());
+      if (action)
+        void shortcut(
+          shifted.current && key.toLowerCase() === 'z' ? 'redo' : action[0],
+          key.toLowerCase(),
+        );
+      return;
+    }
+    if (key === '{tab}') {
+      if (input.current) accept();
+      const scope =
+        hostDocument.activeElement?.closest('[role="dialog"],[aria-modal="true"]') ?? hostDocument;
+      const fields = Array.from(
+        scope.querySelectorAll<HTMLElement>('input,textarea,[contenteditable="true"]'),
+      ).filter(
+        (el) =>
+          !el.closest('.touch-keyboard') &&
+          el.getClientRects().length &&
+          (editable(el) ? !el.disabled && !el.readOnly : el.isContentEditable),
+      );
+      const at = fields.indexOf(hostDocument.activeElement as HTMLElement);
+      fields[(at + (shifted.current ? -1 : 1) + fields.length) % fields.length]?.focus({
+        preventScroll: true,
+      });
+      return;
+    }
+    const el = field.current;
+    if (!el?.isConnected || el.disabled || el.readOnly) return;
     if (mode === 'pinyin' && el.type !== 'password') {
       if (/^[a-z']$/.test(key)) {
         if (input.current.length < 48 && (key !== "'" || input.current.length > 0))
@@ -356,6 +498,9 @@ export default function TouchKeyboard({
     host.current.append(keys);
     keyboard.current = new Keyboard(keys, {
       layout,
+      // Carets are owned by the editor. The library otherwise collapses native
+      // text selections after every key, including Ctrl, before Copy can run.
+      disableCaretPositioning: true,
       display: {
         '{bksp}': '⌫',
         '{shift}': '⇧',
@@ -363,12 +508,24 @@ export default function TouchKeyboard({
         '{space}': tr('空格'),
         '{left}': '←',
         '{right}': '→',
+        '{ctrl}': 'Ctrl',
+        '{tab}': 'Tab',
+        '{esc}': 'Esc',
       },
       onKeyPress: (key) => insertRef.current(key),
       onRender: () => {
         const from = layout.default.flatMap((row) => row.split(' ')),
           to = layout.shift.flatMap((row) => row.split(' '));
         host.current?.querySelectorAll<HTMLElement>('.hg-button').forEach((button, index) => {
+          const key = button.dataset.skbtn;
+          if (key === '{ctrl}') {
+            button.setAttribute('aria-pressed', String(controlled.current));
+            button.classList.toggle('keyboard-modifier-active', controlled.current);
+          }
+          const action = shortcuts.find(
+            ([, letter]) => letter.toLowerCase() === key?.toLowerCase(),
+          );
+          if (action) button.title = `${tr(action[2])} (Ctrl+${action[1]})`;
           if (
             !shifted.current &&
             from[index] &&
@@ -390,6 +547,7 @@ export default function TouchKeyboard({
       keys.remove();
       keyboard.current = null;
       shifted.current = false;
+      controlled.current = false;
     };
   }, [open, mode, locale]);
   useEffect(() => {
@@ -438,7 +596,7 @@ export default function TouchKeyboard({
           role="dialog"
           aria-label={tr('悬浮屏幕键盘')}
           style={{ left: position.x, top: position.y, width: Math.min(width, view.innerWidth - 8) }}
-          onPointerDown={(e) => {
+          onPointerDownCapture={(e) => {
             if (!(e.target as HTMLElement).closest('input,select')) e.preventDefault();
           }}
         >
@@ -518,6 +676,11 @@ export default function TouchKeyboard({
               </button>
             ))}
           </div>
+          {shortcutError && (
+            <p className="keyboard-shortcut-error" role="status">
+              {shortcutError}
+            </p>
+          )}
           {settings && (
             <div id="keyboard-settings" className="keyboard-settings">
               <label>

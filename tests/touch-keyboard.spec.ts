@@ -12,12 +12,66 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
 });
 
+test('editing shortcuts preserve caret and selection, update React fields and support native undo', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.getByRole('button', { name: '公式', exact: true }).click();
+  const field = page.getByLabel('LaTeX · 可直接修改');
+  await field.fill('alpha beta');
+  await field.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(6, 10));
+  await page.getByRole('button', { name: '屏幕键盘', exact: true }).click();
+  const shortcut = async (label: string) => {
+    const selected = await field.evaluate((el: HTMLTextAreaElement) => [
+      el.selectionStart,
+      el.selectionEnd,
+    ]);
+    await key(page, '{ctrl}');
+    expect(
+      await field.evaluate((el: HTMLTextAreaElement) => [el.selectionStart, el.selectionEnd]),
+    ).toEqual(selected);
+    await expect(page.locator('[data-skbtn="{ctrl}"]')).toHaveAttribute('aria-pressed', 'true');
+    await key(page, label.match(/Ctrl\+([A-Z])/)![1].toLowerCase());
+    await expect(page.locator('[data-skbtn="{ctrl}"]')).toHaveAttribute('aria-pressed', 'false');
+  };
+  await shortcut('复制 (Ctrl+C)');
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('beta');
+  await shortcut('剪切 (Ctrl+X)');
+  await expect(field).toHaveValue('alpha ');
+  await shortcut('撤销 (Ctrl+Z)');
+  await expect(field).toHaveValue('alpha beta');
+  await shortcut('重做 (Ctrl+Y)');
+  await expect(field).toHaveValue('alpha ');
+  await shortcut('粘贴 (Ctrl+V)');
+  await expect(field).toHaveValue('alpha beta');
+  await shortcut('全选 (Ctrl+A)');
+  expect(
+    await field.evaluate((el: HTMLTextAreaElement) => [el.selectionStart, el.selectionEnd]),
+  ).toEqual([0, 10]);
+  await page.getByRole('button', { name: '英文', exact: true }).click();
+  await key(page, 'x');
+  await expect(field).toHaveValue('x');
+  await shortcut('撤销 (Ctrl+Z)');
+  await expect(field).toHaveValue('alpha beta');
+  await page.setViewportSize({ width: 320, height: 740 });
+  await expect(page.locator('.surfacetab-keys')).toBeInViewport();
+  expect(
+    await page.locator('.surfacetab-keys').evaluate((el) => el.scrollWidth <= el.clientWidth),
+  ).toBe(true);
+  await expect(page.locator('.keyboard-shortcuts')).toHaveCount(0);
+  expect((await page.locator('.touch-keyboard').boundingBox())!.height).toBeLessThan(300);
+  await key(page, '{esc}');
+  await expect(page.locator('.touch-keyboard')).toHaveCount(0);
+});
+
 test('offline Pinyin, English, caret insertion, separators, partial candidates and lifecycle', async ({
   page,
 }) => {
   const outbound: string[] = [];
+  const origin = new URL(page.url()).origin + '/';
   page.on('request', (request) => {
-    if (!request.url().startsWith('http://127.0.0.1:5173/') && !request.url().startsWith('data:'))
+    if (!request.url().startsWith(origin) && !request.url().startsWith('data:'))
       outbound.push(request.url());
   });
   await page.getByRole('button', { name: '公式', exact: true }).click();

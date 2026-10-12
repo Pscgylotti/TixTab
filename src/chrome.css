@@ -1086,7 +1086,7 @@ body {
   padding-right: 3%;
 }
 .touch-keyboard .surfacetab-keys .hg-row:nth-child(3) {
-  padding-left: 5%;
+  padding-left: 14%;
   padding-right: 1%;
 }
 .touch-keyboard .keyboard-layout-latex .hg-row:nth-child(3) {
@@ -1133,7 +1133,7 @@ body {
 }
 .touch-keyboard .hg-theme-default .hg-button {
   font-size: clamp(11px, 3cqw, 20px);
-  height: clamp(26px, 7cqw, 48px);
+  height: clamp(26px, 6.2cqw, 40px);
   min-height: 0;
   padding: 4px;
   border-radius: 5px;
@@ -1498,6 +1498,15 @@ fieldset.provider-config {
   gap: 4px;
   padding: 5px 3px;
   border-bottom: 1px solid var(--line);
+}
+.touch-keyboard .hg-theme-default .hg-button.keyboard-modifier-active {
+  background: var(--accent);
+  color: white;
+}
+.keyboard-shortcut-error {
+  margin: 3px;
+  font-size: 11px;
+  color: var(--muted);
 }
 .keyboard-modes button {
   min-height: 30px;

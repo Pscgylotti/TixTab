@@ -60,6 +60,68 @@ async function checkGeometry(page: Page) {
     .toBe(true);
 }
 
+test('flyout chooses the roomier page region above or below and updates after expansion', async ({
+  page,
+}) => {
+  await prepare(page);
+  const doc = await PDFDocument.create(),
+    font = await doc.embedFont(StandardFonts.Helvetica);
+  const pdfPage = doc.addPage([595, 842]);
+  pdfPage.drawText('upperword', { x: 230, y: 700, size: 24, font });
+  pdfPage.drawText('lowerword', { x: 230, y: 120, size: 24, font });
+  await page.locator('input[type=file]').setInputFiles({
+    name: 'vertical.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from(await doc.save()),
+  });
+  await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  await page.getByRole('button', { name: '选文', exact: true }).click();
+  for (const [word, side] of [
+    ['upperword', 'below'],
+    ['lowerword', 'above'],
+  ]) {
+    const span = page.locator('.textLayer span').filter({ hasText: word }).first();
+    await span.scrollIntoViewIfNeeded();
+    const box = (await span.boundingBox())!;
+    await page.mouse.dblclick(box.x + 12, box.y + box.height / 2);
+    await expect(page.locator('.selection-flyout')).toHaveAttribute('data-placement', side);
+    await checkGeometry(page);
+    await page.getByRole('button', { name: '翻译', exact: true }).click();
+    await expect(page.locator('.selection-flyout')).toHaveAttribute('data-placement', side);
+    await checkGeometry(page);
+    expect(
+      await page.locator('.selection-flyout').evaluate((el) => {
+        const r = el.getBoundingClientRect(),
+          v = document.querySelector('.canvas-container')!.getBoundingClientRect();
+        return r.top >= v.top && r.bottom <= v.bottom;
+      }),
+    ).toBe(true);
+    await page.getByRole('button', { name: '关闭划词工具' }).click();
+  }
+});
+
+test('keyboard clipboard works on PDF selection and page objects without a focused text field', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await prepare(page);
+  await select(page);
+  await page.getByRole('button', { name: '屏幕键盘', exact: true }).click();
+  const shortcut = async (letter: string) => {
+    await page.locator('[data-skbtn="{ctrl}"]').click();
+    await page.locator(`[data-skbtn="${letter}"]`).click();
+  };
+  await shortcut('c');
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('competitive');
+  await shortcut('v');
+  await expect(page.locator('[data-object-id]')).toHaveCount(1);
+  await shortcut('z');
+  await expect(page.locator('[data-object-id]')).toHaveCount(0);
+  await shortcut('y');
+  await expect(page.locator('[data-object-id]')).toHaveCount(1);
+});
+
 test('blank page clicks dismiss selection flyout; controls preserve it in every view', async ({
   page,
 }) => {
@@ -129,15 +191,14 @@ test('resident native translation starts on the first flyout Translate click', a
   await expect(page.locator('.translation-result')).toContainText('有竞争力的');
   expect(translations).toBe(1);
 });
-test('writing hand switches panel side, survives reload and preserves selection during controls', async ({
+test('writing hand switches panel alignment, survives reload and preserves selection during controls', async ({
   page,
 }) => {
   await prepare(page);
-  const point = await select(page);
+  await select(page);
   await checkGeometry(page);
-  await expect(page.locator('.selection-flyout')).toHaveAttribute('data-placement', 'left');
+  await expect(page.locator('.selection-flyout')).toHaveAttribute('data-placement', /above|below/);
   const panel = (await page.locator('.selection-flyout').boundingBox())!;
-  expect(panel.x + panel.width).toBeLessThan(point.x - 32);
   await page.getByRole('button', { name: '翻译', exact: true }).click();
   await expect(page.getByLabel('远程失败回退本地', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '翻译后端设置', exact: true }).click();
@@ -155,7 +216,8 @@ test('writing hand switches panel side, survives reload and preserves selection 
   await page.getByLabel('书写惯用手').selectOption('left');
   await page.getByRole('button', { name: '关闭', exact: true }).click();
   await select(page);
-  await expect(page.locator('.selection-flyout')).toHaveAttribute('data-placement', 'right');
+  await expect(page.locator('.selection-flyout')).toHaveAttribute('data-placement', /above|below/);
+  expect((await page.locator('.selection-flyout').boundingBox())!.x).toBeGreaterThan(panel.x);
   await page.reload();
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   await page.getByRole('button', { name: '选文', exact: true }).click();

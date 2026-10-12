@@ -192,6 +192,10 @@
 [data-night='true'] .touch-keyboard .hg-theme-default .hg-button:is(:hover, .hg-activeButton) {
   background: #40516d;
 }
+[data-night='true'] .touch-keyboard .hg-theme-default .hg-button.keyboard-modifier-active {
+  background: #5276bb;
+  color: #fff;
+}
 [data-night='true'] .touch-keyboard .latex-shortcuts button {
   background: #2c3545;
   color: #c3d1e8;

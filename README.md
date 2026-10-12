@@ -6,10 +6,10 @@
 
 ## Get started
 
-1. Download `TixTab-0.2.37-lite-x64.exe` from Releases and run it. This portable app needs no Node.js or Python for basic PDF features.
+1. Download `TixTab-0.2.38-lite-x64.exe` from Releases and run it. This portable app needs no Node.js or Python for basic PDF features.
 2. Open PDFs in tabs, or drop a PDF and choose to open it in new tabs or insert all/selected pages after the current page. Drop PNG/JPEG/WebP/GIF/BMP/AVIF/SVG files to insert image objects.
 3. For local AI, open **Settings → Local model library**, download the models you need, and click **Set up** to prepare managed Python and optional acceleration/speech dependencies.
-4. Switch the interface language in Settings. English, offline Chinese Pinyin, LaTeX and voice keyboard modes are included. Voice input supports Chinese/English, a live waveform and local engines, and inserts at the current text caret.
+4. Switch the interface language in Settings. English, offline Chinese Pinyin, LaTeX and voice keyboard modes are included. The compact key layout includes Ctrl, Tab and Esc; tap Ctrl then A/X/C/V/Z/Y to edit. Voice input supports Chinese/English, a live waveform and local engines, and inserts at the current text caret.
 
 ## Features
 

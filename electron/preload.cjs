@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('surfaceDesktop', {
+  editCommand: (command) => ipcRenderer.invoke('edit:command', command),
   runtimes: {
     run: (request) => ipcRenderer.invoke('runtimes:run', request),
     onProgress: (callback) => {

@@ -29,9 +29,25 @@ export function useSelectionPlacement(selection: Anchor, hand: WritingHand, expa
         width: visual?.width ?? innerWidth,
         height: visual?.height ?? innerHeight,
       };
+      // Toolbars, status bar and docked chat do not provide usable page space.
+      const canvas = document.querySelector('.canvas-container')?.getBoundingClientRect();
+      if (canvas && canvas.width > 0 && canvas.height > 0) {
+        const right = Math.min(viewport.left + viewport.width, canvas.right),
+          bottom = Math.min(viewport.top + viewport.height, canvas.bottom);
+        viewport.left = Math.max(viewport.left, canvas.left);
+        viewport.top = Math.max(viewport.top, canvas.top);
+        viewport.width = Math.max(1, right - viewport.left);
+        viewport.height = Math.max(1, bottom - viewport.top);
+      }
       // The custom keyboard does not resize the visual viewport. Treat its
       // actual bounds as an exclusion region, including after a drag/resize.
       const keyboard = document.querySelector('.touch-keyboard')?.getBoundingClientRect();
+      const obstacles = Array.from(
+        document.querySelectorAll<HTMLElement>('.insert-dock,.zoom-dock,.page-navigation'),
+      )
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0);
+      if (keyboard) obstacles.push(keyboard);
       const anchor = selection.range?.commonAncestorContainer.isConnected
         ? selection.range.getBoundingClientRect()
         : { left: selection.x, top: selection.y, width: 0, height: 0 };
@@ -56,7 +72,7 @@ export function useSelectionPlacement(selection: Anchor, hand: WritingHand, expa
         selection,
         hand,
         expanded,
-        keyboard ? [keyboard] : [],
+        obstacles,
       );
       setPosition((previous) =>
         Object.keys(next).every(
@@ -74,6 +90,8 @@ export function useSelectionPlacement(selection: Anchor, hand: WritingHand, expa
     };
     const observer = new ResizeObserver(schedule);
     observer.observe(element);
+    const canvas = document.querySelector('.canvas-container');
+    if (canvas) observer.observe(canvas);
     const actions = element.querySelector('.selection-actions');
     const mutation = new MutationObserver(schedule);
     if (actions) {
