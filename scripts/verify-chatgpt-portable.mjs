@@ -39,12 +39,23 @@ try {
     font = await doc.embedFont(StandardFonts.Helvetica);
   for (let n = 1; n <= 12; n++)
     doc.addPage([600, 900]).drawText(`Portable page ${n}`, { font, size: 16, x: 40, y: 800 });
+  await page.evaluate(() =>
+    document.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        pointerId: 888,
+        pointerType: 'pen',
+        buttons: 1,
+        bubbles: true,
+      }),
+    ),
+  );
   await page.locator('input[type=file][accept=".pdf,.tixtab"]').setInputFiles({
     name: 'Portable.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from(await doc.save()),
   });
   await page.locator('.busy-overlay').waitFor({ state: 'hidden' });
+  await page.waitForFunction(() => document.querySelector('.pdf-layer')?.width > 100);
   await page.getByRole('button', { name: '下一页', exact: true }).click();
   await page.getByRole('button', { name: '下一页', exact: true }).click();
   await page.getByRole('button', { name: '连续页面预览', exact: true }).click();
@@ -123,7 +134,7 @@ try {
   );
   assert.deepEqual(errors, []);
   console.log(
-    'Actual portable: extraction, exact build/model/source hashes, ChatGPT/dictation IPC, collapsed account persistence, independent voice language, continuous page 3 entry and attachment page 6, night mode, offline WAV recognition passed. No account login, microphone capture, or paid inference. Renderer errors: none.',
+    'Actual portable: extraction, exact build/model/source hashes, lost pen release rendering recovery, ChatGPT/dictation IPC, collapsed account persistence, independent voice language, continuous page 3 entry and attachment page 6, night mode, offline WAV recognition passed. No account login, microphone capture, or paid inference. Renderer errors: none.',
   );
 } finally {
   if (browser) {

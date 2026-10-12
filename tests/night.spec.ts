@@ -71,7 +71,7 @@ for (const mode of ['单页标注', '连续页面预览', '双页预览']) {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
-    await page.route('**/pdfNight.worker.ts*', async (route) => {
+    await page.route('**/pdfNight.worker*', async (route) => {
       await gate;
       await route.continue();
     });

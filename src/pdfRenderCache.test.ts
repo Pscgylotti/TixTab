@@ -39,19 +39,16 @@ describe('PDF 位图共享和绘制调度', () => {
       b = requestPdfBitmap(pdf, 1, 1, 2),
       c = requestPdfBitmap(pdf, 2, 1, 2),
       foreground = requestPdfBitmap(pdf, 3, 1, 0);
-    await Promise.resolve();
-    expect(starts).toEqual([1, 2]);
+    await vi.waitFor(() => expect(starts).toEqual([1, 2]));
     expect(getPdfRenderStats(pdf)).toMatchObject({ running: 2, queued: 2 });
     a.cancel();
     pending[0].resolve();
     const [image, image2] = await Promise.all([a.promise, shared.promise]);
     expect(image).toBe(image2);
-    await Promise.resolve();
-    expect(starts).toEqual([1, 2, 4]);
+    await vi.waitFor(() => expect(starts).toEqual([1, 2, 4]));
     pending[1].resolve();
     await b.promise;
-    await Promise.resolve();
-    expect(starts).toEqual([1, 2, 4, 3]);
+    await vi.waitFor(() => expect(starts).toEqual([1, 2, 4, 3]));
     pending[2].resolve();
     pending[3].resolve();
     await Promise.all([foreground.promise, c.promise]);
@@ -66,8 +63,7 @@ describe('PDF 位图共享和绘制调度', () => {
     const rejection = expect(c.promise).rejects.toMatchObject({ name: 'AbortError' });
     c.cancel();
     await rejection;
-    await Promise.resolve();
-    expect(starts).toEqual([1, 2]);
+    await vi.waitFor(() => expect(starts).toEqual([1, 2]));
     pending[0].resolve();
     pending[1].resolve();
     await Promise.all([a.promise, b.promise]);
@@ -77,7 +73,7 @@ describe('PDF 位图共享和绘制调度', () => {
     const { pdf, pending } = fixture(3000, 2000);
     for (let i = 0; i < 3; i++) {
       const lease = requestPdfBitmap(pdf, i, 1);
-      await Promise.resolve();
+      await vi.waitFor(() => expect(pending).toHaveLength(i + 1));
       pending[i].resolve();
       await lease.promise;
     }

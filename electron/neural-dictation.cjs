@@ -49,8 +49,28 @@ function createNeuralDictation({
     if (starting && (!owner || startOwner === owner)) startCancelled = true;
     system.cancel(owner);
     if (job && (!owner || job.owner === owner)) {
-      finish(job);
-      killWorker();
+      if (job.done) return; // Closing an idle panel must not evict its warm model.
+      if (!job.system && worker?.device) {
+        job.discard = true;
+        job.text = '';
+        job.stopping = true;
+        job.ready = false;
+        send(worker.child, { action: 'stop', id: job.id });
+        // Keep a loaded recognizer once capture has stopped. Do not let failed
+        // inference or an unresponsive microphone keep running indefinitely.
+        const current = job;
+        if (!current.drain)
+          current.drain = setTimeout(() => {
+            if (!current.done && job === current) {
+              finish(current);
+              killWorker();
+            }
+          }, 45000);
+        current.wake?.();
+      } else {
+        finish(job);
+        killWorker(); // A queued start must never open a microphone after cancel.
+      }
     }
   }
   function command(exe, args, owner, timeout = 600000) {
@@ -184,13 +204,16 @@ function createNeuralDictation({
             if (!result.ok) job.done = true;
             return result;
           }
-          const states = await models.list();
+          const device = engine === 'sensevoice-small' ? 'CPU' : r.device || 'AUTO';
+          const key = [engine, device, engine === 'sensevoice-small' ? r.language : ''].join(':');
+          // The resident worker already verified its weights. Avoid filesystem
+          // scans of every installed model on each press of the microphone.
+          const states =
+            worker?.key === key ? [{ id: engine, source: 'resident' }] : await models.list();
           if (startCancelled) return { ok: false, error: 'cancelled' };
           if (!states.some((s) => s.id === engine && s.source !== 'missing'))
             return { ok: false, error: 'model-missing' };
           if (!exists(python)) return { ok: false, error: 'runtime' };
-          const device = engine === 'sensevoice-small' ? 'CPU' : r.device || 'AUTO';
-          const key = [engine, device, engine === 'sensevoice-small' ? r.language : ''].join(':');
           if (worker?.key !== key) killWorker();
           const current = {
             owner,
@@ -237,6 +260,7 @@ function createNeuralDictation({
             worker = active;
             child.stdin.on('error', () => {});
             child.stdout.on('data', (chunk) => {
+              if (worker !== active) return;
               active.buffer += chunk.toString('utf8');
               if (active.buffer.length > 65536) {
                 if (job && !job.done) {
@@ -278,8 +302,9 @@ function createNeuralDictation({
                 if (message.event === 'processing') session.processing = true;
                 if (message.event === 'text') {
                   session.processing = false;
-                  session.text +=
-                    (session.text ? '\n' : '') + String(message.text || '').slice(0, 8000);
+                  if (!session.discard)
+                    session.text +=
+                      (session.text ? '\n' : '') + String(message.text || '').slice(0, 8000);
                   if (session.text.length > 16000) cancel(owner);
                 }
                 if (message.event === 'error')
@@ -307,7 +332,13 @@ function createNeuralDictation({
           send(worker.child, { action: 'start', id: current.id, language: r.language });
           // Loading/compiling may take longer on the first NPU run. Record itself
           // has a separate two-minute bound enforced in the native worker.
-          current.timer = setTimeout(() => cancel(owner), 240000);
+          current.timer = setTimeout(() => {
+            if (job === current && !current.done) {
+              current.error = 'timeout';
+              finish(current);
+              killWorker();
+            }
+          }, 240000);
           return { ok: true, data: { id: current.id } };
         } finally {
           starting = false;
@@ -332,7 +363,8 @@ function createNeuralDictation({
             job.drain = setTimeout(() => {
               if (job && !job.done) {
                 job.error = 'timeout';
-                cancel(owner);
+                finish(job);
+                killWorker();
               }
             }, 45000);
         }
@@ -369,7 +401,7 @@ function createNeuralDictation({
               text,
               level: current.level,
               ready: current.ready,
-              done: current.done,
+              done: current.done || !!current.discard,
               error: current.error,
               device: current.device,
               fallback: current.fallback,

@@ -7,10 +7,41 @@ import threading
 import types
 import numpy as np
 from pathlib import Path
-from native_asr import FRAME, Segmenter, model_directory, record
+from native_asr import FRAME, Segmenter, SpeechModel, model_directory, record
 
 
 class SegmentTests(unittest.TestCase):
+    def test_whisper_keeps_complete_npu_compilation_cache_for_next_load(self):
+        import os
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sizes = {'encoder.blob': 195522689, 'decoder.blob': 695970200}
+            compilations = []
+            real_stat = Path.stat
+            def virtual_stat(path, *args, **kwargs):
+                info = real_stat(path, *args, **kwargs)
+                if path.name in sizes:
+                    values = list(info)
+                    values[6] = sizes[path.name]
+                    return os.stat_result(values)
+                return info
+            def pipeline(directory, target, **options):
+                cache = Path(options['CACHE_DIR'])
+                if not all((cache / name).exists() for name in sizes):
+                    compilations.append(target)
+                for name in sizes:
+                    (cache / name).write_bytes(b'compiled fixture')
+                return object()
+            ov = types.SimpleNamespace(__version__='fixture', Core=lambda: types.SimpleNamespace(available_devices=['NPU']))
+            genai = types.SimpleNamespace(WhisperPipeline=pipeline)
+            with patch.dict('os.environ', {'LOCALAPPDATA': temp}), patch.dict('sys.modules', {'openvino': ov, 'openvino_genai': genai}), patch('cache_lease.acquire_cache_lease'), patch.object(Path, 'stat', virtual_stat):
+                for _ in range(2):
+                    model = SpeechModel('whisper-small', root, 'NPU')
+                    self.assertEqual(model.device, 'NPU')
+                    self.assertTrue(all((model.cache / name).exists() for name in sizes))
+                    model.close()
+            self.assertEqual(compilations, ['NPU'])
+
     def test_silence_never_submits_inference(self):
         segmenter = Segmenter(lambda frame, rate: False)
         for _ in range(1000):

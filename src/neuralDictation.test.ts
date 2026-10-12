@@ -122,7 +122,42 @@ describe('local neural dictation controller', () => {
       expect(next.data.text).toBe('');
       expect(next.data.ready).toBe(true);
       f.service.cancel(f.owner);
-      expect(child.killed).toBe(true);
+      expect(child.killed).not.toBe(true);
+      expect(child.stdin.read().toString()).toContain('stop');
+    } finally {
+      f.service.dispose();
+    }
+  });
+  it('cancel drains a loaded recorder, discards late text, and preserves it for the next use', async () => {
+    const f = fixture();
+    try {
+      const request = {
+        action: 'start',
+        engine: 'whisper-small',
+        language: 'zh-CN',
+        device: 'NPU',
+      };
+      const first = await f.service.run(f.owner, request);
+      const child = f.children[0];
+      child.stdout.write(JSON.stringify({ event: 'loaded', device: 'NPU' }) + '\n');
+      f.service.cancel({});
+      expect(child.stdin.read().toString()).not.toContain('stop');
+      f.service.cancel(f.owner);
+      child.stdout.write(
+        JSON.stringify({ event: 'text', id: first.data.id, text: 'discard me' }) + '\n',
+      );
+      expect(
+        (await f.service.run(f.owner, { action: 'read', id: first.data.id })).data,
+      ).toMatchObject({ done: true, text: '' });
+      expect((await f.service.run(f.owner, request)).error).toBe('busy');
+      child.stdout.write(JSON.stringify({ event: 'done', id: first.data.id }) + '\n');
+      f.service.cancel(f.owner); // Closing an already idle panel is harmless.
+      f.models.list = () => {
+        throw Error('Warm start must not scan model files');
+      };
+      expect((await f.service.run(f.owner, request)).ok).toBe(true);
+      expect(f.children).toHaveLength(1);
+      expect(child.killed).not.toBe(true);
     } finally {
       f.service.dispose();
     }

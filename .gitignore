@@ -30,3 +30,4 @@ docs/benchmarks/
 docs/releases/*
 !docs/releases/0.2.35.md
 !docs/releases/0.2.36.md
+!docs/releases/0.2.37.md

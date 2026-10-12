@@ -13,6 +13,9 @@ import time
 import numpy as np
 
 RATE, FRAME = 16000, 480  # WebRTC VAD: 30 ms, mono PCM16
+# NPU Whisper small needs ~850 MiB for its complete compiled working set.
+# 768 MiB evicted a required blob immediately after each successful load.
+WHISPER_CACHE_BUDGET = 2 * 1024 * 1024 * 1024
 
 
 def model_directory(engine, root, bundled, manifest):
@@ -136,7 +139,7 @@ class SpeechModel:
                 raise RuntimeError('device')
             self.fallback = ', '.join(failed)
             from opus_cache import trim_cache
-            trim_cache(cache, budget=768 * 1024 * 1024)
+            trim_cache(cache, budget=WHISPER_CACHE_BUDGET)
 
     def transcribe(self, samples, language):
         samples = np.asarray(samples, dtype=np.float32)
