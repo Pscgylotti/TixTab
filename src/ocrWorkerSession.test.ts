@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('./modelLibrary', () => ({ requireLocalModels: vi.fn(async () => {}) }));
 import { localOcr, releaseOcr } from './ocr';
+import { createOcrSession } from './ocrWorkerSession';
 const image = 'data:image/png;base64,aW1hZ2U=';
 class FakeWorker {
   static instances: FakeWorker[] = [];
@@ -65,8 +66,12 @@ it.each(['load', 'loadLanguage', 'recognize'])(
   },
 );
 it('reuses warm OCR without reinitializing or retaining input data', async () => {
-  await localOcr(image, vi.fn());
-  await localOcr(image, vi.fn());
+  const progress = vi.fn();
+  await localOcr(image, progress);
+  expect(progress).toHaveBeenCalledWith('加载本地中英 OCR…');
+  progress.mockClear();
+  await localOcr(image, progress);
+  expect(progress).not.toHaveBeenCalledWith('加载本地中英 OCR…');
   expect(FakeWorker.instances).toHaveLength(1);
   expect(FakeWorker.instances[0].messages.map((p) => p.action)).toEqual([
     'load',
@@ -75,6 +80,34 @@ it('reuses warm OCR without reinitializing or retaining input data', async () =>
     'recognize',
     'recognize',
   ]);
+});
+it('parallel lanes own independent workers and cancelling one cannot terminate another', async () => {
+  const a = createOcrSession(false),
+    b = createOcrSession(false),
+    abort = new AbortController();
+  FakeWorker.hold = 'recognize';
+  const first = a.localOcr(image, vi.fn(), abort.signal),
+    rejected = expect(first).rejects.toMatchObject({ name: 'AbortError' });
+  const second = b.localOcr(image, vi.fn());
+  try {
+    await vi.waitFor(() =>
+      expect(
+        FakeWorker.instances.filter((w) => w.messages.at(-1)?.action === 'recognize'),
+      ).toHaveLength(2),
+    );
+    abort.abort();
+    await rejected;
+    expect(FakeWorker.instances[1].terminate).not.toHaveBeenCalled();
+    const worker = FakeWorker.instances[1],
+      packet = worker.messages.at(-1);
+    worker.onmessage!({
+      data: { ...packet, status: 'resolve', data: { text: 'second', confidence: 98 } },
+    });
+    expect((await second).text).toBe('second');
+  } finally {
+    a.releaseOcr();
+    b.releaseOcr();
+  }
 });
 it('times out a stuck recognition and terminates the actual worker', async () => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });

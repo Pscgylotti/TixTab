@@ -18,12 +18,24 @@ from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel, Field
-try:
-    from .native_texo import NativeTexo
-    from .native_opus import NativeOpus
-except ImportError:
-    from native_texo import NativeTexo
-    from native_opus import NativeOpus
+
+
+# Factories run in the inference thread, after admission. An OCR-only session
+# must not import formula/tokenizer or translation graphs at service startup.
+def create_texo():
+    try:
+        from .native_texo import NativeTexo
+    except ImportError:
+        from native_texo import NativeTexo
+    return NativeTexo()
+
+
+def create_opus(direction):
+    try:
+        from .native_opus import NativeOpus
+    except ImportError:
+        from native_opus import NativeOpus
+    return NativeOpus(direction=direction)
 
 _model = None
 _model_kind = None
@@ -167,7 +179,7 @@ def health():
 
 @app.post('/recognize')
 async def recognize(body: RecognizeRequest, request: Request):
-    return await run_native(request, ('texo', None), NativeTexo,
+    return await run_native(request, ('texo', None), create_texo,
                             lambda model, cancelled: model.recognize(body.image, body.device, cancelled=cancelled))
 
 
@@ -193,7 +205,7 @@ async def recognize_unimumer(body: UnimumerRequest, request: Request):
 @app.post('/translate')
 async def translate(body: TranslateRequest, request: Request):
     if not body.text.strip():raise HTTPException(400, 'Translation text is empty')
-    return await run_native(request, ('opus', body.direction), lambda: NativeOpus(direction=body.direction),
+    return await run_native(request, ('opus', body.direction), lambda: create_opus(body.direction),
                             lambda model, cancelled: model.translate(body.text, body.device, cancelled=cancelled))
 
 

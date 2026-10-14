@@ -57,6 +57,10 @@ test('floating chat preserves draft, page context and keyboard input without red
   await expect(page.locator('.chat-panel')).toHaveCount(0);
   expect(await page.locator('.canvas-container').evaluate((el) => el.clientWidth)).toBe(original);
   await page.getByRole('button', { name: '加页', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '插入空白页', exact: true })
+    .getByRole('button', { name: '插入页面', exact: true })
+    .click();
   await expect(popup.getByLabel('聊天附件页码')).toHaveValue('2');
   await popup.getByLabel('向 ChatGPT 提问').focus();
   await popup.getByLabel('向 ChatGPT 提问').press('End');

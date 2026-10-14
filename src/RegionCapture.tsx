@@ -1,16 +1,33 @@
 import { t as tr, useLocale } from './i18n';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { PageRegion } from './capturePage';
 export default function RegionCapture({
   onCapture,
   onClose,
   onBitmapOcr,
+  hint = '拖动框选截图区域',
+  label = '框选识别区域',
+  targetPageId,
 }: {
   onCapture: (pageId: string | null, region: PageRegion) => void;
   onClose: () => void;
-  onBitmapOcr: () => void;
+  onBitmapOcr?: () => void;
+  hint?: string;
+  label?: string;
+  targetPageId?: string;
 }) {
   useLocale();
+  useEffect(() => {
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', escape, true);
+    return () => window.removeEventListener('keydown', escape, true);
+  }, [onClose]);
   const contact = useRef<{
     id: number;
     x: number;
@@ -30,13 +47,16 @@ export default function RegionCapture({
     <div
       className="region-capture"
       role="dialog"
-      aria-label={tr('框选识别区域')}
+      aria-label={tr(label)}
+      aria-modal="true"
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('button') || contact.current) return;
         const paper = document
           .elementsFromPoint(e.clientX, e.clientY)
           .find((el) => el.matches('.paper,.reading-paper')) as HTMLElement | undefined;
         if (!paper) return;
+        const pageId = paper.closest<HTMLElement>('[data-page-id]')?.dataset.pageId ?? null;
+        if (targetPageId && pageId !== targetPageId) return;
         const rect = paper.getBoundingClientRect(),
           content = paper.querySelector<HTMLElement>('.reading-content');
         contact.current = {
@@ -46,7 +66,7 @@ export default function RegionCapture({
           rect,
           width: content?.offsetWidth ?? paper.offsetWidth,
           height: content?.offsetHeight ?? paper.offsetHeight,
-          pageId: paper.closest<HTMLElement>('[data-page-id]')?.dataset.pageId ?? null,
+          pageId,
         };
         e.currentTarget.setPointerCapture(e.pointerId);
         e.preventDefault();
@@ -85,8 +105,8 @@ export default function RegionCapture({
       }}
     >
       <div className="capture-hint">
-        {tr('拖动框选截图区域')}
-        <button onClick={onBitmapOcr}>{tr('解析位图')}</button>
+        {tr(hint)}
+        {onBitmapOcr && <button onClick={onBitmapOcr}>{tr('解析位图')}</button>}
         <button onClick={onClose}>{tr('取消')}</button>
       </div>
       {box && (

@@ -16,6 +16,7 @@ import {
   copyInk,
   drawingTool,
   inkBox,
+  inkResize,
   pasteInkFromButton,
   registerInkGesture,
   selectInk,
@@ -47,7 +48,7 @@ export default function InkSelectionLayer({
   const current = useRef({ page, onChange, onActivate });
   current.current = { page, onChange, onActivate };
   const [marquee, setMarquee] = useState<Bounds | null>(null);
-  const [delta, setDelta] = useState({ x: 0, y: 0 });
+  const [delta, setDelta] = useState({ x: 0, y: 0, scale: 1 });
   const [error, setError] = useState('');
   const tree = useRef(new SpatialIndex<Page['strokes'][number]>(cullingInkBounds));
   const start = useRef<{ x: number; y: number } | null>(null);
@@ -56,7 +57,15 @@ export default function InkSelectionLayer({
     pending = useRef<{ x: number; y: number } | null>(null);
   const alive = useRef(true),
     moveFrame = useRef(0);
-  const moving = useRef<{ id: number; x: number; y: number; dx: number; dy: number } | null>(null);
+  const moving = useRef<{
+    id: number;
+    x: number;
+    y: number;
+    dx: number;
+    dy: number;
+    scale: number;
+    corner?: string;
+  } | null>(null);
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -171,7 +180,7 @@ export default function InkSelectionLayer({
       cancelAnimationFrame(frame.current);
       frame.current = 0;
       setMarquee(null);
-      setDelta({ x: 0, y: 0 });
+      setDelta({ x: 0, y: 0, scale: 1 });
     };
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && (start.current || moving.current)) {
@@ -275,15 +284,15 @@ export default function InkSelectionLayer({
     moving.current = null;
     cancelAnimationFrame(moveFrame.current);
     moveFrame.current = 0;
-    if (!cancel && (m.dx || m.dy)) {
+    if (!cancel && (m.dx || m.dy || m.scale !== 1)) {
       const set = new Set(ids),
-        moved = new Map(translateInk(chosen, m.dx, m.dy).map((s) => [s.id, s]));
+        moved = new Map(translateInk(chosen, m.dx, m.dy, false, m.scale).map((s) => [s.id, s]));
       onChange({
         ...page,
         strokes: page.strokes.map((s) => (set.has(s.id) ? moved.get(s.id)! : s)),
       });
     }
-    setDelta({ x: 0, y: 0 });
+    setDelta({ x: 0, y: 0, scale: 1 });
   };
   const rectStyle = (b: Bounds) => ({
     left: b.minX,
@@ -300,20 +309,35 @@ export default function InkSelectionLayer({
       {box && (
         <>
           <svg className="ink-selection-highlight" viewBox={`0 0 ${page.width} ${page.height}`}>
-            <g transform={`translate(${delta.x} ${delta.y})`}>{paths}</g>
+            <g transform={`translate(${delta.x} ${delta.y}) scale(${delta.scale})`}>{paths}</g>
           </svg>
           <div
             className="ink-selection-box object-selection"
             aria-label={tr('笔迹选择')}
             data-selected-strokes={chosen.length}
-            style={{ ...rectStyle(box), transform: `translate(${delta.x}px,${delta.y}px)` }}
+            style={{
+              ...rectStyle({
+                minX: box.minX * delta.scale + delta.x,
+                minY: box.minY * delta.scale + delta.y,
+                maxX: box.maxX * delta.scale + delta.x,
+                maxY: box.maxY * delta.scale + delta.y,
+              }),
+            }}
             onPointerDown={(e) => {
               if (e.button !== 0 || e.pointerType === 'touch') return;
               e.preventDefault();
               e.stopPropagation();
               e.currentTarget.setPointerCapture(e.pointerId);
               const p = point(e.clientX, e.clientY);
-              moving.current = { id: e.pointerId, x: p.x, y: p.y, dx: 0, dy: 0 };
+              moving.current = {
+                id: e.pointerId,
+                x: p.x,
+                y: p.y,
+                dx: 0,
+                dy: 0,
+                scale: 1,
+                corner: (e.target as HTMLElement).dataset.inkResize,
+              };
             }}
             onPointerMove={(e) => {
               const m = moving.current;
@@ -321,19 +345,43 @@ export default function InkSelectionLayer({
               e.preventDefault();
               e.stopPropagation();
               const p = point(e.clientX, e.clientY);
-              m.dx = Math.max(-box.minX, Math.min(page.width - box.maxX, p.x - m.x));
-              m.dy = Math.max(-box.minY, Math.min(page.height - box.maxY, p.y - m.y));
+              if (m.corner) {
+                const r = inkResize(
+                  box,
+                  m.corner,
+                  p.x,
+                  p.y,
+                  page.width,
+                  page.height,
+                  100 / chosen.reduce((largest, stroke) => Math.max(largest, stroke.size), 1),
+                );
+                m.dx = r.x;
+                m.dy = r.y;
+                m.scale = r.scale;
+              } else {
+                m.dx = Math.max(-box.minX, Math.min(page.width - box.maxX, p.x - m.x));
+                m.dy = Math.max(-box.minY, Math.min(page.height - box.maxY, p.y - m.y));
+              }
               if (!moveFrame.current)
                 moveFrame.current = requestAnimationFrame(() => {
                   moveFrame.current = 0;
                   const latest = moving.current;
-                  if (latest) setDelta({ x: latest.dx, y: latest.dy });
+                  if (latest) setDelta({ x: latest.dx, y: latest.dy, scale: latest.scale });
                 });
             }}
             onPointerUp={(e) => endMove(e)}
             onPointerCancel={(e) => endMove(e, true)}
             onLostPointerCapture={(e) => endMove(e, true)}
-          />
+          >
+            {['nw', 'ne', 'sw', 'se'].map((corner) => (
+              <span
+                key={corner}
+                data-ink-resize={corner}
+                className={`review-resize-handle ${corner}`}
+                style={{ width: 9 / zoom, height: 9 / zoom, borderWidth: 1 / zoom }}
+              />
+            ))}
+          </div>
           {viewport.current?.parentElement &&
             createPortal(
               <div

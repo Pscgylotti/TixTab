@@ -1,11 +1,12 @@
 {
   "name": "tixtab",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Pen-first PDF reading and annotation workspace",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
+    "predev": "node scripts/prepare-pdf-index-worker.mjs",
     "dev": "vite --host 127.0.0.1",
     "prepare:runtime": "node scripts/prepare-runtime.mjs",
     "prepare:icons": "node scripts/prepare-icons.mjs",
@@ -81,7 +82,7 @@
     "electronDist": "node_modules/electron/dist",
     "npmRebuild": false,
     "directories": {
-      "output": "release/0.3.0"
+      "output": "release/0.3.1"
     },
     "files": [
       "dist/**/*",
@@ -144,7 +145,11 @@
           "microphones.py",
           "asr-manifest.json",
           "requirements-asr.txt",
-          "start-asr.ps1"
+          "start-asr.ps1",
+          "pdf_editor.py",
+          "requirements-pdf.txt",
+          "install_dependencies.py",
+          "python-sources.json"
         ]
       },
       "LICENSE",

@@ -51,7 +51,7 @@ class UnimumerTests(unittest.TestCase):
         service.drop_model()
         q=MagicMock();q.recognize.return_value={'latex':'x','encoderDevice':'GPU'}
         texo=MagicMock();texo.recognize.return_value={'latex':'y','encoderDevice':'NPU'}
-        with TestClient(service.app) as client,patch.object(service,'create_unimumer',return_value=q),patch.object(service,'NativeTexo',return_value=texo):
+        with TestClient(service.app) as client,patch.object(service,'create_unimumer',return_value=q),patch.object(service,'create_texo',return_value=texo):
             self.assertEqual(client.post('/recognize-unimumer',json={'image':'test','device':'NPU'}).status_code,422)
             self.assertEqual(client.post('/recognize-unimumer',json={'image':'test','device':'GPU'}).json()['latex'],'x')
             self.assertEqual(client.post('/recognize',json={'image':'test'}).json()['latex'],'y');q.close.assert_called_once()

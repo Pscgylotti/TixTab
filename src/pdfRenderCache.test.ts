@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { renderPolicy, setPowerMode } from './appearance';
+import { renderPolicy, setPowerMode, setMemoryMode } from './appearance';
 import {
   getPdfRenderStats,
   invalidatePdfBitmap,
@@ -15,6 +15,7 @@ import {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  setMemoryMode('normal');
   setPowerMode('auto');
 });
 function fixture(width = 200, height = 300) {
@@ -42,6 +43,35 @@ function fixture(width = 200, height = 300) {
   return { pdf, starts, pending };
 }
 describe('PDF 位图共享和绘制调度', () => {
+  it('minimal mode retires cached pages immediately and retains only visible rasters', async () => {
+    const { pdf, pending } = fixture();
+    const a = requestPdfBitmap(pdf, 0, 1);
+    await vi.waitFor(() => expect(pending).toHaveLength(1));
+    pending[0].resolve();
+    const first = await a.promise;
+    Object.assign(first, { isConnected: true });
+    const b = requestPdfBitmap(pdf, 1, 1);
+    await vi.waitFor(() => expect(pending).toHaveLength(2));
+    pending[1].resolve();
+    const hidden = await b.promise;
+    setMemoryMode('minimal');
+    expect(getPdfRenderStats(pdf)).toMatchObject({ bytes: 0, bitmaps: 0, pages: 0 });
+    expect(first).toMatchObject({ width: 200, height: 300 });
+    expect(hidden).toMatchObject({ width: 1, height: 1 });
+    const c = requestPdfBitmap(pdf, 2, 1);
+    await vi.waitFor(() => expect(pending).toHaveLength(3));
+    pending[2].resolve();
+    expect(await c.promise).toMatchObject({ width: 200, height: 300 });
+    expect(getPdfRenderStats(pdf)).toMatchObject({ bytes: 0, bitmaps: 0, pages: 0 });
+    expect(priorPdfBitmap(pdf, 2)).toBeUndefined();
+    expect(renderPolicy()).toMatchObject({
+      concurrency: 1,
+      cacheBytes: 0,
+      extraPageBytes: 0,
+      basePixels: 1000000,
+    });
+    releasePdfRenderCache(pdf);
+  });
   it('releases retired document pixels immediately even when its PDF proxy remains reachable', async () => {
     const { pdf, pending } = fixture(200, 300);
     const canvases: HTMLCanvasElement[] = [];

@@ -36,7 +36,7 @@ test('runtime setup reports readiness, progress, failure/retry and English label
   const setup = page.getByRole('region', { name: '自动安装本地运行时' });
   await setup.getByRole('button', { name: '自动安装', exact: true }).first().click();
   await expect(setup).toContainText('安装依赖，首次可能需要几分钟…');
-  await expect(setup).toContainText('下载失败，请检查网络后重试。');
+  await expect(setup).toContainText('所有下载源均失败，请查看安装日志后重试。');
   await setup.getByRole('button', { name: '自动安装', exact: true }).first().click();
   await expect(setup).toContainText('运行时已准备就绪。');
   await expect(setup.getByRole('button', { name: '已就绪', exact: true })).toBeDisabled();

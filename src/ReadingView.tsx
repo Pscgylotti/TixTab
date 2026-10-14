@@ -20,6 +20,9 @@ import { useDeferredZoom } from './useDeferredZoom';
 import PageEditor from './PageEditor';
 import type { PenDiagnostic } from './PdfSurface';
 import PdfDetailLayer from './PdfDetailLayer';
+import NativePdfPreview from './NativePdfPreview';
+import { useLiveNativeEdit } from './nativePdfDrafts';
+import { paperAppearance } from './paperAppearance';
 import { requestPdfBitmap, renderingCancelled } from './pdfRenderCache';
 import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
 import type { Page, Tool } from './model';
@@ -69,6 +72,7 @@ const ReadingPage = memo(function ReadingPage({
   hand: boolean;
 }) {
   useLocale();
+  const nativeLive = useLiveNativeEdit(page.id);
   const { pdfNight } = useAppearance(),
     policy = renderPolicy();
   const root = useRef<HTMLDivElement>(null),
@@ -82,11 +86,11 @@ const ReadingPage = memo(function ReadingPage({
   }, [width, policy.settleMs]);
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
-      rootMargin: '300px',
+      rootMargin: policy.minimal ? '0px' : '300px',
     });
     observer.observe(root.current!);
     return () => observer.disconnect();
-  }, []);
+  }, [policy.minimal]);
   useEffect(() => {
     let dead = false,
       cancel: (() => void) | undefined;
@@ -159,7 +163,12 @@ const ReadingPage = memo(function ReadingPage({
       <div
         className={`reading-paper paper-${page.sourceIndex === null ? page.paper : 'plain'}`}
         data-pdf-source={page.sourceIndex ?? ''}
-        style={{ width, height: page.height * scale }}
+        data-blank-paper={page.sourceIndex === null ? true : undefined}
+        style={{
+          width,
+          height: page.height * scale,
+          ...(page.sourceIndex === null ? paperAppearance(page, pdfNight) : {}),
+        }}
       >
         <div
           className={`reading-content ${tool === 'select' ? 'selectable' : ''}`}
@@ -167,8 +176,11 @@ const ReadingPage = memo(function ReadingPage({
           style={{ width: page.width, height: page.height, transform: `scale(${scale})` }}
         >
           <div ref={host} style={{ display: 'contents' }} />
+          {visible && (page.pdfEdits?.length || nativeLive) && (
+            <NativePdfPreview page={page} zoom={settledWidth / page.width} />
+          )}
           <PdfDetailLayer
-            pdf={visible ? pdf : null}
+            pdf={visible && !page.pdfEdits?.length && !nativeLive ? pdf : null}
             sourceIndex={page.sourceIndex}
             width={page.width}
             height={page.height}
@@ -193,6 +205,7 @@ const ReadingPage = memo(function ReadingPage({
                 sourceIndex={page.sourceIndex}
                 enabled={hand}
                 pageId={page.id}
+                bitmapOcr={page.bitmapOcr}
               />
               <PageEditor
                 page={page}
@@ -328,7 +341,7 @@ export default function ReadingView({
     layout,
     viewport.top - 8,
     viewport.height,
-    Math.max(400, viewport.height),
+    renderPolicy().minimal ? 0 : Math.max(400, viewport.height),
   );
   const observedIndex = useRef<number | null>(null),
     lastReset = useRef(resetView),

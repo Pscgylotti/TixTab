@@ -1,5 +1,3 @@
-import { PDFDocument } from 'pdf-lib';
-
 /** One-based input; preserve user ordering, remove duplicate page numbers. */
 export function parsePageRange(value: string, count: number): number[] {
   if (!Number.isInteger(count) || count < 1 || value.length > 2048) throw Error('page-range');
@@ -19,6 +17,7 @@ export async function appendPdfSources(
   source: Uint8Array | null,
   imports: { bytes: Uint8Array; pages: number[] }[],
 ) {
+  const { PDFDocument } = await import('pdf-lib');
   const output = source
     ? await PDFDocument.load(source, { updateMetadata: false })
     : await PDFDocument.create();

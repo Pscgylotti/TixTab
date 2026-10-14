@@ -1,6 +1,16 @@
 import { validOcr, type OcrAnnotation } from './ocrLayout';
+import { validNativeEdits, type NativePdfEdit } from './pdfNativeTypes';
 export type Tool =
-  'pen' | 'ballpoint' | 'pencil' | 'highlighter' | 'eraser' | 'hand' | 'select' | 'object';
+  | 'pen'
+  | 'ballpoint'
+  | 'pencil'
+  | 'highlighter'
+  | 'eraser'
+  | 'hand'
+  | 'select'
+  | 'object'
+  | 'pdf-edit'
+  | 'review';
 export type Point = [number, number, number];
 export interface Stroke {
   id: string;
@@ -18,6 +28,7 @@ export interface PlacedImage {
   width: number;
   height: number;
   kind: 'sketch' | 'formula' | 'image' | 'text';
+  rotation?: 0 | 90 | 180 | 270;
   textBox?: TextBox;
   latex?: string;
   macros?: Record<string, string>;
@@ -49,6 +60,35 @@ export function validTextBox(value: unknown): value is TextBox {
 export function isPicture(image: PlacedImage) {
   return image.kind === 'image' || (image.kind === 'sketch' && !image.scene);
 }
+export interface ReviewNote {
+  id: string;
+  text: string;
+  region: { x: number; y: number; width: number; height: number };
+  /** Screen-pixel offset of the side card, independent of page zoom. */
+  cardOffset?: { x: number; y: number };
+}
+export function validReviews(value: unknown): value is ReviewNote[] {
+  return (
+    Array.isArray(value) &&
+    value.length <= 4096 &&
+    value.every(
+      (n) =>
+        n &&
+        typeof n.id === 'string' &&
+        typeof n.text === 'string' &&
+        n.text.length <= 10000 &&
+        n.region &&
+        ['x', 'y', 'width', 'height'].every((k) => Number.isFinite(n.region[k])) &&
+        n.region.width > 0 &&
+        n.region.height > 0 &&
+        (n.cardOffset === undefined ||
+          (n.cardOffset &&
+            ['x', 'y'].every(
+              (key) => Number.isFinite(n.cardOffset[key]) && Math.abs(n.cardOffset[key]) <= 1000000,
+            ))),
+    )
+  );
+}
 export interface Page {
   id: string;
   sourceIndex: number | null;
@@ -58,7 +98,12 @@ export interface Page {
   images: PlacedImage[];
   /** Number of image objects below the page's single handwriting layer. Legacy pages default to top. */
   inkLayer?: number;
-  paper: 'plain' | 'dots' | 'lines';
+  paper: 'plain' | 'dots' | 'grid' | 'lines' | 'fine-grid';
+  paperColor?: string;
+  reviews?: ReviewNote[];
+  /** Revision changes native content without losing stable notebook page identity. */
+  nativeRevision?: string;
+  pdfEdits?: NativePdfEdit[];
   /** Nonvisual OCR metadata for source PDF bitmaps, in page coordinates. */
   bitmapOcr?: { imageIndex: number; polygon: number[]; result: OcrAnnotation }[];
 }
@@ -101,7 +146,8 @@ export function isEmptyStarterNotebook(n: Notebook) {
     p.width === 595.28 &&
     p.height === 841.89 &&
     !p.strokes.length &&
-    !p.images.length
+    !p.images.length &&
+    !p.reviews?.length
   );
 }
 export const isEraser = (e: { pointerType: string; buttons: number; button: number }) =>
@@ -188,7 +234,8 @@ export function validNotebook(value: unknown): value is Notebook {
         p.height > 0 &&
         p.height <= 20000 &&
         (p.sourceIndex === null || (Number.isInteger(p.sourceIndex) && p.sourceIndex >= 0)) &&
-        ['plain', 'dots', 'lines'].includes(p.paper) &&
+        ['plain', 'dots', 'grid', 'lines', 'fine-grid'].includes(p.paper) &&
+        (p.paperColor === undefined || /^#[0-9a-f]{6}$/i.test(p.paperColor)) &&
         Array.isArray(p.strokes) &&
         p.strokes.every(
           (s) =>
@@ -204,6 +251,9 @@ export function validNotebook(value: unknown): value is Notebook {
             ),
         ) &&
         Array.isArray(p.images) &&
+        (p.reviews === undefined || validReviews(p.reviews)) &&
+        (p.nativeRevision === undefined || typeof p.nativeRevision === 'string') &&
+        (p.pdfEdits === undefined || validNativeEdits(p.pdfEdits)) &&
         (p.bitmapOcr === undefined ||
           (Array.isArray(p.bitmapOcr) &&
             p.bitmapOcr.length <= 4096 &&
@@ -222,6 +272,7 @@ export function validNotebook(value: unknown): value is Notebook {
           (i) =>
             typeof i.id === 'string' &&
             ['sketch', 'formula', 'image', 'text'].includes(i.kind) &&
+            (i.rotation === undefined || [0, 90, 180, 270].includes(i.rotation)) &&
             (i.kind !== 'text' || validTextBox(i.textBox)) &&
             (i.macros === undefined || validMacroSnapshot(i.macros)) &&
             (i.ocr === undefined || validOcr(i.ocr)) &&

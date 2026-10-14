@@ -1,8 +1,11 @@
+import { usePenHaptics } from './usePenHaptics';
 import { performanceDelay, trackPerformance } from './performanceLedger';
 import {
   useAppearance,
   setNight,
   setPowerMode,
+  setMemoryMode,
+  type MemoryMode,
   setOriginal,
   setRenderQuality,
   setPreRenderRange,
@@ -13,7 +16,9 @@ import {
 } from './appearance';
 import { t as tr, useLocale, setLocale, type Locale } from './i18n';
 import { formulaDraftKey } from './formulaDraft';
-import { loadBlankPaper, saveBlankPaper } from './blankPaper';
+import BlankPageDialog from './BlankPageDialog';
+import { penSizeFromSlider, penSizeToSlider } from './penSizeScale';
+import AnchoredPopover from './AnchoredPopover';
 import {
   lazy,
   Suspense,
@@ -63,6 +68,8 @@ import {
   File,
   ScanText,
   Type,
+  FilePenLine,
+  StickyNote,
 } from 'lucide-react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfSurface from './PdfSurface';
@@ -100,9 +107,14 @@ import {
 import PageList from './PageList';
 import PageJump from './PageJump';
 import SidebarResizer from './SidebarResizer';
-import { NavigationContext, useDocumentNavigation } from './DocumentNavigator';
+import { useDocumentNavigation } from './DocumentNavigator';
 import { duplicateNotebookPage } from './duplicatePage';
 import { historyTarget, historyViewportIndex } from './historyNavigation';
+import { applyNativeDrafts } from './nativePdfDrafts';
+import { pdfEditErrors } from './pdfNativeTypes';
+import AppContexts from './AppContexts';
+import type { PageAction } from './pageOperations';
+const PageOperationsDialog = lazy(() => import('./PageOperationsDialog'));
 import InkColors, { savedInkColor } from './InkColors';
 import FullscreenButton from './FullscreenButton';
 import TouchKeyboard from './TouchKeyboard';
@@ -136,7 +148,13 @@ import { usePenInteractionTracking, activatePenTarget, penInteractionPage } from
 const SketchDialog = lazy(() => import('./SketchDialog')),
   FormulaDialog = lazy(() => import('./FormulaDialog'));
 type DropAnchor = { pageId: string; x?: number; y?: number };
-type DocumentTab = { id: string; name: string };
+import DocumentTabs from './DocumentTabs';
+import {
+  reorderDocumentTab,
+  tabsToClose,
+  type DocumentTab,
+  type CloseTabsMode,
+} from './tabOperations';
 function savedTabs(): string[] {
   try {
     const ids: unknown = JSON.parse(localStorage.getItem('surfacetab.tabs') || '[]');
@@ -158,7 +176,8 @@ export default function App() {
   const locale = useLocale();
   const writingHand = useWritingHand();
   const appearance = useAppearance();
-  const [blankPaper, setBlankPaper] = useState(loadBlankPaper);
+  const [blankPageAnchor, setBlankPageAnchor] = useState<DOMRect | null>(null);
+  const [pageDelete, setPageDelete] = useState<{ id: string; anchor: DOMRect } | null>(null);
   const [notebook, setNotebook] = useState<Notebook>(newNotebook),
     [pdf, setPdf] = useState<PDFDocumentProxy | null>(null),
     [index, setIndex] = useState(0);
@@ -230,6 +249,9 @@ export default function App() {
     [ocrImage, setOcrImage] = useState<string | null>(null);
   const [recognizingCapture, setRecognizingCapture] = useState(false);
   const [bitmapOcrOpen, setBitmapOcrOpen] = useState(false);
+  const [pageOperation, setPageOperation] = useState<{ action: PageAction; index: number } | null>(
+    null,
+  );
   const capture = async (pageId: string | null, region: PageRegion) => {
     setCapturing(false);
     setRecognizingCapture(false);
@@ -253,6 +275,7 @@ export default function App() {
   const [bottomCollapsed, setBottomCollapsed] = useState(() =>
     savedChrome('surfacetab.bottomCollapsed'),
   );
+  const penHaptics = usePenHaptics(tool);
   useEffect(() => {
     try {
       localStorage.setItem('surfacetab.bottomCollapsed', String(bottomCollapsed));
@@ -334,6 +357,12 @@ export default function App() {
     pdfRef = useRef(pdf),
     renderedSource = useRef<Uint8Array | null>(null),
     saveQueue = useRef(Promise.resolve());
+  useEffect(() => {
+    if (appearance.memoryMode === 'minimal') {
+      history.current = history.current.slice(-5);
+      future.current = future.current.slice(-5);
+    }
+  }, [appearance.memoryMode]);
   current.current = notebook;
   pdfRef.current = pdf;
   const page = notebook.pages[Math.min(index, notebook.pages.length - 1)];
@@ -543,12 +572,18 @@ export default function App() {
     },
     [],
   );
-  const commit = useCallback((n: Notebook) => {
-    history.current = [...history.current.slice(-39), current.current];
-    future.current = [];
-    current.current = n;
-    setNotebook(n);
-  }, []);
+  const commit = useCallback(
+    (n: Notebook) => {
+      history.current = [
+        ...history.current.slice(appearance.memoryMode === 'minimal' ? -4 : -39),
+        current.current,
+      ];
+      future.current = [];
+      current.current = n;
+      setNotebook(n);
+    },
+    [appearance.memoryMode],
+  );
   const selectNavigationPage = useCallback((next: number) => {
     readingObserved.current = false;
     setIndex(next);
@@ -663,9 +698,17 @@ export default function App() {
     if (pdf)
       setPdfViewCacheKey(
         pdf,
-        `${viewMode}:${zoom.toFixed(5)}:${appearance.mode}:${appearance.quality}:${appearance.battery}`,
+        `${viewMode}:${zoom.toFixed(5)}:${appearance.mode}:${appearance.quality}:${appearance.battery}:${appearance.memoryMode}`,
       );
-  }, [pdf, zoom, viewMode, appearance.mode, appearance.quality, appearance.battery]);
+  }, [
+    pdf,
+    zoom,
+    viewMode,
+    appearance.mode,
+    appearance.quality,
+    appearance.battery,
+    appearance.memoryMode,
+  ]);
   fitRef.current = fit;
   useLayoutEffect(() => {
     if (!ready) return;
@@ -777,6 +820,7 @@ export default function App() {
     const keydown = (e: KeyboardEvent) => {
       if (
         (e.target as HTMLElement).closest('input, textarea, select, [contenteditable="true"]') ||
+        document.querySelector('[aria-modal="true"]') ||
         dialog ||
         ocrImage ||
         bitmapOcrOpen ||
@@ -818,6 +862,7 @@ export default function App() {
       }
       const found = tools.find((t) => t.key.toLowerCase() === e.key.toLowerCase());
       if (found) setTool(found.id);
+      if (e.key.toLowerCase() === 'd' && !e.altKey) setTool('pdf-edit');
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault();
         turnPage(e.key === 'ArrowRight' ? 1 : -1, e.shiftKey ? 1 : pageStep);
@@ -893,13 +938,19 @@ export default function App() {
       }
       setWorkspaceOpen(false);
     });
-  const closeTab = (id: string) =>
+  const closeTabs = (id: string, mode: CloseTabsMode) =>
     documentOperation(async () => {
+      const ordered = tabsRef.current;
+      const closing = new Set(tabsToClose(ordered, id, mode));
+      if (!closing.size) return;
       await persist(current.current);
-      const remaining = tabsRef.current.filter((t) => t.id !== id);
-      if (id === activeRef.current) {
-        const at = tabsRef.current.findIndex((t) => t.id === id),
-          next = remaining[Math.min(at, remaining.length - 1)];
+      const remaining = ordered.filter((tab) => !closing.has(tab.id));
+      if (closing.has(activeRef.current)) {
+        const at = ordered.findIndex((tab) => tab.id === id);
+        const next =
+          mode === 'current'
+            ? remaining[Math.min(at, remaining.length - 1)]
+            : remaining.find((tab) => tab.id === id);
         if (next) await loadDocument(next.id);
         else {
           const newId = uid(),
@@ -1326,11 +1377,14 @@ export default function App() {
         tabsRef.current.map((t) => (t.id === activeId ? { ...t, name: notebook.name } : t)),
       );
   }, [activeId, notebook.name]);
-  const addPage = () => {
+  const addPage = (event: { currentTarget: HTMLElement }) =>
+    setBlankPageAnchor(event.currentTarget.getBoundingClientRect());
+  const insertBlankPage = (paper: Page['paper'], paperColor: string) => {
     const n = current.current,
-      p = { ...blankPage(page.width, page.height), paper: blankPaper };
+      p = { ...blankPage(page.width, page.height), paper, paperColor };
     commit({ ...n, pages: [...n.pages.slice(0, index + 1), p, ...n.pages.slice(index + 1)] });
     setIndex(index + 1);
+    setBlankPageAnchor(null);
   };
   const movePage = (from: number, to: number) => {
     if (from === to || to < 0 || to >= current.current.pages.length) return;
@@ -1435,6 +1489,21 @@ export default function App() {
       }
     }
   };
+  const applyPendingPdf = async () => {
+    if (busy || operation.current) return;
+    const snapshot = current.current;
+    setBusy(true);
+    try {
+      const next = await applyNativeDrafts(snapshot);
+      if (current.current === snapshot) commit(next);
+      else notify(tr('PDF 内容已改变，请重新选择元素。'));
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'pdf-edit';
+      notify(tr(pdfEditErrors[code] || pdfEditErrors['pdf-edit']));
+    } finally {
+      setBusy(false);
+    }
+  };
   const bottomControls = (
     <>
       <div className="insert-dock">
@@ -1489,6 +1558,20 @@ export default function App() {
         <button aria-label={tr('加页')} title={tr('加页')} onClick={addPage}>
           <FilePlus2 size={19} />
           <span>{tr('加页')}</span>
+        </button>
+        <div />
+        <button
+          aria-label={tr('便签')}
+          title={tr('框选区域添加便签')}
+          aria-pressed={tool === 'review'}
+          className={tool === 'review' ? 'active' : ''}
+          onClick={() => {
+            setSelection(null);
+            setTool('review');
+          }}
+        >
+          <StickyNote size={20} />
+          <span>{tr('便签')}</span>
         </button>
       </div>
       <div className="zoom-dock">
@@ -1565,28 +1648,167 @@ export default function App() {
       role="group"
       aria-label={tr('标注工具')}
     >
-      {tools.map(({ id, label, icon: Icon, key }) => (
+      {[...tools, { id: 'pdf-edit' as const, label: 'PDF 元素', icon: FilePenLine, key: 'D' }].map(
+        ({ id, label, icon: Icon, key }) => (
+          <button
+            key={id}
+            className={`tool-button ${tool === id ? 'active' : ''}`}
+            title={`${tr(label)} (${key})`}
+            aria-label={tr(label)}
+            aria-pressed={tool === id}
+            onClick={() => {
+              setTool(id);
+              if (id === 'highlighter') setSize(18);
+              else if (size >= 10) setSize(2.8);
+            }}
+          >
+            <Icon size={compact ? 16 : 20} />
+            {!compact && <span>{tr(label)}</span>}
+            {id === 'ballpoint' && <span className="ballpoint-dot" aria-hidden="true" />}
+          </button>
+        ),
+      )}
+    </div>
+  );
+  useEffect(() => {
+    setPageDelete(null);
+    setBlankPageAnchor(null);
+  }, [activeId]);
+  const renderInkControls = (compact = false) => (
+    <div className={compact ? 'compact-edit-controls' : 'expanded-edit-controls'}>
+      <InkColors color={color} onChange={setColor} compact={compact} />
+      {!compact && <div className="toolbar-divider" />}
+      <label className="size-control">
+        <span className="size-preview-slot" aria-hidden="true">
+          <i style={{ width: Math.min(12, size + 2), height: Math.min(12, size + 2) }} />
+        </span>
+        <input
+          aria-label={tr('笔触粗细')}
+          title={`${tr('笔触粗细')} ${size.toFixed(1)}`}
+          type="range"
+          min={tool === 'highlighter' ? 0.5 : 0}
+          max={tool === 'highlighter' ? 32 : 100}
+          step={tool === 'highlighter' ? 0.1 : 1}
+          value={tool === 'highlighter' ? size : penSizeToSlider(size)}
+          aria-valuetext={size.toFixed(2)}
+          onChange={(e) =>
+            setSize(
+              tool === 'highlighter'
+                ? Number(e.target.value)
+                : penSizeFromSlider(Number(e.target.value)),
+            )
+          }
+        />
+        <output>{size.toFixed(1)}</output>
+      </label>
+      {!compact && <div className="toolbar-divider" />}
+      <div className="row history-buttons">
         <button
-          key={id}
-          className={`tool-button ${tool === id ? 'active' : ''}`}
-          title={`${tr(label)} (${key})`}
-          aria-label={tr(label)}
-          aria-pressed={tool === id}
-          onClick={() => {
-            setTool(id);
-            if (id === 'highlighter') setSize(18);
-            else if (size >= 10) setSize(2.8);
-          }}
+          className="icon-button"
+          title={tr('撤销 (Ctrl+Z)')}
+          aria-label={tr('撤销')}
+          disabled={!history.current.length}
+          onClick={undo}
         >
-          <Icon size={compact ? 16 : 20} />
-          {!compact && <span>{tr(label)}</span>}
-          {id === 'ballpoint' && <span className="ballpoint-dot" aria-hidden="true" />}
+          <Undo2 size={compact ? 16 : 19} />
         </button>
-      ))}
+        <button
+          className="icon-button"
+          title={tr('重做 (Ctrl+Y)')}
+          aria-label={tr('重做')}
+          disabled={!future.current.length}
+          onClick={redo}
+        >
+          <Redo2 size={compact ? 16 : 19} />
+        </button>
+      </div>
     </div>
   );
   return (
-    <NavigationContext.Provider value={navigation.value}>
+    <AppContexts
+      navigation={navigation.value}
+      editing={{
+        notebook,
+        mode: viewMode,
+        stageNative: (pageId, edit) => {
+          const n = current.current,
+            total = n.pages.reduce(
+              (sum, p) =>
+                sum +
+                (p.pdfEdits?.filter((d) => p.id !== pageId || d.element.id !== edit.element.id)
+                  .length ?? 0),
+              0,
+            );
+          if (total >= 256) {
+            notify(tr('最多暂存 256 项 PDF 编辑，请先应用已有修改。'));
+            return;
+          }
+          commit({
+            ...current.current,
+            pages: current.current.pages.map((p) =>
+              p.id === pageId
+                ? {
+                    ...p,
+                    pdfEdits: [
+                      ...(p.pdfEdits ?? []).filter((d) => d.element.id !== edit.element.id),
+                      edit,
+                    ],
+                  }
+                : p,
+            ),
+          });
+        },
+      }}
+    >
+      {blankPageAnchor && (
+        <BlankPageDialog
+          width={page.width}
+          height={page.height}
+          anchor={blankPageAnchor}
+          onClose={() => setBlankPageAnchor(null)}
+          onInsert={insertBlankPage}
+        />
+      )}
+      {pageDelete && (
+        <AnchoredPopover
+          anchor={pageDelete.anchor}
+          label={tr('删除页面')}
+          alert
+          onClose={() => setPageDelete(null)}
+          width={260}
+          className="page-delete-popover"
+        >
+          <div className="editing-fields">
+            <p>
+              {tr(
+                '删除第 {0} 页及其标注？可通过撤销恢复。',
+                notebook.pages.findIndex((p) => p.id === pageDelete.id) + 1,
+              )}
+            </p>
+          </div>
+          <footer>
+            <button onClick={() => setPageDelete(null)}>{tr('取消')}</button>
+            <button
+              className="danger"
+              onClick={() => {
+                const n = current.current,
+                  at = n.pages.findIndex((p) => p.id === pageDelete.id);
+                if (n.pages.length > 1 && at >= 0) {
+                  commit({
+                    ...n,
+                    pages: n.pages.filter((p) => p.id !== pageDelete.id),
+                    bookmarks: n.bookmarks?.filter((b) => b.pageId !== pageDelete.id),
+                  });
+                  setIndex(Math.max(0, at - 1));
+                }
+                setPageDelete(null);
+              }}
+            >
+              {tr('确认删除')}
+            </button>
+          </footer>
+        </AnchoredPopover>
+      )}
       <div
         className={`app-shell ${compactWhenCollapsed && headerCollapsed && toolbarCollapsed && bottomCollapsed ? 'chrome-minimal' : ''}`}
         onPointerDownCapture={(event) => {
@@ -1729,8 +1951,8 @@ export default function App() {
               {tr(saveStatus)}
             </span>
           </div>
+          <FullscreenButton className="header-fullscreen" />
           <div className="top-actions">
-            <FullscreenButton />
             <button onClick={() => file.current?.click()} disabled={busy || !ready}>
               <FileUp size={17} />
               {tr('打开')}
@@ -1762,47 +1984,17 @@ export default function App() {
             {headerCollapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}
           </button>
         </header>
-        <div className="document-tabs" role="tablist" aria-label={tr('文档标签页')}>
-          {tabs.map((tab) => (
-            <div className={`document-tab ${tab.id === activeId ? 'active' : ''}`} key={tab.id}>
-              <button
-                role="tab"
-                aria-selected={tab.id === activeId}
-                disabled={busy || !ready}
-                title={tab.name}
-                onClick={() => reportOperation(() => switchDocument(tab.id))}
-                onKeyDown={(e) => {
-                  if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
-                    e.preventDefault();
-                    const at = tabs.findIndex((t) => t.id === tab.id),
-                      target =
-                        e.key === 'Home'
-                          ? 0
-                          : e.key === 'End'
-                            ? tabs.length - 1
-                            : (at + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-                    const buttons = e.currentTarget
-                      .closest('[role=tablist]')!
-                      .querySelectorAll<HTMLButtonElement>('[role=tab]');
-                    buttons[target]?.focus();
-                    reportOperation(() => switchDocument(tabs[target].id));
-                  }
-                }}
-              >
-                <File size={14} />
-                <span>{tab.name}</span>
-              </button>
-              <button
-                className="close-tab"
-                aria-label={tr('关闭标签 {0}', tab.name)}
-                title={tr('关闭标签，保留文档')}
-                disabled={busy || !ready}
-                onClick={() => reportOperation(() => closeTab(tab.id))}
-              >
-                <X size={14} />
-              </button>
-            </div>
-          ))}
+        <DocumentTabs
+          tabs={tabs}
+          activeId={activeId}
+          disabled={busy || !ready}
+          onSelect={(id) => reportOperation(() => switchDocument(id))}
+          onClose={(id, mode) => reportOperation(() => closeTabs(id, mode))}
+          onReorder={(id, slot) => {
+            if (!ready || operation.current || busyRef.current) return;
+            setDocumentTabs(reorderDocumentTab(tabsRef.current, id, slot));
+          }}
+        >
           <button
             className="new-document-tab"
             disabled={busy || !ready}
@@ -1821,7 +2013,7 @@ export default function App() {
           >
             <Plus size={17} />
           </button>
-        </div>
+        </DocumentTabs>
         {dragging && (
           <div className="pdf-drop-overlay">
             <FileUp size={36} />
@@ -1855,19 +2047,48 @@ export default function App() {
                     onSelect={(i) => navigation.go(notebook.pages[i].id)}
                     onMove={movePage}
                     onDuplicate={duplicatePage}
-                    onDelete={(i) => {
+                    onEditPages={(action, index) => {
+                      selectNavigationPage(index);
+                      setPageOperation({ action, index });
+                    }}
+                    onDelete={(i, anchor) => {
                       setIndex(i);
-                      setDialog('delete');
+                      setPageDelete({ id: notebook.pages[i].id, anchor });
                     }}
                   />
-                  <button className="add-page" onClick={addPage}>
-                    <Plus size={16} />
-                    {tr('插入空白页')}
-                  </button>
-                  <button className="add-page" onClick={() => duplicatePage(index)} disabled={busy}>
-                    <FilePlus2 size={16} />
-                    {tr('复制当前页')}
-                  </button>
+                  <div className="sidebar-page-actions" role="group" aria-label={tr('页面操作')}>
+                    <button
+                      className="add-page"
+                      aria-label={tr('插入空白页')}
+                      title={tr('插入空白页')}
+                      onClick={addPage}
+                    >
+                      <Plus size={16} />
+                    </button>
+                    <button
+                      className="add-page"
+                      aria-label={tr('复制当前页')}
+                      title={tr('复制当前页')}
+                      onClick={() => duplicatePage(index)}
+                      disabled={busy}
+                    >
+                      <FilePlus2 size={16} />
+                    </button>
+                    <button
+                      className="add-page"
+                      aria-label={tr('删除当前页')}
+                      title={tr('删除当前页')}
+                      disabled={busy || notebook.pages.length <= 1}
+                      onClick={(event) =>
+                        setPageDelete({
+                          id: page.id,
+                          anchor: event.currentTarget.getBoundingClientRect(),
+                        })
+                      }
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </>
               )}
               <div className="sidebar-bottom">
@@ -1903,8 +2124,39 @@ export default function App() {
                   <span>{tr('工作空间')}</span>
                 </button>
               </div>
-              {toolbarCollapsed && renderTools(true)}
+              {toolbarCollapsed && (
+                <div className="compact-drawing-strip">
+                  {renderTools(true)}
+                  {renderInkControls(true)}
+                </div>
+              )}
               <div className="row workspace-controls">
+                {notebook.pages.some((p) => p.pdfEdits?.length) && (
+                  <div className="native-edits-actions">
+                    <button
+                      disabled={busy}
+                      className="primary"
+                      onClick={() => void applyPendingPdf()}
+                    >
+                      {tr('应用 PDF 编辑')}
+                    </button>
+                    <button
+                      disabled={busy}
+                      title={tr('放弃全部暂存修改')}
+                      aria-label={tr('放弃全部暂存修改')}
+                      onClick={() =>
+                        commit({
+                          ...current.current,
+                          pages: current.current.pages.map((p) =>
+                            p.pdfEdits?.length ? { ...p, pdfEdits: undefined } : p,
+                          ),
+                        })
+                      }
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
                 <button
                   className="icon-button"
                   aria-label={tr('打开 ChatGPT 聊天')}
@@ -1992,42 +2244,7 @@ export default function App() {
             <div id="drawing-toolbar" className="toolbar" hidden={toolbarCollapsed}>
               {!toolbarCollapsed && renderTools()}
               <div className="toolbar-divider" />
-              <InkColors color={color} onChange={setColor} />
-              <div className="toolbar-divider" />
-              <label className="size-control">
-                <span style={{ width: Math.min(12, size + 2), height: Math.min(12, size + 2) }} />
-                <input
-                  aria-label={tr('笔触粗细')}
-                  type="range"
-                  min=".6"
-                  max={tool === 'highlighter' ? 32 : 12}
-                  step=".2"
-                  value={size}
-                  onChange={(e) => setSize(Number(e.target.value))}
-                />
-                <output>{size.toFixed(1)}</output>
-              </label>
-              <div className="toolbar-divider" />
-              <div className="row history-buttons">
-                <button
-                  className="icon-button"
-                  title={tr('撤销 (Ctrl+Z)')}
-                  aria-label={tr('撤销')}
-                  disabled={!history.current.length}
-                  onClick={undo}
-                >
-                  <Undo2 size={19} />
-                </button>
-                <button
-                  className="icon-button"
-                  title={tr('重做 (Ctrl+Y)')}
-                  aria-label={tr('重做')}
-                  disabled={!future.current.length}
-                  onClick={redo}
-                >
-                  <Redo2 size={19} />
-                </button>
-              </div>
+              {!toolbarCollapsed && renderInkControls()}
             </div>
             <div className="canvas-container">
               <PdfPrefetch
@@ -2134,7 +2351,12 @@ export default function App() {
                 <button
                   className="delete-button"
                   disabled={notebook.pages.length <= 1}
-                  onClick={() => setDialog('delete')}
+                  onClick={(event) =>
+                    setPageDelete({
+                      id: page.id,
+                      anchor: event.currentTarget.getBoundingClientRect(),
+                    })
+                  }
                 >
                   <Trash2 size={13} />
                   {tr('删除当前页')}
@@ -2391,28 +2613,16 @@ export default function App() {
             />
           )}
         </Suspense>
-        {(dialog === 'help' || dialog === 'settings' || dialog === 'delete') && (
+        {(dialog === 'help' || dialog === 'settings') && (
           <div className="modal-scrim">
             <section
               className="modal small-modal"
               role="dialog"
               aria-modal="true"
-              aria-label={
-                dialog === 'settings'
-                  ? tr('设置与笔诊断')
-                  : dialog === 'delete'
-                    ? tr('删除页面')
-                    : tr('使用帮助')
-              }
+              aria-label={dialog === 'settings' ? tr('设置与笔诊断') : tr('使用帮助')}
             >
               <header>
-                <h2>
-                  {dialog === 'settings'
-                    ? tr('纸张与笔输入')
-                    : dialog === 'delete'
-                      ? tr('删除这一页？')
-                      : tr('像在纸上一样自然')}
-                </h2>
+                <h2>{dialog === 'settings' ? tr('纸张与笔输入') : tr('像在纸上一样自然')}</h2>
                 <button
                   className="icon-button"
                   aria-label={tr('关闭')}
@@ -2484,6 +2694,44 @@ export default function App() {
                         <option value="en">English</option>
                       </select>
                     </label>
+                    <label className="appearance-setting">
+                      <span>
+                        <input
+                          type="checkbox"
+                          checked={penHaptics.enabled}
+                          disabled={!penHaptics.available}
+                          onChange={(e) => penHaptics.setEnabled(e.target.checked)}
+                        />{' '}
+                        {tr('笔触振动反馈')}
+                      </span>
+                    </label>
+                    <label className="appearance-setting haptic-strength-setting">
+                      {tr('振动强度')}
+                      <input
+                        aria-label={tr('振动强度')}
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        disabled={!penHaptics.available || !penHaptics.enabled}
+                        value={Math.round(penHaptics.strength * 100)}
+                        onChange={(e) => penHaptics.setStrength(Number(e.target.value) / 100)}
+                      />
+                      <output>{Math.round(penHaptics.strength * 100)}%</output>
+                    </label>
+                    <p className="appearance-note">
+                      {tr('强度调节仅对提供此能力的笔生效；需在系统中开启笔的触觉信号。')}
+                    </p>
+                    <p className="appearance-note" role="status">
+                      {tr(
+                        {
+                          waiting: '将支持振动的笔靠近屏幕以检测。',
+                          supported: '已检测到笔触振动支持；书写时模拟纸张反馈。',
+                          unsupported: '当前笔或设备未提供振动反馈。',
+                          unavailable: '当前环境未提供笔触振动接口。',
+                        }[penHaptics.status],
+                      )}
+                    </p>
                     <label className="writing-hand-setting">
                       {tr('书写惯用手')}
                       <select
@@ -2539,6 +2787,7 @@ export default function App() {
                       {tr('PDF 渲染清晰度')}
                       <select
                         aria-label={tr('PDF 渲染清晰度')}
+                        disabled={appearance.memoryMode === 'minimal'}
                         value={appearance.quality}
                         onChange={(e) => setRenderQuality(e.target.value as RenderQuality)}
                       >
@@ -2551,9 +2800,28 @@ export default function App() {
                       {tr('缩小页面时使用更高采样密度，停下后补绘。超清会增加内存与耗电。')}
                     </p>
                     <label className="appearance-setting">
+                      {tr('内存占用')}
+                      <select
+                        aria-label={tr('内存占用')}
+                        value={appearance.memoryMode}
+                        onChange={(e) => setMemoryMode(e.target.value as MemoryMode)}
+                      >
+                        <option value="normal">{tr('标准缓存')}</option>
+                        <option value="minimal">{tr('极低内存')}</option>
+                      </select>
+                    </label>
+                    {appearance.memoryMode === 'minimal' && (
+                      <p className="appearance-note">
+                        {tr(
+                          '仅保留正在显示的画面，关闭预渲染并降低像素预算；撤销历史保留 5 步，回翻页面会重新渲染。模型闲置卸载时间仍按独立设置执行。',
+                        )}
+                      </p>
+                    )}
+                    <label className="appearance-setting">
                       {tr('前后预渲染页数')}
                       <select
                         aria-label={tr('前后预渲染页数')}
+                        disabled={appearance.memoryMode === 'minimal'}
                         value={appearance.preRender}
                         onChange={(e) =>
                           setPreRenderRange(Number(e.target.value) as PreRenderRange)
@@ -2572,11 +2840,13 @@ export default function App() {
                         ))}
                       </select>
                     </label>
-                    <p className="appearance-note">
-                      {tr(
-                        '保留最近 15 页；额外页面缓存普通模式 200 MiB、节能模式 120 MiB。缩放或切换视图后重建。',
-                      )}
-                    </p>
+                    {appearance.memoryMode !== 'minimal' && (
+                      <p className="appearance-note">
+                        {tr(
+                          '保留最近 15 页；额外页面缓存普通模式 200 MiB、节能模式 120 MiB。缩放或切换视图后重建。',
+                        )}
+                      </p>
+                    )}
                     <p className="appearance-note">
                       {tr(
                         '节能档降低补绘并行度与像素预算；交互期间复用已有画面，窗口隐藏时暂停 PDF 绘制。',
@@ -2586,55 +2856,12 @@ export default function App() {
                         : tr('当前连接电源或未报告电池状态。')}
                     </p>
                     <p>{tr('默认用笔书写、手指移动。书写时忽略触摸，减少手掌误触。')}</p>
-                    <label className="field-label">{tr('空白页纸张')}</label>
-                    <div className="row">
-                      {(['plain', 'dots', 'lines'] as const).map((p, i) => (
-                        <button
-                          key={p}
-                          aria-pressed={(page.sourceIndex === null ? page.paper : blankPaper) === p}
-                          className={
-                            (page.sourceIndex === null ? page.paper : blankPaper) === p
-                              ? 'primary'
-                              : ''
-                          }
-                          onClick={() => {
-                            setBlankPaper(p);
-                            saveBlankPaper(p);
-                            if (page.sourceIndex === null) updatePage({ ...page, paper: p });
-                          }}
-                        >
-                          {[tr('纯白'), tr('点阵'), tr('横线')][i]}
-                        </button>
-                      ))}
-                    </div>
-                    {page.sourceIndex !== null && (
-                      <p className="appearance-note">
-                        {tr('PDF 原稿保持不变；纸张设置应用于新插入的空白页。')}
-                      </p>
-                    )}
                     <PenDiagnosticCard />
                     <p className="muted">
                       {tr(
                         '支持标准笔擦信号 button=5 / buttons=32；实际压感与笔擦需由设备驱动上报。',
                       )}
                     </p>
-                  </>
-                ) : dialog === 'delete' ? (
-                  <>
-                    <p>{tr('删除第 {0} 页及其标注？可通过撤销恢复。', index + 1)}</p>
-                    <button
-                      className="danger"
-                      onClick={() => {
-                        commit({
-                          ...current.current,
-                          pages: current.current.pages.filter((p) => p.id !== page.id),
-                        });
-                        setIndex(Math.max(0, index - 1));
-                        setDialog(null);
-                      }}
-                    >
-                      {tr('删除当前页')}
-                    </button>
                   </>
                 ) : (
                   <>
@@ -2656,7 +2883,7 @@ export default function App() {
                     </p>
                     <p>
                       {tr(
-                        '工程保留可编辑笔迹；导出 PDF 合入笔迹与草图。基础版支持标注和页面管理，尚不支持修改原 PDF 的文字。',
+                        '工程保留可编辑笔迹和便签；导出 PDF 保留绘图与审阅批注。PDF 元素工具可修改原生文本和图片，首次使用需安装本地运行时。',
                       )}
                     </p>
                     <p>
@@ -2670,7 +2897,27 @@ export default function App() {
             </section>
           </div>
         )}
+        {pageOperation && (
+          <Suspense fallback={null}>
+            <PageOperationsDialog
+              notebook={notebook}
+              pdf={pdf}
+              index={pageOperation.index}
+              action={pageOperation.action}
+              onClose={() => setPageOperation(null)}
+              onApply={(next) => {
+                if (current.current !== notebook) {
+                  notify(tr('文档已改变，请重新操作。'));
+                  return;
+                }
+                commit(next);
+                setPageOperation(null);
+                setResetView((v) => v + 1);
+              }}
+            />
+          </Suspense>
+        )}
       </div>
-    </NavigationContext.Provider>
+    </AppContexts>
   );
 }

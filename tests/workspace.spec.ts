@@ -155,6 +155,10 @@ test('工作空间分组、文档切换位置、搜索置顶、导出与删除�
     { x: 200, y: 150, pressure: 0.7 },
   ]);
   await page.getByRole('button', { name: '插入空白页', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '插入空白页', exact: true })
+    .getByRole('button', { name: '插入页面', exact: true })
+    .click();
   await page.getByRole('button', { name: '放大', exact: true }).click();
   const zoom = await page.locator('.zoom-dock>span').textContent();
   await page.getByRole('button', { name: '管理工作空间' }).click();
@@ -397,6 +401,10 @@ test('真实 PDF 打开、插页删页、矢量标注导出与工程重开', asy
     { x: 260, y: 200, pressure: 0.9 },
   ]);
   await page.getByRole('button', { name: '插入空白页', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '插入空白页', exact: true })
+    .getByRole('button', { name: '插入页面', exact: true })
+    .click();
   await expect(page.getByRole('button', { name: '第 2 页', exact: true })).toBeVisible();
   const saved = await project(page);
   expect(saved.pages).toHaveLength(2);
@@ -948,6 +956,10 @@ test('排版换行合并后发送翻译，同一跨行句子本地翻译一致',
 test('连续与双页支持鼠标拖动、触摸拖动、缩放与适合页面', async ({ page }) => {
   for (let i = 0; i < 3; i++)
     await page.getByRole('button', { name: '插入空白页', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '插入空白页', exact: true })
+    .getByRole('button', { name: '插入页面', exact: true })
+    .click();
   await page.getByRole('button', { name: '第 1 页', exact: true }).click();
   await page.getByRole('button', { name: '移动', exact: true }).click();
   for (const mode of ['连续页面预览', '双页预览']) {
@@ -1105,6 +1117,10 @@ test('预定义命令随公式保存，重开可编辑；悬浮键盘输入和�
 test('长按缩略图拖动排序、页面管理删除和撤销', async ({ page }) => {
   for (let i = 0; i < 2; i++)
     await page.getByRole('button', { name: '插入空白页', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '插入空白页', exact: true })
+    .getByRole('button', { name: '插入页面', exact: true })
+    .click();
   const original = await project(page),
     active = original.pages[2].id;
   await page.getByRole('button', { name: '第 1 页', exact: true }).click({ button: 'right' });

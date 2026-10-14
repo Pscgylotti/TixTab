@@ -49,7 +49,11 @@ function textLayout(root: HTMLElement, bounds: DOMRect) {
       maxY: rect.bottom - bounds.top,
       node,
       horizontal:
-        !parseFloat(span.style.getPropertyValue('--rotate')) && !Number(root.dataset.mainRotation),
+        !parseFloat(span.style.getPropertyValue('--rotate')) &&
+        !Number(
+          span.closest<HTMLElement>('[data-main-rotation]')?.dataset.mainRotation ??
+            root.dataset.mainRotation,
+        ),
       rtl: span.dir === 'rtl',
     });
   }

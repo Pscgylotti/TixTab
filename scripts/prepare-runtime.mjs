@@ -1,5 +1,6 @@
 import { mkdir, copyFile, readdir, readFile } from 'node:fs/promises';
 import { build } from 'esbuild';
+import './prepare-pdf-index-worker.mjs';
 const destination = new URL('../public/ort/', import.meta.url);
 await mkdir(destination, { recursive: true });
 const source = new URL('../node_modules/onnxruntime-web/dist/', import.meta.url);

@@ -1,12 +1,30 @@
 /* A touch-first popover: every field inside is a full finger target. */
 .selection-flyout {
+  box-sizing: border-box;
   --ctl: var(--hit);
   overscroll-behavior: contain;
   scrollbar-gutter: auto;
   scrollbar-width: thin;
 }
 .selection-flyout.expanded {
-  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.selection-flyout.expanded .selection-actions {
+  flex-shrink: 0;
+}
+.selection-flyout.expanded .selection-actions > button:last-child {
+  margin-left: auto;
+}
+.selection-flyout.expanded .translation-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.selection-flyout.expanded :is(.translation-source, .translation-result) {
+  max-height: none;
+  overflow: visible;
 }
 .selection-flyout[role='dialog'] :is(button, a, select) {
   min-width: var(--hit);

@@ -7,6 +7,10 @@ test('双页默认翻两页，单页微调保留配对，并正确处理首尾�
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   for (let i = 0; i < 4; i++)
     await page.getByRole('button', { name: '插入空白页', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '插入空白页', exact: true })
+    .getByRole('button', { name: '插入页面', exact: true })
+    .click();
   await page.getByRole('button', { name: '第 1 页', exact: true }).click();
   await page.getByRole('button', { name: '双页预览', exact: true }).click();
   const spread = async (indexes: number[]) => {

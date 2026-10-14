@@ -1,0 +1,1 @@
+{"kind": "single-cold-service-import", "modelsLoaded": false, "deviceScan": false, "elapsedMs": 485.2, "workingSetBytes": 66625536, "privateBytes": 284856320, "featureModules": ["backend.native_texo", "backend.native_opus", "tokenizers"]}

@@ -17,6 +17,7 @@ export async function drawPdfOriginalImage(
   imageIndex: number,
   output: HTMLCanvasElement,
   signal: AbortSignal,
+  maxPixels = 64_000_000,
 ) {
   const page = await pdf.getPage(pageIndex + 1),
     ops = await page.getOperatorList(),
@@ -55,35 +56,48 @@ export async function drawPdfOriginalImage(
   // Avoid a pathological source allocation on a low-memory tablet. The caller
   // has a bounded high-resolution region fallback for oversized/unsupported images.
   if (crop.w * crop.h > 64_000_000 || Math.max(crop.w, crop.h) > 32767) return false;
-  output.width = crop.w;
-  output.height = crop.h;
+  const scale = Math.min(1, Math.sqrt(maxPixels / crop.w / crop.h));
+  output.width = Math.max(1, Math.floor(crop.w * scale));
+  output.height = Math.max(1, Math.floor(crop.h * scale));
   const ctx = output.getContext('2d')!;
   if (image.bitmap) {
-    ctx.drawImage(image.bitmap, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
+    ctx.drawImage(image.bitmap, crop.x, crop.y, crop.w, crop.h, 0, 0, output.width, output.height);
     return true;
   }
   if (!image.data || ![1, 2, 3].includes(image.kind ?? 0)) return false;
   // Convert at most 64 rows at once; do not allocate another full RGBA source.
-  for (let top = 0; top < crop.h; top += 64) {
-    const rows = Math.min(64, crop.h - top),
-      pixels = ctx.createImageData(crop.w, rows);
-    for (let y = 0; y < rows; y++)
-      for (let x = 0; x < crop.w; x++) {
-        const source = (crop.y + top + y) * image.width + crop.x + x,
-          dest = (y * crop.w + x) * 4;
-        if (image.kind === 1) {
-          const byte = (crop.y + top + y) * Math.ceil(image.width / 8) + ((crop.x + x) >> 3),
-            gray = image.data[byte] & (128 >> ((crop.x + x) & 7)) ? 255 : 0;
-          pixels.data[dest] = pixels.data[dest + 1] = pixels.data[dest + 2] = gray;
-        } else {
-          const at = source * (image.kind === 2 ? 3 : 4);
-          pixels.data[dest] = image.data[at];
-          pixels.data[dest + 1] = image.data[at + 1];
-          pixels.data[dest + 2] = image.data[at + 2];
+  const stripe = scale < 1 ? document.createElement('canvas') : null;
+  try {
+    for (let top = 0; top < crop.h; top += 64) {
+      const rows = Math.min(64, crop.h - top),
+        pixels = ctx.createImageData(crop.w, rows);
+      for (let y = 0; y < rows; y++)
+        for (let x = 0; x < crop.w; x++) {
+          const source = (crop.y + top + y) * image.width + crop.x + x,
+            dest = (y * crop.w + x) * 4;
+          if (image.kind === 1) {
+            const byte = (crop.y + top + y) * Math.ceil(image.width / 8) + ((crop.x + x) >> 3),
+              gray = image.data[byte] & (128 >> ((crop.x + x) & 7)) ? 255 : 0;
+            pixels.data[dest] = pixels.data[dest + 1] = pixels.data[dest + 2] = gray;
+          } else {
+            const at = source * (image.kind === 2 ? 3 : 4);
+            pixels.data[dest] = image.data[at];
+            pixels.data[dest + 1] = image.data[at + 1];
+            pixels.data[dest + 2] = image.data[at + 2];
+          }
+          pixels.data[dest + 3] = image.kind === 3 ? image.data[source * 4 + 3] : 255;
         }
-        pixels.data[dest + 3] = image.kind === 3 ? image.data[source * 4 + 3] : 255;
-      }
-    ctx.putImageData(pixels, 0, top);
+      if (stripe) {
+        stripe.width = crop.w;
+        stripe.height = rows;
+        stripe.getContext('2d')!.putImageData(pixels, 0, 0);
+        const y0 = Math.round((top * output.height) / crop.h),
+          y1 = Math.round(((top + rows) * output.height) / crop.h);
+        if (y1 > y0) ctx.drawImage(stripe, 0, 0, crop.w, rows, 0, y0, output.width, y1 - y0);
+      } else ctx.putImageData(pixels, 0, top);
+    }
+  } finally {
+    if (stripe) stripe.width = stripe.height = 1;
   }
   return true;
 }

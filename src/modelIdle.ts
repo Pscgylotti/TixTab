@@ -21,16 +21,19 @@ export function setModelIdleSeconds(value: number) {
   } catch {
     /* Session preference. */
   }
+  notifyIdlePolicy();
+}
+function notifyIdlePolicy() {
   listeners.forEach((listener) => listener());
   // Update an already running service; this never starts one or loads weights.
   void fetch('http://127.0.0.1:8766/models/config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ idleReleaseSeconds: value }),
+    body: JSON.stringify({ idleReleaseSeconds: getModelIdleSeconds() }),
     signal: AbortSignal.timeout(1200),
   }).catch(() => {});
   void window.surfaceDesktop?.dictation
-    ?.run({ action: 'idle-policy', idleReleaseSeconds: value })
+    ?.run({ action: 'idle-policy', idleReleaseSeconds: getModelIdleSeconds() })
     .catch(() => {});
 }
 if (typeof window !== 'undefined' && window.addEventListener) {

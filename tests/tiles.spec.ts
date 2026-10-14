@@ -175,6 +175,10 @@ test('高清瓦片在各视图只绘制可见区域，旋转裁切像素与整�
   }
   await page.getByRole('button', { name: '单页标注', exact: true }).click();
   await page.getByRole('button', { name: '插入空白页', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '插入空白页', exact: true })
+    .getByRole('button', { name: '插入页面', exact: true })
+    .click();
   await expect(page.locator('.pdf-detail-tile')).toHaveCount(0);
   expect(errors).toEqual([]);
   console.log(JSON.stringify({ detailReadyMs: timings }));

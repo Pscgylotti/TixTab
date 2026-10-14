@@ -12,6 +12,8 @@ const {
   screen,
 } = require('electron');
 const { attachNativePen } = require('./pen-native.cjs');
+const { createPenHaptics } = require('./pen-haptics.cjs');
+const penHapticWindows = new Map();
 const { createProviderVault } = require('./provider-vault.cjs');
 const { lowerPriority } = require('./low-priority.cjs');
 const { createDesktopShortcut } = require('./desktop-shortcut.cjs');
@@ -22,6 +24,7 @@ const { createZotero } = require('./zotero.cjs');
 const { createDictation } = require('./dictation.cjs');
 const { createNeuralDictation } = require('./neural-dictation.cjs');
 const { createRuntimeInstaller } = require('./runtime-installer.cjs');
+const { createPdfEditor } = require('./pdf-editor.cjs');
 const { createChatGPT, createCredentialStore } = require('./chatgpt.cjs');
 const modelCatalog = require('./model-catalog.json');
 const path = require('node:path');
@@ -84,7 +87,55 @@ app.whenReady().then(() => {
   });
   const providerSender = (event) =>
     event.senderFrame === event.sender.mainFrame && trusted(event.senderFrame.url);
+  ipcMain.handle('pen:haptic', (event, action, value) => {
+    if (!providerSender(event)) return 'unavailable';
+    const owner = penHapticWindows.get(event.sender.id);
+    if (!owner) return 'unavailable';
+    if (action === 'configure' && typeof value === 'boolean') return owner.configure(value);
+    if (action === 'intensity') return owner.intensity(value);
+    if (action === 'stop') {
+      owner.stop();
+      return owner.status();
+    }
+    if (action === 'start' && BrowserWindow.fromWebContents(event.sender)?.isFocused())
+      return owner.start(value);
+    return owner.status();
+  });
   const editWindows = new Set();
+  const editSender = (event) =>
+    providerSender(event) ||
+    (editWindows.has(event.sender.id) &&
+      event.senderFrame === event.sender.mainFrame &&
+      event.senderFrame.url === 'about:blank');
+  ipcMain.handle('edit:key', (event, key, select) => {
+    const keys = {
+      ArrowLeft: 'Left',
+      ArrowRight: 'Right',
+      ArrowUp: 'Up',
+      ArrowDown: 'Down',
+      Home: 'Home',
+      End: 'End',
+      Backspace: 'Backspace',
+      Delete: 'Delete',
+    };
+    if (
+      !editSender(event) ||
+      typeof key !== 'string' ||
+      !Object.hasOwn(keys, key) ||
+      typeof select !== 'boolean' ||
+      !BrowserWindow.fromWebContents(event.sender)?.isFocused()
+    )
+      return false;
+    const input = { keyCode: keys[key], modifiers: select ? ['shift'] : [] };
+    event.sender.sendInputEvent({ ...input, type: 'keyDown' });
+    event.sender.sendInputEvent({ ...input, type: 'keyUp' });
+    return true;
+  });
+  ipcMain.handle('edit:clipboard-history', (event) => {
+    if (!editSender(event) || !BrowserWindow.fromWebContents(event.sender)?.isFocused())
+      return false;
+    return require('./clipboard-history.cjs').openClipboardHistory();
+  });
   ipcMain.handle('app:desktop-shortcut', (event) =>
     providerSender(event)
       ? createDesktopShortcut({ app, shell })
@@ -147,11 +198,17 @@ app.whenReady().then(() => {
   ipcMain.handle('runtimes:run', (event, request) => {
     if (
       !providerSender(event) ||
-      !['openvino', 'speech'].includes(request?.id) ||
-      !['status', 'install', 'cancel'].includes(request?.action)
+      !['openvino', 'speech', 'pdf'].includes(request?.id) ||
+      !['status', 'install', 'cancel', 'diagnostics', 'sources', 'configure-sources'].includes(
+        request?.action,
+      )
     )
       return { ok: false, error: 'invalid' };
     const owner = event.sender;
+    if (request.action === 'sources')
+      return runtimeInstaller.downloadSources().then((sources) => ({ ok: true, sources }));
+    if (request.action === 'configure-sources')
+      return runtimeInstaller.configureSources(request.sources);
     if (!runtimeOwners.has(owner)) {
       runtimeOwners.add(owner);
       const cancel = () => runtimeInstaller.cancel(owner);
@@ -163,8 +220,32 @@ app.whenReady().then(() => {
     }
     if (request.action === 'status')
       return runtimeInstaller.status(request.id).then((data) => ({ ok: true, data }));
+    if (request.action === 'diagnostics')
+      return runtimeInstaller
+        .diagnostics(owner, request.id)
+        .then((diagnostics) => ({ ok: !!diagnostics, diagnostics }));
     if (request.action === 'cancel') return { ok: runtimeInstaller.cancel(owner) };
     return runtimeInstaller.install(owner, request.id);
+  });
+  const pdfEditor = createPdfEditor({
+    runtime: path.join(app.getPath('home'), '.surfacetab/pdf-runtime'),
+    backend,
+    temporary: path.join(app.getPath('temp'), 'tixtab-pdf-editor'),
+  });
+  const pdfOwners = new WeakSet();
+  app.once('before-quit', () => pdfEditor.dispose());
+  ipcMain.handle('pdf-editor:run', (event, request) => {
+    if (!providerSender(event)) return { ok: false, error: 'invalid' };
+    const owner = event.sender;
+    if (!pdfOwners.has(owner)) {
+      pdfOwners.add(owner);
+      owner.once('destroyed', () => pdfEditor.cancel(owner));
+      owner.on('render-process-gone', () => pdfEditor.cancel(owner));
+      owner.on('did-start-navigation', (_event, details) => {
+        if (details.isMainFrame && !details.isSameDocument) pdfEditor.cancel(owner);
+      });
+    }
+    return pdfEditor.run(owner, request);
   });
   const dictation = createNeuralDictation({
     backend,
@@ -420,7 +501,21 @@ app.whenReady().then(() => {
     },
   });
   win.once('ready-to-show', () => win.show());
-  attachNativePen(win, { screen, trusted });
+  const penHaptics = createPenHaptics({
+    notify: (status) => {
+      if (!win.webContents.isDestroyed()) win.webContents.send('pen:haptic-status', status);
+    },
+  });
+  const hapticWindowId = win.webContents.id;
+  penHapticWindows.set(hapticWindowId, penHaptics);
+  attachNativePen(win, { screen, trusted, observe: (sample) => penHaptics.sample(sample) });
+  win.on('blur', () => penHaptics.reset());
+  win.on('hide', () => penHaptics.reset());
+  win.webContents.on('render-process-gone', () => penHaptics.reset());
+  win.on('closed', () => {
+    penHapticWindows.delete(hapticWindowId);
+    penHaptics.dispose();
+  });
   const visibility = () =>
     win.webContents.send('window:visibility', win.isVisible() && !win.isMinimized());
   for (const event of ['hide', 'show', 'minimize', 'restore']) win.on(event, visibility);

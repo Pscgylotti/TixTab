@@ -28,6 +28,53 @@
   scrollbar-width: none;
   touch-action: pan-x;
 }
+.compact-drawing-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 28px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+.tools-inline .compact-drawing-strip .compact-tools {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+.compact-edit-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+.expanded-edit-controls {
+  display: contents;
+}
+.compact-edit-controls .size-control {
+  gap: 4px;
+  flex: none;
+}
+.compact-edit-controls .size-control input {
+  width: 72px;
+  min-width: 0;
+  height: var(--compact-button);
+}
+.compact-edit-controls .size-control > span,
+.compact-edit-controls .size-control output {
+  display: none;
+}
+.compact-edit-controls :is(.icon-button, .history-buttons button) {
+  width: 28px;
+  height: var(--compact-button);
+  min-width: 28px;
+  min-height: var(--compact-button);
+  padding: 4px;
+}
+.compact-edit-controls .history-buttons {
+  gap: 0;
+}
 .tools-inline .compact-tools .tool-button {
   flex: 0 0 30px;
   position: relative;

@@ -1,12 +1,16 @@
 import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 export type TextContent = Awaited<ReturnType<PDFPageProxy['getTextContent']>>;
 import { performanceLedger, trackPerformance } from './performanceLedger';
+import { renderPolicy, subscribeAppearance } from './appearance';
 
 const REUSE_TEXT_CONTENT = true;
 const PAGE_LIMIT = 32,
   BYTE_LIMIT = 8_000_000;
 type Entry = { promise: Promise<TextContent>; bytes: number };
-const documents = new WeakMap<PDFDocumentProxy, Map<number, Entry>>();
+let documents = new WeakMap<PDFDocumentProxy, Map<number, Entry>>();
+subscribeAppearance(() => {
+  if (renderPolicy().minimal) documents = new WeakMap();
+});
 
 /** Share default PDF.js extraction only. Consumers must treat the returned text
  * as read-only; each visible text layer still owns its DOM and layout. Limits
@@ -32,7 +36,10 @@ export function readPdfTextContent(pdf: PDFDocumentProxy, index: number, page?: 
   cache.set(index, entry);
   const trim = () => {
     let bytes = [...cache.values()].reduce((total, value) => total + value.bytes, 0);
-    while (cache.size > PAGE_LIMIT || bytes > BYTE_LIMIT) {
+    while (
+      cache.size > (renderPolicy().minimal ? 2 : PAGE_LIMIT) ||
+      bytes > (renderPolicy().minimal ? 256000 : BYTE_LIMIT)
+    ) {
       const first = cache.keys().next().value!;
       bytes -= cache.get(first)!.bytes;
       cache.delete(first);

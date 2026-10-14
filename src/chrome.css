@@ -18,6 +18,14 @@
   --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
   --min-font-size-inv: calc(1 / var(--min-font-size));
 }
+.pdf-native-text {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
 .textLayer :is(span, br) {
   color: transparent;
   position: absolute;
@@ -25,8 +33,8 @@
   cursor: text;
   transform-origin: 0 0;
 }
-.textLayer > :not(.markedContent),
-.textLayer .markedContent span:not(.markedContent) {
+:is(.textLayer, .pdf-native-text) > :not(.markedContent),
+:is(.textLayer, .pdf-native-text) .markedContent span:not(.markedContent) {
   font-size: calc(var(--text-scale-factor) * var(--font-height));
   transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
 }
@@ -35,6 +43,11 @@
 }
 .textLayer ::selection {
   background: #5c8bea55;
+}
+.textLayer .bitmap-text-word {
+  font-family: Arial, sans-serif;
+  line-height: 1;
+  --ocr-scale-x: 1;
 }
 .reading-view {
   position: absolute;
@@ -698,8 +711,8 @@
   }
 }
 
-.textLayer > :not(.markedContent),
-.textLayer .markedContent span:not(.markedContent) {
+:is(.textLayer, .pdf-native-text) > :not(.markedContent),
+:is(.textLayer, .pdf-native-text) .markedContent span:not(.markedContent) {
   z-index: 1;
   --font-height: 0;
   --scale-x: 1;
@@ -1115,16 +1128,32 @@
   padding: 5px 0;
 }
 .sketch-editor {
-  contain: layout paint style;
+  /* Excalidraw's fixed SVG trail uses viewport coordinates. Layout/paint
+     containment would rebase it to this editor and offset the eraser preview. */
+  contain: style;
+}
+.haptic-strength-setting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.haptic-strength-setting input[type='range'] {
+  flex: 1;
+  min-width: 70px;
+}
+.haptic-strength-setting output {
+  min-width: 4ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
-.textLayer[data-main-rotation='90'] {
+:is(.textLayer, .pdf-native-text)[data-main-rotation='90'] {
   transform: rotate(90deg) translateY(-100%);
 }
-.textLayer[data-main-rotation='180'] {
+:is(.textLayer, .pdf-native-text)[data-main-rotation='180'] {
   transform: rotate(180deg) translate(-100%, -100%);
 }
-.textLayer[data-main-rotation='270'] {
+:is(.textLayer, .pdf-native-text)[data-main-rotation='270'] {
   transform: rotate(270deg) translateX(-100%);
 }
 .hiddenCanvasElement {
@@ -1615,8 +1644,71 @@ fieldset.provider-config {
   gap: 10px;
 }
 .keyboard-voice {
-  padding: 12px 8px 4px;
+  padding: 6px 4px 2px;
   color: var(--text);
+}
+.voice-edit-pad {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 136px;
+  gap: 6px;
+}
+.voice-edit-navigation {
+  display: grid;
+  grid-template-columns: 1fr 1.7fr 1fr;
+  grid-template-rows: repeat(3, 28px) 28px;
+  gap: 3px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+}
+.voice-edit-pad button {
+  min-height: 30px;
+  min-width: 0;
+  padding: 4px;
+  font-size: 12px;
+  border-radius: 6px;
+  touch-action: manipulation;
+}
+.voice-up {
+  grid-area: 1 / 2;
+}
+.voice-left {
+  grid-area: 2 / 1;
+}
+.voice-select {
+  grid-area: 2 / 2;
+}
+.voice-select[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.voice-right {
+  grid-area: 2 / 3;
+}
+.voice-down {
+  grid-area: 3 / 2;
+}
+.voice-edit-bottom {
+  grid-area: 4 / 1 / 5 / 4;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.voice-edit-commands {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 4px;
+}
+@media (max-width: 380px) {
+  .voice-edit-pad {
+    grid-template-columns: minmax(0, 1fr) 118px;
+  }
+  .voice-edit-pad button {
+    padding: 2px;
+    font-size: 11px;
+  }
 }
 .keyboard-voice > p {
   margin: 0 0 10px;
@@ -1628,7 +1720,7 @@ fieldset.provider-config {
 .keyboard-voice .chat-voice-controls {
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 .keyboard-voice .chat-voice-controls > button,
 .keyboard-voice .chat-voice-language {

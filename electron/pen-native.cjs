@@ -52,7 +52,10 @@ function createPenReader() {
   return reader;
 }
 
-function attachNativePen(win, { screen, trusted, readPen, platform = process.platform } = {}) {
+function attachNativePen(
+  win,
+  { screen, trusted, readPen, observe = () => {}, platform = process.platform } = {},
+) {
   if (platform !== 'win32') return () => {};
   let previous = null,
     latest = null,
@@ -75,6 +78,7 @@ function attachNativePen(win, { screen, trusted, readPen, platform = process.pla
     });
   };
   const reset = () => {
+    observe(null);
     clearTimeout(timer);
     timer = null;
     if (previous?.barrel) {
@@ -103,6 +107,7 @@ function attachNativePen(win, { screen, trusted, readPen, platform = process.pla
       reset();
       return;
     }
+    observe(sample);
     // No IPC during ordinary writing/hover. Held movements are coalesced;
     // button/contact edges and release are delivered immediately.
     const changed =

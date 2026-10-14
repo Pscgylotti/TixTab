@@ -36,7 +36,7 @@ describe('selection flyout placement', () => {
           paragraph,
           { x: 710, y: y + 12 },
           'right',
-          height > 54,
+          false,
         );
         expect(result.side).toBe(y < 400 ? 'below' : 'above');
         expect(result.height).toBe(height);
@@ -59,7 +59,7 @@ describe('selection flyout placement', () => {
     expect(result.side).toBe('above');
     expect(intersects(result, keyboard)).toBe(false);
   });
-  it('uses free space above/below a wide paragraph and limits a tall panel', () => {
+  it('expanded translation uses the full reading area even when it covers the source', () => {
     const paragraph = { left: 150, top: 620, width: 1150, height: 90 };
     const result = placeSelectionFlyout(
       view,
@@ -69,9 +69,9 @@ describe('selection flyout placement', () => {
       'right',
       true,
     );
-    expect(result.side).toBe('above');
-    expect(result.maxHeight).toBeLessThan(600);
-    expect(intersects(result, paragraph)).toBe(false);
+    expect(result.side).toBe('overlay');
+    expect(result).toMatchObject({ left: 400, top: 12, width: 640, height: 936, maxHeight: 936 });
+    expect(intersects(result, paragraph)).toBe(true);
   });
   it('keeps panels within portrait, zoomed and very short viewports', () => {
     for (const viewport of [
@@ -95,7 +95,7 @@ describe('selection flyout placement', () => {
       }
     }
   });
-  it('keeps a scrollable panel clear of text when docks leave only a narrow vertical slot', () => {
+  it('expanded translation chooses the largest free rectangle around bottom docks', () => {
     const viewport = { left: 16, top: 233, width: 736, height: 333 };
     const anchor = { left: 369, top: 322, width: 26, height: 7 };
     const result = placeSelectionFlyout(
@@ -110,9 +110,12 @@ describe('selection flyout placement', () => {
         { left: 319, top: 438, width: 130, height: 40 },
       ],
     );
-    expect(result.side).toBe('below');
-    expect(result.height).toBeLessThan(100);
-    expect(intersects(result, anchor)).toBe(false);
+    expect(result.side).toBe('overlay');
+    expect(result.height).toBeGreaterThan(170);
+    expect(result.width).toBeLessThanOrEqual(640);
+    expect(result.width).toBeLessThan(712);
+    expect(intersects(result, anchor)).toBe(true);
+    expect(intersects(result, { left: 319, top: 438, width: 130, height: 40 })).toBe(false);
   });
   it('moves away from a floating keyboard when non-overlapping space exists', () => {
     const keyboard = { left: 20, top: 580, width: 480, height: 300 };
@@ -126,6 +129,8 @@ describe('selection flyout placement', () => {
       [keyboard],
     );
     expect(intersects(result, keyboard)).toBe(false);
-    expect(intersects(result, text)).toBe(false);
+    expect(result.side).toBe('overlay');
+    expect(result.width * result.height).toBeGreaterThan(300000);
+    expect(result.width).toBeLessThanOrEqual(640);
   });
 });

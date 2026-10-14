@@ -13,10 +13,13 @@ export function clonePage(page: Page, sourceIndex = page.sourceIndex): Page {
     sourceIndex,
     strokes: page.strokes.map((s) => ({ ...s, id: uid(), points: s.points.map((p) => [...p]) })),
     images: page.images.map(cloneImage),
+    reviews: page.reviews?.map((n) => ({ ...n, id: uid(), region: { ...n.region } })),
   };
 }
 /** Give a duplicate its own source page, so export never aliases one PDF page twice. */
 export async function duplicateNotebookPage(notebook: Notebook, index: number): Promise<Notebook> {
+  if (notebook.pages.some((p) => p.pdfEdits?.length))
+    throw new Error('请先应用或放弃暂存的 PDF 元素编辑，再复制页面。');
   const original = notebook.pages[index];
   if (!original) throw new Error('page-missing');
   let source = notebook.source,

@@ -1,5 +1,13 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('surfaceDesktop', {
+  penHaptics: {
+    run: (action, value) => ipcRenderer.invoke('pen:haptic', action, value),
+    onStatus: (callback) => {
+      const listener = (_event, status) => callback(status);
+      ipcRenderer.on('pen:haptic-status', listener);
+      return () => ipcRenderer.removeListener('pen:haptic-status', listener);
+    },
+  },
   onNativePen: (callback) => {
     const listener = (_event, sample) => callback(sample);
     ipcRenderer.on('pen:native', listener);
@@ -8,6 +16,9 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
   createDesktopShortcut: () => ipcRenderer.invoke('app:desktop-shortcut'),
   openDocumentUrl: (url) => ipcRenderer.invoke('document:open-url', url),
   editCommand: (command) => ipcRenderer.invoke('edit:command', command),
+  editKey: (key, select) => ipcRenderer.invoke('edit:key', key, select),
+  openClipboardHistory: () => ipcRenderer.invoke('edit:clipboard-history'),
+  pdfEditor: { run: (request) => ipcRenderer.invoke('pdf-editor:run', request) },
   runtimes: {
     run: (request) => ipcRenderer.invoke('runtimes:run', request),
     onProgress: (callback) => {

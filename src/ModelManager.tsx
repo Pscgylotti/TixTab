@@ -6,6 +6,7 @@ import type { ModelAction, ModelProgress, ModelState } from './modelLibrary';
 import './modelLibrary.css';
 import RuntimeSetup from './RuntimeSetup';
 import ModelConfirmation from './ModelConfirmation';
+import { useRuntimeClose } from './useRuntimeClose';
 const size = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MiB`;
 const features = {
   formula: '公式',
@@ -25,6 +26,7 @@ const errors: Record<string, string> = {
 export default function ModelManager({ onClose }: { onClose: () => void }) {
   useLocale();
   const bridge = window.surfaceDesktop?.models;
+  const { close, confirmation } = useRuntimeClose(onClose);
   const [states, setStates] = useState<ModelState[]>([]),
     [progress, setProgress] = useState<ModelProgress | null>(null),
     [busy, setBusy] = useState(false),
@@ -93,7 +95,7 @@ export default function ModelManager({ onClose }: { onClose: () => void }) {
             <h2>{t('本地模型管理')}</h2>
             <p>{t('按需下载，离线运行')}</p>
           </div>
-          <button className="icon-button" aria-label={t('关闭模型管理')} onClick={onClose}>
+          <button className="icon-button" aria-label={t('关闭模型管理')} onClick={close}>
             <X size={20} />
           </button>
         </header>
@@ -246,6 +248,7 @@ export default function ModelManager({ onClose }: { onClose: () => void }) {
           onConfirm={() => void run(pending.id, pending.action)}
         />
       )}
+      {confirmation}
     </div>
   );
 }

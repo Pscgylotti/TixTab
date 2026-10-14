@@ -74,6 +74,8 @@ export async function packPdfExport(notebook: Notebook, signal: AbortSignal) {
       width: page.width,
       height: page.height,
       paper: page.paper,
+      paperColor: page.paperColor,
+      reviews: page.reviews?.map((n) => ({ ...n, region: { ...n.region } })),
       inkLayer: layers.indexOf(null),
       strokes,
       images: layers
@@ -86,6 +88,7 @@ export async function packPdfExport(notebook: Notebook, signal: AbortSignal) {
           y: image.y,
           width: image.width,
           height: image.height,
+          rotation: image.rotation,
         })),
     });
     await yieldIfNeeded();

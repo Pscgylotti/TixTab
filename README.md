@@ -8,12 +8,15 @@ Supports Surface Pen.
 
 ## Get started
 
-1. Use the Windows installer `TixTab-0.3.0-lite-setup-x64.exe`, then launch TixTab from the desktop or Start menu. Basic PDF features need no Node.js or Python. The installer supports upgrading an existing installation and an optional desktop shortcut on its finish page.
+1. Use the Windows installer `TixTab-0.3.1-lite-setup-x64.exe`, then launch TixTab from the desktop or Start menu. Basic PDF features need no Node.js or Python. The installer supports upgrading an existing installation and an optional desktop shortcut on its finish page.
 2. Open PDFs in tabs, or drop a PDF and choose to open it in new tabs or insert all/selected pages after the current page. Drop PNG/JPEG/WebP/GIF/BMP/AVIF/SVG files to insert image objects.
 3. For local AI, open **Settings → Local model library**, download the models you need, and click **Set up** to prepare managed Python and optional acceleration/speech dependencies.
 4. Switch the interface language in Settings. English, offline Chinese Pinyin, LaTeX and voice keyboard modes are included. The compact key layout includes Ctrl, Tab and Esc; tap Ctrl then A/X/C/V/Z/Y to edit. Voice input supports Chinese/English, a live waveform and local engines, and inserts at the current text caret.
 
 ## Features
+
+- Drag document tabs to reorder; long-press or right-click for close/current/other/right actions. Touch users can drag after holding. Tab order persists, and closing preserves workspace documents.
+- Basic native PDF text/image editing with real previews, region review notes, rotate/crop/split, an extreme memory mode, and lightweight bitmap OCR indexing. [Editing scope and limits](docs/PDF-EDITING.md).
 
 - Bitmap text indexing: choose **Region OCR → Analyze bitmaps**, then the whole document or a page range. Recognizes embedded/inserted pictures locally, saves text metadata in `.tixtab`, and includes it in document search with measured line highlights. Remote OCR is optional. [Details and limits](docs/BITMAP-OCR.md).
 - While using a drawing pen, hold its side button and drag to select handwriting; mouse users can hold Alt. A transparent selection frame supports move, cut/copy/paste and undo. Side-button taps still activate highlighted images/links or open the tool ring on empty space. Hovered targets have a separate emphasis color.

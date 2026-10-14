@@ -35,7 +35,10 @@ export async function exportPdf(
     options.onProgress?.({ stage: 'preparing' });
     // Commit/paint the cancellable overlay before preparing a large snapshot.
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
-    const packed = await packPdfExport(notebook, controller.signal);
+    const prepared = notebook.pages.some((p) => p.pdfEdits?.length)
+      ? await (await import('./nativePdfDrafts')).applyNativeDrafts(notebook, controller.signal)
+      : notebook;
+    const packed = await packPdfExport(prepared, controller.signal);
     if (controller.signal.aborted) throw cancelledPdfExport();
     try {
       worker = new Worker(new URL('./pdfExport.worker.ts', import.meta.url), { type: 'module' });

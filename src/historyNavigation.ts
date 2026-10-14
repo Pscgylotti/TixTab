@@ -21,7 +21,11 @@ export function historyTarget(before: Notebook, after: Notebook, activeId: strin
       (p.strokes !== previous.strokes ||
         p.images !== previous.images ||
         p.bitmapOcr !== previous.bitmapOcr ||
+        p.reviews !== previous.reviews ||
+        p.nativeRevision !== previous.nativeRevision ||
+        p.pdfEdits !== previous.pdfEdits ||
         p.paper !== previous.paper ||
+        p.paperColor !== previous.paperColor ||
         p.inkLayer !== previous.inkLayer ||
         p.width !== previous.width ||
         p.height !== previous.height ||

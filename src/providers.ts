@@ -493,3 +493,40 @@ export function providerFailureStatus(error: unknown, remote = false) {
       : t('接口无法连接或返回格式不正确');
   return error instanceof Error ? error.message : t('未知错误');
 }
+
+/** A bounded bitmap batch holds the local resource/cache lease once. Each
+ * Tesseract lane owns its worker; other local AI cannot compete with the batch. */
+export async function withBitmapOcrPool<T>(
+  count: number,
+  signal: AbortSignal,
+  work: (
+    recognize: (
+      image: string,
+      lane: number,
+    ) => Promise<{ text: string; lines?: import('./ocrLayout').OcrLine[]; engine: string }>,
+  ) => Promise<T>,
+) {
+  return providerTasks.withLocalLane(
+    () =>
+      withModelCacheUse(async () => {
+        const { requireLocalModels } = await import('./modelLibrary');
+        const { createOcrSession, releaseOcr } = await import('./ocrWorkerSession');
+        await requireLocalModels(['tesseract']);
+        signal.throwIfAborted();
+        await activate('bitmap:tesseract', releaseOcr, false, signal);
+        releaseOcr();
+        const lanes = Array.from({ length: Math.max(1, Math.min(4, Math.floor(count))) }, () =>
+          createOcrSession(false),
+        );
+        try {
+          return await work(async (image, lane) => ({
+            ...(await lanes[lane].localOcr(image, () => {}, signal, true)),
+            engine: 'Tesseract',
+          }));
+        } finally {
+          lanes.forEach((lane) => lane.releaseOcr());
+        }
+      }, signal),
+    signal,
+  );
+}

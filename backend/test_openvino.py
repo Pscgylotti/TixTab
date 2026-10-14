@@ -50,7 +50,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(self.client.post('/models/release', json={'action': 'release-idle'}, headers={'Origin': 'https://foreign.example'}).status_code, 403)
         self.assertIs(service._model, model)
         self.assertEqual(self.client.post('/models/release', json={'action': 'anything'}).status_code, 422)
-        with patch.object(service, 'NativeTexo') as constructor:
+        with patch.object(service, 'create_texo') as constructor:
             result = self.client.post('/models/release', json={'action': 'release-idle'}, headers={'Origin': 'surfacetab://app'})
             self.assertEqual(result.status_code, 200)
             self.assertTrue(result.json()['released'])
@@ -86,7 +86,7 @@ class ServiceTests(unittest.TestCase):
         asyncio.run(check())
 
     def test_health_does_not_load_model_and_validates_host(self):
-        with patch.object(service, 'NativeTexo') as constructor:
+        with patch.object(service, 'create_texo') as constructor:
             response = self.client.get('/health', headers={'Origin': 'surfacetab://app'})
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.headers['access-control-allow-origin'], 'surfacetab://app')
@@ -97,14 +97,14 @@ class ServiceTests(unittest.TestCase):
         self.assertNotIn('access-control-allow-origin', self.client.get('/health', headers={'Origin': 'https://foreign.example'}).headers)
 
     def test_cache_maintenance_returns_busy_without_retaining_failed_model(self):
-        with patch.object(service, 'NativeTexo', side_effect=CacheBusyError('fixture maintenance')):
+        with patch.object(service, 'create_texo', side_effect=CacheBusyError('fixture maintenance')):
             response = self.client.post('/recognize', json={'image': 'test'})
             self.assertEqual(response.status_code, 429)
             self.assertIsNone(service._model)
             self.assertIsNone(service._idle_handle)
 
     def test_request_device_default_and_busy(self):
-        with patch.object(service, 'NativeTexo') as constructor:
+        with patch.object(service, 'create_texo') as constructor:
             constructor.return_value.recognize.return_value = {'latex': 'x', 'encoderDevice': 'NPU'}
             self.assertEqual(self.client.post('/recognize', json={'image': 'test'}).json()['latex'], 'x')
             self.assertEqual(constructor.return_value.recognize.call_args.args, ('test', 'AUTO'))
@@ -125,7 +125,7 @@ class ServiceTests(unittest.TestCase):
         service.release_idle_model(); self.assertIsNone(service._model)
 
     def test_bad_input_does_not_poison_session_and_driver_failure_resets(self):
-        with patch.object(service, 'NativeTexo') as constructor:
+        with patch.object(service, 'create_texo') as constructor:
             constructor.return_value.recognize.side_effect = ValueError('empty drawing')
             self.assertEqual(self.client.post('/recognize', json={'image': 'test'}).status_code, 400)
             self.assertIsNotNone(service._model)
@@ -165,7 +165,7 @@ class ServiceTests(unittest.TestCase):
             def recognize(image, device, cancelled):
                 self.assertTrue(cancelled.wait(2), 'Disconnected native work was not cancelled')
                 raise InterruptedError()
-            with patch.object(service, 'NativeTexo') as constructor:
+            with patch.object(service, 'create_texo') as constructor:
                 constructor.return_value.recognize.side_effect = recognize
                 await service.app({'type': 'http', 'asgi': {'version': '3.0'}, 'http_version': '1.1', 'method': 'POST', 'scheme': 'http', 'path': '/recognize', 'raw_path': b'/recognize', 'query_string': b'', 'headers': [(b'host', b'localhost'), (b'content-type', b'application/json')], 'server': ('127.0.0.1', 8766), 'client': ('127.0.0.1', 1234)}, receive, send)
             self.assertEqual(messages[0]['status'], 499)

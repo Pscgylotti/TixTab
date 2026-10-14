@@ -151,12 +151,7 @@ function createNeuralDictation({
           await command(
             python,
             [
-              '-m',
-              'pip',
-              'install',
-              '--disable-pip-version-check',
-              '--only-binary=:all:',
-              '-r',
+              path.join(backend, 'install_dependencies.py'),
               path.join(backend, 'requirements-asr.txt'),
             ],
             owner,

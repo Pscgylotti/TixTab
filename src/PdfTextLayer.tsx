@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { trackPerformance } from './performanceLedger';
 import { TextLayer, type PDFDocumentProxy } from 'pdfjs-dist';
 import { readPdfTextContent } from './pdfTextContent';
+import type { Page } from './model';
+import BitmapTextLayer from './BitmapTextLayer';
 import {
   glyphAtPoint,
   glyphCaret,
@@ -14,11 +16,14 @@ import {
 export default function PdfTextLayer({
   pdf,
   sourceIndex,
+  page: notebookPage,
 }: {
   pdf: PDFDocumentProxy | null;
   sourceIndex: number | null;
+  page?: Page;
 }) {
   const root = useRef<HTMLDivElement>(null);
+  const nativeRoot = useRef<HTMLDivElement>(null);
   const selecting = useRef<{ id: number; anchor: GlyphHit } | null>(null);
   const [preview, setPreview] = useState<DOMRect | null>(null);
   const hoverFrame = useRef(0);
@@ -42,10 +47,10 @@ export default function PdfTextLayer({
   useEffect(() => {
     let cancelled = false,
       layer: TextLayer | undefined;
-    const element = root.current!;
+    const element = nativeRoot.current!;
     selecting.current = null;
     hidePreview();
-    invalidateTextLayout(element);
+    invalidateTextLayout(root.current!);
     element.replaceChildren();
     if (pdf && sourceIndex !== null)
       void trackPerformance('pdf-text', () =>
@@ -78,7 +83,7 @@ export default function PdfTextLayer({
           const dimensions = viewport.rawDims as { pageWidth: number; pageHeight: number };
           element.style.width = `${dimensions.pageWidth * viewport.userUnit}px`;
           element.style.height = `${dimensions.pageHeight * viewport.userUnit}px`;
-          invalidateTextLayout(element);
+          invalidateTextLayout(root.current!);
         }),
       ).catch(() => {});
     return () => {
@@ -160,7 +165,10 @@ export default function PdfTextLayer({
             selectWord(hit);
           }
         }}
-      />
+      >
+        <div ref={nativeRoot} className="pdf-native-text" />
+        {notebookPage && <BitmapTextLayer page={notebookPage} />}
+      </div>
       {preview &&
         createPortal(
           <div

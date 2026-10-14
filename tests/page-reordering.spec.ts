@@ -5,6 +5,56 @@ async function project(page: Page) {
   await page.keyboard.press('Control+s');
   return JSON.parse(await fs.readFile((await (await wait).path())!, 'utf8'));
 }
+test('touch thumbnail scrolling coasts after release and stops on a new contact without selecting/reordering', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const fixture = await page.evaluate(async () => {
+    const { newNotebook, blankPage } = await import('/src/model.ts' as string);
+    const n = newNotebook();
+    n.pages = Array.from({ length: 30 }, () => blankPage());
+    return JSON.stringify(n);
+  });
+  await page.locator('input[type=file]').setInputFiles({
+    name: 'scroll.tixtab',
+    mimeType: 'application/json',
+    buffer: Buffer.from(fixture),
+  });
+  await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  const list = page.locator('.page-list'),
+    card = page.getByRole('button', { name: '第 2 页', exact: true }),
+    b = (await card.boundingBox())!;
+  const client = await page.context().newCDPSession(page),
+    x = b.x + b.width / 2,
+    y = Math.min(
+      b.y + b.height / 2,
+      (await list.boundingBox())!.y + (await list.boundingBox())!.height - 20,
+    );
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x, y, id: 1 }],
+  });
+  for (let i = 1; i <= 4; i++) {
+    await new Promise((r) => setTimeout(r, 20));
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x, y: y - i * 32, id: 1 }],
+    });
+  }
+  const lifted = await list.evaluate((el) => el.scrollTop);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect.poll(() => list.evaluate((el) => el.scrollTop)).toBeGreaterThan(lifted + 30);
+  const bounds = (await list.boundingBox())!;
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: bounds.x + 8, y: bounds.y + 30, id: 2 }],
+  });
+  const stopped = await list.evaluate((el) => el.scrollTop);
+  await new Promise((r) => setTimeout(r, 120));
+  expect(Math.abs((await list.evaluate((el) => el.scrollTop)) - stopped)).toBeLessThan(2);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+  await expect(page.locator('.page-card.selected')).toHaveAttribute('data-page-index', '0');
+});
 test('thumbnail insertion indicator, adjacent ordering, escape and auto-scroll cancellation', async ({
   page,
 }) => {

@@ -50,6 +50,10 @@ import GroupHierarchy from './GroupHierarchy';
 import PdfTextLayer from './PdfTextLayer';
 import PdfNavigationLayer from './PdfNavigationLayer';
 import InkSelectionLayer from './InkSelectionLayer';
+import ReviewLayer from './ReviewLayer';
+import { useAppearance, renderPolicy } from './appearance';
+import { lazy, Suspense } from 'react';
+const NativePdfLayer = lazy(() => import('./NativePdfLayer'));
 interface Props {
   page: Page;
   pdf: PDFDocumentProxy | null;
@@ -137,6 +141,7 @@ function PageEditor({
   viewKey,
 }: Props) {
   useLocale();
+  const { memoryMode } = useAppearance();
   const root = useRef<HTMLDivElement>(null),
     ink = useRef<HTMLCanvasElement>(null),
     live = useRef<HTMLCanvasElement>(null);
@@ -311,7 +316,10 @@ function PageEditor({
   const imageIndex = useRef<SpatialIndex<PlacedImage> | null>(null);
   if (!imageIndex.current) imageIndex.current = new SpatialIndex<PlacedImage>(imageBounds);
   const prepareCanvas = (canvas: HTMLCanvasElement) => {
-    const ratio = Math.min(2, Math.sqrt(4000000 / (page.width * page.height)));
+    const ratio = Math.min(
+      renderPolicy().minimal ? 1 : 2,
+      Math.sqrt((renderPolicy().minimal ? 1000000 : 4000000) / (page.width * page.height)),
+    );
     const width = Math.ceil(page.width * ratio),
       height = Math.ceil(page.height * ratio);
     if (canvas.width !== width || canvas.height !== height) {
@@ -322,7 +330,7 @@ function PageEditor({
   useEffect(() => {
     if (ink.current) committed.current!.paint(ink.current, page);
     else committed.current!.reset();
-  }, [page.id, page.width, page.height, page.strokes, reading]);
+  }, [page.id, page.width, page.height, page.strokes, reading, memoryMode]);
   useEffect(() => {
     const canvas = ink.current;
     if (!canvas) return;
@@ -369,6 +377,11 @@ function PageEditor({
       paintFinish.current = undefined;
       try {
         const canvas = live.current!;
+        if (renderPolicy().minimal && !stroke.current && !erased.current) {
+          canvas.width = canvas.height = 1;
+          finish?.();
+          return;
+        }
         if (stroke.current || erased.current) prepareCanvas(canvas);
         const ctx = canvas.getContext('2d')!;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -426,6 +439,7 @@ function PageEditor({
     }
   };
   const down = (e: ReactPointerEvent) => {
+    if (tool === 'pdf-edit' || tool === 'review') return;
     if (e.button === 2 || (e.pointerType === 'pen' && e.buttons & 2)) {
       e.preventDefault();
       onContext(e.clientX, e.clientY);
@@ -555,7 +569,7 @@ function PageEditor({
             )
           );
         })}
-        {tool === 'select' && <PdfTextLayer pdf={pdf} sourceIndex={page.sourceIndex} />}
+        {tool === 'select' && <PdfTextLayer pdf={pdf} sourceIndex={page.sourceIndex} page={page} />}
         <PdfNavigationLayer
           page={page}
           pdf={pdf}
@@ -573,6 +587,14 @@ function PageEditor({
           onChange={onChange}
           onActivate={onActivate}
         />
+        {page.reviews?.length || tool === 'review' ? (
+          <ReviewLayer page={page} tool={tool} zoom={zoom} onChange={onChange} />
+        ) : null}
+        {tool === 'pdf-edit' && (
+          <Suspense fallback={null}>
+            <NativePdfLayer page={page} zoom={zoom} active={active} />
+          </Suspense>
+        )}
       </div>
       {active &&
         tool === 'object' &&

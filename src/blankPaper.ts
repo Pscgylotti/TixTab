@@ -2,7 +2,8 @@ import type { Page } from './model';
 export function loadBlankPaper(): Page['paper'] {
   try {
     const paper = localStorage.getItem('tixtab.blankPaper');
-    if (paper === 'plain' || paper === 'lines') return paper;
+    if (paper === 'plain' || paper === 'lines' || paper === 'grid' || paper === 'fine-grid')
+      return paper;
   } catch {}
   return 'dots';
 }

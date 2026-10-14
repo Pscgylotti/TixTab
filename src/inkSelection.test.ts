@@ -3,6 +3,7 @@ import { blankPage, type Stroke } from './model';
 import {
   decodeInk,
   inkBox,
+  inkResize,
   placeInk,
   strokeInBox,
   translateInk,
@@ -20,6 +21,17 @@ const stroke: Stroke = {
   ],
 };
 describe('editable ink selection', () => {
+  it('resizes around the opposite corner, scales width, retains pressure and clips at page limits', () => {
+    const box = { minX: 100, minY: 150, maxX: 200, maxY: 250 };
+    const resize = inkResize(box, 'se', 300, 350, 600, 800);
+    expect(resize).toEqual({ scale: 2, x: -100, y: -150 });
+    const result = translateInk([stroke], resize.x, resize.y, false, resize.scale)[0];
+    expect(result.size).toBe(6);
+    expect(result.points.map((p) => p[2])).toEqual([0.2, 0.8]);
+    const bound = inkResize(box, 'nw', -500, -500, 600, 800);
+    expect(box.minX * bound.scale + bound.x).toBeGreaterThanOrEqual(0);
+    expect(box.minY * bound.scale + bound.y).toBeGreaterThanOrEqual(0);
+  });
   it('selects a crossing segment even when both endpoints are outside, but rejects empty nearby space', () => {
     expect(strokeInBox(stroke, { minX: 40, minY: 10, maxX: 60, maxY: 30 })).toBe(true);
     expect(strokeInBox(stroke, { minX: 40, minY: 40, maxX: 60, maxY: 60 })).toBe(false);

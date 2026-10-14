@@ -1,6 +1,9 @@
 import { useSyncExternalStore } from 'react';
 export type PowerMode = 'auto' | 'eco' | 'quality';
 export type RenderQuality = 'standard' | 'high' | 'ultra';
+export type MemoryMode = 'normal' | 'minimal';
+let memoryMode = saved('tixtab.memoryMode', 'normal') as MemoryMode;
+if (!['normal', 'minimal'].includes(memoryMode)) memoryMode = 'normal';
 export const preRenderChoices = [0, 0.5, 1, 2, 3, 4] as const;
 export type PreRenderRange = (typeof preRenderChoices)[number];
 function saved(key: string, fallback: string) {
@@ -23,7 +26,7 @@ let battery = false,
 const listeners = new Set<() => void>();
 function changed() {
   revision++;
-  if (typeof document !== 'undefined') {
+  if (typeof document !== 'undefined' && document.documentElement) {
     document.documentElement.dataset.night = String(night);
     document.documentElement.dataset.eco = String(renderPolicy().eco);
   }
@@ -37,7 +40,24 @@ export function subscribeAppearance(fn: () => void) {
 }
 export function useAppearance() {
   useSyncExternalStore(subscribeAppearance, () => revision);
-  return { night, mode, quality, battery, original, preRender, pdfNight: night && !original };
+  return {
+    night,
+    mode,
+    quality,
+    battery,
+    original,
+    preRender: memoryMode === 'minimal' ? 0 : preRender,
+    memoryMode,
+    pdfNight: night && !original,
+  };
+}
+export function setMemoryMode(value: MemoryMode) {
+  if (!['normal', 'minimal'].includes(value)) return;
+  memoryMode = value;
+  try {
+    localStorage.setItem('tixtab.memoryMode', value);
+  } catch {}
+  changed();
 }
 export function setNight(value: boolean) {
   night = value;
@@ -71,22 +91,24 @@ export function setRenderQuality(value: RenderQuality) {
   changed();
 }
 export function renderPolicy() {
-  const eco = mode === 'eco' || (mode === 'auto' && battery);
+  const minimal = memoryMode === 'minimal';
+  const eco = minimal || mode === 'eco' || (mode === 'auto' && battery);
   const level = quality === 'standard' ? 0 : quality === 'high' ? 1 : 2;
   return {
     eco,
+    minimal,
     concurrency: eco ? 1 : 2,
-    sampling: [1, 1.5, 2][level],
-    baseScale: (eco ? [1, 2, 3] : [1.5, 3, 4])[level],
-    basePixels: (eco ? [2, 4, 6] : [6, 8, 12])[level] * 1_000_000,
-    readingPixels: (eco ? [1, 3, 5] : [2, 6, 10])[level] * 1_000_000,
-    detailPixels: (eco ? [2, 4, 6] : [6, 8, 12])[level] * 1_000_000,
-    viewPixels: (eco ? [1.2, 3, 5] : [3, 6, 10])[level] * 1_000_000,
-    dpr: eco ? 1.25 : 2,
+    sampling: minimal ? 1 : [1, 1.5, 2][level],
+    baseScale: minimal ? 1 : (eco ? [1, 2, 3] : [1.5, 3, 4])[level],
+    basePixels: (minimal ? 1 : (eco ? [2, 4, 6] : [6, 8, 12])[level]) * 1_000_000,
+    readingPixels: (minimal ? 0.75 : (eco ? [1, 3, 5] : [2, 6, 10])[level]) * 1_000_000,
+    detailPixels: (minimal ? 0.75 : (eco ? [2, 4, 6] : [6, 8, 12])[level]) * 1_000_000,
+    viewPixels: (minimal ? 0.75 : (eco ? [1.2, 3, 5] : [3, 6, 10])[level]) * 1_000_000,
+    dpr: minimal ? 1 : eco ? 1.25 : 2,
     settleMs: eco ? 320 : 200,
     detailMs: eco ? 280 : 160,
-    cacheBytes: (eco ? 32 : 48) * 1024 * 1024,
-    extraPageBytes: (eco ? 120 : 200) * 1024 * 1024,
+    cacheBytes: (minimal ? 0 : eco ? 32 : 48) * 1024 * 1024,
+    extraPageBytes: (minimal ? 0 : eco ? 120 : 200) * 1024 * 1024,
   };
 }
 export function setPreRenderRange(value: PreRenderRange) {

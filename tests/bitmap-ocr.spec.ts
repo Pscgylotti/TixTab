@@ -66,8 +66,15 @@ test('stopping retains completed pictures, retry indexes grouped pictures; Engli
   await page.getByRole('button', { name: '框选 OCR', exact: true }).click();
   await page.getByRole('button', { name: '解析位图', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '解析位图' });
+  await expect(dialog.getByLabel('OCR 后端')).toHaveValue('local');
+  await expect(dialog.locator('.bitmap-ocr-counts')).toContainText('已解析 0 张 · 未解析 3 张');
+  await dialog.getByLabel('OCR 后端').selectOption('native');
   await dialog.getByRole('button', { name: '开始解析', exact: true }).click();
   await expect.poll(() => calls).toBe(2);
+  await expect(dialog.getByRole('progressbar')).toHaveAttribute('value', '1');
+  await expect(dialog.getByRole('progressbar')).toHaveAttribute('max', '3');
+  await expect(dialog.getByRole('status')).toHaveText('正在解析位图…');
+  await expect(dialog.locator('.bitmap-ocr-counts')).toContainText('已解析 1 张 · 未解析 2 张');
   await dialog.getByRole('button', { name: '停止', exact: true }).click();
   await expect(dialog.getByRole('status')).toContainText('已停止');
   blocking = false;
@@ -162,6 +169,10 @@ test('bitmap OCR ranges, persistence, skipping, search line highlights and undo'
   const open = async () => {
     await page.getByRole('button', { name: '框选 OCR', exact: true }).click();
     await page.getByRole('button', { name: '解析位图', exact: true }).click();
+    await page
+      .getByRole('dialog', { name: '解析位图' })
+      .getByLabel('OCR 后端')
+      .selectOption('native');
   };
   await open();
   const dialog = page.getByRole('dialog', { name: '解析位图' });
@@ -221,4 +232,72 @@ test('bitmap OCR ranges, persistence, skipping, search line highlights and undo'
   await page.keyboard.press('Control+f');
   await page.getByRole('textbox', { name: '搜索文档文字' }).fill('alpha');
   await expect(page.locator('.document-search-results button')).toHaveCount(3);
+});
+
+test('default Tesseract indexes word boxes, selects OCR text in all views and shows image OCR', async ({
+  page,
+  context,
+}) => {
+  test.setTimeout(120000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await fixture(page);
+  await page.getByRole('button', { name: '框选 OCR', exact: true }).click();
+  await page.getByRole('button', { name: '解析位图', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '解析位图' });
+  await expect(dialog.getByLabel('OCR 后端')).toHaveValue('local');
+  await expect(dialog.locator('.bitmap-ocr-counts')).toContainText('已解析 0 张 · 未解析 3 张');
+  await dialog.getByRole('button', { name: '开始解析' }).click();
+  await expect(dialog.getByRole('status')).toContainText('解析完成：3 张位图', { timeout: 90000 });
+  await expect(dialog.getByRole('progressbar')).toHaveAttribute('value', '3');
+  await expect(dialog.getByRole('progressbar')).toHaveAttribute('max', '3');
+  await expect(dialog.locator('.bitmap-ocr-counts')).toContainText('已解析 3 张 · 未解析 0 张');
+  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
+  const project = await saved(page);
+  expect(project.pages[0].bitmapOcr[0].result.engine).toBe('Tesseract');
+  expect(project.pages[0].bitmapOcr[0].result.lines[0].words.length).toBeGreaterThan(1);
+  for (const view of ['单页标注', '连续页面预览', '双页预览']) {
+    await page.getByRole('button', { name: view, exact: true }).click();
+    await page.getByRole('button', { name: '选文', exact: true }).click();
+    const word = page
+      .locator('.bitmap-text-word')
+      .filter({ hasText: /^alpha\s*$/ })
+      .first();
+    await expect(word).toBeVisible();
+    await word.scrollIntoViewIfNeeded();
+    const box = (await word.boundingBox())!;
+    const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    await page.mouse.move(point.x, point.y);
+    await expect(page.locator('.pdf-selection-caret')).toBeVisible();
+    await page.mouse.dblclick(point.x, point.y);
+    await expect.poll(() => page.evaluate(() => getSelection()?.toString())).toBe('alpha');
+    await expect(page.locator('.selection-flyout')).toBeVisible();
+    await page.keyboard.press('Control+c');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('alpha');
+    await page.getByRole('button', { name: '关闭划词工具' }).click();
+  }
+  await page.getByRole('button', { name: '单页标注', exact: true }).click();
+  await page.getByRole('button', { name: '移动', exact: true }).click();
+  const box = (await page.locator('.pdf-layer').first().boundingBox())!;
+  await page.mouse.dblclick(box.x + (box.width * 250) / 600, box.y + (box.height * 275) / 800);
+  const original = page.getByRole('dialog', { name: '原图', exact: true });
+  await expect(original).toBeVisible();
+  await original.getByRole('button', { name: '查看 OCR 信息' }).click();
+  await expect(original.getByRole('region', { name: 'OCR 解析内容' })).toContainText(
+    'Bitmap alpha',
+  );
+  await expect(original.getByRole('region', { name: 'OCR 解析内容' })).toContainText('Tesseract');
+  await original.getByRole('button', { name: '查看 OCR 信息' }).click();
+  await expect(original.getByRole('region', { name: 'OCR 解析内容' })).toHaveCount(0);
+  await original.getByRole('button', { name: '关闭原图' }).click();
+  await page.keyboard.press('Control+z');
+  await page.getByRole('button', { name: '实验性夜间模式', exact: true }).click();
+  await page.mouse.dblclick(box.x + (box.width * 250) / 600, box.y + (box.height * 275) / 800);
+  await original.getByRole('button', { name: '查看 OCR 信息' }).click();
+  await expect(original.getByRole('region', { name: 'OCR 解析内容' })).toContainText(
+    '此图片尚未解析',
+  );
+  await original.screenshot({ path: '.cache/bitmap-ocr-original-info-night.png' });
+  expect(errors).toEqual([]);
 });

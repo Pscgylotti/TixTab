@@ -1,16 +1,55 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { isPicture, type Page, type PlacedImage } from './model';
 import { getPdfImages } from './pdfNight';
-import { drawPdfOriginalImage } from './pdfOriginalImage';
-import { polygonBox, transformPolygon } from './pdfNightGeometry';
+import { bitmapPdfDecoder } from './bitmapPdfDecoder';
+import { polygonBox, transformPolygon, type ImagePolygon } from './pdfNightGeometry';
 import { normalizeOcr, type OcrAnnotation, type OcrLine } from './ocrLayout';
+import { runBitmapJobs } from './bitmapOcrPool';
+import { recognitionImageSize } from './recognitionImageSize';
 export interface BitmapRecognition {
   text?: string;
   lines?: OcrLine[];
   engine: string;
 }
-type Recognize = (image: string) => Promise<BitmapRecognition>;
-/** One bitmap at a time. Reuse models through the provider lane; retain only text/geometry. */
+type Recognize = (image: string, lane: number) => Promise<BitmapRecognition>;
+export interface BitmapInventory {
+  total: number;
+  parsed: number;
+  /** Geometry only; keep it for this dialog so long documents need no second operator-list pass. */
+  pdfImages: Map<string, ImagePolygon[]>;
+}
+export async function inspectBitmapPages(
+  pages: Page[],
+  pdf: PDFDocumentProxy | null,
+  signal: AbortSignal,
+): Promise<BitmapInventory> {
+  const inventory: BitmapInventory = { total: 0, parsed: 0, pdfImages: new Map() };
+  const countObject = (image: PlacedImage) => {
+    if (image.group) image.group.objects.forEach(countObject);
+    else if (isPicture(image)) {
+      inventory.total++;
+      if (image.ocr) inventory.parsed++;
+    }
+  };
+  for (const page of pages) {
+    signal.throwIfAborted();
+    if (pdf && page.sourceIndex !== null) {
+      const polygons = await getPdfImages(pdf, page.sourceIndex);
+      signal.throwIfAborted();
+      inventory.pdfImages.set(page.id, polygons);
+      const parsed = new Set(page.bitmapOcr?.map((b) => b.imageIndex));
+      for (const [i, polygon] of polygons.entries()) {
+        const box = polygonBox(polygon);
+        if (box.width <= 0 || box.height <= 0) continue;
+        inventory.total++;
+        if (parsed.has(i)) inventory.parsed++;
+      }
+    }
+    page.images.forEach(countObject);
+  }
+  return inventory;
+}
+/** Decode only the active lanes; completed text is merged by stable image/path. */
 export async function scanBitmapPages(
   pages: Page[],
   pdf: PDFDocumentProxy | null,
@@ -19,100 +58,124 @@ export async function scanBitmapPages(
     replace: boolean;
     recognize: Recognize;
     onPage: (page: Page) => void;
-    onImage: () => void;
+    onImage: (alreadyParsed: boolean) => void;
+    inventory?: BitmapInventory;
+    concurrency?: number;
   },
 ) {
   const { signal } = options;
-  const source = document.createElement('canvas'),
-    input = document.createElement('canvas');
-  const recognize = async (): Promise<OcrAnnotation> => {
+  const decoder = pdf ? bitmapPdfDecoder(pdf, signal) : null;
+  const concurrency = Math.max(1, Math.min(4, Math.floor(options.concurrency || 1)));
+  const lanes = Array.from({ length: concurrency }, () => ({
+    source: document.createElement('canvas'),
+    input: document.createElement('canvas'),
+  }));
+  const recognize = async (lane: number): Promise<OcrAnnotation> => {
     signal.throwIfAborted();
-    const scale = Math.min(
-      1,
-      Math.sqrt(4_000_000 / (source.width * source.height)),
-      4096 / Math.max(source.width, source.height),
+    const { source, input } = lanes[lane];
+    const { width, height } = recognitionImageSize(
+      source.width,
+      source.height,
+      Math.min(1, 4096 / Math.max(source.width, source.height)),
     );
-    input.width = Math.max(1, Math.round(source.width * scale));
-    input.height = Math.max(1, Math.round(source.height * scale));
+    input.width = width;
+    input.height = height;
     const ctx = input.getContext('2d')!;
     ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, input.width, input.height);
-    ctx.drawImage(source, 0, 0, input.width, input.height);
-    const result = await options.recognize(input.toDataURL('image/png'));
-    signal.throwIfAborted();
-    options.onImage();
-    return normalizeOcr(result.text ?? '', result.lines, input.width, input.height, result.engine);
-  };
-  const scanObject = async (image: PlacedImage): Promise<PlacedImage> => {
-    signal.throwIfAborted();
-    if (image.group) {
-      const children: PlacedImage[] = [];
-      for (const child of image.group.objects) children.push(await scanObject(child));
-      return children.some((child, i) => child !== image.group!.objects[i])
-        ? { ...image, group: { ...image.group, objects: children } }
-        : image;
-    }
-    if (!isPicture(image) || (image.ocr && !options.replace)) return image;
-    const bitmap = await createImageBitmap(await (await fetch(image.data, { signal })).blob());
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(source, 0, 0, width, height);
     try {
-      const scale = Math.min(1, Math.sqrt(4_000_000 / (bitmap.width * bitmap.height)));
-      source.width = Math.max(1, Math.round(bitmap.width * scale));
-      source.height = Math.max(1, Math.round(bitmap.height * scale));
-      source.getContext('2d')!.drawImage(bitmap, 0, 0, source.width, source.height);
+      const result = await options.recognize(input.toDataURL('image/png'), lane);
+      signal.throwIfAborted();
+      return normalizeOcr(result.text ?? '', result.lines, width, height, result.engine);
     } finally {
-      bitmap.close();
+      source.width = source.height = input.width = input.height = 1;
     }
-    return { ...image, ocr: await recognize() };
   };
-  try {
+  const updateObject = (
+    images: PlacedImage[],
+    path: number[],
+    ocr: OcrAnnotation,
+  ): PlacedImage[] => {
+    const [index, ...rest] = path,
+      image = images[index];
+    const next = [...images];
+    next[index] = rest.length
+      ? {
+          ...image,
+          group: { ...image.group!, objects: updateObject(image.group!.objects, rest, ocr) },
+        }
+      : { ...image, ocr };
+    return next;
+  };
+  const queued = async function* () {
     for (const page of pages) {
       signal.throwIfAborted();
       let next = page;
-      try {
-        if (pdf && page.sourceIndex !== null) {
-          const p = await pdf.getPage(page.sourceIndex + 1),
-            viewport = p.getViewport({ scale: 1 });
-          const polygons = await getPdfImages(pdf, page.sourceIndex);
-          for (const [imageIndex, polygon] of polygons.entries()) {
-            signal.throwIfAborted();
-            if (!options.replace && next.bitmapOcr?.some((b) => b.imageIndex === imageIndex))
-              continue;
-            const projected = transformPolygon(polygon, viewport.transform),
-              box = polygonBox(projected);
-            if (box.width <= 0 || box.height <= 0) continue;
-            const decoded = await drawPdfOriginalImage(
-              pdf,
-              page.sourceIndex,
-              imageIndex,
-              source,
-              signal,
-            );
+      const jobs: ((lane: number) => Promise<void>)[] = [];
+      if (pdf && page.sourceIndex !== null) {
+        const p = await pdf.getPage(page.sourceIndex + 1),
+          viewport = p.getViewport({ scale: 1 });
+        const polygons =
+          options.inventory?.pdfImages.get(page.id) ?? (await getPdfImages(pdf, page.sourceIndex));
+        const parsed = new Set(page.bitmapOcr?.map((b) => b.imageIndex));
+        for (const [imageIndex, polygon] of polygons.entries()) {
+          if (!options.replace && parsed.has(imageIndex)) continue;
+          const projected = transformPolygon(polygon, viewport.transform),
+            box = polygonBox(projected);
+          if (box.width <= 0 || box.height <= 0) continue;
+          jobs.push(async (lane) => {
+            const decoded = await decoder!.draw(page.sourceIndex!, imageIndex, lanes[lane].source);
             if (!decoded) throw new Error('PDF 位图无法解码，已保留此前完成的结果');
-            const result = await recognize();
+            const result = await recognize(lane);
             next = {
               ...next,
               bitmapOcr: [
                 ...(next.bitmapOcr ?? []).filter((b) => b.imageIndex !== imageIndex),
                 { imageIndex, polygon: projected, result },
-              ],
+              ].sort((a, b) => a.imageIndex - b.imageIndex),
             };
-          }
+            options.onPage(next);
+            options.onImage(parsed.has(imageIndex));
+          });
         }
-        // Commit each completed picture to this page, including when a later picture is cancelled.
-        for (let i = 0; i < page.images.length; i++) {
-          const image = await scanObject(page.images[i]);
-          if (image !== page.images[i]) {
-            const images = [...next.images];
-            images[i] = image;
-            next = { ...next, images };
-          }
-        }
-      } finally {
-        if (next !== page) options.onPage(next);
       }
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      const enqueue = (image: PlacedImage, path: number[]) => {
+        if (image.group) {
+          image.group.objects.forEach((child, i) => enqueue(child, [...path, i]));
+          return;
+        }
+        if (!isPicture(image) || (image.ocr && !options.replace)) return;
+        jobs.push(async (lane) => {
+          const bitmap = await createImageBitmap(
+            await (await fetch(image.data, { signal })).blob(),
+          );
+          try {
+            signal.throwIfAborted();
+            const { source } = lanes[lane],
+              { width, height } = recognitionImageSize(bitmap.width, bitmap.height);
+            source.width = width;
+            source.height = height;
+            source.getContext('2d')!.drawImage(bitmap, 0, 0, width, height);
+          } finally {
+            bitmap.close();
+          }
+          const ocr = await recognize(lane);
+          next = { ...next, images: updateObject(next.images, path, ocr) };
+          options.onPage(next);
+          options.onImage(!!image.ocr);
+        });
+      };
+      page.images.forEach((image, i) => enqueue(image, [i]));
+      for (const job of jobs) yield job;
     }
+  };
+  try {
+    await runBitmapJobs(queued(), concurrency, signal);
   } finally {
-    source.width = source.height = input.width = input.height = 1;
+    lanes.forEach(({ source, input }) => {
+      source.width = source.height = input.width = input.height = 1;
+    });
+    await decoder?.close();
   }
 }

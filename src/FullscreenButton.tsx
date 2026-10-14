@@ -1,7 +1,7 @@
 import { t as tr, useLocale } from './i18n';
 import { useEffect, useState } from 'react';
 import { Maximize, Minimize } from 'lucide-react';
-export default function FullscreenButton() {
+export default function FullscreenButton({ className = '' }: { className?: string }) {
   useLocale();
   const [active, setActive] = useState(!!document.fullscreenElement);
   const [error, setError] = useState('');
@@ -37,7 +37,7 @@ export default function FullscreenButton() {
   }, [active]);
   return (
     <button
-      className="icon-button"
+      className={`icon-button ${className}`}
       aria-label={active ? tr('退出全屏') : tr('全屏')}
       title={error || (active ? tr('退出全屏 (F11 / Esc)') : tr('全屏 (F11)'))}
       onClick={() => void toggle()}

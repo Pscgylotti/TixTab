@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { trackPerformance } from './performanceLedger';
 import { createPortal } from 'react-dom';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { X } from 'lucide-react';
+import { X, ScanText } from 'lucide-react';
+import type { Page } from './model';
 import { getPdfImages } from './pdfNight';
 import { polygonBox, transformPolygon, type ImagePolygon } from './pdfNightGeometry';
 import { requestPdfTile, renderingCancelled } from './pdfRenderCache';
@@ -14,11 +15,13 @@ export default function PdfOriginalImages({
   sourceIndex,
   enabled,
   pageId,
+  bitmapOcr,
 }: {
   pdf: PDFDocumentProxy | null;
   sourceIndex: number | null;
   enabled: boolean;
   pageId: string;
+  bitmapOcr?: Page['bitmapOcr'];
 }) {
   useLocale();
   const penActive = usePenInteraction(pageId),
@@ -27,9 +30,13 @@ export default function PdfOriginalImages({
     [selected, setSelected] = useState<number[] | null>(null),
     [status, setStatus] = useState(''),
     [imageAspect, setImageAspect] = useState<number | null>(null);
+  const [showOcr, setShowOcr] = useState(false);
   const anchor = useRef<HTMLSpanElement>(null),
     canvas = useRef<HTMLCanvasElement>(null),
     selectedImageIndex = useRef(-1);
+  const ocr = selected
+    ? bitmapOcr?.find((b) => b.imageIndex === selectedImageIndex.current)?.result
+    : undefined;
   const pictureBox = selected ? polygonBox(selected) : null;
   useLayoutEffect(() => {
     refreshPenHover();
@@ -179,6 +186,7 @@ export default function PdfOriginalImages({
   }, [enabled, images]);
   useEffect(() => {
     if (!selected || !pdf || sourceIndex === null) return;
+    setShowOcr(false);
     let dead = false;
     let cancel: (() => void) | undefined;
     const abort = new AbortController();
@@ -331,7 +339,18 @@ export default function PdfOriginalImages({
               className="modal original-image-modal"
             >
               <header>
-                <h2>{tr('原图')}</h2>
+                <div className="original-image-heading">
+                  <h2>{tr('原图')}</h2>
+                  <button
+                    className="icon-button"
+                    aria-label={tr('查看 OCR 信息')}
+                    title={tr('查看 OCR 信息')}
+                    aria-expanded={showOcr}
+                    onClick={() => setShowOcr((value) => !value)}
+                  >
+                    <ScanText size={17} />
+                  </button>
+                </div>
                 <button
                   className="icon-button"
                   aria-label={tr('关闭原图')}
@@ -341,6 +360,18 @@ export default function PdfOriginalImages({
                 </button>
               </header>
               {status && <p role="status">{status}</p>}
+              {showOcr && (
+                <section className="original-image-ocr" aria-label={tr('OCR 解析内容')}>
+                  {ocr ? (
+                    <>
+                      <p className="muted">{ocr.engine}</p>
+                      <pre>{ocr.text || tr('已解析，未识别到文字')}</pre>
+                    </>
+                  ) : (
+                    <p className="muted">{tr('此图片尚未解析，请先使用“解析位图”。')}</p>
+                  )}
+                </section>
+              )}
               <ZoomableImagePreview
                 key={selected.join(',')}
                 canvasRef={canvas}

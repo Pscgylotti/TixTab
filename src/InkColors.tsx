@@ -28,9 +28,11 @@ function savedPalette(): string[] {
 export default function InkColors({
   color,
   onChange,
+  compact = false,
 }: {
   color: string;
   onChange: (color: string) => void;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false),
     [draft, setDraft] = useState(color),
@@ -80,17 +82,21 @@ export default function InkColors({
       aria-label={tr('颜色 {0}', c)}
       aria-pressed={color === c}
       style={{ '--swatch': c } as React.CSSProperties}
-      onClick={() => onChange(c)}
+      onClick={() => {
+        onChange(c);
+        setDraft(c);
+        if (compact) setOpen(false);
+      }}
     />
   );
   return (
-    <div className="colors">
-      {inkColors.map(swatch)}
+    <div className={`colors${compact ? ' colors-compact' : ''}`}>
+      {!compact && inkColors.map(swatch)}
       <button
         ref={trigger}
         className="icon-button custom-color-trigger"
-        aria-label={tr('自定义笔触颜色')}
-        title={tr('自定义笔触颜色')}
+        aria-label={tr(compact ? '笔触颜色' : '自定义笔触颜色')}
+        title={tr(compact ? '笔触颜色' : '自定义笔触颜色')}
         aria-expanded={open}
         style={{ '--swatch': color } as React.CSSProperties}
         onClick={() => {
@@ -103,8 +109,14 @@ export default function InkColors({
           setOpen((v) => !v);
         }}
       >
-        <Palette size={18} />
-        <i />
+        {compact ? (
+          <span className="selected-ink-color" aria-hidden="true" />
+        ) : (
+          <>
+            <Palette size={18} />
+            <i />
+          </>
+        )}
       </button>
       {open &&
         createPortal(
@@ -126,6 +138,11 @@ export default function InkColors({
                 <X size={18} />
               </button>
             </header>
+            {compact && (
+              <div className="preset-ink-colors" role="group" aria-label={tr('预设颜色')}>
+                {inkColors.map(swatch)}
+              </div>
+            )}
             <label className="ink-color-input">
               {tr('选择颜色')}
               <input

@@ -1,4 +1,6 @@
 import { t as tr, useLocale } from './i18n';
+import { createPortal } from 'react-dom';
+import type { PageAction } from './pageOperations';
 import {
   useEffect,
   useLayoutEffect,
@@ -12,6 +14,7 @@ import type { Page } from './model';
 import PageThumbnail from './PageThumbnail';
 import { insertionAt, insertionDestination, makeLayout, visibleRange } from './virtualLayout';
 import { useScrollViewport } from './useScrollViewport';
+import { ScrollVelocity, inertiaStep } from './scrollInertia';
 export default function PageList({
   pages,
   pdf,
@@ -20,19 +23,47 @@ export default function PageList({
   onMove,
   onDelete,
   onDuplicate,
+  onEditPages,
 }: {
   pages: Page[];
   pdf: PDFDocumentProxy | null;
   index: number;
   onSelect: (i: number) => void;
   onMove: (from: number, to: number) => void;
-  onDelete: (i: number) => void;
+  onDelete: (i: number, anchor: DOMRect) => void;
   onDuplicate: (i: number) => void;
+  onEditPages?: (action: PageAction, index: number) => void;
 }) {
   useLocale();
   const root = useRef<HTMLDivElement>(null),
     timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined),
     suppressClick = useRef(0);
+  const velocity = useRef(new ScrollVelocity()),
+    kineticFrame = useRef(0);
+  const stopKinetic = () => {
+    cancelAnimationFrame(kineticFrame.current);
+    kineticFrame.current = 0;
+    velocity.current.reset();
+  };
+  const startKinetic = () => {
+    let speed = velocity.current.release(performance.now()),
+      last = performance.now();
+    velocity.current.reset();
+    if (Math.abs(speed.y) < 0.035) return;
+    const frame = (time: number) => {
+      kineticFrame.current = 0;
+      const el = root.current;
+      if (!el || contact.current) return;
+      const step = inertiaStep(speed, time - last),
+        old = el.scrollTop;
+      el.scrollTop += step.dy;
+      speed = step.velocity;
+      last = time;
+      if (!step.done && Math.abs(el.scrollTop - old) > 0.01)
+        kineticFrame.current = requestAnimationFrame(frame);
+    };
+    kineticFrame.current = requestAnimationFrame(frame);
+  };
   const contact = useRef<{
       id: number;
       from: number;
@@ -57,6 +88,23 @@ export default function PageList({
   const range = visibleRange(layout, viewport.top - 4, viewport.height, 300);
   const [drag, setDrag] = useState<{ from: number; to: number } | null>(null),
     [menu, setMenu] = useState<number | null>(null);
+  const menuRef = useRef(menu);
+  menuRef.current = menu;
+  const [menuPosition, setMenuPosition] = useState({ left: 8, top: 8 });
+  useLayoutEffect(() => {
+    if (menu === null) return;
+    const r = root.current?.querySelector(`[data-page-index="${menu}"]`)?.getBoundingClientRect();
+    if (r)
+      setMenuPosition({
+        left: Math.min(window.innerWidth - 188, Math.max(8, r.right - 170)),
+        top: Math.min(window.innerHeight - 300, Math.max(8, r.top + 25)),
+      });
+    const close = (event: Event) => {
+      if (!(event.target as HTMLElement).closest('.page-actions-menu,.page-card')) setMenu(null);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [menu]);
   const cleanup = () => {
     clearTimeout(timer.current);
     cancelAnimationFrame(autoFrame.current);
@@ -69,16 +117,13 @@ export default function PageList({
   };
   useEffect(() => {
     const cancel = () => {
+      stopKinetic();
       if (contact.current) suppressClick.current = performance.now() + 800;
       cleanup();
       setMenu(null);
     };
     const key = (event: KeyboardEvent) => {
-      if (
-        event.key !== 'Escape' ||
-        (!contact.current && !root.current?.querySelector('[role="menu"]'))
-      )
-        return;
+      if (event.key !== 'Escape' || (!contact.current && menuRef.current === null)) return;
       event.preventDefault();
       event.stopPropagation();
       cancel();
@@ -99,16 +144,19 @@ export default function PageList({
     () => () => {
       clearTimeout(timer.current);
       cancelAnimationFrame(autoFrame.current);
+      stopKinetic();
     },
     [],
   );
   useEffect(() => {
+    stopKinetic();
     setMenu(null);
     cleanup();
   }, [pages]);
   useLayoutEffect(() => {
     const el = root.current!;
     if (contact.current) return;
+    stopKinetic();
     const top = layout.offsets[index] + 4,
       bottom = layout.offsets[index + 1] + 4;
     if (top < el.scrollTop) el.scrollTop = top;
@@ -147,6 +195,8 @@ export default function PageList({
   };
   const down = (e: ReactPointerEvent, from: number) => {
     if (e.button !== 0) return;
+    stopKinetic();
+    if (e.pointerType === 'touch') velocity.current.add(e.clientX, e.clientY, performance.now());
     setMenu(null);
     cleanup();
     const c = {
@@ -164,6 +214,7 @@ export default function PageList({
     timer.current = setTimeout(() => {
       if (contact.current !== c) return;
       c.held = true;
+      stopKinetic();
       suppressClick.current = performance.now() + 800;
       setMenu(from);
     }, 450);
@@ -174,6 +225,7 @@ export default function PageList({
     const distance = Math.hypot(e.clientX - c.x, e.clientY - c.y),
       el = root.current!;
     if (!c.held) {
+      if (e.pointerType === 'touch') velocity.current.add(e.clientX, e.clientY, performance.now());
       if (distance > 8) {
         clearTimeout(timer.current);
         c.moved = true;
@@ -202,12 +254,22 @@ export default function PageList({
       const destination = insertionDestination(c.from, c.to);
       if (c.from !== destination) onMove(c.from, destination);
     }
+    const coast = !cancel && !c.held && c.moved && e.pointerType === 'touch';
     cleanup();
+    if (coast) startKinetic();
+    else velocity.current.reset();
   };
   return (
     <div
       className="page-list"
       ref={root}
+      onPointerDownCapture={(e) => {
+        if (contact.current && contact.current.id !== e.pointerId) {
+          stopKinetic();
+          cleanup();
+        } else if (!contact.current) stopKinetic();
+      }}
+      onWheel={stopKinetic}
       onPointerMove={move}
       onPointerUp={(e) => end(e)}
       onPointerCancel={(e) => end(e, true)}
@@ -260,47 +322,67 @@ export default function PageList({
                   {i === index && <span className="selected-dot" />}
                 </div>
               </button>
-              {menu === i && (
-                <div
-                  className="page-manage"
-                  role="menu"
-                  aria-label={tr('管理第 {0} 页', i + 1)}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <button role="menuitem" disabled={!i} onClick={() => onMove(i, i - 1)}>
-                    {tr('上移')}
-                  </button>
-                  <button
-                    role="menuitem"
-                    disabled={i === pages.length - 1}
-                    onClick={() => onMove(i, i + 1)}
+              {menu === i &&
+                createPortal(
+                  <div
+                    className="page-actions-menu"
+                    style={menuPosition}
+                    role="menu"
+                    aria-label={tr('管理第 {0} 页', i + 1)}
+                    onPointerDown={(e) => e.stopPropagation()}
                   >
-                    {tr('下移')}
-                  </button>
-                  <button
-                    role="menuitem"
-                    disabled={pages.length === 1}
-                    onClick={() => {
-                      setMenu(null);
-                      onDelete(i);
-                    }}
-                  >
-                    {tr('删除')}
-                  </button>
-                  <button
-                    role="menuitem"
-                    onClick={() => {
-                      setMenu(null);
-                      onDuplicate(i);
-                    }}
-                  >
-                    {tr('复制页面')}
-                  </button>
-                  <button role="menuitem" onClick={() => setMenu(null)}>
-                    {tr('关闭')}
-                  </button>
-                </div>
-              )}
+                    <button role="menuitem" disabled={!i} onClick={() => onMove(i, i - 1)}>
+                      {tr('上移')}
+                    </button>
+                    <button
+                      role="menuitem"
+                      disabled={i === pages.length - 1}
+                      onClick={() => onMove(i, i + 1)}
+                    >
+                      {tr('下移')}
+                    </button>
+                    <button
+                      role="menuitem"
+                      disabled={pages.length === 1}
+                      onClick={(event) => {
+                        setMenu(null);
+                        onDelete(i, event.currentTarget.getBoundingClientRect());
+                      }}
+                    >
+                      {tr('删除')}
+                    </button>
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setMenu(null);
+                        onDuplicate(i);
+                      }}
+                    >
+                      {tr('复制页面')}
+                    </button>
+                    {onEditPages &&
+                      (['rotate', 'crop', 'split'] as const).map((action) => (
+                        <button
+                          key={action}
+                          role="menuitem"
+                          onClick={() => {
+                            setMenu(null);
+                            onEditPages(action, i);
+                          }}
+                        >
+                          {tr(
+                            { rotate: '旋转页面', crop: '裁剪页面', split: '拆分 / 提取 PDF' }[
+                              action
+                            ],
+                          )}
+                        </button>
+                      ))}
+                    <button role="menuitem" onClick={() => setMenu(null)}>
+                      {tr('关闭')}
+                    </button>
+                  </div>,
+                  document.body,
+                )}
             </div>
           );
         })}

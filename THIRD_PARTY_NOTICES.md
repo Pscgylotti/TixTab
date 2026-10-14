@@ -4,6 +4,8 @@ TixTab application code is AGPL-3.0-only. Third-party code and models retain the
 
 Full license texts: [docs/THIRD-PARTY-LICENSES.txt](docs/THIRD-PARTY-LICENSES.txt). Additional attribution: [Pinyin](docs/PINYIN-NOTICES.md), [model terms](docs/MODELS.md), [distribution notes](docs/DISTRIBUTION.md). Electron and Chromium notices are also included beside the extracted executable.
 
+PDF.js 5.4.624 is modified at build time for geometry-only image indexing. The reproducible patch is scripts/prepare-pdf-index-worker.mjs; generated workers retain the upstream Apache-2.0 notice. / PDF.js 构建扩展仅增加不解码位图的图片索引，保留上游 Apache-2.0 声明。
+
 Generated from the locked dependency tree, including development tools. Exact package archives and hashes are recorded in package-lock.json.
 
 | Package | Version | License | Upstream |
@@ -212,6 +214,7 @@ Generated from the locked dependency tree, including development tools. Exact pa
 | @vitest/spy | 3.2.7 | MIT | https://github.com/vitest-dev/vitest |
 | @vitest/utils | 3.2.7 | MIT | https://github.com/vitest-dev/vitest |
 | @xmldom/xmldom | 0.8.15 | MIT | git://github.com/xmldom/xmldom |
+| PyMuPDF (optional local PDF runtime) | 1.28.2 | AGPL-3.0 / separate upstream commercial license | https://github.com/pymupdf/PyMuPDF |
 | abbrev | 4.0.0 | ISC | https://github.com/npm/abbrev-js |
 | agent-base | 7.1.4 | MIT | https://github.com/TooTallNate/proxy-agents |
 | ajv | 8.20.0 | MIT | ajv-validator/ajv |

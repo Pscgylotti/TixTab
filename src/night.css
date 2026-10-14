@@ -151,6 +151,36 @@
   font-size: var(--fs-xl);
   margin: 0;
 }
+.original-image-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.original-image-heading .icon-button {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 6px;
+}
+.original-image-ocr {
+  flex-shrink: 0;
+  max-height: min(240px, 30dvh);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-sunken);
+  padding: 10px 12px;
+  user-select: text;
+}
+.original-image-ocr pre {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
 .original-image-content {
   min-height: 0;
   flex: 1;

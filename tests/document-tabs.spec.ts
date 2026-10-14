@@ -61,6 +61,10 @@ test('多文件拖入、标签切换保存视图和标注，关闭保留文档�
   await page.getByRole('button', { name: '放大', exact: true }).click();
   const zoom = await page.locator('.zoom-dock>span').textContent();
   await page.getByRole('button', { name: '加页', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '插入空白页', exact: true })
+    .getByRole('button', { name: '插入页面', exact: true })
+    .click();
   await page.getByRole('tab', { name: 'Alpha', exact: true }).click();
   await idle(page);
   await expect(page.locator('.page-navigation')).toContainText('1 / 3');
@@ -210,4 +214,133 @@ test('自定义颜色应用于实际笔迹并保存常用色，校验输入和�
   await page.screenshot({ path: 'test-results/custom-ink-night-english.png' });
   await page.getByRole('button', { name: 'Remove color #f012ab', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Color #f012ab', exact: true })).toHaveCount(0);
+});
+
+test('拖动标签插入排序保持当前文档，取消不改变顺序，重启恢复', async ({ page }) => {
+  await page
+    .locator('input[type=file]')
+    .setInputFiles(await Promise.all(['Alpha', 'Beta', 'Gamma'].map((n) => fixture(n))));
+  await idle(page);
+  const a = (await page.getByRole('tab', { name: 'Alpha', exact: true }).boundingBox())!;
+  const c = (await page.locator('.document-tab').last().boundingBox())!;
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(c.x + c.width - 3, a.y + a.height / 2, { steps: 6 });
+  await expect(page.locator('[data-tab-insertion="3"]')).toHaveCount(1);
+  await page.mouse.up();
+  await expect(page.getByRole('tab')).toHaveText(['Beta', 'Gamma', 'Alpha']);
+  await expect(page.getByRole('tab', { name: 'Gamma', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  const b = (await page.getByRole('tab', { name: 'Beta', exact: true }).boundingBox())!;
+  await page.mouse.move(b.x + 10, b.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(c.x + c.width, b.y + 10);
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await expect(page.getByRole('tab')).toHaveText(['Beta', 'Gamma', 'Alpha']);
+  await page.reload();
+  await idle(page);
+  await expect(page.getByRole('tab')).toHaveText(['Beta', 'Gamma', 'Alpha']);
+});
+
+test('长按菜单批量关闭保留编辑内容，右键和键盘菜单可用', async ({ page }) => {
+  await page
+    .locator('input[type=file]')
+    .setInputFiles(await Promise.all(['Alpha', 'Beta', 'Gamma'].map((n) => fixture(n))));
+  await idle(page);
+  await page.getByRole('button', { name: '下一页', exact: true }).click();
+  const b = (await page.getByRole('tab', { name: 'Beta', exact: true }).boundingBox())!;
+  await page.mouse.move(b.x + 15, b.y + 15);
+  await page.mouse.down();
+  await expect(page.getByRole('menu')).toBeVisible();
+  await page.mouse.up();
+  await expect(page.getByRole('tab', { name: 'Gamma', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await page.getByRole('menuitem', { name: '关闭右侧所有标签', exact: true }).click();
+  await idle(page);
+  await expect(page.getByRole('tab')).toHaveText(['Alpha', 'Beta']);
+  await expect(page.getByRole('tab', { name: 'Beta', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  expect((await stored(page, 'Gamma')).pages).toHaveLength(3);
+  await page.getByRole('tab', { name: 'Alpha', exact: true }).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '关闭其它标签', exact: true }).click();
+  await idle(page);
+  await expect(page.getByRole('tab')).toHaveText(['Alpha']);
+  await page.getByRole('tab').focus();
+  await page.keyboard.press('Shift+F10');
+  await expect(page.getByRole('menuitem', { name: '关闭其它标签', exact: true })).toBeDisabled();
+  await page.getByRole('menuitem', { name: '关闭当前标签', exact: true }).click();
+  await idle(page);
+  await expect(page.getByRole('tab')).toHaveCount(1);
+  await expect(page.getByRole('tab', { name: 'Alpha', exact: true })).toHaveCount(0);
+  expect((await stored(page, 'Alpha')).pages).toHaveLength(3);
+});
+
+test('真实触屏长按拖动排序，普通滑动不切换或重排', async ({ page }) => {
+  await page
+    .locator('input[type=file]')
+    .setInputFiles(await Promise.all(['Alpha', 'Beta', 'Gamma'].map((n) => fixture(n))));
+  await idle(page);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+  const a = (await page.getByRole('tab', { name: 'Alpha', exact: true }).boundingBox())!;
+  const c = (await page.locator('.document-tab').last().boundingBox())!;
+  const point = { x: a.x + 15, y: a.y + 15 };
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+  await expect(page.getByRole('menu')).toBeVisible();
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [{ x: c.x + c.width - 3, y: point.y }],
+  });
+  await expect(page.locator('[data-tab-insertion="3"]')).toHaveCount(1);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(page.getByRole('tab')).toHaveText(['Beta', 'Gamma', 'Alpha']);
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  const b = (await page.getByRole('tab', { name: 'Beta', exact: true }).boundingBox())!;
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: b.x + 30, y: b.y + 15 }],
+  });
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [{ x: b.x + 5, y: b.y + 15 }],
+  });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(page.getByRole('tab')).toHaveText(['Beta', 'Gamma', 'Alpha']);
+  await expect(page.getByRole('tab', { name: 'Gamma', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page.getByRole('menu')).toHaveCount(0);
+});
+
+test('标签菜单适配英文夜间与折叠竖屏', async ({ page }) => {
+  await page
+    .locator('input[type=file]')
+    .setInputFiles(await Promise.all(['Alpha', 'Beta'].map((n) => fixture(n))));
+  await idle(page);
+  await page.getByRole('button', { name: '收起顶部区域', exact: true }).click();
+  await page.evaluate(() => {
+    localStorage.setItem('surfacetab.locale', 'en');
+    localStorage.setItem('surfacetab.night', 'true');
+  });
+  await page.reload();
+  await idle(page);
+  await page.setViewportSize({ width: 600, height: 900 });
+  await page.getByRole('tab', { name: 'Alpha', exact: true }).click({ button: 'right' });
+  const menu = page.getByRole('menu', { name: 'Tab actions' });
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: 'Close other tabs', exact: true })).toBeVisible();
+  const r = (await menu.boundingBox())!;
+  expect(r.x).toBeGreaterThanOrEqual(0);
+  expect(r.x + r.width).toBeLessThanOrEqual(600);
+  await page.screenshot({ path: '.cache/031-tab-menu-portrait.png' });
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
 });

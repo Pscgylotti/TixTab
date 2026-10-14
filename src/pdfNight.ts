@@ -1,7 +1,11 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { trackPerformance, performanceLedger } from './performanceLedger';
 import { imagePolygons, transformPolygon, polygonBox, type ImagePolygon } from './pdfNightGeometry';
-const metadata = new WeakMap<PDFDocumentProxy, Map<number, Promise<ImagePolygon[]>>>();
+import { renderPolicy, subscribeAppearance } from './appearance';
+let metadata = new WeakMap<PDFDocumentProxy, Map<number, Promise<ImagePolygon[]>>>();
+subscribeAppearance(() => {
+  if (renderPolicy().minimal) metadata = new WeakMap();
+});
 export function getPdfImages(pdf: PDFDocumentProxy, index: number) {
   let pages = metadata.get(pdf);
   if (!pages) {
@@ -17,11 +21,38 @@ export function getPdfImages(pdf: PDFDocumentProxy, index: number) {
     promise = trackPerformance('pdf-images', () =>
       pdf.getPage(index + 1).then(async (p) => {
         const { OPS } = await import('pdfjs-dist');
-        return imagePolygons(await p.getOperatorList(), OPS);
+        // The pinned worker extension returns transforms and image occurrences
+        // only: no image decoder, pixels, font data or renderer object cache.
+        const transport = (
+          pdf as unknown as {
+            _transport?: {
+              messageHandler?: {
+                sendWithPromise: (
+                  name: string,
+                  data: object,
+                ) => Promise<{ fnArray: number[]; argsArray: unknown[][] }>;
+              };
+            };
+          }
+        )._transport;
+        if (transport?.messageHandler)
+          return imagePolygons(
+            await transport.messageHandler.sendWithPromise('TixTabImageIndex', {
+              pageIndex: index,
+            }),
+            OPS,
+          );
+        // Lightweight test/embedded proxies without our worker still release
+        // temporary operator lists after collecting the geometry.
+        try {
+          return imagePolygons(await p.getOperatorList(), OPS);
+        } finally {
+          p.cleanup?.();
+        }
       }),
     );
     pages.set(index, promise);
-    if (pages.size > 128) pages.delete(pages.keys().next().value!);
+    if (pages.size > (renderPolicy().minimal ? 2 : 128)) pages.delete(pages.keys().next().value!);
     promise.catch(() => pages!.delete(index));
   }
   return promise;
@@ -68,10 +99,13 @@ function getWorker() {
       if (data.error) p.reject(new Error(data.error));
       else p.resolve(data.bitmap);
       if (!pending.size)
-        idle = setTimeout(() => {
-          worker?.terminate();
-          worker = undefined;
-        }, 60_000);
+        idle = setTimeout(
+          () => {
+            worker?.terminate();
+            worker = undefined;
+          },
+          renderPolicy().minimal ? 1000 : 60_000,
+        );
     };
   }
   return worker;
@@ -85,21 +119,28 @@ export async function applyPdfNight(
   maskFrame?: { width: number; height: number; x: number; y: number },
 ) {
   const images = await getPdfImages(pdf, index),
-    bitmap = await createImageBitmap(canvas),
+    polygons = images.map((p) => transformPolygon(p, transform));
+  return applyNightPolygons(canvas, polygons, opaque, maskFrame);
+}
+export async function applyNightPolygons(
+  canvas: HTMLCanvasElement,
+  images: ImagePolygon[],
+  opaque = false,
+  maskFrame?: { width: number; height: number; x: number; y: number },
+) {
+  const bitmap = await createImageBitmap(canvas),
     w = getWorker(),
     id = ++sequence;
   try {
-    const polygons = images
-      .map((p) => transformPolygon(p, transform))
-      .filter((p) => {
-        const b = polygonBox(p);
-        return (
-          b.x < (maskFrame?.width ?? canvas.width) &&
-          b.y < (maskFrame?.height ?? canvas.height) &&
-          b.x + b.width > 0 &&
-          b.y + b.height > 0
-        );
-      });
+    const polygons = images.filter((p) => {
+      const b = polygonBox(p);
+      return (
+        b.x < (maskFrame?.width ?? canvas.width) &&
+        b.y < (maskFrame?.height ?? canvas.height) &&
+        b.x + b.width > 0 &&
+        b.y + b.height > 0
+      );
+    });
     const output = await new Promise<ImageBitmap>((resolve, reject) => {
       pending.set(id, { resolve, reject, timer: setTimeout(fail, 30_000) });
       w.postMessage({ id, bitmap, polygons, opaque, maskFrame }, [bitmap]);

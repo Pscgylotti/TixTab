@@ -72,6 +72,31 @@ assert.deepEqual(
   'Only the Windows pen native dependency may ship in node_modules',
 );
 assert.ok(entries.includes('/electron/pen-native.cjs'), 'Native pen bridge missing');
+for (const name of [
+  'pdf-editor.cjs',
+  'clipboard-history.cjs',
+  'pen-haptics.cjs',
+  'pen-haptics-native.cjs',
+  'runtime-sources.cjs',
+  'runtime-log.cjs',
+])
+  assert.ok(entries.includes('/electron/' + name), 'Desktop companion missing: ' + name);
+for (const name of [
+  'pdf_editor.py',
+  'requirements-pdf.txt',
+  'install_dependencies.py',
+  'python-sources.json',
+])
+  assert.deepEqual(
+    readFileSync(join(dirname(dirname(archive)), 'backend', name)),
+    readFileSync(join('backend', name)),
+    'Native editor/setup source differs: ' + name,
+  );
+assert.equal(
+  entries.filter((name) => /^\/dist\/assets\/pdf-index-worker-[^/]+\.mjs$/.test(name)).length,
+  1,
+  'Geometry-only PDF worker must ship',
+);
 assert.ok(
   existsSync(archive + '.unpacked/node_modules/@koromix/koffi-win32-x64/win32_x64/koffi.node'),
   'Unpacked pen native binding missing',

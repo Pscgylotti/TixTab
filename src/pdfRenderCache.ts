@@ -62,6 +62,7 @@ const states = new WeakMap<PDFDocumentProxy, State>(),
   thumbnailLru = new Map<HTMLCanvasElement, { state: State; key: string }>(),
   queue: Job[] = [];
 const cachedLocations = new WeakMap<HTMLCanvasElement, { state: State; key: string }>();
+const liveCacheStates = new Set<State>();
 const retiredBitmaps = new WeakSet<HTMLCanvasElement>();
 export const isRetiredPdfBitmap = (canvas: HTMLCanvasElement) => retiredBitmaps.has(canvas);
 
@@ -70,6 +71,7 @@ export const isRetiredPdfBitmap = (canvas: HTMLCanvasElement) => retiredBitmaps.
 export function releasePdfRenderCache(pdf: PDFDocumentProxy) {
   for (const state of [states.get(pdf), thumbnailStates.get(pdf)]) {
     if (!state) continue;
+    liveCacheStates.delete(state);
     state.generation++;
     for (const job of [...state.jobs.values()]) {
       job.cancelled = true;
@@ -270,8 +272,31 @@ function stateFor(pdf: PDFDocumentProxy, thumbnail = false) {
     state.thumbnail = thumbnail;
     store.set(pdf, state);
   }
+  liveCacheStates.add(state);
   return state;
 }
+subscribeAppearance(() => {
+  if (!renderPolicy().minimal) return;
+  for (const state of liveCacheStates) {
+    for (const canvas of [...state.cache.values()]) {
+      invalidatePdfBitmap(canvas);
+      if (!canvas.isConnected) canvas.width = canvas.height = 1;
+    }
+    for (const job of [...state.jobs.values()])
+      if (job.priority >= 3) {
+        job.cancelled = true;
+        job.abort.abort();
+        job.task?.cancel();
+        if (!job.started) {
+          const at = queue.indexOf(job);
+          if (at >= 0) queue.splice(at, 1);
+          state.jobs.delete(job.key);
+          job.reject(cancelled());
+          job.finish?.('cancelled');
+        }
+      }
+  }
+});
 function cancelled() {
   return new DOMException('页面绘制已取消', 'AbortError');
 }
@@ -314,6 +339,10 @@ function boundedStage<T>(promise: Promise<T>, job: Job): Promise<T> {
   });
 }
 function cache(state: State, key: string, canvas: HTMLCanvasElement) {
+  if (renderPolicy().minimal) {
+    retiredBitmaps.add(canvas);
+    return;
+  }
   const page = Number(key.split(':')[0]),
     fullPage = !state.thumbnail && !key.includes(':tile:');
   if (fullPage) {
@@ -375,14 +404,20 @@ function pump() {
     running++;
     job.started = true;
     void (async () => {
+      const scratch = new Set<HTMLCanvasElement>();
+      let loadedPage: PDFPageProxy | undefined;
+      let output: HTMLCanvasElement | undefined,
+        delivered = false;
       try {
         const page = await boundedStage(
           trackPerformance('pdf-page', () => job.pdf.getPage(job.sourceIndex + 1)),
           job,
         );
+        loadedPage = page;
         if (job.cancelled) throw cancelled();
         const viewport = page.getViewport({ scale: job.scale }),
           canvas = document.createElement('canvas');
+        output = canvas;
         canvas.width = job.region?.width ?? Math.ceil(viewport.width);
         canvas.height = job.region?.height ?? Math.ceil(viewport.height);
         // PDF.js otherwise requests alpha:false, enabling Windows LCD subpixel
@@ -423,6 +458,7 @@ function pump() {
               }
             : targetRegion,
           work = missing || isHalf ? document.createElement('canvas') : canvas;
+        if (work !== canvas) scratch.add(work);
         if (region && (missing || isHalf)) {
           work.width = region.width;
           work.height = region.height;
@@ -431,6 +467,7 @@ function pump() {
           work !== canvas ? work.getContext('2d', { alpha: true })! : canvasContext;
         // Preserve page coordinates for rotated fractional image sampling.
         const raster = isHalf ? document.createElement('canvas') : work;
+        if (raster !== work) scratch.add(raster);
         if (isHalf) {
           raster.width = fullWidth;
           raster.height = fullHeight;
@@ -541,12 +578,23 @@ function pump() {
           );
         if (job.cancelled) throw cancelled();
         if (job.generation === job.state.generation) cache(job.state, job.key, canvas);
+        else retiredBitmaps.add(canvas);
+        delivered = true;
         job.resolve(canvas);
         job.finish?.();
       } catch (e) {
         job.reject(e);
         job.finish?.(performanceOutcome(e));
       } finally {
+        // RenderTask and its continuation can outlive the job through a display's
+        // lease. Release temporary full-page/half-page surfaces deterministically.
+        for (const canvas of scratch) canvas.width = canvas.height = 1;
+        if (!delivered && output) output.width = output.height = 1;
+        job.task = undefined;
+        if (renderPolicy().minimal && loadedPage) {
+          completeBounds.delete(loadedPage);
+          loadedPage.cleanup?.();
+        }
         continuations.delete(job);
         if (job.state.jobs.get(job.key) === job) job.state.jobs.delete(job.key);
         running--;

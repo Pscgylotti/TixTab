@@ -12,6 +12,7 @@
   user-select: none;
 }
 .document-tab {
+  position: relative;
   display: flex;
   flex-shrink: 0;
   border-radius: var(--r-md);
@@ -27,10 +28,43 @@
   box-shadow: var(--shadow-1);
 }
 .document-tab > [role='tab'] {
+  touch-action: none;
+  -webkit-user-drag: none;
   padding: 5px 10px;
   min-height: 34px;
   min-width: 0;
   gap: 6px;
+}
+.document-tab.tab-dragging {
+  opacity: 0.55;
+}
+.tab-insertion-line {
+  position: absolute;
+  inset: 3px auto 3px -4px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+  pointer-events: none;
+  z-index: 1;
+}
+.tab-insertion-line.after {
+  left: auto;
+  right: -4px;
+}
+.document-tab-popover {
+  padding: 6px;
+}
+.document-tab-menu {
+  display: grid;
+  gap: 2px;
+}
+.document-tab-menu > button {
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 8px 10px;
+  gap: 10px;
+  width: 100%;
+  font-size: var(--fs-sm);
 }
 .document-tab > [role='tab'] > span {
   overflow: hidden;
@@ -151,6 +185,26 @@
   background: var(--swatch);
   box-shadow: 0 0 0 1px var(--border-strong);
 }
+.selected-ink-color {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+.preset-ink-colors {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+.preset-ink-colors .color-swatch {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+}
 .ink-color-panel {
   position: fixed;
   z-index: 58;
@@ -255,7 +309,7 @@
   top: 0;
   right: 4px;
   z-index: 25;
-  width: 32px;
+  width: 64px;
   height: var(--compact-row, 40px);
   min-height: var(--compact-row, 40px);
   padding: 0;
@@ -276,7 +330,7 @@
   padding: 4px;
 }
 .app-shell > .topbar.collapsed + .document-tabs {
-  padding-right: 42px;
+  padding-right: 74px;
 }
 .chrome-minimal {
   position: relative;
@@ -287,7 +341,7 @@
   top: 0;
   right: 4px;
   z-index: 25;
-  width: 32px;
+  width: 64px;
   height: var(--compact-row);
   padding: 0;
   gap: 0;
@@ -307,7 +361,7 @@
 .chrome-minimal > .document-tabs {
   height: var(--compact-row);
   min-height: var(--compact-row);
-  padding: 0 42px 0 8px;
+  padding: 0 74px 0 8px;
   gap: 2px;
   scrollbar-width: none;
 }
@@ -388,4 +442,11 @@
   .chrome-minimal {
     --compact-row: 36px;
   }
+}
+.topbar.collapsed > .header-fullscreen {
+  width: 32px;
+  min-width: 32px;
+  height: var(--compact-row, 40px);
+  min-height: var(--compact-row, 40px);
+  padding: 4px;
 }

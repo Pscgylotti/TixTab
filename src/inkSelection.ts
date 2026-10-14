@@ -94,6 +94,29 @@ export function translateInk(
     ),
   }));
 }
+/** Uniform corner resizing, with the opposite corner fixed and the entire
+ * ink bounds (including stroke width) kept on the page. */
+export function inkResize(
+  box: Bounds,
+  corner: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  maxScale = 24,
+) {
+  const left = corner.includes('w'),
+    top = corner.includes('n');
+  const ax = left ? box.maxX : box.minX,
+    ay = top ? box.maxY : box.minY;
+  const vx = (left ? box.minX : box.maxX) - ax,
+    vy = (top ? box.minY : box.maxY) - ay;
+  const wanted = ((x - ax) * vx + (y - ay) * vy) / Math.max(1e-9, vx * vx + vy * vy);
+  const limitX = Math.abs(vx) ? (left ? ax : width - ax) / Math.abs(vx) : Infinity;
+  const limitY = Math.abs(vy) ? (top ? ay : height - ay) / Math.abs(vy) : Infinity;
+  const scale = Math.max(0.01, Math.min(wanted, limitX, limitY, maxScale));
+  return { scale, x: ax * (1 - scale), y: ay * (1 - scale) };
+}
 export const INK_MIME = 'application/x-tixtab-ink+json';
 export type InkClipboard = { type: 'tixtab-ink'; version: 1; pageId: string; strokes: Stroke[] };
 export function decodeInk(raw: string): InkClipboard | null {

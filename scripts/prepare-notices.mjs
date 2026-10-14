@@ -3,7 +3,9 @@ import { join } from 'node:path';
 
 // Include build tools too: Electron itself is a dev dependency in package.json.
 const lock = JSON.parse(await readFile('package-lock.json', 'utf8'));
-const notices = [],
+const notices = [
+    '| PyMuPDF (optional local PDF runtime) | 1.28.2 | AGPL-3.0 / separate upstream commercial license | https://github.com/pymupdf/PyMuPDF |',
+  ],
   texts = [];
 for (const directory of Object.keys(lock.packages).filter((key) =>
   key.startsWith('node_modules/'),
@@ -37,7 +39,7 @@ for (const directory of Object.keys(lock.packages).filter((key) =>
 }
 await writeFile(
   'THIRD_PARTY_NOTICES.md',
-  `# Third-party notices / 第三方说明\n\nTixTab application code is AGPL-3.0-only. Third-party code and models retain their own licenses; this file does not relicense them. / 应用许可不覆盖第三方代码与模型。\n\nFull license texts: [docs/THIRD-PARTY-LICENSES.txt](docs/THIRD-PARTY-LICENSES.txt). Additional attribution: [Pinyin](docs/PINYIN-NOTICES.md), [model terms](docs/MODELS.md), [distribution notes](docs/DISTRIBUTION.md). Electron and Chromium notices are also included beside the extracted executable.\n\nGenerated from the locked dependency tree, including development tools. Exact package archives and hashes are recorded in package-lock.json.\n\n| Package | Version | License | Upstream |\n|---|---|---|---|\n${notices.sort().join('\n')}\n`,
+  `# Third-party notices / 第三方说明\n\nTixTab application code is AGPL-3.0-only. Third-party code and models retain their own licenses; this file does not relicense them. / 应用许可不覆盖第三方代码与模型。\n\nFull license texts: [docs/THIRD-PARTY-LICENSES.txt](docs/THIRD-PARTY-LICENSES.txt). Additional attribution: [Pinyin](docs/PINYIN-NOTICES.md), [model terms](docs/MODELS.md), [distribution notes](docs/DISTRIBUTION.md). Electron and Chromium notices are also included beside the extracted executable.\n\nPDF.js 5.4.624 is modified at build time for geometry-only image indexing. The reproducible patch is scripts/prepare-pdf-index-worker.mjs; generated workers retain the upstream Apache-2.0 notice. / PDF.js 构建扩展仅增加不解码位图的图片索引，保留上游 Apache-2.0 声明。\n\nGenerated from the locked dependency tree, including development tools. Exact package archives and hashes are recorded in package-lock.json.\n\n| Package | Version | License | Upstream |\n|---|---|---|---|\n${notices.sort().join('\n')}\n`,
 );
 await writeFile('docs/THIRD-PARTY-LICENSES.txt', texts.join('\n'));
 console.log('Dependency notices:', notices.length, '; license/notice texts:', texts.length);

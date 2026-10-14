@@ -21,8 +21,21 @@ export function groupLeaves(image: PlacedImage): PlacedImage[] {
 const urls = new WeakMap<NonNullable<PlacedImage['group']>, Map<string, string>>();
 const xmlAttribute = (value: string) =>
   value.replace(/[&"<>]/g, (c) => ({ '&': '&amp;', '"': '&quot;', '<': '&lt;', '>': '&gt;' })[c]!);
+const rotatedDisplays = new WeakMap<PlacedImage, string>();
 export function groupDisplay(image: PlacedImage, night = false, pdfNight = false): string {
-  if (!image.group) return image.displayData ?? image.data;
+  if (!image.group) {
+    const data = image.displayData ?? image.data;
+    if (!image.rotation) return data;
+    const cached = rotatedDisplays.get(image);
+    if (cached) return cached;
+    const swap = image.rotation % 180;
+    const w = swap ? image.height : image.width,
+      h = swap ? image.width : image.height;
+    const xml = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${image.width} ${image.height}"><image x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" transform="translate(${image.width / 2} ${image.height / 2}) rotate(${image.rotation})" href="${xmlAttribute(data)}"/></svg>`;
+    const result = 'data:image/svg+xml;base64,' + btoa(xml);
+    rotatedDisplays.set(image, result);
+    return result;
+  }
   const group = image.group,
     key = `${night}:${pdfNight}`;
   let cache = urls.get(group);
@@ -42,7 +55,7 @@ export function groupDisplay(image: PlacedImage, night = false, pdfNight = false
         : night
           ? 'invert(0.9) hue-rotate(180deg)'
           : '';
-      return `<image x="${child.x}" y="${child.y}" width="${child.width}" height="${child.height}" href="${xmlAttribute(child.displayData ?? child.data)}"${filter ? ` style="filter:${filter}"` : ''}/>`;
+      return `<image x="${child.x}" y="${child.y}" width="${child.width}" height="${child.height}" href="${xmlAttribute(groupDisplay(child))}"${filter ? ` style="filter:${filter}"` : ''}/>`;
     })
     .join('')}</svg>`;
   const data = 'data:image/svg+xml;base64,' + btoa(xml);

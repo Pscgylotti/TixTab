@@ -93,7 +93,7 @@ interface Props {
   priority?: number;
 }
 export default memo(function PdfDetailLayer(props: Props) {
-  const { mode, quality, battery, pdfNight } = useAppearance();
+  const { mode, quality, battery, pdfNight, memoryMode } = useAppearance();
   const layer = useRef<HTMLDivElement>(null),
     latest = useRef(props);
   latest.current = props;
@@ -211,6 +211,7 @@ export default memo(function PdfDetailLayer(props: Props) {
     quality,
     battery,
     pdfNight,
+    memoryMode,
   ]);
   const active = plan?.pdf === props.pdf && plan.sourceIndex === props.sourceIndex ? plan : null;
   return (

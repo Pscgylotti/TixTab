@@ -1,5 +1,5 @@
 import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist';
-import worker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import worker from '../.cache/pdf-index-worker.mjs?url';
 import { uid, type Notebook } from './model';
 import { trackPerformance } from './performanceLedger';
 import { releasePdfRenderCache } from './pdfRenderCache';

@@ -90,7 +90,7 @@ class OcrTests(unittest.TestCase):
 
     def test_shared_service_switch_busy_timeout_and_optional_dependency_failure(self):
         service._model=None;service._model_kind=None
-        with TestClient(service.app) as client,patch.object(service,'create_ocr') as factory,patch.object(service,'NativeTexo') as texo:
+        with TestClient(service.app) as client,patch.object(service,'create_ocr') as factory,patch.object(service,'create_texo') as texo:
             factory.return_value.recognize.return_value={'text':'text'};texo.return_value.recognize.return_value={'latex':'x'}
             self.assertEqual(client.post('/ocr',json={'image':'png'}).json()['text'],'text')
             self.assertEqual(factory.return_value.recognize.call_args.args,('png','AUTO'))

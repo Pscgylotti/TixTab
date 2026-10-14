@@ -6,7 +6,7 @@ export interface ViewRect {
 }
 export type WritingHand = 'right' | 'left';
 export interface FlyoutPosition extends ViewRect {
-  side: 'left' | 'right' | 'above' | 'below';
+  side: 'left' | 'right' | 'above' | 'below' | 'overlay';
   maxHeight: number;
 }
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(n, max));
@@ -16,10 +16,45 @@ function overlap(a: ViewRect, b: ViewRect) {
     Math.max(0, Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top))
   );
 }
+/** Largest free rectangle inside the reading area; the original text is not an obstacle. */
+function expandedArea(view: ViewRect, obstacles: ViewRect[]): ViewRect {
+  let regions = [view];
+  for (const obstacle of obstacles) {
+    const block = {
+      left: obstacle.left - 8,
+      top: obstacle.top - 8,
+      width: obstacle.width + 16,
+      height: obstacle.height + 16,
+    };
+    regions = regions.flatMap((r) => {
+      if (!overlap(r, block)) return [r];
+      const right = r.left + r.width,
+        bottom = r.top + r.height;
+      return [
+        { ...r, height: Math.max(0, block.top - r.top) },
+        {
+          ...r,
+          top: block.top + block.height,
+          height: Math.max(0, bottom - block.top - block.height),
+        },
+        { ...r, width: Math.max(0, block.left - r.left) },
+        {
+          ...r,
+          left: block.left + block.width,
+          width: Math.max(0, right - block.left - block.width),
+        },
+      ].filter((candidate) => candidate.width > 0 && candidate.height > 0);
+    });
+  }
+  return regions.reduce(
+    (best, r) => (r.width * r.height > best.width * best.height ? r : best),
+    regions[0] ?? view,
+  );
+}
 /** Fixed-position CSS coordinates, including the visual viewport when zoomed.
  * Evaluate a bounded set of placements; no measurements, timers or polling here.
  * Prefer the roomier vertical region, aligned away from the writing hand.
- * A tall panel scrolls in the available space rather than covering the selection.
+ * Expanded translations use the largest available reading rectangle instead.
  */
 export function placeSelectionFlyout(
   viewport: ViewRect,
@@ -36,6 +71,17 @@ export function placeSelectionFlyout(
     top = viewport.top + margin;
   const right = viewport.left + viewport.width - margin,
     bottom = viewport.top + viewport.height - margin;
+  if (expanded) {
+    const area = expandedArea({ left, top, width: right - left, height: bottom - top }, obstacles);
+    const width = Math.min(640, area.width * 0.88);
+    return {
+      ...area,
+      left: area.left + (area.width - width) / 2,
+      width,
+      side: 'overlay',
+      maxHeight: area.height,
+    };
+  }
   const width = Math.min(size.width, right - left),
     fullHeight = Math.min(size.height, bottom - top);
   // A short page viewport must still offer a scrollable vertical placement.

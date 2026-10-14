@@ -14,7 +14,11 @@ import { useNavigation } from './DocumentNavigator';
 import { t } from './i18n';
 import { groupPageLinks, type PdfLink as Link } from './pdfLinkGroups';
 import { refreshPenHover, registerPenTargets, usePenInteraction } from './penInteraction';
-const cachedLinks = new WeakMap<PDFDocumentProxy, Map<number, Promise<Link[]>>>();
+import { renderPolicy, subscribeAppearance } from './appearance';
+let cachedLinks = new WeakMap<PDFDocumentProxy, Map<number, Promise<Link[]>>>();
+subscribeAppearance(() => {
+  if (renderPolicy().minimal) cachedLinks = new WeakMap();
+});
 function pageLinks(pdf: PDFDocumentProxy, sourceIndex: number) {
   let cache = cachedLinks.get(pdf);
   if (!cache) cachedLinks.set(pdf, (cache = new Map()));
@@ -66,7 +70,7 @@ function pageLinks(pdf: PDFDocumentProxy, sourceIndex: number) {
       return groupPageLinks(links);
     })();
     cache.set(sourceIndex, request);
-    if (cache.size > 128) cache.delete(cache.keys().next().value!);
+    if (cache.size > (renderPolicy().minimal ? 2 : 128)) cache.delete(cache.keys().next().value!);
     void request.catch(() => {
       if (cache?.get(sourceIndex) === request) cache.delete(sourceIndex);
     });

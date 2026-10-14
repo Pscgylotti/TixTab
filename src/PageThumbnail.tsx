@@ -1,4 +1,4 @@
-import { useAppearance } from './appearance';
+import { useAppearance, renderPolicy } from './appearance';
 import { trackPerformance } from './performanceLedger';
 import { t as tr, useLocale } from './i18n';
 import { memo, useEffect, useRef, useState } from 'react';
@@ -9,6 +9,7 @@ import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
 import { finalInkPath } from './ink';
 import { pageLayers } from './pageLayers';
 import { groupDisplay } from './objectGroup';
+import { paperAppearance } from './paperAppearance';
 export default memo(function PageThumbnail({
   page,
   pdf,
@@ -17,18 +18,18 @@ export default memo(function PageThumbnail({
   pdf: PDFDocumentProxy | null;
 }) {
   useLocale();
-  const { night, pdfNight } = useAppearance();
+  const { night, pdfNight, memoryMode } = useAppearance();
   const root = useRef<HTMLDivElement>(null),
     [visible, setVisible] = useState(false);
   const { host, display, recovery } = usePdfBitmapDisplay();
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
       root: root.current?.closest('.page-list'),
-      rootMargin: '150px',
+      rootMargin: renderPolicy().minimal ? '0px' : '150px',
     });
     observer.observe(root.current!);
     return () => observer.disconnect();
-  }, []);
+  }, [memoryMode]);
   useEffect(() => {
     let dead = false,
       cancel: (() => void) | undefined;
@@ -55,8 +56,12 @@ export default memo(function PageThumbnail({
       className={`page-mini page-thumbnail ${page.sourceIndex === null ? `thumbnail-${page.paper}` : ''}`}
       data-pdf-night={pdfNight}
       data-pdf-source={page.sourceIndex ?? ''}
+      data-blank-paper={page.sourceIndex === null ? true : undefined}
       ref={root}
-      style={{ aspectRatio: `${page.width}/${page.height}` }}
+      style={{
+        aspectRatio: `${page.width}/${page.height}`,
+        ...(page.sourceIndex === null ? paperAppearance(page, pdfNight) : {}),
+      }}
     >
       <div ref={host} style={{ display: 'contents' }} />
       {visible && (

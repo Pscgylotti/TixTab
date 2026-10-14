@@ -111,6 +111,20 @@ for (const view of ['单页标注', '连续页面预览', '双页预览']) {
     const moved = await project(page);
     expect(moved.pages[0].strokes[0].points[0][0]).toBeGreaterThan(100);
     expect(moved.pages[0].strokes[2]).toEqual(before.pages[0].strokes[2]);
+    const handle = box.locator('[data-ink-resize="se"]');
+    const h = (await handle.boundingBox())!;
+    await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(h.x + h.width / 2 + 35, h.y + h.height / 2 + 35, { steps: 4 });
+    await page.mouse.up();
+    const resized = await project(page);
+    expect(resized.pages[0].strokes[0].size).toBeGreaterThan(moved.pages[0].strokes[0].size);
+    expect(resized.pages[0].strokes[0].points.map((p: number[]) => p[2])).toEqual([0.2, 0.8]);
+    expect(resized.pages[0].strokes[2]).toEqual(moved.pages[0].strokes[2]);
+    await page.keyboard.press('Control+z');
+    expect((await project(page)).pages[0].strokes).toEqual(moved.pages[0].strokes);
+    await page.keyboard.press('Control+y');
+    expect((await project(page)).pages[0].strokes).toEqual(resized.pages[0].strokes);
     await page.keyboard.press('Control+c');
     await expect
       .poll(() =>

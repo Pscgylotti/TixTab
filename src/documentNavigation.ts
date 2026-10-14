@@ -1,8 +1,10 @@
 import { Util, type PDFDocumentProxy } from 'pdfjs-dist';
+import { renderPolicy, subscribeAppearance } from './appearance';
 import type { Page, PlacedImage } from './model';
 import { readPdfTextContent } from './pdfTextContent';
 import { groupLeaves } from './objectGroup';
 import { polygonBox } from './pdfNightGeometry';
+import { imageCorners } from './objectRotation';
 import type { OcrAnnotation } from './ocrLayout';
 export interface TextRect {
   x: number;
@@ -32,7 +34,10 @@ interface Cache {
   weights: Map<number, number>;
   destinations: Map<string, Promise<number | null>>;
 }
-const documents = new WeakMap<PDFDocumentProxy, Cache>();
+let documents = new WeakMap<PDFDocumentProxy, Cache>();
+subscribeAppearance(() => {
+  if (renderPolicy().minimal) documents = new WeakMap();
+});
 function cacheFor(pdf: PDFDocumentProxy) {
   let value = documents.get(pdf);
   if (!value)
@@ -81,7 +86,7 @@ export function readPageText(pdf: PDFDocumentProxy, sourceIndex: number) {
     if (cache.get(sourceIndex) === request) {
       owner.weights.set(sourceIndex, text.length * 2 + parts.length * 80);
       let retained = [...owner.weights.values()].reduce((a, b) => a + b, 0);
-      while (retained > 8_000_000 && cache.size) {
+      while (retained > (renderPolicy().minimal ? 256000 : 8_000_000) && cache.size) {
         const oldest = cache.keys().next().value!;
         retained -= owner.weights.get(oldest) ?? 0;
         cache.delete(oldest);
@@ -92,7 +97,7 @@ export function readPageText(pdf: PDFDocumentProxy, sourceIndex: number) {
   })();
   cache.set(sourceIndex, request);
   // Bound retained page structures; evicted pages are rebuilt only on demand.
-  if (cache.size > 128) {
+  if (cache.size > (renderPolicy().minimal ? 2 : 128)) {
     const oldest = cache.keys().next().value!;
     cache.delete(oldest);
     owner.weights.delete(oldest);
@@ -275,21 +280,7 @@ export function findBitmapText(page: Page, query: string) {
   };
   for (const b of page.bitmapOcr ?? []) add(b.result, b.polygon, `pdf:${b.imageIndex}`, true);
   for (const image of page.images.flatMap(groupLeaves))
-    if (image.ocr)
-      add(
-        image.ocr,
-        [
-          image.x,
-          image.y,
-          image.x + image.width,
-          image.y,
-          image.x + image.width,
-          image.y + image.height,
-          image.x,
-          image.y + image.height,
-        ],
-        image.id,
-      );
+    if (image.ocr) add(image.ocr, imageCorners(image), image.id);
   return hits;
 }
 export async function resolveDestination(pdf: PDFDocumentProxy, destination: unknown) {

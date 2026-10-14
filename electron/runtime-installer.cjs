@@ -6,9 +6,11 @@ const { spawn } = require('node:child_process');
 const { Readable } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
 const manifest = require('./runtime-manifest.json');
+const { runtimeLog } = require('./runtime-log.cjs');
+const { defaults, validateSources } = require('./runtime-sources.cjs');
 
 // All paths, commands and download records are main-process owned. The renderer
-// can only choose one of two profiles; no URLs, pip arguments or paths cross IPC.
+// can only choose a fixed profile; no URLs, pip arguments or paths cross IPC.
 function createRuntimeInstaller({
   root,
   backend,
@@ -17,9 +19,15 @@ function createRuntimeInstaller({
   spawnProcess = spawn,
   platform = process.platform,
   arch = process.arch,
+  runtimeManifest = manifest,
 }) {
   root = path.resolve(root);
   const profiles = {
+    pdf: {
+      directory: 'pdf-runtime',
+      requirements: 'requirements-pdf.txt',
+      imports: 'import pymupdf',
+    },
     openvino: {
       directory: 'openvino-runtime',
       requirements: 'requirements-ocr.txt',
@@ -32,6 +40,18 @@ function createRuntimeInstaller({
     },
   };
   let job = null;
+  let configuring = false;
+  async function downloadSources() {
+    try {
+      return validateSources(
+        JSON.parse(
+          await fs.readFile(await safe(path.join(root, 'runtime-download-sources.json')), 'utf8'),
+        ),
+      );
+    } catch {
+      return { ...defaults };
+    }
+  }
   const pythonFor = (id) => path.join(root, profiles[id].directory, 'Scripts', 'python.exe');
   async function safe(target) {
     const relative = path.relative(root, target);
@@ -51,9 +71,9 @@ function createRuntimeInstaller({
     current.stage = stage;
     if (Date.now() - current.last < 150 && stage === 'download' && done < total) return;
     current.last = Date.now();
-    notify(current.owner, { id: current.id, stage, done, total });
+    notify(current.owner, { id: current.id, stage, done, total, source: current.source });
   }
-  function command(exe, args, current, timeout = 1200000) {
+  function command(exe, args, current, timeout = 1200000, events = false) {
     current?.controller.signal.throwIfAborted();
     return new Promise((resolve, reject) => {
       const child = spawnProcess(exe, args, {
@@ -63,6 +83,8 @@ function createRuntimeInstaller({
       });
       if (current) current.child = child;
       let output = '',
+        lines = '',
+        errors = '',
         settled = false,
         timedOut = false;
       const finish = (error) => {
@@ -71,6 +93,8 @@ function createRuntimeInstaller({
         clearTimeout(timer);
         current?.controller.signal.removeEventListener('abort', abort);
         if (current?.child === child) current.child = null;
+        consume(lines);
+        consume(errors);
         error ? reject(error) : resolve(output);
       };
       const abort = () => {
@@ -82,8 +106,41 @@ function createRuntimeInstaller({
       }, timeout);
       child.stdout.on('data', (chunk) => {
         output = (output + chunk.toString()).slice(-16000);
+        lines = (lines + chunk.toString()).slice(-16000);
+        const parts = lines.split(/\r?\n/);
+        lines = parts.pop();
+        for (const line of parts) consume(line);
       });
-      child.stderr.on('data', () => {}); // pip output can include proxy secrets.
+      const consume = (line) => {
+        if (!current || !line.trim()) return;
+        if (events) {
+          try {
+            const event = JSON.parse(line);
+            if (
+              event.event === 'source' &&
+              ['pypi', 'tuna', 'ustc', 'custom'].includes(event.source)
+            ) {
+              current.source = event.source;
+              current.log.append(`Package source: ${event.source}`);
+              emit(current, 'dependencies');
+              return;
+            }
+            if (event.event === 'log' && typeof event.text === 'string') {
+              current.log.append(event.text);
+              return;
+            }
+            if (event.event === 'error') current.log.append('Dependency installation failed.');
+          } catch {
+            current.log.append(line);
+          }
+        } else current.log.append(line);
+      };
+      child.stderr.on('data', (chunk) => {
+        errors = (errors + chunk.toString()).slice(-16000);
+        const parts = errors.split(/\r?\n/);
+        errors = parts.pop();
+        for (const line of parts) consume(line);
+      });
       child.once('error', () => finish(Error('setup')));
       child.once('close', (code) =>
         finish(
@@ -129,7 +186,7 @@ function createRuntimeInstaller({
       const python = await safe(pythonFor(id));
       if (!existsSync(python)) return { installed: false, devices: [] };
       const pins = await requirements(profiles[id].requirements);
-      const code = `${profiles[id].imports}; import json,struct,sys; from importlib.metadata import version; pins=json.loads(${JSON.stringify(JSON.stringify(pins))}); assert sys.version_info[:2]==(3,10) and struct.calcsize('P')==8; assert all(version(k)==v for k,v in pins.items()); print(json.dumps({'installed':True,'devices':openvino.Core().available_devices}))`;
+      const code = `${profiles[id].imports}; import json,struct,sys; from importlib.metadata import version; pins=json.loads(${JSON.stringify(JSON.stringify(pins))}); assert sys.version_info[:2]==(3,10) and struct.calcsize('P')==8; assert all(version(k)==v for k,v in pins.items()); print(json.dumps({'installed':True,'devices':${id === 'pdf' ? '[]' : 'openvino.Core().available_devices'}}))`;
       const output = await command(python, ['-c', code], current, 60000);
       return JSON.parse(output.trim().split('\n').at(-1));
     } catch {
@@ -137,6 +194,7 @@ function createRuntimeInstaller({
     }
   }
   async function managedPython(current) {
+    const manifest = runtimeManifest;
     const base = await safe(path.join(root, 'python', manifest.version + '-' + manifest.revision));
     const executable = path.join(base, 'python', 'python.exe');
     if (existsSync(executable)) return executable;
@@ -144,33 +202,72 @@ function createRuntimeInstaller({
     await fs.mkdir(stage, { recursive: true });
     const archive = path.join(stage, 'python.tar.gz');
     try {
-      emit(current, 'download', 0, manifest.bytes);
-      const response = await fetch(manifest.url, {
-        signal: current.controller.signal,
-        credentials: 'omit',
-        cache: 'no-store',
-      });
-      if (!response.ok || !response.body) {
-        await response.body?.cancel();
-        throw Error('network');
-      }
-      let bytes = 0;
-      const hash = createHash('sha256');
-      const input = Readable.fromWeb(response.body, { signal: current.controller.signal });
-      async function* checked() {
-        for await (const chunk of input) {
-          bytes += chunk.length;
-          if (bytes > manifest.bytes) throw Error('checksum');
-          hash.update(chunk);
-          emit(current, 'download', bytes, manifest.bytes);
-          yield chunk;
+      let downloaded = false,
+        lastError = Error('network');
+      const sources = [
+        { id: 'github', url: manifest.url },
+        ...(manifest.mirrors || []).map((url) => ({ id: 'npmmirror', url })),
+      ];
+      if (current.sources.python === 'npmmirror')
+        sources.sort((a, b) => Number(b.id === 'npmmirror') - Number(a.id === 'npmmirror'));
+      for (let attempt = 0; attempt < sources.length; attempt++) {
+        current.controller.signal.throwIfAborted();
+        current.source = sources[attempt].id;
+        current.log.append(`Python source: ${current.source}`);
+        emit(current, 'download', 0, manifest.bytes);
+        const download = new AbortController();
+        const abort = () => download.abort();
+        current.controller.signal.addEventListener('abort', abort, { once: true });
+        let idle = setTimeout(abort, 15000);
+        const limit = setTimeout(abort, 300000);
+        try {
+          const response = await fetch(sources[attempt].url, {
+            signal: download.signal,
+            credentials: 'omit',
+            cache: 'no-store',
+          });
+          if (!response.ok || !response.body) {
+            await response.body?.cancel();
+            throw Error('network');
+          }
+          let bytes = 0;
+          const hash = createHash('sha256');
+          const input = Readable.fromWeb(response.body, { signal: download.signal });
+          async function* checked() {
+            for await (const chunk of input) {
+              bytes += chunk.length;
+              clearTimeout(idle);
+              idle = setTimeout(abort, 20000);
+              if (bytes > manifest.bytes) throw Error('checksum');
+              hash.update(chunk);
+              emit(current, 'download', bytes, manifest.bytes);
+              yield chunk;
+            }
+          }
+          await pipeline(checked(), createWriteStream(archive, { flags: 'wx' }), {
+            signal: download.signal,
+          });
+          if (bytes !== manifest.bytes || hash.digest('hex') !== manifest.sha256)
+            throw Error('checksum');
+          downloaded = true;
+          break;
+        } catch (error) {
+          if (current.controller.signal.aborted) throw Error('cancelled');
+          if (error.code === 'ENOSPC') throw error;
+          if (error.message === 'checksum' || lastError.message !== 'checksum')
+            lastError = Error(error.message === 'checksum' ? 'checksum' : 'network');
+          current.log.append(
+            `Python source ${current.source} failed (${error.message === 'checksum' ? 'checksum' : 'network'}).`,
+          );
+          await fs.unlink(archive).catch(() => {});
+        } finally {
+          clearTimeout(idle);
+          clearTimeout(limit);
+          current.controller.signal.removeEventListener('abort', abort);
         }
       }
-      await pipeline(checked(), createWriteStream(archive, { flags: 'wx' }), {
-        signal: current.controller.signal,
-      });
-      if (bytes !== manifest.bytes || hash.digest('hex') !== manifest.sha256)
-        throw Error('checksum');
+      if (!downloaded) throw lastError;
+      current.log.append('Python archive size and SHA256 verified.');
       emit(current, 'extract');
       await command(
         path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe'),
@@ -189,8 +286,18 @@ function createRuntimeInstaller({
   async function install(owner, id) {
     if (!profiles[id]) return { ok: false, error: 'invalid' };
     if (platform !== 'win32' || arch !== 'x64') return { ok: false, error: 'unsupported' };
-    if (job) return { ok: false, error: 'busy' };
-    const current = { owner, id, child: null, controller: new AbortController(), last: 0 };
+    if (job || configuring) return { ok: false, error: 'busy' };
+    const current = {
+      owner,
+      id,
+      child: null,
+      controller: new AbortController(),
+      last: 0,
+      source: undefined,
+      startedAt: Date.now(),
+      sources: { ...defaults },
+      log: { append() {}, snapshot: () => ({ logs: '', updatedAt: 0 }), flush: async () => {} },
+    };
     job = current;
     let lock,
       acquired = false;
@@ -198,6 +305,8 @@ function createRuntimeInstaller({
     try {
       await safe(root);
       await fs.mkdir(root, { recursive: true });
+      await safe(path.join(root, `runtime-install-${id}.log`));
+      current.sources = await downloadSources();
       // Cross-window/process lock; recover only a lock whose process has exited.
       const lockPath = await safe(path.join(root, '.runtime-install.lock'));
       try {
@@ -220,6 +329,8 @@ function createRuntimeInstaller({
         lock = await fs.open(lockPath, 'wx');
       }
       acquired = true;
+      current.log = runtimeLog(root, id);
+      current.log.append(`Install started: ${id}`);
       await lock.writeFile(JSON.stringify({ pid: process.pid }));
       emit(current, 'check');
       const ready = await status(id, current);
@@ -241,27 +352,28 @@ function createRuntimeInstaller({
       await command(
         pythonFor(id),
         [
-          '-m',
-          'pip',
-          'install',
-          '--disable-pip-version-check',
-          '--only-binary=:all:',
-          '--no-warn-script-location',
-          '--retries',
-          '2',
-          '--timeout',
-          '30',
-          '-r',
+          path.join(backend, 'install_dependencies.py'),
           path.join(backend, profiles[id].requirements),
+          '--source',
+          current.sources.packages,
+          ...(current.sources.packages === 'custom'
+            ? ['--custom-index', current.sources.customIndex]
+            : []),
         ],
         current,
+        1500000,
+        true,
       );
       emit(current, 'verify');
       const verified = await status(id, current);
       current.controller.signal.throwIfAborted();
       if (!verified.installed) throw Error('setup');
+      current.log.append('Install verified and complete.');
       return { ok: true, data: verified };
     } catch (e) {
+      current.log.append(
+        `Install ended: ${current.controller.signal.aborted ? 'cancelled' : e.code === 'ENOSPC' ? 'disk-full' : e.message}`,
+      );
       return {
         ok: false,
         error: current.controller.signal.aborted
@@ -273,6 +385,7 @@ function createRuntimeInstaller({
               : 'setup',
       };
     } finally {
+      await current.log.flush();
       clearTimeout(timer);
       await lock?.close();
       if (acquired) await fs.unlink(path.join(root, '.runtime-install.lock')).catch(() => {});
@@ -288,7 +401,62 @@ function createRuntimeInstaller({
     return false;
   }
   return {
+    downloadSources,
+    async configureSources(value) {
+      if (job || configuring) return { ok: false, error: 'busy' };
+      configuring = true;
+      try {
+        const sources = validateSources(value);
+        await safe(root);
+        await fs.mkdir(root, { recursive: true });
+        await fs.writeFile(
+          await safe(path.join(root, 'runtime-download-sources.json')),
+          JSON.stringify(sources),
+          'utf8',
+        );
+        return { ok: true, sources };
+      } catch (error) {
+        return {
+          ok: false,
+          error: error.message === 'invalid-source' ? 'invalid-source' : 'unsafe',
+        };
+      } finally {
+        configuring = false;
+      }
+    },
     status,
+    async diagnostics(owner, id) {
+      if (!profiles[id]) return null;
+      if (job?.owner === owner && job.id === id)
+        return {
+          installing: true,
+          id,
+          stage: job.stage,
+          source: job.source,
+          startedAt: job.startedAt,
+          ...job.log.snapshot(),
+        };
+      try {
+        const file = await safe(path.join(root, `runtime-install-${id}.log`)),
+          stat = await fs.stat(file);
+        const handle = await fs.open(file, 'r');
+        try {
+          const buffer = Buffer.alloc(Math.min(64000, stat.size));
+          await handle.read(buffer, 0, buffer.length, Math.max(0, stat.size - buffer.length));
+          return {
+            installing: false,
+            id,
+            stage: 'idle',
+            logs: buffer.toString('utf8'),
+            updatedAt: stat.mtimeMs,
+          };
+        } finally {
+          await handle.close();
+        }
+      } catch {
+        return { installing: false, id, stage: 'idle', logs: '', updatedAt: 0 };
+      }
+    },
     install,
     cancel,
     dispose() {

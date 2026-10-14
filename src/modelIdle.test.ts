@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { getModelIdleSeconds, setModelIdleSeconds, scheduleModelIdle } from './modelIdle';
+import { setMemoryMode } from './appearance';
 let store: Map<string, string>;
 beforeEach(() => {
   vi.useFakeTimers();
@@ -13,8 +14,22 @@ beforeEach(() => {
   setModelIdleSeconds(1800);
 });
 afterEach(() => {
+  setMemoryMode('normal');
   vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+it('memory mode never changes the user-controlled model idle timeout', async () => {
+  const release = vi.fn();
+  const cancel = scheduleModelIdle(release);
+  await vi.advanceTimersByTimeAsync(20000);
+  setMemoryMode('minimal');
+  expect(getModelIdleSeconds()).toBe(1800);
+  expect(store.get('surfacetab.modelIdleSeconds')).toBe('1800');
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(release).not.toHaveBeenCalled();
+  cancel();
+  setMemoryMode('normal');
+  expect(getModelIdleSeconds()).toBe(1800);
 });
 it('defaults to 1800 seconds, persists valid values and rejects invalid limits', () => {
   expect(getModelIdleSeconds()).toBe(1800);

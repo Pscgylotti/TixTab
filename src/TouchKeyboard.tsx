@@ -5,6 +5,7 @@ import Keyboard from 'simple-keyboard';
 import DictationButton from './DictationButton';
 import { copyText } from './clipboard';
 import FieldEditMenu from './FieldEditMenu';
+import { moveTextSelection, type EditKey } from './keyboardSelection';
 import './chat.css';
 import {
   Keyboard as KeyboardIcon,
@@ -13,6 +14,12 @@ import {
   Settings2,
   ChevronLeft,
   ChevronRight,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  Delete,
+  ClipboardList,
 } from 'lucide-react';
 import 'simple-keyboard/build/css/index.css';
 
@@ -99,6 +106,7 @@ export default function TouchKeyboard({
   const [fieldReady, setFieldReady] = useState(false),
     [voiceStatus, setVoiceStatus] = useState('');
   const [shortcutError, setShortcutError] = useState('');
+  const [selecting, setSelecting] = useState(false);
   const [settings, setSettings] = useState(false),
     [position, setPosition] = useState({ x: 20, y: Math.max(70, view.innerHeight - 310) });
   const [right, setRight] = useState(10),
@@ -190,6 +198,7 @@ export default function TouchKeyboard({
       if (editable(e.target) && !e.target.closest('.touch-keyboard')) {
         if (field.current !== e.target) updateComposition('');
         field.current = e.target;
+        setSelecting(false);
         setFieldReady(!e.target.disabled && !e.target.readOnly);
         if (!native && pointerType.current !== 'mouse') setOpen(true);
       }
@@ -314,6 +323,55 @@ export default function TouchKeyboard({
       remaining = item ? raw.slice(item.matchedLength).replace(/^'+/, '') : '';
     write((item?.word ?? raw) + (suffix !== undefined ? remaining + suffix : ''));
     updateComposition(suffix !== undefined ? '' : remaining);
+  };
+  const editKey = async (key: EditKey) => {
+    const el = field.current;
+    if (!el?.isConnected || el.disabled || el.readOnly) return;
+    el.focus({ preventScroll: true });
+    if (view.surfaceDesktop?.editKey) {
+      try {
+        if (
+          await view.surfaceDesktop.editKey(
+            key,
+            selecting && !['Backspace', 'Delete'].includes(key),
+          )
+        )
+          return;
+      } catch {}
+    }
+    if (key === 'Backspace') {
+      write('', true);
+      return;
+    }
+    if (key === 'Delete') {
+      const start = el.selectionStart ?? 0,
+        end = el.selectionEnd ?? start;
+      if (start === end)
+        selection(el, start, start + (Array.from(el.value.slice(start))[0]?.length ?? 0));
+      write('');
+      return;
+    }
+    const next = moveTextSelection(
+      el.value,
+      el.selectionStart ?? 0,
+      el.selectionEnd ?? 0,
+      el.selectionDirection ?? 'none',
+      key,
+      selecting,
+    );
+    try {
+      el.setSelectionRange(next.start, next.end, next.direction);
+    } catch {}
+  };
+  const clipboardHistory = async () => {
+    field.current?.focus({ preventScroll: true });
+    try {
+      if (await view.surfaceDesktop?.openClipboardHistory?.()) {
+        setShortcutError('');
+        return;
+      }
+    } catch {}
+    setShortcutError(tr('剪贴板历史仅在 Windows 桌面版可用；请确认系统已启用 Win+V。'));
   };
   acceptRef.current = accept;
   const control = (active: boolean) => {
@@ -600,7 +658,11 @@ export default function TouchKeyboard({
           className="touch-keyboard"
           role="dialog"
           aria-label={tr('悬浮屏幕键盘')}
-          style={{ left: position.x, top: position.y, width: Math.min(width, view.innerWidth - 8) }}
+          style={{
+            left: position.x,
+            top: position.y,
+            width: Math.min(width, mode === 'voice' ? 440 : 900, view.innerWidth - 8),
+          }}
           onPointerDownCapture={(e) => {
             if (!(e.target as HTMLElement).closest('input,select')) e.preventDefault();
           }}
@@ -771,13 +833,7 @@ export default function TouchKeyboard({
           )}
           {mode === 'voice' ? (
             <div className="keyboard-voice">
-              <p>
-                {tr(
-                  fieldReady
-                    ? '点击麦克风，识别结果写入当前输入框。'
-                    : '请先点击需要输入的文本框。',
-                )}
-              </p>
+              {!fieldReady && <p>{tr('请先点击需要输入的文本框。')}</p>}
               <DictationButton
                 disabled={!fieldReady}
                 hostDocument={hostDocument}
@@ -794,7 +850,92 @@ export default function TouchKeyboard({
                   write((space ? ' ' : '') + text);
                 }}
               />
-              <p role="status">{voiceStatus}</p>
+              {voiceStatus && <p role="status">{voiceStatus}</p>}
+              <div className="voice-edit-pad" role="group" aria-label={tr('语音文本编辑')}>
+                <div className="voice-edit-navigation">
+                  <button
+                    disabled={!fieldReady}
+                    className="voice-up"
+                    aria-label={tr('向上移动光标')}
+                    onClick={() => void editKey('ArrowUp')}
+                  >
+                    <ArrowUp size={20} />
+                  </button>
+                  <button
+                    disabled={!fieldReady}
+                    className="voice-left"
+                    aria-label={tr('向左移动光标')}
+                    onClick={() => void editKey('ArrowLeft')}
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                  <button
+                    disabled={!fieldReady}
+                    className="voice-select"
+                    aria-pressed={selecting}
+                    onClick={() => setSelecting((v) => !v)}
+                  >
+                    {tr(selecting ? '结束选择' : '开始选择')}
+                  </button>
+                  <button
+                    disabled={!fieldReady}
+                    className="voice-right"
+                    aria-label={tr('向右移动光标')}
+                    onClick={() => void editKey('ArrowRight')}
+                  >
+                    <ArrowRight size={20} />
+                  </button>
+                  <button
+                    disabled={!fieldReady}
+                    className="voice-down"
+                    aria-label={tr('向下移动光标')}
+                    onClick={() => void editKey('ArrowDown')}
+                  >
+                    <ArrowDown size={20} />
+                  </button>
+                  <div className="voice-edit-bottom">
+                    <button disabled={!fieldReady} onClick={() => void editKey('Home')}>
+                      {tr('行首')}
+                    </button>
+                    <button disabled={!fieldReady} onClick={() => void shortcut('selectAll', 'A')}>
+                      {tr('全选')}
+                    </button>
+                    <button disabled={!fieldReady} onClick={() => void editKey('End')}>
+                      {tr('行尾')}
+                    </button>
+                  </div>
+                </div>
+                <div className="voice-edit-commands">
+                  <button
+                    disabled={!fieldReady}
+                    aria-label={tr('退格')}
+                    title={tr('退格')}
+                    onClick={() => void editKey('Backspace')}
+                  >
+                    <Delete size={19} />
+                  </button>
+                  <button disabled={!fieldReady} onClick={() => void editKey('Delete')}>
+                    {tr('删除')}
+                  </button>
+                  {shortcuts.slice(1, 4).map(([command, key, label]) => (
+                    <button
+                      disabled={!fieldReady}
+                      key={command}
+                      onClick={() => void shortcut(command, key)}
+                    >
+                      {tr(label)}
+                    </button>
+                  ))}
+                  <button
+                    disabled={!fieldReady}
+                    aria-label={tr('剪贴板历史（Win+V）')}
+                    title={tr('剪贴板历史（Win+V）')}
+                    onClick={() => void clipboardHistory()}
+                  >
+                    <ClipboardList size={17} /> Win+V
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className={`surfacetab-keys-host keyboard-layout-${mode}`} ref={host} />

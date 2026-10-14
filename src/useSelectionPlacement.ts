@@ -48,20 +48,22 @@ export function useSelectionPlacement(selection: Anchor, hand: WritingHand, expa
         .map((el) => el.getBoundingClientRect())
         .filter((r) => r.width > 0 && r.height > 0);
       if (keyboard) obstacles.push(keyboard);
-      const anchor = selection.range?.commonAncestorContainer.isConnected
-        ? selection.range.getBoundingClientRect()
-        : { left: selection.x, top: selection.y, width: 0, height: 0 };
+      const anchor =
+        !expanded && selection.range?.commonAncestorContainer.isConnected
+          ? selection.range.getBoundingClientRect()
+          : { left: selection.x, top: selection.y, width: 0, height: 0 };
       const actions = element.querySelector<HTMLElement>('.selection-actions');
       const style = getComputedStyle(element);
       const gap = actions ? parseFloat(getComputedStyle(actions).columnGap) || 0 : 0;
       const buttons = actions ? Array.from(actions.children) : [];
-      const compactWidth =
-        buttons.reduce((sum, button) => sum + button.getBoundingClientRect().width, 0) +
-        Math.max(0, buttons.length - 1) * gap +
-        parseFloat(style.paddingLeft) +
-        parseFloat(style.paddingRight) +
-        parseFloat(style.borderLeftWidth) +
-        parseFloat(style.borderRightWidth);
+      const compactWidth = !expanded
+        ? buttons.reduce((sum, button) => sum + button.getBoundingClientRect().width, 0) +
+          Math.max(0, buttons.length - 1) * gap +
+          parseFloat(style.paddingLeft) +
+          parseFloat(style.paddingRight) +
+          parseFloat(style.borderLeftWidth) +
+          parseFloat(style.borderRightWidth)
+        : 0;
       const next = placeSelectionFlyout(
         viewport,
         {

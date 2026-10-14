@@ -10,7 +10,7 @@ if(-not (Test-Path -LiteralPath $nativePython)) {
 }
 if($Install) {
   $requirements=if($Ocr) { 'requirements-ocr.txt' } else { 'requirements-openvino.txt' }
-  & $nativePython -m pip install -r (Join-Path $serviceRoot $requirements)
+  & $nativePython (Join-Path $serviceRoot 'install_dependencies.py') (Join-Path $serviceRoot $requirements)
   if($LASTEXITCODE -ne 0) { throw 'OpenVINO runtime installation failed.' }
 }
 & $nativePython -m uvicorn openvino_app:app --app-dir $serviceRoot --host 127.0.0.1 --port 8766

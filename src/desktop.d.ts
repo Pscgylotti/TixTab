@@ -1,10 +1,20 @@
 interface Window {
   surfaceDesktop?: {
+    penHaptics?: {
+      run: (
+        action: 'configure' | 'start' | 'stop' | 'status' | 'intensity',
+        value?: boolean | string | number,
+      ) => Promise<import('./usePenHaptics').HapticStatus>;
+      onStatus: (callback: (status: import('./usePenHaptics').HapticStatus) => void) => () => void;
+    };
+    pdfEditor?: import('./pdfNativeTypes').PdfEditorBridge;
     onNativePen?: (
       callback: (sample: import('./penInteraction').NativePenSample) => void,
     ) => () => void;
     createDesktopShortcut?: () => Promise<{ ok: boolean; error?: string; path?: string }>;
     openDocumentUrl?: (url: string) => Promise<boolean>;
+    editKey?: (key: import('./keyboardSelection').EditKey, select: boolean) => Promise<boolean>;
+    openClipboardHistory?: () => Promise<boolean>;
     editCommand?: (
       command: 'selectAll' | 'cut' | 'copy' | 'paste' | 'undo' | 'redo',
     ) => Promise<boolean>;

@@ -48,19 +48,20 @@ async function checkGeometry(page: Page) {
           panel.y >= 0 &&
           panel.right <= innerWidth &&
           panel.bottom <= innerHeight &&
-          !(
-            panel.x < range.right &&
-            panel.right > range.x &&
-            panel.y < range.bottom &&
-            panel.bottom > range.y
-          )
+          (el.classList.contains('expanded') ||
+            !(
+              panel.x < range.right &&
+              panel.right > range.x &&
+              panel.y < range.bottom &&
+              panel.bottom > range.y
+            ))
         );
       }),
     )
     .toBe(true);
 }
 
-test('flyout chooses the roomier page region above or below and updates after expansion', async ({
+test('compact flyout clears text; expanded translation uses the available reading area', async ({
   page,
 }) => {
   await prepare(page);
@@ -87,13 +88,24 @@ test('flyout chooses the roomier page region above or below and updates after ex
     await expect(page.locator('.selection-flyout')).toHaveAttribute('data-placement', side);
     await checkGeometry(page);
     await page.getByRole('button', { name: '翻译', exact: true }).click();
-    await expect(page.locator('.selection-flyout')).toHaveAttribute('data-placement', side);
+    await expect(page.locator('.selection-flyout')).toHaveAttribute('data-placement', 'overlay');
     await checkGeometry(page);
+    if (word === 'upperword')
+      await page
+        .locator('.selection-flyout')
+        .screenshot({ path: '.cache/translation-expanded-area.png' });
     expect(
       await page.locator('.selection-flyout').evaluate((el) => {
         const r = el.getBoundingClientRect(),
           v = document.querySelector('.canvas-container')!.getBoundingClientRect();
-        return r.top >= v.top && r.bottom <= v.bottom;
+        return (
+          r.top >= v.top &&
+          r.bottom <= v.bottom &&
+          r.width <= 640 &&
+          r.width < v.width * 0.9 &&
+          r.width > Math.min(300, v.width * 0.7) &&
+          r.height > v.height * 0.6
+        );
       }),
     ).toBe(true);
     await page.getByRole('button', { name: '关闭划词工具' }).click();
@@ -133,6 +145,11 @@ test('blank page clicks dismiss selection flyout; controls preserve it in every 
     await page.getByRole('button', { name: '翻译后端设置', exact: true }).click();
     await expect(page.locator('.selection-flyout')).toBeVisible();
     expect(await page.evaluate(() => getSelection()?.toString())).toBe('competitive');
+    // Expanded translations intentionally cover the paper; collapse before testing a paper click.
+    await page
+      .locator('.selection-actions')
+      .getByRole('button', { name: '翻译', exact: true })
+      .click();
     const blank = (await page.locator('.textLayer').first().boundingBox())!;
     await page.mouse.click(blank.x + blank.width - 25, blank.y + 25);
     await expect(page.locator('.selection-flyout')).toHaveCount(0);

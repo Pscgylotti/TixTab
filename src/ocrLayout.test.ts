@@ -91,3 +91,37 @@ test('text-only engines search without fabricating precise coordinates', () => {
   ];
   expect(findBitmapText(p, 'alpha')[0].rects).toEqual([{ x: 10, y: 20, width: 100, height: 60 }]);
 });
+
+test('Tesseract word boxes survive normalization and project validation', () => {
+  const lines = tesseractLines([
+    {
+      paragraphs: [
+        {
+          lines: [
+            {
+              text: 'alpha beta',
+              bbox: { x0: 10, y0: 20, x1: 190, y1: 40 },
+              words: [
+                { text: 'alpha', bbox: { x0: 10, y0: 20, x1: 80, y1: 40 } },
+                { text: 'beta', bbox: { x0: 100, y0: 20, x1: 190, y1: 40 } },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ]);
+  const result = normalizeOcr('alpha beta', lines, 200, 100, 'Tesseract');
+  expect(result.lines[0].words).toEqual([
+    { text: 'alpha', polygon: [0.05, 0.2, 0.4, 0.2, 0.4, 0.4, 0.05, 0.4] },
+    { text: 'beta', polygon: [0.5, 0.2, 0.95, 0.2, 0.95, 0.4, 0.5, 0.4] },
+  ]);
+  expect(validOcr(result)).toBe(true);
+  expect(validOcr({ ...result, lines: [{ ...result.lines[0], words: [null] }] })).toBe(false);
+  expect(
+    validOcr({
+      ...result,
+      lines: [{ ...result.lines[0], words: [{ text: 'bad', polygon: [NaN] }] }],
+    }),
+  ).toBe(false);
+});

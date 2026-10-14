@@ -70,7 +70,7 @@ class PiperTests(unittest.TestCase):
 
     def test_service_binary_contract_switch_busy_timeout_missing_and_validation(self):
         service._model=None;service._model_kind=None
-        with TestClient(service.app) as client,patch.object(service,'create_piper') as factory,patch.object(service,'NativeTexo') as texo:
+        with TestClient(service.app) as client,patch.object(service,'create_piper') as factory,patch.object(service,'create_texo') as texo:
             factory.return_value.synthesize.return_value={'audio':b'RIFFtest','voice':'en_US-lessac-low','vocoderDevices':['NPU','CPU']}
             body={'voice':'en_US-lessac-low','chunks':[[1,0,20,0,2]],'device':'AUTO'}
             response=client.post('/synthesize',json=body,headers={'Origin':'surfacetab://app'})

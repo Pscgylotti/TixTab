@@ -1,0 +1,20 @@
+{
+  "retainedScratch": 0,
+  "actualHash": "21e030fe90cbfcbc12c374fa4a7e89be7b9950d69bb95c4d77bd8c3d2e8414fd",
+  "referenceHash": "21e030fe90cbfcbc12c374fa4a7e89be7b9950d69bb95c4d77bd8c3d2e8414fd",
+  "stats": {
+    "bytes": 11520000,
+    "bitmaps": 2,
+    "thumbnails": 0,
+    "pages": 1,
+    "pageBytes": 7680000,
+    "renders": 2,
+    "hits": 0,
+    "running": 0,
+    "queued": 0
+  },
+  "size": [
+    1200,
+    1600
+  ]
+}

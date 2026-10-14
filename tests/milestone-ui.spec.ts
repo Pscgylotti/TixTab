@@ -6,7 +6,7 @@ async function settings(page: Page) {
   await page.getByRole('button', { name: '设置', exact: true }).click();
   return page.getByRole('dialog', { name: '设置与笔诊断' });
 }
-test('paper choice works on original PDFs for new blank pages and persists in all views/themes', async ({
+test('blank page options live in insertion dialog; colored patterns persist in all views and themes', async ({
   page,
 }) => {
   await page.goto('/');
@@ -19,42 +19,41 @@ test('paper choice works on original PDFs for new blank pages and persists in al
     buffer: Buffer.from(await pdf.save()),
   });
   await expect(page.locator('.paper')).toHaveAttribute('data-pdf-source', '0');
-  let dialog = await settings(page);
-  await dialog.getByRole('button', { name: '横线', exact: true }).click();
-  await expect(dialog.getByRole('button', { name: '横线', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  await expect(dialog).toContainText('纸张设置应用于新插入的空白页');
-  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
-  await expect(page.locator('.paper')).toHaveClass(/paper-plain/);
-  await page.getByRole('button', { name: '插入空白页', exact: true }).click();
-  await expect(page.locator('.paper')).toHaveClass(/paper-lines/);
-  for (const night of [false, true]) {
-    if (night) await page.getByRole('button', { name: '实验性夜间模式', exact: true }).click();
-    for (const view of ['单页标注', '连续页面预览', '双页预览']) {
-      await page.getByRole('button', { name: view, exact: true }).click();
-      for (const [label, kind] of [
-        ['纯白', 'plain'],
-        ['点阵', 'dots'],
-        ['横线', 'lines'],
-      ]) {
-        dialog = await settings(page);
-        await dialog.getByRole('button', { name: label, exact: true }).click();
-        await dialog.getByRole('button', { name: '关闭', exact: true }).click();
-        const blank = page
-          .locator('.paper[data-pdf-source=""],.reading-paper[data-pdf-source=""]')
-          .first();
-        await expect(blank).toHaveClass(new RegExp(`paper-${kind}`));
-        const pattern = await blank.evaluate(
-          (el) =>
-            getComputedStyle(el, el.classList.contains('paper') ? '::after' : null).backgroundImage,
-        );
-        expect(kind === 'plain' ? pattern === 'none' : pattern.includes('gradient')).toBe(true);
-      }
-    }
+  const controls = page.getByRole('group', { name: '页面操作' });
+  expect(await controls.getByRole('button').count()).toBe(3);
+  const boxes = await controls
+    .getByRole('button')
+    .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().top));
+  expect(Math.max(...boxes) - Math.min(...boxes)).toBeLessThan(2);
+  for (const [label, kind] of [
+    ['空白', 'plain'],
+    ['点阵', 'dots'],
+    ['格子', 'grid'],
+    ['横线', 'lines'],
+    ['细密格子', 'fine-grid'],
+  ]) {
+    await controls.getByRole('button', { name: '插入空白页', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: '插入空白页', exact: true });
+    await dialog.getByRole('button', { name: label, exact: true }).click();
+    await dialog.getByRole('button', { name: '纸张颜色 #fff7e6', exact: true }).click();
+    await dialog.getByRole('button', { name: '插入页面', exact: true }).click();
+    await expect(page.locator('.paper')).toHaveClass(new RegExp(`paper-${kind}`));
+    await expect(page.locator('.paper')).toHaveCSS('background-color', 'rgb(255, 247, 230)');
   }
-  // Wait for the actual workspace transaction, rather than assuming a UI click saved to disk.
+  const dialog = await settings(page);
+  await expect(dialog.getByText('空白页纸张', { exact: true })).toHaveCount(0);
+  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
+  await page.getByRole('button', { name: '连续页面预览', exact: true }).click();
+  await expect(page.locator('.reading-paper.paper-fine-grid')).toBeVisible();
+  await page.getByRole('button', { name: '实验性夜间模式', exact: true }).click();
+  await expect(page.locator('.reading-paper.paper-fine-grid')).not.toHaveCSS(
+    'background-color',
+    'rgb(255, 247, 230)',
+  );
+  await page.getByRole('button', { name: '双页预览', exact: true }).click();
+  await expect(page.locator('.reading-paper.paper-fine-grid')).toBeVisible();
+  await page.getByRole('button', { name: '单页标注', exact: true }).click();
+  await expect(page.locator('.paper')).toHaveClass(/paper-fine-grid/);
   await expect
     .poll(() =>
       page.evaluate(async () => {
@@ -66,15 +65,16 @@ test('paper choice works on original PDFs for new blank pages and persists in al
           documents.find((d: { name: string }) => d.name === 'Paper')!.id,
           false,
         );
-        return `${saved?.meta.view.mode}:${saved?.notebook.pages[1]?.paper}`;
+        return saved?.notebook.pages.at(-1)?.paperColor;
       }),
     )
-    .toBe('dual:lines');
+    .toBe('#fff7e6');
+  const saved = page.waitForEvent('download');
+  await page.getByRole('button', { name: '导出 PDF', exact: true }).click();
+  await (await saved).saveAs('.cache/page-editing/paper-styles.pdf');
   await page.reload();
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
-  await expect(page.locator('.reading-paper.paper-lines')).toHaveCount(1);
-  await page.getByRole('button', { name: '插入空白页', exact: true }).click();
-  await expect(page.locator('.reading-paper.paper-lines')).toHaveCount(1);
+  await expect(page.locator('.paper')).toHaveClass(/paper-fine-grid/);
 });
 
 test('pen/touch long press offers clipboard editing in password and ordinary fields without changing values on open', async ({

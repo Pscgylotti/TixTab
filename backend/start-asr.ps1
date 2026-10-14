@@ -8,7 +8,7 @@ if(-not (Test-Path -LiteralPath $nativePython)) {
   if($LASTEXITCODE -ne 0) { throw 'Python 3.10 x64 is required.' }
 }
 if($Install) {
-  & $nativePython -m pip install --disable-pip-version-check --only-binary=:all: -r (Join-Path $PSScriptRoot 'requirements-asr.txt')
+  & $nativePython (Join-Path $PSScriptRoot 'install_dependencies.py') (Join-Path $PSScriptRoot 'requirements-asr.txt')
   if($LASTEXITCODE -ne 0) { throw 'Local speech runtime installation failed.' }
 }
 & $nativePython -c 'import openvino as ov,openvino_genai,sherpa_onnx,sounddevice,soxr,webrtcvad; print(ov.Core().available_devices)'

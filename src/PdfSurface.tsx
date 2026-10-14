@@ -14,6 +14,9 @@ import { PanZoomPointers } from './gestures';
 import { useDeferredZoom } from './useDeferredZoom';
 import { objectBox } from './objectSelection';
 import { useNavigation } from './DocumentNavigator';
+import NativePdfPreview from './NativePdfPreview';
+import { useLiveNativeEdit } from './nativePdfDrafts';
+import { paperAppearance } from './paperAppearance';
 export interface PenDiagnostic {
   type: string;
   pressure: number;
@@ -57,6 +60,7 @@ export default function PdfSurface({
   focusObjectId,
 }: Props) {
   useLocale();
+  const nativeLive = useLiveNativeEdit(page.id);
   const navigation = useNavigation();
   const { pdfNight } = useAppearance(),
     policy = renderPolicy();
@@ -189,7 +193,7 @@ export default function PdfSurface({
       };
       const prior = priorPdfBitmap(pdf, page.sourceIndex, pdfNight);
       if (prior) show(prior);
-      else {
+      else if (!policy.minimal) {
         onRender(tr('\u751F\u6210\u9884\u89C8\u2026'));
         await render(Math.min(0.7, cap));
       }
@@ -218,6 +222,7 @@ export default function PdfSurface({
     policy.dpr,
     policy.baseScale,
     policy.sampling,
+    policy.minimal,
   ]);
   useEffect(
     () => () => {
@@ -281,15 +286,20 @@ export default function PdfSurface({
           data-pdf-night={pdfNight}
           data-pdf-source={page.sourceIndex ?? ''}
           data-page-id={page.id}
+          data-blank-paper={page.sourceIndex === null ? true : undefined}
           style={{
+            ...(page.sourceIndex === null ? paperAppearance(page, pdfNight) : {}),
             width: page.width,
             height: page.height,
             transform: `translate(-50%, -50%) scale(${zoom})`,
           }}
         >
           <div ref={host} style={{ display: 'contents' }} />
+          {(page.pdfEdits?.length || nativeLive) && (
+            <NativePdfPreview page={page} zoom={settledZoom} />
+          )}
           <PdfDetailLayer
-            pdf={pdf}
+            pdf={page.pdfEdits?.length || nativeLive ? null : pdf}
             sourceIndex={page.sourceIndex}
             width={page.width}
             height={page.height}
@@ -313,6 +323,7 @@ export default function PdfSurface({
             sourceIndex={page.sourceIndex}
             enabled={tool === 'hand'}
             pageId={page.id}
+            bitmapOcr={page.bitmapOcr}
           />
           <PageEditor
             page={page}

@@ -1,0 +1,499 @@
+.review-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10020;
+}
+.review-layer.placing {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+.review-anchor,
+.review-draft {
+  position: absolute;
+  border: 1.5px solid #d5a94499;
+  background: transparent !important;
+  border-radius: 5px;
+  padding: 0;
+  min-height: 0;
+  pointer-events: auto;
+}
+.review-anchor {
+  display: block;
+  color: #b88b20;
+  overflow: visible;
+  cursor: pointer;
+  touch-action: none;
+}
+.review-anchor.editing {
+  cursor: move;
+}
+.review-resize-handle {
+  position: absolute;
+  background: var(--surface);
+  border: solid var(--accent);
+  border-radius: 2px;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+.review-resize-handle.nw {
+  left: 0;
+  top: 0;
+  cursor: nwse-resize;
+}
+.review-resize-handle.ne {
+  left: 100%;
+  top: 0;
+  cursor: nesw-resize;
+}
+.review-resize-handle.sw {
+  left: 0;
+  top: 100%;
+  cursor: nesw-resize;
+}
+.review-resize-handle.se {
+  left: 100%;
+  top: 100%;
+  cursor: nwse-resize;
+}
+.review-anchor > .lucide {
+  position: absolute;
+  right: 0;
+  top: 0;
+  transform: translate(50%, -50%);
+  fill: var(--surface);
+}
+.review-anchor.highlighted,
+.review-draft {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: #6495ed16 !important;
+}
+.review-region-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.review-side-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+.review-connector {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.review-connector line {
+  stroke: #b88b2080;
+  stroke-width: 1;
+}
+.review-connector line.highlighted {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.review-card {
+  position: absolute;
+  pointer-events: auto;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  color: var(--text);
+  border: 0.75px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 18px #0002;
+  padding: 10px;
+  cursor: pointer;
+  min-height: 108px;
+}
+.review-card.editing {
+  background: var(--surface);
+  border-width: 1.5px;
+}
+.review-card.editing header {
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+.review-card.highlighted {
+  border-color: var(--accent);
+}
+.review-card header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.review-card header span {
+  flex: 1;
+}
+.review-card header button {
+  padding: 3px;
+  min-height: 24px;
+  width: 24px;
+}
+.review-card p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 62px;
+  overflow: auto;
+}
+.review-card textarea {
+  width: 100%;
+  margin-top: 8px;
+  min-height: 120px;
+  max-height: 200px;
+  resize: vertical;
+  font-size: 13px;
+}
+.editing-dialog {
+  width: min(600px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-3);
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.editing-dialog > header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+.editing-dialog > header h2 {
+  font-size: 16px;
+  margin: 0;
+  flex: 1;
+}
+.editing-dialog > header button {
+  padding: 4px;
+  min-height: 30px;
+  width: 30px;
+}
+.editing-fields {
+  padding: 16px;
+  overflow: auto;
+  display: grid;
+  gap: 14px;
+}
+.editing-fields label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.editing-fields :is(input, select, textarea) {
+  min-width: 0;
+  width: 100%;
+}
+.editing-fields .field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.editing-fields p {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  color: var(--text-muted);
+}
+.editing-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.editing-dialog .error {
+  color: var(--danger, #d95656);
+}
+.native-pdf-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10010;
+  pointer-events: none;
+}
+.native-pdf-element {
+  position: absolute;
+  pointer-events: auto;
+  border: 1px solid #5989cb80;
+  border-radius: 1px;
+  padding: 0;
+  min-height: 0;
+  background: transparent !important;
+}
+.native-pdf-element:hover,
+.native-pdf-element:focus {
+  border-color: var(--accent);
+  background: #6495ed26 !important;
+}
+.native-pdf-status {
+  pointer-events: auto;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  max-width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.page-actions-menu {
+  position: fixed;
+  z-index: 100;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  width: 180px;
+  box-shadow: var(--shadow-3);
+  display: grid;
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+}
+.page-actions-menu button {
+  justify-content: flex-start;
+  padding: 7px 10px;
+  min-height: 32px;
+  font-size: 13px;
+}
+.page-editor.tool-pdf-edit {
+  cursor: default;
+}
+.page-rotate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.page-edit-previews {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+.page-edit-preview-stage {
+  width: 210px;
+  height: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.page-edit-preview-paper {
+  position: relative;
+  flex: none;
+}
+.page-edit-preview-paper .page-mini {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: 0;
+}
+.crop-preview-region {
+  position: absolute;
+  border: 1.5px solid var(--accent);
+  box-shadow: 0 0 0 250px #0007;
+  pointer-events: none;
+}
+.crop-result-preview {
+  position: relative;
+  overflow: hidden;
+}
+.native-pdf-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.native-pdf-preview canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.native-preview-error {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 4;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface);
+  padding: 5px;
+  border-radius: 5px;
+  pointer-events: none;
+}
+.native-edits-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.native-edits-actions button {
+  font-size: 12px;
+  min-height: 28px;
+  padding: 4px 7px;
+}
+.native-dialog-preview {
+  position: relative;
+  margin: 0 auto;
+  background: var(--surface-sunken);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.native-dialog-preview > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.native-pdf-element {
+  cursor: move;
+  touch-action: none;
+  overflow: visible;
+}
+.native-pdf-element.selected {
+  border-color: var(--accent);
+}
+.sidebar-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+}
+.sidebar-page-actions .add-page {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 6px;
+  min-height: 32px;
+  justify-content: center;
+}
+.paper-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+}
+.paper-choice-grid button {
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  font-size: 12px;
+}
+.paper-choice-grid button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.paper-choice-preview {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.paper-color-presets {
+  display: flex;
+  gap: 8px;
+}
+.paper-color-presets button {
+  width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+}
+.paper-color-presets button[aria-pressed='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.paper[data-blank-paper='true']::after {
+  background-image: none;
+}
+.anchored-popover {
+  position: fixed;
+  z-index: 110;
+  max-height: calc(100dvh - 16px);
+}
+.blank-page-dialog > header {
+  padding: 7px 10px;
+}
+.blank-page-dialog > header h2 {
+  font-size: 14px;
+}
+.blank-page-dialog .editing-fields {
+  padding: 9px 10px;
+  gap: 8px;
+}
+.blank-page-dialog .paper-choice-grid {
+  gap: 4px;
+}
+.blank-page-dialog .paper-choice-grid button {
+  padding: 4px;
+  gap: 3px;
+  font-size: 11px;
+  min-width: 0;
+}
+.blank-page-dialog .paper-choice-preview {
+  height: 35px;
+  width: 100%;
+  aspect-ratio: auto;
+}
+.blank-page-dialog .paper-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.blank-page-dialog .paper-color-row label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.blank-page-dialog .paper-color-row input {
+  width: 28px;
+  min-height: 24px;
+  padding: 0;
+}
+.blank-page-dialog .paper-color-presets {
+  gap: 5px;
+}
+.blank-page-dialog .paper-color-presets button {
+  width: 20px;
+  min-height: 20px;
+}
+.blank-page-dialog footer,
+.page-delete-popover footer {
+  padding: 7px 10px;
+}
+.blank-page-dialog footer button,
+.page-delete-popover footer button {
+  min-height: 28px;
+  padding: 4px 10px;
+  font-size: 12px;
+}

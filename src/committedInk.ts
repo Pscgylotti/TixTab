@@ -1,6 +1,7 @@
 import type { Stroke } from './model';
 import { drawStroke, drawStrokes, inkBounds } from './ink';
 import { SpatialIndex, unionBounds, type Bounds } from './spatialIndex';
+import { renderPolicy } from './appearance';
 
 /** Retain the exact raster; a dynamic bounds hierarchy selects ordered survivors
  * for dirty-region replay. Reordering and large changes still replay the layer. */
@@ -38,7 +39,15 @@ export class CommittedInk {
     canvas: HTMLCanvasElement,
     page: { id: string; width: number; height: number; strokes: readonly Stroke[] },
   ) {
-    const ratio = Math.min(2, Math.sqrt(4000000 / (page.width * page.height))),
+    if (renderPolicy().minimal && !page.strokes.length) {
+      this.reset();
+      canvas.width = canvas.height = 1;
+      return { mode: 'full' as const, usedScratch: false, strokesDrawn: 0, pixelsCleared: 1 };
+    }
+    const ratio = Math.min(
+        renderPolicy().minimal ? 1 : 2,
+        Math.sqrt((renderPolicy().minimal ? 1000000 : 4000000) / (page.width * page.height)),
+      ),
       width = Math.ceil(page.width * ratio),
       height = Math.ceil(page.height * ratio),
       previous = this.previous;
@@ -183,6 +192,7 @@ export class CommittedInk {
       pixelsHigh: height,
       strokes: page.strokes,
     };
+    if (renderPolicy().minimal) this.releaseScratch();
     return {
       mode,
       usedScratch,

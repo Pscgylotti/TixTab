@@ -86,7 +86,7 @@ class TranslationServiceTests(unittest.TestCase):
         service._model=None;service._model_kind=None;self.client.close()
 
     def test_shared_model_eviction_direction_change_and_idle_release(self):
-        with patch.object(service,'NativeOpus') as opus,patch.object(service,'NativeTexo') as texo:
+        with patch.object(service,'create_opus') as opus,patch.object(service,'create_texo') as texo:
             opus.return_value.translate.return_value={'translation':'translated'};texo.return_value.recognize.return_value={'latex':'x'}
             for direction in ['en-zh','en-zh','zh-en']:
                 self.assertEqual(self.client.post('/translate',json={'text':'input','direction':direction}).status_code,200)
@@ -97,7 +97,7 @@ class TranslationServiceTests(unittest.TestCase):
         health=self.client.get('/health').json();self.assertIn('translate-experimental',health['capabilities']);self.assertFalse(health['loaded'])
 
     def test_busy_rejected_input_and_error_statuses(self):
-        with patch.object(service,'NativeOpus') as constructor:
+        with patch.object(service,'create_opus') as constructor:
             self.assertEqual(self.client.post('/translate',json={'text':'a'*10001,'direction':'en-zh'}).status_code,422)
             constructor.assert_not_called()
             service._lock.acquire()
@@ -111,7 +111,7 @@ class TranslationServiceTests(unittest.TestCase):
             self.assertEqual(self.client.post('/translate',json={'text':'x','direction':'en-zh'}).status_code,503);self.assertIsNone(service._model)
 
     def test_corrupt_model_is_unavailable_instead_of_rejected_user_input(self):
-        with patch.object(service,'NativeOpus',side_effect=ValueError('OPUS model checksum mismatch')):
+        with patch.object(service,'create_opus',side_effect=ValueError('OPUS model checksum mismatch')):
             response=self.client.post('/translate',json={'text':'The book','direction':'en-zh'})
             self.assertEqual(response.status_code,503);self.assertIsNone(service._model)
 

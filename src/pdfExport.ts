@@ -11,6 +11,7 @@ import {
   PDFHexString,
   PDFContentStream,
   rgb,
+  degrees,
   type PDFObject,
 } from 'pdf-lib';
 import type { Notebook, Page } from './model';
@@ -19,6 +20,7 @@ import { pageLayers } from './pageLayers';
 import { groupLeaves } from './objectGroup';
 import { t } from './i18n';
 import { SignedPdfExportError, type PdfExportProgress } from './pdfExportProtocol';
+import { paperStep } from './paperAppearance';
 export { SignedPdfExportError } from './pdfExportProtocol';
 
 const name = (value: string) => PDFName.of(value);
@@ -330,14 +332,27 @@ async function appendOverlay(
   for (const image of pageLayers(p).flatMap((i) => (i ? groupLeaves(i) : [i]))) {
     if (image) {
       const png = await doc.embedPng(image.data),
-        scale = Math.min(image.width / png.width, image.height / png.height),
+        turn = image.rotation ?? 0,
+        displayWidth = turn % 180 ? image.height : image.width,
+        displayHeight = turn % 180 ? image.width : image.height,
+        scale = Math.min(displayWidth / png.width, displayHeight / png.height),
         width = png.width * scale,
         height = png.height * scale;
       layer.drawImage(png, {
-        x: image.x + (image.width - width) / 2,
-        y: p.height - image.y - (image.height + height) / 2,
+        x:
+          image.x +
+          image.width / 2 -
+          (Math.cos((-turn * Math.PI) / 180) * width - Math.sin((-turn * Math.PI) / 180) * height) /
+            2,
+        y:
+          p.height -
+          image.y -
+          image.height / 2 -
+          (Math.sin((-turn * Math.PI) / 180) * width + Math.cos((-turn * Math.PI) / 180) * height) /
+            2,
         width,
         height,
+        rotate: degrees(-turn),
       });
     } else {
       for (const stroke of p.strokes) {
@@ -430,7 +445,9 @@ export async function exportPdf(
   const reordered =
       notebook.pages.length !== original.length ||
       notebook.pages.some((page, i) => page.sourceIndex !== i),
-    painted = notebook.pages.some((page) => page.strokes.length || page.images.length);
+    painted = notebook.pages.some(
+      (page) => page.strokes.length || page.images.length || page.reviews?.length,
+    );
   const bookmarked = notebook.bookmarks?.some((b) => notebook.pages.some((p) => p.id === b.pageId));
   if (notebook.source && !reordered && !painted && !bookmarked) return notebook.source.slice();
   let signed = false;
@@ -510,8 +527,69 @@ export async function exportPdf(
   }
   for (let i = 0; i < notebook.pages.length; i++) {
     const p = notebook.pages[i];
+    if (p.sourceIndex === null) appendPaper(output, output.getPage(i), p);
     if (p.strokes.length || p.images.length)
       await appendOverlay(output, output.getPage(i), p, geometries[i]);
+    for (const note of p.reviews ?? []) {
+      const r = note.region,
+        m = geometries[i].matrix;
+      const points = [
+        [r.x, p.height - r.y - r.height],
+        [r.x + r.width, p.height - r.y],
+      ].map(([x, y]) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]]);
+      const rect = [
+        Math.min(points[0][0], points[1][0]),
+        Math.min(points[0][1], points[1][1]),
+        Math.max(points[0][0], points[1][0]),
+        Math.max(points[0][1], points[1][1]),
+      ];
+      const parent = output.context.register(
+        output.context.obj({
+          Type: 'Annot',
+          Subtype: 'Square',
+          Rect: rect,
+          P: output.getPage(i).ref,
+          F: 4,
+          C: [0.75, 0.58, 0.18],
+          BS: { W: 1.5, S: 'S' },
+          Contents: PDFHexString.fromText(note.text),
+          T: PDFString.of('TixTab'),
+          NM: PDFString.of(note.id),
+        }),
+      );
+      const w = rect[2] - rect[0],
+        h = rect[3] - rect[1],
+        inset = 0.75,
+        radius = Math.min(5, Math.max(0, w / 2 - inset), Math.max(0, h / 2 - inset)),
+        k = radius * 0.5522847498;
+      const x = inset,
+        y = inset,
+        right = w - inset,
+        top = h - inset;
+      const path = `q 0.75 0.58 0.18 RG 1.5 w ${x + radius} ${y} m ${right - radius} ${y} l ${right - radius + k} ${y} ${right} ${y + radius - k} ${right} ${y + radius} c ${right} ${top - radius} l ${right} ${top - radius + k} ${right - radius + k} ${top} ${right - radius} ${top} c ${x + radius} ${top} l ${x + radius - k} ${top} ${x} ${top - radius + k} ${x} ${top - radius} c ${x} ${y + radius} l ${x} ${y + radius - k} ${x + radius - k} ${y} ${x + radius} ${y} c S Q`;
+      const appearance = output.context.register(
+        output.context.flateStream(path, {
+          Type: 'XObject',
+          Subtype: 'Form',
+          BBox: [0, 0, w, h],
+          Resources: {},
+        }),
+      );
+      output.context.lookup(parent, PDFDict).set(name('AP'), output.context.obj({ N: appearance }));
+      const popup = output.context.register(
+        output.context.obj({
+          Type: 'Annot',
+          Subtype: 'Popup',
+          Rect: [rect[2] + 8, rect[1], rect[2] + 248, rect[1] + 180],
+          Parent: parent,
+          Open: false,
+        }),
+      );
+      const annotation = output.context.lookup(parent, PDFDict);
+      annotation.set(name('Popup'), popup);
+      output.getPage(i).node.addAnnot(parent);
+      output.getPage(i).node.addAnnot(popup);
+    }
     options.onProgress?.({ stage: 'annotations', completed: i + 1, total: notebook.pages.length });
   }
   // New images must be registered before the reachability walk.
@@ -519,4 +597,56 @@ export async function exportPdf(
   await output.flush();
   if (reordered && notebook.source) collectGarbage(output);
   return output.save({ updateFieldAppearances: false });
+}
+/** One tiling cell per page: fine grids/dots do not expand into thousands of paths. */
+function appendPaper(doc: PDFDocument, page: PDFPage, p: Page) {
+  const background = p.paperColor ?? '#ffffff',
+    channels = [1, 3, 5].map((i) => parseInt(background.slice(i, i + 2), 16) / 255);
+  if (background.toLowerCase() !== '#ffffff')
+    page.drawRectangle({
+      x: 0,
+      y: 0,
+      width: p.width,
+      height: p.height,
+      color: rgb(channels[0], channels[1], channels[2]),
+    });
+  if (p.paper === 'plain') return;
+  const step = paperStep(p.paper),
+    line = [174 / 255, 189 / 255, 211 / 255].map((c, i) => c * 0.36 + channels[i] * 0.64).join(' '),
+    mid = step / 2,
+    r = 0.65,
+    k = r * 0.5522847498;
+  const path =
+    p.paper === 'dots'
+      ? `${line} rg ${mid + r} ${mid} m ${mid + r} ${mid + k} ${mid + k} ${mid + r} ${mid} ${mid + r} c ${mid - k} ${mid + r} ${mid - r} ${mid + k} ${mid - r} ${mid} c ${mid - r} ${mid - k} ${mid - k} ${mid - r} ${mid} ${mid - r} c ${mid + k} ${mid - r} ${mid + r} ${mid - k} ${mid + r} ${mid} c f`
+      : `${line} RG .6 w 0 0 m ${step} 0 l ${p.paper === 'lines' ? '' : `0 0 m 0 ${step} l`} S`;
+  const pattern = doc.context.register(
+    doc.context.flateStream(path, {
+      Type: 'Pattern',
+      PatternType: 1,
+      PaintType: 1,
+      TilingType: 1,
+      BBox: [0, 0, step, step],
+      XStep: step,
+      YStep: step,
+      Matrix: [1, 0, 0, -1, 0, p.height],
+      Resources: {},
+    }),
+  );
+  let resources = page.node.Resources();
+  if (!resources) {
+    resources = doc.context.obj({});
+    page.node.set(name('Resources'), resources);
+  }
+  let patterns = resources.lookupMaybe(name('Pattern'), PDFDict);
+  if (!patterns) {
+    patterns = doc.context.obj({});
+    resources.set(name('Pattern'), patterns);
+  }
+  patterns.set(name('TixTabPaper'), pattern);
+  page.node.addContentStream(
+    doc.context.register(
+      doc.context.flateStream(`q /Pattern cs /TixTabPaper scn 0 0 ${p.width} ${p.height} re f Q`),
+    ),
+  );
 }

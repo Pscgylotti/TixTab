@@ -203,6 +203,7 @@ export default function SelectionFlyout({
         left: position.left,
         top: position.top,
         width: position.width,
+        height: expanded ? position.height : undefined,
         maxHeight: position.maxHeight,
       }}
       role="dialog"
