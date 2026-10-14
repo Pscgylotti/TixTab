@@ -19,6 +19,8 @@ import { formulaDraftKey } from './formulaDraft';
 import BlankPageDialog from './BlankPageDialog';
 import { penSizeFromSlider, penSizeToSlider } from './penSizeScale';
 import AnchoredPopover from './AnchoredPopover';
+import ClipboardShelfButton from './ClipboardShelfButton';
+import { startClipboardCapture, browserShelf } from './clipboardShelf';
 import {
   lazy,
   Suspense,
@@ -72,6 +74,7 @@ import {
   Type,
   FilePenLine,
   StickyNote,
+  ListChecks,
 } from 'lucide-react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfSurface from './PdfSurface';
@@ -111,7 +114,7 @@ import PageJump from './PageJump';
 import SidebarResizer from './SidebarResizer';
 import { useDocumentNavigation } from './DocumentNavigator';
 import { duplicateNotebookPage } from './duplicatePage';
-import { copyNotebookPage, pasteNotebookPage } from './pageTransfer';
+import { copyNotebookPages, pasteNotebookPage } from './pageTransfer';
 import {
   storeCopiedPage,
   getCopiedPage,
@@ -123,6 +126,15 @@ import {
 import ExtraTools from './ExtraTools';
 import UiScaleSettings from './UiScaleSettings';
 import PressureCurveSettings from './PressureCurveSettings';
+import BatchPanel from './BatchPanel';
+import {
+  batchRequest,
+  withBatch,
+  batchOutputName,
+  saveBatchManifest,
+  loadBatchManifest,
+  type BatchManifest,
+} from './batchWorkspace';
 import { historyTarget, historyViewportIndex } from './historyNavigation';
 import { trimSourceHistory } from './sourceHistory';
 import { applyNativeDrafts } from './nativePdfDrafts';
@@ -188,6 +200,7 @@ function savedChrome(key: string) {
   }
 }
 export default function App() {
+  useEffect(startClipboardCapture, []);
   const hasCopiedPage = usePageClipboard();
   const pageTransferAbort = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -208,8 +221,35 @@ export default function App() {
   const locale = useLocale();
   const writingHand = useWritingHand();
   const appearance = useAppearance();
+  useEffect(() => {
+    void (window.surfaceDesktop?.clipboardShelf || browserShelf).run(
+      'memory',
+      appearance.memoryMode === 'minimal',
+    );
+  }, [appearance.memoryMode]);
   const [blankPageAnchor, setBlankPageAnchor] = useState<DOMRect | null>(null);
   const [pageDelete, setPageDelete] = useState<{ id: string; anchor: DOMRect } | null>(null);
+  const [pageSelectionMode, setPageSelectionMode] = useState(false);
+  const [selectedPageIds, setSelectedPageIds] = useState<string[]>([]);
+  const [pageSelectionVersion, setPageSelectionVersion] = useState(0);
+  const choosePages = (ids: string[]) => {
+    setSelectedPageIds(ids);
+    setPageSelectionVersion((version) => version + 1);
+  };
+  const [batchManifest, setBatchManifest] = useState<BatchManifest | null>(null);
+  const batchRef = useRef<BatchManifest | null>(null),
+    batchSaves = useRef(Promise.resolve());
+  const [batchExport, setBatchExport] = useState<{
+    done: number;
+    total: number;
+    name: string;
+  } | null>(null);
+  const storeBatch = useCallback((manifest: BatchManifest) => {
+    batchRef.current = manifest;
+    setBatchManifest(manifest);
+    batchSaves.current = batchSaves.current.catch(() => {}).then(() => saveBatchManifest(manifest));
+    return batchSaves.current;
+  }, []);
   const [notebook, setNotebook] = useState<Notebook>(newNotebook),
     [pdf, setPdf] = useState<PDFDocumentProxy | null>(null),
     [index, setIndex] = useState(0);
@@ -396,6 +436,27 @@ export default function App() {
     }
   }, [appearance.memoryMode]);
   current.current = notebook;
+  useEffect(() => {
+    const id = notebook.batch?.id;
+    if (!id) {
+      batchRef.current = null;
+      setBatchManifest(null);
+      return;
+    }
+    if (batchRef.current?.id === id) return;
+    let alive = true;
+    void loadBatchManifest(id)
+      .then((manifest) => {
+        if (alive && manifest) {
+          batchRef.current = manifest;
+          setBatchManifest(manifest);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [notebook.batch?.id]);
   pdfRef.current = pdf;
   const page = notebook.pages[Math.min(index, notebook.pages.length - 1)];
   const currentPageId = useRef(page.id);
@@ -606,6 +667,17 @@ export default function App() {
   );
   const commit = useCallback(
     (n: Notebook) => {
+      const batch = batchRef.current;
+      if (n.batch && batch?.id === n.batch.id) {
+        const item = batch.items.find((item) => item.id === n.batch!.itemId);
+        if (item && !item.edited)
+          void storeBatch({
+            ...batch,
+            items: batch.items.map((value) =>
+              value.id === item.id ? { ...value, edited: true } : value,
+            ),
+          }).catch(() => notify(tr('连续批注进度保存失败，请保存当前工程。')));
+      }
       history.current = trimSourceHistory(
         [...history.current.slice(appearance.memoryMode === 'minimal' ? -4 : -39), current.current],
         n,
@@ -917,7 +989,7 @@ export default function App() {
     view = defaultView,
   ) => {
     const old = pdfRef.current;
-    ensureTab(id, next.name);
+    ensureTab(id, next.batch?.title || next.name);
     viewRef.current = { ...view };
     history.current = [];
     future.current = [];
@@ -958,6 +1030,168 @@ export default function App() {
   const reportOperation = (action: () => Promise<void>) => {
     void action().catch((e) => notify(tr('打开失败：{0}', e instanceof Error ? e.message : e)));
   };
+  const startBatch = () =>
+    documentOperation(async () => {
+      const chosen = await batchRequest({ action: 'choose' });
+      if (chosen.cancelled) return;
+      const folder = chosen.folder!;
+      if (!folder.files.length) throw Error(tr('此文件夹中没有 PDF。'));
+      await persist(current.current);
+      const id = isEmptyStarterNotebook(current.current) ? activeRef.current : uid();
+      const manifest: BatchManifest = {
+        id,
+        title: folder.name,
+        folderId: folder.id,
+        items: folder.files.map((file) => ({
+          ...file,
+          storageId: uid(),
+          edited: false,
+          cached: false,
+        })),
+      };
+      const first = manifest.items[0],
+        loaded = await batchRequest({ action: 'read', folderId: folder.id, fileId: first.id });
+      const imported = await importPdf(new Uint8Array(loaded.bytes!), first.name);
+      try {
+        const next = withBatch(imported.notebook, manifest, first);
+        await storeBatch(manifest);
+        await persist(next, id, defaultView);
+        activate(id, next, imported.pdf);
+        setWorkspaceOpen(false);
+      } catch (error) {
+        void destroyPdf(imported.pdf);
+        throw error;
+      }
+    });
+  const jumpBatch = (at: number) =>
+    reportOperation(() =>
+      documentOperation(async () => {
+        const manifest = batchRef.current,
+          original = current.current;
+        if (
+          !manifest ||
+          !original.batch ||
+          original.batch.id !== manifest.id ||
+          !manifest.items[at]
+        )
+          return;
+        const target = manifest.items[at];
+        if (target.id === original.batch.itemId) return;
+        await persist(original);
+        await batchSaves.current;
+        const previous = manifest.items.find((item) => item.id === original.batch!.itemId)!;
+        const { batch: _reference, ...archive } = original;
+        await saveWorkspaceDocument(
+          previous.storageId,
+          archive,
+          viewRef.current,
+          undefined,
+          manifest.id,
+        );
+        let next: Notebook,
+          document: PDFDocumentProxy | null = null,
+          view = defaultView;
+        try {
+          if (target.cached) {
+            const restored = await loadWorkspaceDocument(target.storageId, false);
+            next = restored.notebook;
+            view = restored.meta.view;
+            document = next.source ? await loadPdf(next.source) : null;
+          } else {
+            const bytes = await batchRequest({
+              action: 'read',
+              folderId: manifest.folderId,
+              fileId: target.id,
+            });
+            const imported = await importPdf(new Uint8Array(bytes.bytes!), target.name);
+            next = imported.notebook;
+            document = imported.pdf;
+          }
+          const updated = {
+            ...manifest,
+            items: manifest.items.map((item) =>
+              item.id === previous.id ? { ...item, cached: true } : item,
+            ),
+          };
+          const selected = withBatch(next, updated, target);
+          await storeBatch(updated);
+          await persist(selected, activeRef.current, view);
+          activate(activeRef.current, selected, document, view);
+        } catch (error) {
+          void destroyPdf(document);
+          throw error;
+        }
+      }),
+    );
+  const exportBatch = () =>
+    reportOperation(() =>
+      documentOperation(async () => {
+        const manifest = batchRef.current,
+          currentNotebook = current.current;
+        if (!manifest || currentNotebook.batch?.id !== manifest.id) return;
+        const edited = manifest.items.filter((item) => item.edited);
+        if (!edited.length) return;
+        await persist(currentNotebook);
+        await batchSaves.current;
+        const destination = await batchRequest({ action: 'choose-output' });
+        if (destination.cancelled) return;
+        const controller = new AbortController();
+        exportAbort.current = controller;
+        const cancelWrite = () => {
+          void batchRequest({ action: 'cancel' }).catch(() => {});
+        };
+        controller.signal.addEventListener('abort', cancelWrite, { once: true });
+        let completed = 0;
+        const failures: string[] = [];
+        try {
+          for (const [index, item] of edited.entries()) {
+            controller.signal.throwIfAborted();
+            setBatchExport({ done: index, total: edited.length, name: item.name });
+            setExportProgress({ stage: 'preparing' });
+            try {
+              const n =
+                item.id === currentNotebook.batch.itemId
+                  ? currentNotebook
+                  : (await loadWorkspaceDocument(item.storageId, false)).notebook;
+              const bytes = await exportPdf(n, {
+                signal: controller.signal,
+                onProgress: setExportProgress,
+              });
+              controller.signal.throwIfAborted();
+              await batchRequest({
+                action: 'write',
+                token: destination.token,
+                name: batchOutputName(item.name),
+                bytes,
+              });
+              completed++;
+            } catch (error) {
+              if (controller.signal.aborted) throw error;
+              failures.push(item.name);
+            }
+          }
+          notify(
+            failures.length
+              ? tr(
+                  '已导出 {0} 份，失败 {1} 份：{2}',
+                  completed,
+                  failures.length,
+                  failures.slice(0, 8).join('；'),
+                )
+              : tr('已导出 {0} 份已编辑 PDF。', completed),
+          );
+        } catch (error) {
+          if (controller.signal.aborted) notify(tr('已取消导出，已完成 {0} 份。', completed));
+          else throw error;
+        } finally {
+          controller.signal.removeEventListener('abort', cancelWrite);
+          await batchRequest({ action: 'finish' }).catch(() => {});
+          if (exportAbort.current === controller) exportAbort.current = null;
+          setExportProgress(null);
+          setBatchExport(null);
+        }
+      }),
+    );
   const loadDocument = async (id: string) => {
     const { meta, notebook: n } = await loadWorkspaceDocument(id);
     const doc = n.source ? await loadPdf(n.source) : null;
@@ -1031,7 +1265,10 @@ export default function App() {
     await updateWorkspaceDocument(id, { name });
     setDocumentTabs(tabsRef.current.map((t) => (t.id === id ? { ...t, name } : t)));
     if (id === activeRef.current) {
-      current.current = { ...current.current, name };
+      if (current.current.batch) {
+        current.current = { ...current.current, batch: { ...current.current.batch, title: name } };
+        if (batchRef.current) await storeBatch({ ...batchRef.current, title: name });
+      } else current.current = { ...current.current, name };
       setNotebook(current.current);
     }
   };
@@ -1425,9 +1662,11 @@ export default function App() {
   useEffect(() => {
     if (activeId)
       setDocumentTabs(
-        tabsRef.current.map((t) => (t.id === activeId ? { ...t, name: notebook.name } : t)),
+        tabsRef.current.map((t) =>
+          t.id === activeId ? { ...t, name: notebook.batch?.title || notebook.name } : t,
+        ),
       );
-  }, [activeId, notebook.name]);
+  }, [activeId, notebook.name, notebook.batch?.title]);
   const addPage = (event: { currentTarget: HTMLElement }) =>
     setBlankPageAnchor(event.currentTarget.getBoundingClientRect());
   const insertBlankPage = (paper: Page['paper'], paperColor: string) => {
@@ -1459,20 +1698,30 @@ export default function App() {
       ),
     );
   };
-  const copyPageToClipboard = (at: number) => {
+  const copyPagesToClipboard = (indices: number[]) => {
+    if (!indices.length) return;
     void documentOperation(async () => {
       const owner = new AbortController();
       pageTransferAbort.current = owner;
       try {
-        const payload = await copyNotebookPage(current.current, at, owner.signal);
+        const payload = await copyNotebookPages(current.current, indices, owner.signal);
         const system = await storeCopiedPage(payload, owner.signal);
         notify(
-          tr(system ? '页面已复制，切换文档后可粘贴。' : '页面已复制，请使用“粘贴页面”按钮。'),
+          indices.length > 1
+            ? tr('已复制 {0} 页，切换文档后可粘贴。', indices.length)
+            : tr(system ? '页面已复制，切换文档后可粘贴。' : '页面已复制，请使用“粘贴页面”按钮。'),
         );
       } finally {
         if (pageTransferAbort.current === owner) pageTransferAbort.current = null;
       }
     }).catch(pageTransferFailure);
+  };
+  const copyPageToClipboard = (at: number) => copyPagesToClipboard([at]);
+  const copySelectedPages = () => {
+    const chosen = new Set(selectedPageIds);
+    copyPagesToClipboard(
+      current.current.pages.flatMap((page, at) => (chosen.has(page.id) ? [at] : [])),
+    );
   };
   const pasteCopiedPage = (at: number, payload = getCopiedPage()) => {
     if (!payload) return;
@@ -1485,12 +1734,32 @@ export default function App() {
         if (current.current !== before) throw Error('document-changed');
         commit(next);
         setIndex(at + 1);
-        notify(tr('已粘贴页面。'));
+        notify(
+          payload.pages && payload.pages.length > 1
+            ? tr('已粘贴 {0} 页。', payload.pages.length)
+            : tr('已粘贴页面。'),
+        );
       } finally {
         if (pageTransferAbort.current === owner) pageTransferAbort.current = null;
       }
     }).catch(pageTransferFailure);
   };
+  useEffect(() => {
+    setPageSelectionMode(false);
+    setSelectedPageIds([]);
+  }, [activeId, notebook.batch?.itemId]);
+  useEffect(() => {
+    if (navigation.mode !== 'pages') {
+      setPageSelectionMode(false);
+      setSelectedPageIds([]);
+    }
+  }, [navigation.mode]);
+  useEffect(() => {
+    const valid = new Set(notebook.pages.map((page) => page.id));
+    setSelectedPageIds((ids) =>
+      ids.every((id) => valid.has(id)) ? ids : ids.filter((id) => valid.has(id)),
+    );
+  }, [notebook.pages]);
   const duplicatePage = (at: number) =>
     reportOperation(() =>
       documentOperation(async () => {
@@ -1797,27 +2066,34 @@ export default function App() {
         />
         <output>{size.toFixed(1)}</output>
       </label>
-      {!compact && <div className="toolbar-divider" />}
-      <div className="row history-buttons">
-        <button
-          className="icon-button"
-          title={tr('撤销 (Ctrl+Z)')}
-          aria-label={tr('撤销')}
-          disabled={!history.current.length}
-          onClick={undo}
-        >
-          <Undo2 size={compact ? 16 : 19} />
-        </button>
-        <button
-          className="icon-button"
-          title={tr('重做 (Ctrl+Y)')}
-          aria-label={tr('重做')}
-          disabled={!future.current.length}
-          onClick={redo}
-        >
-          <Redo2 size={compact ? 16 : 19} />
-        </button>
-      </div>
+    </div>
+  );
+  const renderHistoryControls = (compact = false) => (
+    <div className="row history-buttons" role="group" aria-label={tr('编辑历史与剪贴板')}>
+      <button
+        className="icon-button"
+        title={tr('撤销 (Ctrl+Z)')}
+        aria-label={tr('撤销')}
+        disabled={!history.current.length}
+        onClick={undo}
+      >
+        <Undo2 size={compact ? 16 : 19} />
+      </button>
+      <button
+        className="icon-button"
+        title={tr('重做 (Ctrl+Y)')}
+        aria-label={tr('重做')}
+        disabled={!future.current.length}
+        onClick={redo}
+      >
+        <Redo2 size={compact ? 16 : 19} />
+      </button>
+      <ClipboardShelfButton
+        key={activeId}
+        compact={compact}
+        disabled={busy || !ready}
+        onError={notify}
+      />
     </div>
   );
   return (
@@ -2123,7 +2399,25 @@ export default function App() {
               <SidebarResizer />
               <div className="sidebar-heading">
                 <span>{tr('页面')}</span>
-                <span className="count">{notebook.pages.length}</span>
+                <span className="count">
+                  {pageSelectionMode
+                    ? `${selectedPageIds.length} / ${notebook.pages.length}`
+                    : notebook.pages.length}
+                </span>
+                <button
+                  className="icon-button page-selection-toggle"
+                  aria-label={tr('页面选择模式')}
+                  title={tr('页面选择模式')}
+                  aria-pressed={pageSelectionMode}
+                  disabled={busy || !ready}
+                  onClick={() => {
+                    navigation.setMode('pages');
+                    setPageSelectionMode(!pageSelectionMode);
+                    setSelectedPageIds([]);
+                  }}
+                >
+                  <ListChecks size={17} />
+                </button>
                 <button
                   className="icon-button"
                   aria-label={tr('收起页面栏')}
@@ -2132,11 +2426,50 @@ export default function App() {
                   <PanelLeftClose size={17} />
                 </button>
               </div>
-              {navigation.header}
+              {pageSelectionMode ? (
+                <div
+                  className="sidebar-selection-actions"
+                  role="group"
+                  aria-label={tr('页面批量选择')}
+                >
+                  <button onClick={() => choosePages(notebook.pages.map((page) => page.id))}>
+                    <ListChecks size={16} />
+                    <span>{tr('全选')}</span>
+                  </button>
+                  <button onClick={() => choosePages([])}>
+                    <X size={16} />
+                    <span>{tr('全不选')}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const chosen = new Set(selectedPageIds);
+                      choosePages(
+                        notebook.pages
+                          .filter((page) => !chosen.has(page.id))
+                          .map((page) => page.id),
+                      );
+                    }}
+                  >
+                    <Check size={16} />
+                    <span>{tr('反选')}</span>
+                  </button>
+                </div>
+              ) : (
+                navigation.header
+              )}
               {navigation.panel}
               {navigation.mode === 'pages' && (
                 <>
                   <PageList
+                    selectionMode={pageSelectionMode}
+                    selectionVersion={pageSelectionVersion}
+                    selectedIds={selectedPageIds}
+                    onSelectionChange={setSelectedPageIds}
+                    onExitSelection={() => {
+                      setPageSelectionMode(false);
+                      setSelectedPageIds([]);
+                    }}
+                    onCopyPages={copyPagesToClipboard}
                     pages={notebook.pages}
                     pdf={pdf}
                     index={index}
@@ -2176,10 +2509,16 @@ export default function App() {
                     </button>
                     <button
                       className="add-page"
-                      aria-label={tr('复制页面到剪贴板')}
-                      title={tr('复制页面到剪贴板')}
-                      disabled={busy}
-                      onClick={() => copyPageToClipboard(index)}
+                      aria-label={tr(pageSelectionMode ? '复制所选页面' : '复制页面到剪贴板')}
+                      title={
+                        pageSelectionMode
+                          ? tr('复制所选 {0} 页', selectedPageIds.length)
+                          : tr('复制页面到剪贴板')
+                      }
+                      disabled={busy || (pageSelectionMode && !selectedPageIds.length)}
+                      onClick={() =>
+                        pageSelectionMode ? copySelectedPages() : copyPageToClipboard(index)
+                      }
                     >
                       <ClipboardCopy size={16} />
                     </button>
@@ -2217,6 +2556,13 @@ export default function App() {
           )}
           <main className="main-workspace">
             <div className={`workspace-heading${toolbarCollapsed ? ' tools-inline' : ''}`}>
+              {toolbarCollapsed && (
+                <div className="compact-drawing-strip">
+                  {renderHistoryControls(true)}
+                  {renderTools(true)}
+                  {renderInkControls(true)}
+                </div>
+              )}
               <div className="row workspace-path">
                 {!sidebar && (
                   <button
@@ -2242,12 +2588,6 @@ export default function App() {
                   <span>{tr('工作空间')}</span>
                 </button>
               </div>
-              {toolbarCollapsed && (
-                <div className="compact-drawing-strip">
-                  {renderTools(true)}
-                  {renderInkControls(true)}
-                </div>
-              )}
               <div className="row workspace-controls">
                 {notebook.pages.some((p) => p.pdfEdits?.length) && (
                   <div className="native-edits-actions">
@@ -2361,11 +2701,22 @@ export default function App() {
               </div>
             </div>
             <div id="drawing-toolbar" className="toolbar" hidden={toolbarCollapsed}>
+              {!toolbarCollapsed && renderHistoryControls()}
+              <div className="toolbar-divider" />
               {!toolbarCollapsed && renderTools()}
               <div className="toolbar-divider" />
               {!toolbarCollapsed && renderInkControls()}
             </div>
             <div className="canvas-container">
+              {notebook.batch && batchManifest?.id === notebook.batch.id && (
+                <BatchPanel
+                  manifest={batchManifest}
+                  currentId={notebook.batch.itemId}
+                  busy={busy}
+                  onJump={jumpBatch}
+                  onExport={exportBatch}
+                />
+              )}
               <PdfPrefetch
                 pdf={pdf}
                 pages={notebook.pages}
@@ -2564,6 +2915,16 @@ export default function App() {
                 aria-label={tr('PDF 导出进度')}
               >
                 <h2>{tr('正在导出 PDF')}</h2>
+                {batchExport && (
+                  <p>
+                    {tr(
+                      '文件 {0} / {1}：{2}',
+                      batchExport.done + 1,
+                      batchExport.total,
+                      batchExport.name,
+                    )}
+                  </p>
+                )}
                 <div className="row" role="status">
                   <span className="spinner" />
                   <span>
@@ -2626,6 +2987,7 @@ export default function App() {
               onRename={renameDocument}
               onExport={exportDocument}
               onImport={() => file.current?.click()}
+              onStartBatch={window.surfaceDesktop?.batchPdf ? startBatch : undefined}
               onClose={() => setWorkspaceOpen(false)}
             />
           )}

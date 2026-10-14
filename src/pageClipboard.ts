@@ -37,7 +37,9 @@ export function isPageClipboardToken(text: string) {
   return /^TixTab page [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text);
 }
 export async function storeCopiedPage(next: CopiedPage, signal?: AbortSignal) {
-  const size = pageMemory(next.page) + (next.source?.byteLength ?? 0);
+  const size =
+    (next.pages || [next.page]).reduce((sum, page) => sum + pageMemory(page), 0) +
+    (next.source?.byteLength ?? 0);
   if (size > PAGE_CLIPBOARD_LIMIT) throw Error('page-clipboard-large');
   const token = `TixTab page ${uid()}`;
   // Only a session token reaches the OS clipboard. No whole-PDF/base64 copies.

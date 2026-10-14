@@ -136,7 +136,9 @@ for (const mode of ['single', 'continuous', 'dual'])
     await expect(editor(page).locator('.placed-object')).toHaveCount(5);
     await page.keyboard.press('Control+v');
     await expect(editor(page).locator('.placed-object')).toHaveCount(7);
+    await page.evaluate(() => navigator.clipboard.writeText('Before object button copy'));
     await page.getByRole('button', { name: '复制选中对象', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain('\\RR');
     await page.getByRole('button', { name: '粘贴对象', exact: true }).click();
     await expect(editor(page).locator('.placed-object')).toHaveCount(9);
     // A text field receives normal text, never another object insertion.

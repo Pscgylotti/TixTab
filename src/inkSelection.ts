@@ -1,6 +1,7 @@
 import { inkBounds } from './ink';
 import { uid, validNotebook, type Page, type Stroke } from './model';
 import type { Bounds } from './spatialIndex';
+import { rememberClipboard } from './clipboardShelf';
 export type InkGesturePhase = 'start' | 'move' | 'end' | 'cancel';
 type Gesture = (phase: InkGesturePhase, x: number, y: number) => void;
 const gestures = new Map<string, Gesture>();
@@ -203,7 +204,10 @@ export async function copyInk(page: Page, ids: readonly string[]) {
   };
   document.addEventListener('copy', copy, true);
   try {
-    if (document.execCommand('copy') && written) return;
+    if (document.execCommand('copy') && written) {
+      rememberClipboard({ text, html, image: '' });
+      return;
+    }
   } finally {
     document.removeEventListener('copy', copy, true);
   }
@@ -213,6 +217,7 @@ export async function copyInk(page: Page, ids: readonly string[]) {
       'text/plain': new Blob([text], { type: 'text/plain' }),
     }),
   ]);
+  rememberClipboard({ text, html, image: '' });
 }
 export async function pasteInkFromButton() {
   const data = new DataTransfer();

@@ -33,13 +33,13 @@ const info = {
     ),
   ),
   validation: {
-    unit: '455 tests / 89 files',
+    unit: '466 tests / 92 files',
     browser:
-      'Image downloads, image extraction, cross-document page clipboard, UI scale, pressure mapping, real CPU four-worker cancellation, mixed NPU layout/timing and bitmap OCR regressions',
+      '22 release browser tests: clipboard history and memory modes, real toolbar ink/object copy/cut writes, multi-page cross-document clipboard and undo, virtualized mouse/touch/keyboard selection, thumbnail scrolling/reordering, compact controls, lazy folder review/export/restart and global floating panel',
     packaged:
       'Static ASAR/build asset SHA256 and file-set verification, required backend/preload modules, native binding/icon and model exclusion; this release did not launch the installer or packaged application',
     nativeModels:
-      '17 Tesseract backend tests plus HTTP lifecycle; strict NPU English/mixed functional samples; 61-page English CPU/GPU/NPU experimental comparison. Mixed spacing errors remain. No speed or energy guarantee',
+      'Local inference code and weights are unchanged from 0.3.2; no new native inference or energy benchmarks were run. Experimental NPU and mixed OCR limitations remain.',
     installer:
       'Compiled NSIS installer. Earlier isolated upgrade/repair/downgrade fixture evidence retained. Full installation was not rerun on this host.',
     limits:

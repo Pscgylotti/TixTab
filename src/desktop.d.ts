@@ -9,6 +9,7 @@ interface Window {
       onStatus: (callback: (status: import('./usePenHaptics').HapticStatus) => void) => () => void;
     };
     imageExport?: import('./imageExport').ImageExportBridge;
+    batchPdf?: import('./batchWorkspace').BatchBridge;
     pdfEditor?: import('./pdfNativeTypes').PdfEditorBridge;
     onNativePen?: (
       callback: (sample: import('./penInteraction').NativePenSample) => void,
@@ -17,6 +18,7 @@ interface Window {
     openDocumentUrl?: (url: string) => Promise<boolean>;
     editKey?: (key: import('./keyboardSelection').EditKey, select: boolean) => Promise<boolean>;
     openClipboardHistory?: () => Promise<boolean>;
+    clipboardShelf?: import('./clipboardShelf').ClipboardShelfBridge;
     editCommand?: (
       command: 'selectAll' | 'cut' | 'copy' | 'paste' | 'undo' | 'redo',
     ) => Promise<boolean>;

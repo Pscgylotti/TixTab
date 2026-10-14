@@ -20,6 +20,9 @@ export interface WorkspaceDocument {
   scene?: Record<string, unknown>;
   zotero?: Notebook['zotero'];
   bookmarks?: Notebook['bookmarks'];
+  batch?: Notebook['batch'];
+  documentName?: string;
+  archiveFor?: string;
 }
 export interface WorkspaceFolder {
   id: string;
@@ -79,17 +82,19 @@ export async function listWorkspace() {
     request<WorkspaceDocument[]>(tx.objectStore('documents').getAll()),
     request<WorkspaceFolder[]>(tx.objectStore('folders').getAll()),
   ]);
-  documents.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt);
-  return { documents, folders };
+  const visible = documents.filter((document) => !document.archiveFor);
+  visible.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt);
+  return { documents: visible, folders };
 }
 export function saveWorkspaceDocument(
   id: string,
   notebook: Notebook,
   view = defaultView,
   folderId?: string | null,
+  archiveFor?: string,
 ) {
   return trackPerformance('workspace-transaction', () =>
-    saveWorkspaceDocumentImpl(id, notebook, view, folderId),
+    saveWorkspaceDocumentImpl(id, notebook, view, folderId, archiveFor),
   );
 }
 async function saveWorkspaceDocumentImpl(
@@ -97,6 +102,7 @@ async function saveWorkspaceDocumentImpl(
   notebook: Notebook,
   view = defaultView,
   folderId?: string | null,
+  archiveFor?: string,
 ) {
   const db = await database(),
     tx = db.transaction(['documents', 'pages', 'sources', 'preferences'], 'readwrite'),
@@ -121,7 +127,10 @@ async function saveWorkspaceDocumentImpl(
     const now = Date.now();
     const record: WorkspaceDocument = {
       id,
-      name: notebook.name,
+      name: notebook.batch?.title || notebook.name,
+      documentName: notebook.batch ? notebook.name : undefined,
+      batch: notebook.batch,
+      archiveFor: archiveFor ?? old?.archiveFor,
       createdAt: old?.createdAt ?? now,
       updatedAt: previous === notebook ? (old?.updatedAt ?? now) : now,
       folderId: folderId === undefined ? (old?.folderId ?? null) : folderId,
@@ -133,11 +142,11 @@ async function saveWorkspaceDocumentImpl(
       bookmarks: notebook.bookmarks,
     };
     store.put(record);
-    tx.objectStore('preferences').put(id, 'activeDocument');
+    if (!archiveFor && !old?.archiveFor) tx.objectStore('preferences').put(id, 'activeDocument');
     await done;
     performanceLedger?.count('workspacePageWrites', pageWrites);
     performanceLedger?.count('workspaceSourceWrites', sourceWrites);
-    saved = { id, notebook };
+    if (!archiveFor && !old?.archiveFor) saved = { id, notebook };
     return { pageWrites, sourceWrites };
   } catch (error) {
     try {
@@ -162,7 +171,8 @@ export async function loadWorkspaceDocument(id: string, track = true) {
   const pages = new Map(records.map((r) => [r.page.id, r.page]));
   const notebook: Notebook = {
     version: 1,
-    name: meta.name,
+    name: meta.documentName || meta.name,
+    batch: meta.batch,
     source: source.source,
     pages: meta.pageIds.map((id) => pages.get(id)!),
     scene: meta.scene,
@@ -200,8 +210,17 @@ export async function updateWorkspaceDocument(
     store = tx.objectStore('documents');
   const meta = await request<WorkspaceDocument | undefined>(store.get(id));
   if (!meta) throw new Error('文档已被删除');
-  store.put({ ...meta, ...change });
+  store.put({
+    ...meta,
+    ...change,
+    batch: meta.batch && change.name ? { ...meta.batch, title: change.name } : meta.batch,
+  });
   await done;
+  if (meta.batch && change.name) {
+    const { loadBatchManifest, saveBatchManifest } = await import('./batchWorkspace');
+    const manifest = await loadBatchManifest(meta.batch.id);
+    if (manifest) await saveBatchManifest({ ...manifest, title: change.name });
+  }
 }
 export async function createWorkspaceFolder(name: string) {
   const db = await database(),
@@ -235,13 +254,21 @@ export async function deleteWorkspaceDocument(id: string) {
   const db = await database(),
     tx = db.transaction(['documents', 'pages', 'sources'], 'readwrite'),
     done = finished(tx);
-  const keys = await request<IDBValidKey[]>(
-    tx.objectStore('pages').index('documentId').getAllKeys(id),
-  );
-  for (const key of keys) tx.objectStore('pages').delete(key);
-  tx.objectStore('documents').delete(id);
-  tx.objectStore('sources').delete(id);
+  const documents = await request<WorkspaceDocument[]>(tx.objectStore('documents').getAll());
+  const removing = [
+    id,
+    ...documents.filter((document) => document.archiveFor === id).map((document) => document.id),
+  ];
+  for (const documentId of removing) {
+    const keys = await request<IDBValidKey[]>(
+      tx.objectStore('pages').index('documentId').getAllKeys(documentId),
+    );
+    for (const key of keys) tx.objectStore('pages').delete(key);
+    tx.objectStore('documents').delete(documentId);
+    tx.objectStore('sources').delete(documentId);
+  }
   await done;
   if (saved?.id === id) saved = undefined;
-  await deleteFormulaDrafts(id);
+  for (const documentId of removing) await deleteFormulaDrafts(documentId);
+  await (await import('./batchWorkspace')).deleteBatchManifest(id);
 }

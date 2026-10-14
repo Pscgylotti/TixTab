@@ -11,6 +11,7 @@ import {
   Pencil,
   FileUp,
   Download,
+  FolderOpen,
 } from 'lucide-react';
 import {
   createWorkspaceFolder,
@@ -30,6 +31,7 @@ interface Props {
   onRename: (id: string, name: string) => Promise<void>;
   onExport: (id: string) => Promise<void>;
   onImport: () => void;
+  onStartBatch?: () => Promise<void>;
   onClose: () => void;
 }
 export default function WorkspaceManager({
@@ -40,6 +42,7 @@ export default function WorkspaceManager({
   onRename,
   onExport,
   onImport,
+  onStartBatch,
   onClose,
 }: Props) {
   const locale = useLocale();
@@ -109,6 +112,12 @@ export default function WorkspaceManager({
             <p>{tr('{0} 份本地文档', documents.length)}</p>
           </div>
           <div className="row">
+            {onStartBatch && (
+              <button disabled={busy} onClick={() => void run(onStartBatch)}>
+                <FolderOpen size={16} />
+                {tr('连续批注')}
+              </button>
+            )}
             <button disabled={busy} onClick={onImport}>
               <FileUp size={16} />
               {tr('导入')}

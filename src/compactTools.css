@@ -115,17 +115,23 @@
   padding: 0;
 }
 @media (max-width: 650px) {
+  .tools-inline .workspace-path {
+    gap: 0;
+  }
   .tools-inline .workspace-library-button > span {
     display: none;
   }
   .tools-inline .workspace-library-button {
-    width: 28px;
-    min-width: 28px;
+    width: 24px;
+    min-width: 24px;
     justify-content: center;
   }
   .workspace-heading.tools-inline {
     gap: 3px;
     padding: 0 4px;
+  }
+  .workspace-heading.tools-inline .compact-drawing-strip {
+    min-width: 24px;
   }
   .tools-inline .workspace-controls {
     gap: 1px;

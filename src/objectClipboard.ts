@@ -1,5 +1,6 @@
 import { uid, validNotebook, type Page, type PlacedImage } from './model';
 import { objectBox } from './objectSelection';
+import { rememberClipboard } from './clipboardShelf';
 
 export const OBJECT_MIME = 'application/x-tixtab-objects+json';
 const MAX_BYTES = 50_000_000;
@@ -99,7 +100,10 @@ export async function copyObjects(page: Page, ids: readonly string[]) {
   };
   document.addEventListener('copy', copy, true);
   try {
-    if (document.execCommand('copy') && written) return;
+    if (document.execCommand('copy') && written) {
+      rememberClipboard({ text, html, image: '' });
+      return;
+    }
   } finally {
     document.removeEventListener('copy', copy, true);
   }
@@ -109,6 +113,7 @@ export async function copyObjects(page: Page, ids: readonly string[]) {
       'text/plain': new Blob([text], { type: 'text/plain' }),
     }),
   ]);
+  rememberClipboard({ text, html, image: '' });
 }
 /** Toolbar paste uses the same event path as Ctrl+V; ordinary field paste is never intercepted. */
 export async function pasteObjectsFromButton() {

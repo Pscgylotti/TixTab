@@ -15,6 +15,9 @@ import PageThumbnail from './PageThumbnail';
 import { insertionAt, insertionDestination, makeLayout, visibleRange } from './virtualLayout';
 import { useScrollViewport } from './useScrollViewport';
 import { ScrollVelocity, inertiaStep } from './scrollInertia';
+import { itemAt } from './virtualLayout';
+import { pageSelectionRange } from './pageSelection';
+import { Check } from 'lucide-react';
 export default function PageList({
   pages,
   pdf,
@@ -28,6 +31,12 @@ export default function PageList({
   hasCopiedPage,
   onClearClipboard,
   onEditPages,
+  selectionMode = false,
+  selectionVersion = 0,
+  selectedIds = [],
+  onSelectionChange,
+  onExitSelection,
+  onCopyPages,
 }: {
   pages: Page[];
   pdf: PDFDocumentProxy | null;
@@ -41,11 +50,24 @@ export default function PageList({
   hasCopiedPage?: boolean;
   onClearClipboard?: () => void;
   onEditPages?: (action: PageAction, index: number) => void;
+  selectionMode?: boolean;
+  selectionVersion?: number;
+  selectedIds?: string[];
+  onSelectionChange?: (ids: string[]) => void;
+  onExitSelection?: () => void;
+  onCopyPages?: (indices: number[]) => void;
 }) {
   useLocale();
   const root = useRef<HTMLDivElement>(null),
     timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined),
     suppressClick = useRef(0);
+  const [cursor, setCursor] = useState(index);
+  const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const pageIds = useMemo(() => pages.map((page) => page.id), [pages]);
+  const selecting = useRef<{ base: string[]; select: boolean } | null>(null);
+  const keyboardRange = useRef<{ base: string[]; anchor: number } | null>(null);
+  const selectionState = useRef({ pageIds, onSelectionChange });
+  selectionState.current = { pageIds, onSelectionChange };
   const velocity = useRef(new ScrollVelocity()),
     kineticFrame = useRef(0);
   const stopKinetic = () => {
@@ -119,12 +141,14 @@ export default function PageList({
     autoFrame.current = 0;
     const pointer = contact.current?.id;
     contact.current = null;
+    selecting.current = null;
     if (pointer !== undefined && root.current?.hasPointerCapture(pointer))
       root.current.releasePointerCapture(pointer);
     setDrag(null);
   };
   useEffect(() => {
     const cancel = () => {
+      if (selecting.current) selectionState.current.onSelectionChange?.(selecting.current.base);
       stopKinetic();
       if (contact.current) suppressClick.current = performance.now() + 800;
       cleanup();
@@ -161,6 +185,19 @@ export default function PageList({
     setMenu(null);
     cleanup();
   }, [pages]);
+  useEffect(() => {
+    cleanup();
+    stopKinetic();
+    keyboardRange.current = null;
+    if (selectionMode) {
+      setCursor(index);
+      root.current?.focus({ preventScroll: true });
+    }
+  }, [selectionMode]);
+  useEffect(() => {
+    keyboardRange.current = null;
+    if (selectionMode) root.current?.focus({ preventScroll: true });
+  }, [selectionVersion]);
   useLayoutEffect(() => {
     const el = root.current!;
     if (contact.current) return;
@@ -175,6 +212,20 @@ export default function PageList({
     const c = contact.current,
       el = root.current;
     if (!c || !el) return;
+    if (selecting.current) {
+      const to = itemAt(
+        geometry.current,
+        el.scrollTop + c.lastY - el.getBoundingClientRect().top - 4,
+      );
+      if (to !== c.to) {
+        c.to = to;
+        setCursor(to);
+        onSelectionChange?.(
+          pageSelectionRange(pageIds, selecting.current.base, c.from, to, selecting.current.select),
+        );
+      }
+      return;
+    }
     c.to = insertionAt(
       geometry.current,
       el.scrollTop + c.lastY - el.getBoundingClientRect().top - 4,
@@ -185,7 +236,7 @@ export default function PageList({
     autoFrame.current = 0;
     const c = contact.current,
       el = root.current;
-    if (!c?.held || !c.moved || !el) return;
+    if (!c || (!c.held && !selecting.current) || !c.moved || !el) return;
     const bounds = el.getBoundingClientRect(),
       speed =
         c.lastY < bounds.top + 35
@@ -219,6 +270,19 @@ export default function PageList({
     };
     contact.current = c;
     root.current!.setPointerCapture(e.pointerId);
+    if (selectionMode) {
+      e.preventDefault();
+      e.stopPropagation();
+      keyboardRange.current = null;
+      root.current?.focus({ preventScroll: true });
+      setCursor(from);
+      selecting.current = { base: [...selectedIds], select: !selected.has(pages[from].id) };
+      onSelectionChange?.(
+        pageSelectionRange(pageIds, selectedIds, from, from, selecting.current.select),
+      );
+      suppressClick.current = performance.now() + 800;
+      return;
+    }
     timer.current = setTimeout(() => {
       if (contact.current !== c) return;
       c.held = true;
@@ -230,6 +294,15 @@ export default function PageList({
   const move = (e: ReactPointerEvent) => {
     const c = contact.current;
     if (!c || c.id !== e.pointerId) return;
+    if (selecting.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      c.lastY = e.clientY;
+      if (Math.hypot(e.clientX - c.x, e.clientY - c.y) > 6) c.moved = true;
+      dragTarget();
+      if (c.moved && !autoFrame.current) autoFrame.current = requestAnimationFrame(autoScroll);
+      return;
+    }
     const distance = Math.hypot(e.clientX - c.x, e.clientY - c.y),
       el = root.current!;
     if (!c.held) {
@@ -253,6 +326,19 @@ export default function PageList({
   const end = (e: ReactPointerEvent, cancel = false) => {
     const c = contact.current;
     if (!c || c.id !== e.pointerId) return;
+    if (selecting.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (cancel) onSelectionChange?.(selecting.current.base);
+      else {
+        c.lastY = e.clientY;
+        dragTarget();
+      }
+      suppressClick.current = performance.now() + 800;
+      cleanup();
+      velocity.current.reset();
+      return;
+    }
     if (c.held || c.moved) suppressClick.current = performance.now() + 800;
     if (!cancel && !c.held && !c.moved) {
       suppressClick.current = performance.now() + 800;
@@ -269,8 +355,80 @@ export default function PageList({
   };
   return (
     <div
-      className="page-list"
+      className={`page-list${selectionMode ? ' page-list-selecting' : ''}`}
+      role={selectionMode ? 'listbox' : undefined}
+      aria-label={selectionMode ? tr('选择页面') : undefined}
+      aria-multiselectable={selectionMode ? true : undefined}
+      tabIndex={selectionMode ? 0 : undefined}
       onKeyDown={(event) => {
+        if (
+          selectionMode &&
+          [
+            'ArrowUp',
+            'ArrowDown',
+            'ArrowLeft',
+            'ArrowRight',
+            'Enter',
+            ' ',
+            'Escape',
+            'Home',
+            'End',
+          ].includes(event.key)
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.key === 'Escape') {
+            onExitSelection?.();
+            return;
+          }
+          const at = Math.min(cursor, pages.length - 1);
+          if (event.key === 'Enter' || event.key === ' ') {
+            keyboardRange.current = null;
+            onSelectionChange?.(
+              pageSelectionRange(pageIds, selectedIds, at, at, !selected.has(pages[at].id)),
+            );
+            return;
+          }
+          const next =
+            event.key === 'Home'
+              ? 0
+              : event.key === 'End'
+                ? pages.length - 1
+                : Math.max(
+                    0,
+                    Math.min(
+                      pages.length - 1,
+                      at + (['ArrowDown', 'ArrowRight'].includes(event.key) ? 1 : -1),
+                    ),
+                  );
+          if (event.shiftKey) {
+            keyboardRange.current ||= { base: [...selectedIds], anchor: at };
+            onSelectionChange?.(
+              pageSelectionRange(
+                pageIds,
+                keyboardRange.current.base,
+                keyboardRange.current.anchor,
+                next,
+              ),
+            );
+          } else keyboardRange.current = null;
+          setCursor(next);
+          const el = root.current!,
+            top = layout.offsets[next] + 4,
+            bottom = layout.offsets[next + 1] + 4;
+          if (top < el.scrollTop) el.scrollTop = top;
+          else if (bottom > el.scrollTop + el.clientHeight) el.scrollTop = bottom - el.clientHeight;
+          el.focus({ preventScroll: true });
+          measure();
+          return;
+        }
+        if (selectionMode && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+          event.preventDefault();
+          event.stopPropagation();
+          keyboardRange.current = null;
+          onSelectionChange?.(pageIds);
+          return;
+        }
         if (
           !(event.ctrlKey || event.metaKey) ||
           event.altKey ||
@@ -285,8 +443,11 @@ export default function PageList({
           ?.getAttribute('data-page-index');
         const at = value === null || value === undefined ? index : Number(value);
         if (!Number.isInteger(at) || !pages[at]) return;
-        if (event.key.toLowerCase() === 'c') onCopyPage?.(at);
-        else if (hasCopiedPage) onPastePage?.(at);
+        if (event.key.toLowerCase() === 'c') {
+          if (selectionMode)
+            onCopyPages?.(pages.flatMap((p, i) => (selected.has(p.id) ? [i] : [])));
+          else onCopyPage?.(at);
+        } else if (hasCopiedPage) onPastePage?.(at);
       }}
       ref={root}
       onPointerDownCapture={(e) => {
@@ -325,13 +486,23 @@ export default function PageList({
               }}
             >
               <button
-                className={`page-card ${i === index ? 'selected' : ''} ${drag?.from === i ? 'dragging' : ''}`}
+                className={`page-card ${(selectionMode ? selected.has(p.id) : i === index) ? 'selected' : ''} ${drag?.from === i ? 'dragging' : ''}`}
+                role={selectionMode ? 'option' : undefined}
+                aria-selected={selectionMode ? selected.has(p.id) : undefined}
+                data-selection-cursor={selectionMode && cursor === i ? true : undefined}
+                tabIndex={selectionMode ? -1 : undefined}
                 aria-label={tr('第 {0} 页', i + 1)}
                 data-page-index={i}
                 draggable={false}
                 onPointerDown={(e) => down(e, i)}
                 onClick={() => {
-                  if (performance.now() > suppressClick.current) onSelect(i);
+                  if (performance.now() <= suppressClick.current) return;
+                  if (selectionMode) {
+                    setCursor(i);
+                    onSelectionChange?.(
+                      pageSelectionRange(pageIds, selectedIds, i, i, !selected.has(p.id)),
+                    );
+                  } else onSelect(i);
                 }}
                 onContextMenu={(e) => {
                   e.preventDefault();
@@ -340,6 +511,14 @@ export default function PageList({
                 }}
               >
                 <PageThumbnail page={p} pdf={pdf} />
+                {selectionMode && (
+                  <span
+                    className={`page-selection-check${selected.has(p.id) ? ' checked' : ''}`}
+                    aria-hidden="true"
+                  >
+                    {selected.has(p.id) && <Check size={12} />}
+                  </span>
+                )}
                 <div className="page-caption">
                   <span>{String(i + 1).padStart(2, '0')}</span>
                   <span>
@@ -391,7 +570,9 @@ export default function PageList({
                         role="menuitem"
                         onClick={() => {
                           setMenu(null);
-                          onCopyPage(i);
+                          if (selectionMode && selected.has(p.id))
+                            onCopyPages?.(pages.flatMap((p, i) => (selected.has(p.id) ? [i] : [])));
+                          else onCopyPage(i);
                         }}
                       >
                         {tr('复制页面到剪贴板')}

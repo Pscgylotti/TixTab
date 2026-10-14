@@ -61,15 +61,30 @@ export async function copyNotebookPage(
   index: number,
   signal: AbortSignal,
 ): Promise<CopiedPage> {
-  const page = notebook.pages[index];
-  if (!page) throw Error('page-missing');
-  if (page.pdfEdits?.length) throw Error('pending-pdf-edits');
-  const size = pageMemory(page);
+  return copyNotebookPages(notebook, [index], signal);
+}
+export async function copyNotebookPages(
+  notebook: Notebook,
+  indices: number[],
+  signal: AbortSignal,
+): Promise<CopiedPage> {
+  signal.throwIfAborted();
+  const selected = [...new Set(indices)].sort((a, b) => a - b);
+  if (!selected.length || selected.some((i) => !Number.isInteger(i) || !notebook.pages[i]))
+    throw Error('page-missing');
+  const pages = selected.map((i) => notebook.pages[i]);
+  if (pages.some((page) => page.pdfEdits?.length)) throw Error('pending-pdf-edits');
+  const size = pages.reduce((sum, page) => sum + pageMemory(page), 0);
   if (size > PAGE_CLIPBOARD_LIMIT) throw Error('page-clipboard-large');
-  const payload =
-    page.sourceIndex === null
-      ? { page: structuredClone(page), source: null }
-      : ((await transfer({ action: 'copy', source: notebook.source, page }, signal)) as CopiedPage);
+  const payload = pages.every((page) => page.sourceIndex === null)
+    ? (() => {
+        const copied = structuredClone(pages);
+        return { page: copied[0], pages: copied, source: null };
+      })()
+    : ((await transfer(
+        { action: 'copy-pages', source: notebook.source, pages },
+        signal,
+      )) as CopiedPage);
   signal.throwIfAborted();
   if (size + (payload.source?.byteLength ?? 0) > PAGE_CLIPBOARD_LIMIT)
     throw Error('page-clipboard-large');
@@ -82,17 +97,25 @@ export async function pasteNotebookPage(
   signal: AbortSignal,
 ): Promise<Notebook> {
   if (!Number.isInteger(at) || at < 0 || at >= notebook.pages.length) throw Error('page-missing');
+  const pages = payload.pages || [payload.page];
+  if (notebook.pages.length + pages.length >= 10001) throw Error('page-count-limit');
+  const indices = [
+    ...new Set(pages.flatMap((page) => (page.sourceIndex === null ? [] : [page.sourceIndex]))),
+  ];
   const merged = payload.source
     ? ((await transfer(
-        { action: 'paste', source: notebook.source, payload: { source: payload.source } },
+        { action: 'paste', source: notebook.source, payload: { source: payload.source }, indices },
         signal,
       )) as { source: Uint8Array; indices: number[] })
     : null;
   signal.throwIfAborted();
-  const page = clonePage(payload.page, merged ? merged.indices[0] : null);
+  const mapping = new Map(indices.map((index, i) => [index, merged?.indices[i] ?? null]));
+  const inserted = pages.map((page) =>
+    clonePage(page, page.sourceIndex === null ? null : (mapping.get(page.sourceIndex) ?? null)),
+  );
   return {
     ...notebook,
     source: merged?.source ?? notebook.source,
-    pages: [...notebook.pages.slice(0, at + 1), page, ...notebook.pages.slice(at + 1)],
+    pages: [...notebook.pages.slice(0, at + 1), ...inserted, ...notebook.pages.slice(at + 1)],
   };
 }

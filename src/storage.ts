@@ -18,7 +18,7 @@ export function encodeProject(n: Notebook) {
   if (n.source)
     for (let i = 0; i < n.source.length; i += 32768)
       binary += String.fromCharCode(...n.source.subarray(i, i + 32768));
-  return JSON.stringify({ ...n, source: n.source ? btoa(binary) : null });
+  return JSON.stringify({ ...n, batch: undefined, source: n.source ? btoa(binary) : null });
 }
 export function decodeProject(text: string): Notebook {
   const value = JSON.parse(text);

@@ -24,7 +24,16 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
   editCommand: (command) => ipcRenderer.invoke('edit:command', command),
   editKey: (key, select) => ipcRenderer.invoke('edit:key', key, select),
   openClipboardHistory: () => ipcRenderer.invoke('edit:clipboard-history'),
+  clipboardShelf: {
+    run: (action, value) => ipcRenderer.invoke('clipboard:shelf', action, value),
+    onChanged: (callback) => {
+      const listener = () => callback();
+      ipcRenderer.on('clipboard:shelf-changed', listener);
+      return () => ipcRenderer.removeListener('clipboard:shelf-changed', listener);
+    },
+  },
   imageExport: { run: (request) => ipcRenderer.invoke('images:export', request) },
+  batchPdf: { run: (request) => ipcRenderer.invoke('batch:run', request) },
   pdfEditor: { run: (request) => ipcRenderer.invoke('pdf-editor:run', request) },
   runtimes: {
     run: (request) => ipcRenderer.invoke('runtimes:run', request),

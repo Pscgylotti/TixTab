@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { PDFDocument, PDFName, PDFDict } from 'pdf-lib';
-import { extractPage } from './pageTransferEngine';
+import { extractPage, extractPages } from './pageTransferEngine';
 import { blankPage } from './model';
 import { clonePage } from './duplicatePage';
 import { createRequire } from 'node:module';
@@ -13,6 +13,39 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe('detached page and bounded clipboard', () => {
+  it('extracts a mixed multi-page bundle once with shared backgrounds and preserved order', async () => {
+    const input = await PDFDocument.create();
+    input.addPage([200, 300]);
+    input.addPage([400, 500]);
+    input.addPage([600, 700]);
+    const pages = [
+      { ...blankPage(600, 700), sourceIndex: 2 },
+      blankPage(210, 297),
+      { ...blankPage(200, 300), sourceIndex: 0 },
+      { ...blankPage(600, 700), sourceIndex: 2 },
+    ];
+    const bundle = await extractPages(await input.save(), pages);
+    expect(bundle.pages!.map((p) => p.sourceIndex)).toEqual([0, null, 1, 0]);
+    const pdf = await PDFDocument.load(bundle.source!);
+    expect(pdf.getPages().map((p) => p.getSize())).toEqual([
+      { width: 600, height: 700 },
+      { width: 200, height: 300 },
+    ]);
+    expect(pages[0].sourceIndex).toBe(2);
+  });
+  it('pastes a blank-page bundle as fresh editable pages in one notebook change', async () => {
+    const { newNotebook } = await import('./model');
+    const { copyNotebookPages, pasteNotebookPage } = await import('./pageTransfer');
+    const source = newNotebook();
+    source.pages = [blankPage(200, 300), blankPage(400, 500), blankPage(600, 700)];
+    const signal = new AbortController().signal;
+    const bundle = await copyNotebookPages(source, [2, 0, 2], signal);
+    const target = newNotebook(),
+      result = await pasteNotebookPage(target, 0, bundle, signal);
+    expect(result.pages.map((p) => p.width)).toEqual([target.pages[0].width, 200, 600]);
+    expect(result.pages[1].id).not.toBe(source.pages[0].id);
+    expect(target.pages).toHaveLength(1);
+  });
   it('extracts just one source page with geometry/annotations, URI links and static form appearance', async () => {
     const pdf = await PDFDocument.create(),
       a = pdf.addPage([200, 300]),

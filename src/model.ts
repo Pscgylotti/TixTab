@@ -116,6 +116,7 @@ export interface Notebook {
   scene?: Record<string, unknown>;
   zotero?: ZoteroSource;
   bookmarks?: { id: string; pageId: string; title: string }[];
+  batch?: { id: string; title: string; itemId: string };
 }
 export const uid = () => crypto.randomUUID();
 export const blankPage = (width = 595.28, height = 841.89): Page => ({
@@ -203,6 +204,17 @@ function intersects(a: Point, b: Point, c: Point, d: Point) {
 export function validNotebook(value: unknown): value is Notebook {
   if (!value || typeof value !== 'object') return false;
   const n = value as Notebook;
+  if (
+    n.batch !== undefined &&
+    (!n.batch ||
+      typeof n.batch.id !== 'string' ||
+      n.batch.id.length > 128 ||
+      typeof n.batch.itemId !== 'string' ||
+      n.batch.itemId.length > 128 ||
+      typeof n.batch.title !== 'string' ||
+      n.batch.title.length > 512)
+  )
+    return false;
   if (
     n.bookmarks !== undefined &&
     (!Array.isArray(n.bookmarks) ||

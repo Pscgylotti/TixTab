@@ -2,7 +2,7 @@ import { extractFile, listPackage } from '@electron/asar';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { dirname, join, normalize } from 'node:path';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { verifyExecutableIcon } from './verify-icons.mjs';
 const archive =
   process.argv[2] ||
@@ -51,6 +51,29 @@ for (const file of ['cache-helper.ps1', 'cache-catalog.json']) {
 }
 assert.ok(entries.includes('/dist/piper/phonemize.mjs'), 'Offline phonemizer module missing');
 const lite = process.argv.includes('--lite');
+let buildFilesVerified = 0;
+function verifyBuildFolder(folder) {
+  for (const entry of readdirSync(folder, { withFileTypes: true })) {
+    const name = folder + '/' + entry.name;
+    if (lite && (name === 'dist/models' || /^dist\/piper\/.*\.(wasm|data)$/.test(name))) continue;
+    if (entry.isDirectory()) verifyBuildFolder(name);
+    else if (entry.isFile()) {
+      assert.ok(entries.includes('/' + name), 'Build file missing: ' + name);
+      assert.deepEqual(
+        extractFile(archive, normalize(name)),
+        readFileSync(name),
+        'Build file differs: ' + name,
+      );
+      buildFilesVerified++;
+    }
+  }
+}
+verifyBuildFolder('dist');
+verifyBuildFolder('electron');
+assert.ok(
+  !entries.some((name) => /\/(?:\.claude|\.cache|tests|test-results)\//.test(name)),
+  'Private or test data must not ship',
+);
 if (!lite)
   for (const name of ['LICENSE.txt', 'NOTICE.txt', 'RAPIDOCR-MODEL-LICENSES.md'])
     assert.ok(
@@ -104,6 +127,13 @@ assert.ok(
 const json = (name) => JSON.parse(extractFile(archive, normalize(name)).toString());
 const pkg = json('package.json');
 assert.equal(pkg.main, 'electron/main.cjs');
+assert.equal(pkg.version, JSON.parse(readFileSync('package.json', 'utf8')).version);
+for (const name of ['batch-pdf.cjs', 'clipboard-shelf.cjs', 'main.cjs', 'preload.cjs'])
+  assert.deepEqual(
+    extractFile(archive, normalize('electron/' + name)),
+    readFileSync('electron/' + name),
+    'Desktop release source differs: ' + name,
+  );
 const pdfExportWorkers = entries.filter((name) =>
   /^\/dist\/assets\/pdfExport\.worker-[^/]+\.js$/.test(name),
 );
@@ -174,6 +204,7 @@ console.log(
       lite,
       catalogModels: catalog.models.length,
       entries: entries.length,
+      buildFilesVerified,
       modelFilesVerified: checked,
       modelBytesVerified: bytes,
       duplicateNodeModules: false,

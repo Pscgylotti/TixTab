@@ -50,6 +50,7 @@ export default function InkSelectionLayer({
   const [marquee, setMarquee] = useState<Bounds | null>(null);
   const [delta, setDelta] = useState({ x: 0, y: 0, scale: 1 });
   const [error, setError] = useState('');
+  const [copying, setCopying] = useState(false);
   const tree = useRef(new SpatialIndex<Page['strokes'][number]>(cullingInkBounds));
   const start = useRef<{ x: number; y: number } | null>(null);
   const busy = useRef(false),
@@ -218,11 +219,13 @@ export default function InkSelectionLayer({
   const copy = async (cut: boolean) => {
     if (busy.current) return;
     busy.current = true;
+    setCopying(true);
     setError('');
     const original = current.current.page,
       selected = [...ids];
     try {
       await copyInk(original, selected);
+      if (alive.current && !cut) setError(tr('已复制 {0} 条笔迹，可粘贴。', selected.length));
       if (
         alive.current &&
         cut &&
@@ -242,6 +245,7 @@ export default function InkSelectionLayer({
       if (alive.current) setError(tr('复制失败，所选对象已保留。'));
     } finally {
       busy.current = false;
+      if (alive.current) setCopying(false);
     }
   };
   const removeInk = () => {
@@ -385,14 +389,16 @@ export default function InkSelectionLayer({
           {viewport.current?.parentElement &&
             createPortal(
               <div
-                className="ink-selection-controls object-context-toolbar"
+                className="ink-selection-controls object-inspector"
                 role="toolbar"
                 aria-label={tr('笔迹选择')}
+                onPointerDown={(event) => event.stopPropagation()}
               >
                 <button
                   className="icon-button"
                   title={tr('复制')}
                   aria-label={tr('复制')}
+                  disabled={copying}
                   onClick={() => void copy(false)}
                 >
                   <Copy size={17} />
@@ -401,6 +407,7 @@ export default function InkSelectionLayer({
                   className="icon-button"
                   title={tr('剪切')}
                   aria-label={tr('剪切')}
+                  disabled={copying}
                   onClick={() => void copy(true)}
                 >
                   <Scissors size={17} />
@@ -409,6 +416,7 @@ export default function InkSelectionLayer({
                   className="icon-button"
                   title={tr('粘贴')}
                   aria-label={tr('粘贴')}
+                  disabled={copying}
                   onClick={() =>
                     void pasteInkFromButton().catch(() =>
                       setError(tr('剪贴板中没有可粘贴的 TixTab 对象')),

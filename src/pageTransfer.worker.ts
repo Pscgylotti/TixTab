@@ -1,4 +1,4 @@
-import { extractPage } from './pageTransferEngine';
+import { extractPage, extractPages } from './pageTransferEngine';
 import { appendPdfSources } from './pdfInsertion';
 import type { CopiedPage } from './pageTransferEngine';
 import type { Page } from './model';
@@ -6,9 +6,11 @@ const scope = self as unknown as {
   onmessage:
     | ((
         e: MessageEvent<{
-          action: 'copy' | 'paste';
+          action: 'copy' | 'copy-pages' | 'paste';
           source: Uint8Array | null;
           page?: Page;
+          pages?: Page[];
+          indices?: number[];
           payload?: CopiedPage;
         }>,
       ) => void)
@@ -20,7 +22,11 @@ scope.onmessage = async ({ data }) => {
     const result =
       data.action === 'copy'
         ? await extractPage(data.source, data.page!)
-        : await appendPdfSources(data.source, [{ bytes: data.payload!.source!, pages: [0] }]);
+        : data.action === 'copy-pages'
+          ? await extractPages(data.source, data.pages!)
+          : await appendPdfSources(data.source, [
+              { bytes: data.payload!.source!, pages: data.indices || [0] },
+            ]);
     scope.postMessage(
       { ok: true, result },
       result.source ? [result.source.buffer as ArrayBuffer] : [],

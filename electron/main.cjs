@@ -11,6 +11,9 @@ const {
   safeStorage,
   screen,
   dialog,
+  clipboard,
+  nativeImage,
+  Menu,
 } = require('electron');
 const { attachNativePen } = require('./pen-native.cjs');
 const { createPenHaptics } = require('./pen-haptics.cjs');
@@ -48,7 +51,32 @@ protocol.registerSchemesAsPrivileged([
 if (process.env.SURFACETAB_PROFILE) app.setPath('userData', process.env.SURFACETAB_PROFILE);
 else app.setPath('userData', path.join(app.getPath('appData'), 'surfacetab'));
 app.setAppUserModelId('local.surfacetab.app');
+const singleInstance = app.requestSingleInstanceLock();
+if (!singleInstance) app.quit();
+else
+  app.on('second-instance', () => {
+    const window = BrowserWindow.getAllWindows().find(
+      (window) => !window.getParentWindow() && !window.isDestroyed(),
+    );
+    if (!window) return;
+    if (window.isMinimized()) window.restore();
+    window.show();
+    window.focus();
+  });
 app.whenReady().then(() => {
+  if (!singleInstance) return;
+  Menu.setApplicationMenu(null);
+  const batchPdf = require('./batch-pdf.cjs').createBatchPdf({
+    grantFile: path.join(app.getPath('userData'), 'batch-folders.json'),
+    chooseDirectory: async (owner, output) => {
+      const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(owner), {
+        title: output ? 'Export annotated PDFs' : 'Open PDF folder',
+        properties: ['openDirectory', ...(output ? ['createDirectory'] : [])],
+      });
+      return result.canceled ? null : result.filePaths[0];
+    },
+  });
+  app.once('before-quit', () => batchPdf.dispose());
   const root = path.resolve(__dirname, '../dist');
   const appIcon = path.join(root, process.platform === 'win32' ? 'tixtab.ico' : 'tixtab.png');
   const modelRoot = path.join(app.getPath('userData'), 'model-library', 'v1');
@@ -89,6 +117,45 @@ app.whenReady().then(() => {
   });
   const providerSender = (event) =>
     event.senderFrame === event.sender.mainFrame && trusted(event.senderFrame.url);
+  ipcMain.handle('batch:run', (event, request) =>
+    providerSender(event) ? batchPdf.run(event.sender, request) : { ok: false, error: 'untrusted' },
+  );
+  const {
+    createClipboardShelf,
+    clipboardSequence,
+    attachClipboardNotifications,
+  } = require('./clipboard-shelf.cjs');
+  const clipboardShelf = createClipboardShelf({
+    clipboard,
+    nativeImage,
+    sequence: clipboardSequence(),
+    changed: () => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        const contents = window.webContents;
+        if (!contents.isDestroyed() && trusted(contents.getURL()))
+          contents.send('clipboard:shelf-changed');
+      }
+    },
+  });
+  app.once('before-quit', () => clipboardShelf.dispose());
+  ipcMain.handle('clipboard:shelf', async (event, action, value) => {
+    if (!providerSender(event)) return null;
+    if (action === 'memory' && typeof value === 'boolean') {
+      clipboardShelf.memory(value);
+      return null;
+    }
+    if (!BrowserWindow.fromWebContents(event.sender)?.isFocused()) return null;
+    if (action === 'list') {
+      await clipboardShelf.capture();
+      return clipboardShelf.list(value);
+    }
+    if (action === 'get' && typeof value === 'string') return clipboardShelf.get(value);
+    if (action === 'remove' && typeof value === 'string') clipboardShelf.remove(value);
+    else if (action === 'clear') clipboardShelf.clear();
+    else if (action === 'pause' && typeof value === 'boolean') clipboardShelf.pause(value);
+    else return null;
+    return clipboardShelf.list();
+  });
   ipcMain.handle('pen:haptic', (event, action, value) => {
     if (!providerSender(event)) return 'unavailable';
     const owner = penHapticWindows.get(event.sender.id);
@@ -529,6 +596,8 @@ app.whenReady().then(() => {
     },
   });
   win.once('ready-to-show', () => win.show());
+  const detachClipboard = attachClipboardNotifications(win, clipboardShelf.capture);
+  app.once('before-quit', detachClipboard);
   const penHaptics = createPenHaptics({
     notify: (status) => {
       if (!win.webContents.isDestroyed()) win.webContents.send('pen:haptic-status', status);

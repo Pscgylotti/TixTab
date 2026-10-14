@@ -8,12 +8,16 @@ Supports Surface Pen.
 
 ## Get started
 
-1. Use the Windows installer `TixTab-0.3.2-lite-setup-x64.exe`, then launch TixTab from the desktop or Start menu. Basic PDF features need no Node.js or Python. The installer supports upgrading an existing installation and an optional desktop shortcut on its finish page.
+1. Use the Windows installer `TixTab-0.3.3-lite-setup-x64.exe`, then launch TixTab from the desktop or Start menu. Basic PDF features need no Node.js or Python. The installer supports upgrading an existing installation and an optional desktop shortcut on its finish page.
 2. Open PDFs in tabs, or drop a PDF and choose to open it in new tabs or insert all/selected pages after the current page. Drop PNG/JPEG/WebP/GIF/BMP/AVIF/SVG files to insert image objects.
 3. For local AI, open **Settings → Local model library**, download the models you need, and click **Set up** to prepare managed Python and optional acceleration/speech dependencies.
 4. Switch the interface language in Settings. English, offline Chinese Pinyin, LaTeX and voice keyboard modes are included. The compact key layout includes Ctrl, Tab and Esc; tap Ctrl then A/X/C/V/Z/Y to edit. Voice input supports Chinese/English, a live waveform and local engines, and inserts at the current text caret.
 
 ## Features
+
+- Sequential review opens a PDF folder in one tab, loads files on demand, preserves individual edits, and exports edited PDFs to a chosen folder without overwriting originals. Its compact floating navigator can be dragged across the application window.
+- Select multiple sidebar pages with keyboard, mouse or touch, including select all/none/invert, and copy/paste them across documents as one undoable batch.
+- Preview and paste session clipboard history: text, images, editable objects and ink. The data budget is 128 MiB, or 32 MiB in minimal-memory mode, without an item-count limit. Pause or clear history when handling sensitive content; previous Windows Win+V history is not imported. TixTab runs as a single instance.
 
 - Save captures/original images as PNG, extract document bitmaps to a folder, and copy/paste editable pages between documents with bounded clipboard/source history.
 - Settings include overall UI scaling (0.5–4.0; baseline 2.0) and a piecewise pen-pressure curve with up to 16 internal points.

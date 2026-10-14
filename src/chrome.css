@@ -624,6 +624,64 @@
   font-size: var(--fs-sm);
   min-width: var(--ctl);
 }
+.object-inspector.ink-selection-controls {
+  left: 12px;
+  right: auto;
+  z-index: 40;
+}
+.sidebar-heading .page-selection-toggle {
+  margin-left: auto;
+}
+.sidebar-heading .page-selection-toggle + .icon-button {
+  margin-left: 0;
+}
+.page-selection-toggle[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.page-list-selecting {
+  touch-action: none;
+}
+.sidebar-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.sidebar-selection-actions button {
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+  padding: 6px 3px;
+  font-size: 11px;
+}
+.page-list-selecting .page-card {
+  position: relative;
+}
+.page-selection-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  pointer-events: none;
+}
+.page-selection-check.checked {
+  border-color: var(--accent-fill);
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+.page-list-selecting .page-card[data-selection-cursor='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
 .object-order {
   position: relative;
 }

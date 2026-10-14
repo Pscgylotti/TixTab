@@ -175,3 +175,53 @@ test('Alt+mouse selects ink; normal drawing and cancel preserve content; expande
     'true',
   );
 });
+
+for (const view of ['单页标注', '连续页面预览', '双页预览'])
+  test(`Alt-selected ink toolbar copy and cut write a fresh clipboard and preserve editable strokes: ${view}`, async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await fixture(page);
+    await page.getByRole('button', { name: view, exact: true }).click();
+    await page.getByRole('button', { name: '适合页面', exact: true }).click();
+    const start = await at(page, 80, 130),
+      end = await at(page, 210, 220);
+    await page.keyboard.down('Alt');
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(end.x, end.y, { steps: 5 });
+    await page.mouse.up();
+    await page.keyboard.up('Alt');
+    await expect(page.locator('.ink-selection-box')).toHaveAttribute('data-selected-strokes', '2');
+    await page.evaluate(() => navigator.clipboard.writeText('Before button copy'));
+    const controls = page.getByRole('toolbar', { name: '笔迹选择', exact: true });
+    await controls.getByRole('button', { name: '复制', exact: true }).click();
+    await expect(controls.getByRole('status')).toContainText('已复制 2 条笔迹');
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toBe('[TixTab ink]');
+    const html = await page.evaluate(async () => {
+      const items = await navigator.clipboard.read();
+      return (await items[0].getType('text/html')).text();
+    });
+    expect(html).toContain('data-tixtab-ink');
+    expect((await project(page)).pages[0].strokes).toHaveLength(3);
+    await controls.getByRole('button', { name: '剪切', exact: true }).click();
+    await expect.poll(async () => (await project(page)).pages[0].strokes.length).toBe(1);
+    await page.keyboard.press('Control+v');
+    await expect.poll(async () => (await project(page)).pages[0].strokes.length).toBe(3);
+    // A denied clipboard write must never delete the selected source strokes.
+    await page.evaluate(() => {
+      document.execCommand = () => false;
+      Object.defineProperty(navigator.clipboard, 'write', {
+        configurable: true,
+        value: async () => {
+          throw new Error('denied');
+        },
+      });
+    });
+    await controls.getByRole('button', { name: '剪切', exact: true }).click();
+    await expect(controls.getByRole('status')).toContainText('已保留');
+    expect((await project(page)).pages[0].strokes).toHaveLength(3);
+  });
