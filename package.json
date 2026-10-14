@@ -1,24 +1,32 @@
 {
   "name": "tixtab",
-  "version": "0.2.38",
+  "version": "0.3.0",
   "private": true,
-  "description": "Surface-first PDF ink workspace",
+  "description": "Pen-first PDF reading and annotation workspace",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "prepare:runtime": "node scripts/prepare-runtime.mjs",
+    "prepare:icons": "node scripts/prepare-icons.mjs",
+    "verify:icons": "node scripts/verify-icons.mjs --check",
     "model:texo": "node scripts/download-texo.mjs",
     "desktop": "electron .",
     "start": "npm run build && electron .",
-    "build": "npm run prepare:runtime && tsc --noEmit && vite build",
+    "build": "npm run prepare:icons && npm run prepare:runtime && tsc --noEmit && vite build",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "pack": "npm run build && electron-builder --config electron-builder.lite.cjs --win portable --x64",
+    "benchmark:workflow": "node scripts/benchmark-workflow.mjs",
+    "benchmark:spatial": "node scripts/benchmark-spatial.mjs",
+    "benchmark:compare": "node scripts/compare-workflows.mjs",
+    "benchmark:build-control": "node scripts/build-performance-control.mjs",
+    "test:performance-model": "node --test scripts/performance-demand.test.mjs",
+    "pack": "npm run build && electron-builder --config electron-builder.lite.cjs --win nsis --x64",
+    "pack:portable": "npm run build && electron-builder --config electron-builder.lite.cjs --win portable --x64",
     "model:translation": "node scripts/download-translation.mjs",
     "model:reading": "node scripts/download-reading-models.mjs",
     "model:ocr": "node scripts/download-ocr.mjs",
-    "pack:offline": "npm run build && electron-builder --win portable --x64",
+    "pack:offline": "npm run build && electron-builder --win nsis --x64",
     "format": "prettier --write src electron scripts tests *.ts *.cjs package.json .github",
     "format:check": "prettier --check src electron scripts tests *.ts *.cjs package.json .github",
     "verify:package": "node scripts/verify-package.mjs",
@@ -32,12 +40,14 @@
     "html2canvas": "^1.4.1",
     "idb-keyval": "^6.2.2",
     "katex": "^0.16.22",
+    "koffi": "3.3.3",
     "lucide-react": "^0.468.0",
     "onnxruntime-web": "1.22.0-dev.20250409-89f8206ba4",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "5.4.624",
     "perfect-freehand": "^1.2.2",
     "pinyin-ime": "1.0.2",
+    "rbush": "4.0.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
@@ -52,6 +62,7 @@
     "@playwright/test": "^1.56.0",
     "@types/katex": "^0.16.7",
     "@types/node": "^22.15.0",
+    "@types/rbush": "4.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.4.1",
@@ -59,6 +70,7 @@
     "electron-builder": "^26.0.12",
     "esbuild": "0.25.12",
     "prettier": "3.9.10",
+    "sharp": "0.35.5",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.2.0"
@@ -69,13 +81,18 @@
     "electronDist": "node_modules/electron/dist",
     "npmRebuild": false,
     "directories": {
-      "output": "release/0.2.38"
+      "output": "release/0.3.0"
     },
     "files": [
       "dist/**/*",
       "electron/**/*",
       "package.json",
-      "!node_modules/**/*"
+      "!node_modules/**/*",
+      "node_modules/koffi/package.json",
+      "node_modules/koffi/index.cjs",
+      "node_modules/koffi/src/koffi/index.cjs",
+      "node_modules/koffi/src/koffi/src/static.cjs",
+      "node_modules/@koromix/koffi-win32-x64/**/*"
     ],
     "extraFiles": [
       "README.md",
@@ -86,6 +103,14 @@
           "**/*",
           "!previews/**/*",
           "!benchmarks/**/*",
+          "!performance/**/*",
+          "!maintenance/**/*",
+          "!PLAN.md",
+          "!MILESTONE-0.3.0.md",
+          "!RELEASE-0.3.0-READINESS.md",
+          "!VALIDATION.md",
+          "!PERFORMANCE.md",
+          "!FRAMEWORK-PERFORMANCE.md",
           "!releases/*BUILD*"
         ]
       },
@@ -95,6 +120,7 @@
         "filter": [
           "native_texo.py",
           "openvino_app.py",
+          "request_lifecycle.py",
           "requirements-openvino.txt",
           "start-openvino.ps1",
           "native_opus.py",
@@ -113,6 +139,9 @@
           "unimumer-manifest.json",
           "native_asr.py",
           "asr_worker.py",
+          "asr_lifecycle.py",
+          "asr-ort.config",
+          "microphones.py",
           "asr-manifest.json",
           "requirements-asr.txt",
           "start-asr.ps1"
@@ -122,17 +151,41 @@
       "THIRD_PARTY_NOTICES.md",
       "README.zh-CN.md"
     ],
-    "artifactName": "TixTab-${version}-${arch}.${ext}",
+    "artifactName": "TixTab-${version}-setup-${arch}.${ext}",
     "asarUnpack": [
+      "node_modules/@koromix/koffi-win32-x64/**/*.node",
       "electron/cache-helper.ps1",
       "electron/cache-catalog.json",
-      "electron/dictation.ps1"
+      "electron/dictation.ps1",
+      "electron/microphone.cs"
     ],
     "win": {
       "target": [
-        "portable"
+        "nsis"
       ],
-      "signAndEditExecutable": false
+      "icon": "public/tixtab.ico",
+      "signExecutable": false
+    },
+    "nsis": {
+      "include": "electron/installer-upgrade.nsh",
+      "installerLanguages": [
+        "en_US",
+        "zh_CN"
+      ],
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TixTab",
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "public/tixtab.ico",
+      "uninstallerIcon": "public/tixtab.ico"
+    },
+    "portable": {
+      "artifactName": "TixTab-${version}-portable-${arch}.${ext}",
+      "unpackDirName": true
     }
   },
   "license": "AGPL-3.0-only",

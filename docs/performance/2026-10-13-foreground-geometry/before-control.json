@@ -1,0 +1,6 @@
+{
+  "referenceSource": ".cache/foreground-geometry-original.ts",
+  "originalSha256": "bfe96b2a86aa84325630c43b3c3e5824c5b6c624fbc736d30ecaccefd7727a99",
+  "compiledSha256": "7b229c08eec33cb6fd5913535d92044c57be7cc293efda890d95f22d53cb451b",
+  "mechanism": "Only useForegroundViewport.ts differs: share one viewport rect per scroll frame and remove duplicate mount measurement. Preserve root resize measurements, synchronous first paint, clip geometry, quality and scheduling."
+}

@@ -1,0 +1,123 @@
+/* TixTab design tokens. Every chrome surface, control and dialog reads from
+   here; night mode only swaps the values, so components need no per-theme
+   overrides. Document pixels (paper, PDF, ink) keep their own rules. */
+:root {
+  /* Surfaces. The shell is translucent so Windows Mica shows through; anything
+     that floats over the canvas is opaque so it never needs a backdrop blur. */
+  --bg-app: #f4f7fbeb;
+  --bg-canvas: #e9edf3;
+  --surface-chrome: #ffffffc4;
+  --surface: #fff;
+  --surface-sunken: #f1f4f9;
+  --surface-hover: #e9eef6;
+  --surface-active: #dde5f0;
+  --surface-tint: #f7faff;
+  --surface-inverse: #263348;
+  --paper: #fff;
+
+  --border: #dfe5ee;
+  --border-strong: #c7d1e0;
+
+  --text: #1f2a3d;
+  --text-muted: #56637a;
+  --text-subtle: #7a8699;
+  --text-inverse: #fff;
+
+  /* --accent is for text, icons and indicators; --accent-fill carries white text. */
+  --accent: #3f6bd0;
+  --accent-text: #2f58b8;
+  --accent-fill: #3f6bd0;
+  --accent-fill-hover: #345bb6;
+  --accent-soft: #e6eeff;
+  --accent-border: #b9cdf5;
+  --on-accent: #fff;
+
+  --danger: #b93c3c;
+  --danger-fill: #c44545;
+  --danger-soft: #fdeeee;
+  --danger-border: #efc4c4;
+  --success: #2f8a5f;
+  --success-soft: #e8f6ee;
+  --warning: #8a6410;
+  --warning-fill: #c9933f;
+
+  --scrim: #1b273a52;
+  --shadow-1: 0 1px 2px #1b273a14;
+  --shadow-2: 0 4px 14px #1b273a1f;
+  --shadow-3: 0 12px 32px #1b273a2e;
+
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 14px;
+  --fs-xl: 16px;
+  --fs-2xl: 18px;
+
+  /* Control heights. --hit is the minimum finger target. */
+  --ctl-sm: 32px;
+  --ctl: 40px;
+  --hit: 44px;
+
+  --font-ui:
+    'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  --font-mono: 'Cascadia Mono', Consolas, monospace;
+
+  /* Legacy names still referenced by feature stylesheets. */
+  --line: var(--border);
+  --muted: var(--text-muted);
+}
+:root[data-night='true'] {
+  --bg-app: #171b23;
+  --bg-canvas: #12161d;
+  --surface-chrome: #1e242ff5;
+  --surface: #1e242f;
+  --surface-sunken: #242e3e;
+  --surface-hover: #2c3545;
+  --surface-active: #354258;
+  --surface-tint: #293851;
+  --surface-inverse: #e0e5ef;
+  --paper: #1c2027;
+
+  --border: #3a4353;
+  --border-strong: #4a5770;
+
+  --text: #e0e5ef;
+  --text-muted: #a7b4c9;
+  --text-subtle: #8a97ad;
+  --text-inverse: #171b23;
+
+  --accent: #8cafff;
+  --accent-text: #c4d6ff;
+  --accent-fill: #4a72c4;
+  --accent-fill-hover: #5680d6;
+  --accent-soft: #304468;
+  --accent-border: #55719a;
+  --on-accent: #fff;
+
+  --danger: #f2a6a6;
+  --danger-fill: #b84a4a;
+  --danger-soft: #3c282d;
+  --danger-border: #75505a;
+  --success: #8fd0ad;
+  --success-soft: #223a30;
+  --warning: #e8c682;
+  --warning-fill: #c9933f;
+
+  --scrim: #05080d8c;
+  --shadow-1: 0 1px 2px #0006;
+  --shadow-2: 0 4px 14px #0000005c;
+  --shadow-3: 0 12px 32px #00000080;
+}
+/* Fingers and the pen tip both report a coarse pointer on Surface hardware. */
+@media (any-pointer: coarse) {
+  :root {
+    --ctl-sm: 36px;
+    --ctl: 44px;
+  }
+}

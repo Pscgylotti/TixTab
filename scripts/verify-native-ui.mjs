@@ -18,7 +18,7 @@ export async function verifyNativeTexo(page) {
     await page.mouse.up();
   }
   await page.locator('.formula-canvas').screenshot({ path: 'test-results/native-texo-input.png' });
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await page.waitForFunction(
     () =>
       document.querySelector('.formula-status')?.textContent.includes('请检查结果') ||
@@ -38,7 +38,7 @@ export async function verifyNativeTexo(page) {
   await page.screenshot({ path: 'test-results/native-texo-npu.png' });
   // Force an unavailable native route and verify the real bundled CPU model still runs.
   await page.route('http://127.0.0.1:8766/health', (route) => route.abort());
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await page.waitForFunction(
     () =>
       document.querySelector('.formula-status')?.textContent.includes('CPU (WASM)') ||

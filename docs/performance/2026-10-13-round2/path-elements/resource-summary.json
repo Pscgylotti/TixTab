@@ -1,0 +1,68 @@
+[
+  {
+    "label": "round2-path-cache-before-1",
+    "buildSha256": "d80f132f89737541644f9d8be7c05bd2ca5bc0ca1ae755b4008eb47a1d5908b4",
+    "cpuSeconds": 14.59810399999999,
+    "demand200MsP99": 2.5070165588808355,
+    "demand200MsPeak": 2.6811498233837785,
+    "unmatchedProcessIntervals": 0,
+    "peakWorkingSetMiB": 2017.375,
+    "peakRendererPrivateMiB": 333.84765625,
+    "peakTotalPrivateMiB": 1774.6015625
+  },
+  {
+    "label": "round2-path-cache-before-2",
+    "buildSha256": "d80f132f89737541644f9d8be7c05bd2ca5bc0ca1ae755b4008eb47a1d5908b4",
+    "cpuSeconds": 13.540413999999991,
+    "demand200MsP99": 2.152928556126709,
+    "demand200MsPeak": 2.177803998471065,
+    "unmatchedProcessIntervals": 0,
+    "peakWorkingSetMiB": 1982.578125,
+    "peakRendererPrivateMiB": 334.484375,
+    "peakTotalPrivateMiB": 1724.421875
+  },
+  {
+    "label": "round2-path-cache-before-3",
+    "buildSha256": "d80f132f89737541644f9d8be7c05bd2ca5bc0ca1ae755b4008eb47a1d5908b4",
+    "cpuSeconds": 13.275893000000003,
+    "demand200MsP99": 2.0746156167638703,
+    "demand200MsPeak": 2.429694877736432,
+    "unmatchedProcessIntervals": 0,
+    "peakWorkingSetMiB": 2002.765625,
+    "peakRendererPrivateMiB": 331.4296875,
+    "peakTotalPrivateMiB": 1730.12109375
+  },
+  {
+    "label": "round2-path-cache-candidate-1",
+    "buildSha256": "cd0bcaf8fbd85eff7acee32218aee0041117735f5e8fee2faa9b1a122636f9ed",
+    "cpuSeconds": 13.297710999999996,
+    "demand200MsP99": 2.1071069741603012,
+    "demand200MsPeak": 2.530226365631649,
+    "unmatchedProcessIntervals": 0,
+    "peakWorkingSetMiB": 2028.86328125,
+    "peakRendererPrivateMiB": 332.87109375,
+    "peakTotalPrivateMiB": 1764.21484375
+  },
+  {
+    "label": "round2-path-cache-candidate-2",
+    "buildSha256": "cd0bcaf8fbd85eff7acee32218aee0041117735f5e8fee2faa9b1a122636f9ed",
+    "cpuSeconds": 13.344891000000006,
+    "demand200MsP99": 2.0641658156293237,
+    "demand200MsPeak": 2.09618637768489,
+    "unmatchedProcessIntervals": 0,
+    "peakWorkingSetMiB": 1992.9296875,
+    "peakRendererPrivateMiB": 326.21484375,
+    "peakTotalPrivateMiB": 1726.26953125
+  },
+  {
+    "label": "round2-path-cache-candidate-3",
+    "buildSha256": "cd0bcaf8fbd85eff7acee32218aee0041117735f5e8fee2faa9b1a122636f9ed",
+    "cpuSeconds": 13.419668,
+    "demand200MsP99": 2.1619795292906807,
+    "demand200MsPeak": 2.318870817879174,
+    "unmatchedProcessIntervals": 0,
+    "peakWorkingSetMiB": 2034.13671875,
+    "peakRendererPrivateMiB": 352.6640625,
+    "peakTotalPrivateMiB": 1771.49609375
+  }
+]

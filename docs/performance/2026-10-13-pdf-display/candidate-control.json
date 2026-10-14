@@ -1,0 +1,4 @@
+{
+  "mechanism": "Borrow one immutable cached canvas per raster; concurrent views copy without stealing. React owns an empty display:contents host. Preserve dimensions, source quality and scheduler. Release without resizing; invalidate lost cache surfaces and request recovery. Applies to base, reading, detail tiles and thumbnails.",
+  "builderSha256": "492fc9a5cc7805c8ce74c9b6617b74db2834fb3d75403eee5bbfba680ddd13a4"
+}

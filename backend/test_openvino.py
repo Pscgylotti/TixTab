@@ -2,7 +2,9 @@
 import time
 import asyncio
 import json
+import threading
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from backend import openvino_app as service
@@ -169,6 +171,97 @@ class ServiceTests(unittest.TestCase):
             self.assertEqual(messages[0]['status'], 499)
             self.assertFalse(service._lock.locked())
         asyncio.run(run_request())
+
+    def test_receive_failure_does_not_close_model_until_native_work_finishes(self):
+        async def check():
+            started = threading.Event()
+            saw_cancel = threading.Event()
+            release = threading.Event()
+            finished = threading.Event()
+            fail_receive = asyncio.Event()
+            closed = []
+
+            class Model:
+                def close(self):
+                    self_test.assertTrue(finished.is_set())
+                    self_test.assertTrue(service._lock.locked())
+                    closed.append(True)
+
+            async def body():
+                return {}
+
+            async def receive():
+                await fail_receive.wait()
+                raise OSError('connection failed')
+
+            def invoke(model, cancelled):
+                started.set()
+                if cancelled.wait(2):
+                    saw_cancel.set()
+                release.wait(2)
+                finished.set()
+                return {'latex': 'x'}
+
+            self_test = self
+            request = asyncio.create_task(service.run_native(
+                SimpleNamespace(json=body, receive=receive), ('test', None), Model, invoke))
+            try:
+                self.assertTrue(await asyncio.to_thread(started.wait, 1))
+                fail_receive.set()
+                self.assertTrue(await asyncio.to_thread(saw_cancel.wait, 1))
+                self.assertTrue(service._lock.locked())
+                self.assertIsNotNone(service._model)
+                self.assertFalse(closed)
+                self.assertFalse(request.done())
+                release.set()
+                with self.assertRaises(service.HTTPException) as error:
+                    await request
+                self.assertEqual(error.exception.status_code, 503)
+                self.assertEqual(closed, [True])
+                self.assertIsNone(service._model)
+                self.assertFalse(service._lock.locked())
+            finally:
+                release.set()
+                await asyncio.gather(request, return_exceptions=True)
+        asyncio.run(check())
+
+    def test_http_cancellation_retains_lock_and_warm_model_until_work_finishes(self):
+        async def check():
+            started = threading.Event()
+            saw_cancel = threading.Event()
+            release = threading.Event()
+            model = object()
+
+            async def body():
+                return {}
+
+            async def receive():
+                await asyncio.Event().wait()
+
+            def invoke(model, cancelled):
+                started.set()
+                if cancelled.wait(2):
+                    saw_cancel.set()
+                release.wait(2)
+                return 'finished'
+
+            request = asyncio.create_task(service.run_native(
+                SimpleNamespace(json=body, receive=receive), ('test', None), lambda: model, invoke))
+            try:
+                self.assertTrue(await asyncio.to_thread(started.wait, 1))
+                request.cancel()
+                self.assertTrue(await asyncio.to_thread(saw_cancel.wait, 1))
+                self.assertTrue(service._lock.locked())
+                self.assertFalse(request.done())
+                release.set()
+                with self.assertRaises(asyncio.CancelledError):
+                    await request
+                self.assertIs(service._model, model)
+                self.assertFalse(service._lock.locked())
+            finally:
+                release.set()
+                await asyncio.gather(request, return_exceptions=True)
+        asyncio.run(check())
 
 
 if __name__ == '__main__':

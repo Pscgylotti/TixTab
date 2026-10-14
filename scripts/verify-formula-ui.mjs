@@ -45,7 +45,7 @@ export async function verifyFormulaUi(page) {
         event('pointerup', 200);
       }
     });
-    await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+    await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
     const latex = '\\begin{aligned}\nx=1 \\\\\ny=2\n\\end{aligned}';
     await page.waitForFunction((value) => document.querySelector('#latex')?.value === value, latex);
     assert.equal(requests.length, 2);

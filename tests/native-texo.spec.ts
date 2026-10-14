@@ -53,7 +53,7 @@ test('formula defaults to NPU-first, remembers device and reports the actual nat
   await page.getByRole('button', { name: '连接本地加速', exact: true }).click();
   await expect(page.locator('.native-texo-settings [role=status]')).toHaveText('NPU');
   await drawX(page);
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await expect(page.getByLabel('LaTeX · 可直接修改')).toHaveValue('x');
   await expect(page.locator('.formula-status')).toContainText('NPU + CPU');
   expect(requests[0]).toMatchObject({ device: 'AUTO' });
@@ -87,7 +87,7 @@ test('closing formula aborts an in-flight native request without starting a brow
   await page.goto('/');
   await page.getByRole('button', { name: '公式', exact: true }).click();
   await drawX(page);
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await expect.poll(() => started).toBe(true);
   await page
     .getByRole('dialog', { name: '手写公式' })
@@ -115,7 +115,7 @@ test('Pix2Text failure keeps the NPU-first local fallback', async ({ page }) => 
   await drawX(page);
   await page.getByRole('button', { name: '公式设置', exact: true }).click();
   await page.getByLabel('公式识别后端').selectOption('pix2text');
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await expect(page.getByLabel('LaTeX · 可直接修改')).toHaveValue('x');
   expect(nativeDevice).toBe('AUTO');
   await expect(page.locator('.formula-status')).toContainText('NPU + CPU');

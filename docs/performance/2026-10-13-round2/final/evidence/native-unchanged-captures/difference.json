@@ -1,0 +1,8 @@
+{
+  "width": 2333,
+  "height": 1275,
+  "changed": 33,
+  "overOne": 0,
+  "maximum": 1,
+  "meaning": "Same unchanged reference scene; no culling state or content change between these captures. This evidence sets only the 8-bit channel stability bound, not a quality tolerance for missing geometry."
+}

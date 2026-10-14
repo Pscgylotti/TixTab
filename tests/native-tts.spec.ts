@@ -134,7 +134,7 @@ test('native speech uses real local phonemes, pauses/resumes, keeps device prefe
   expect(bounds.x + bounds.width).toBeLessThanOrEqual(560);
   expect(
     await page.locator('.speech-settings').evaluate((el) => getComputedStyle(el).backgroundColor),
-  ).toBe('rgb(44, 53, 69)');
+  ).toBe('rgb(36, 46, 62)');
   await page.reload();
   expect(await page.evaluate(() => localStorage.getItem('surfacetab.speechDevice'))).toBe('GPU');
 });

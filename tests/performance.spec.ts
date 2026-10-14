@@ -188,7 +188,9 @@ test('虚拟缩略图长按跨视区排序，源卡片卸载后仍能松手提�
   await expect
     .poll(() => page.locator('.page-list').evaluate((el) => el.scrollTop))
     .toBeGreaterThan(600);
-  const target = Number(await page.locator('.drop-target').getAttribute('data-page-index'));
+  const target = Number(
+    await page.locator('.page-insertion-line').getAttribute('data-insertion-index'),
+  );
   expect(target).toBeGreaterThan(4);
   await page.mouse.up();
   const inspect = () =>

@@ -1,3 +1,9 @@
+export async function copyImage(data: string) {
+  const response = await fetch(data);
+  const blob = await response.blob();
+  await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+}
+
 export async function copyText(text: string) {
   try {
     await navigator.clipboard.writeText(text);

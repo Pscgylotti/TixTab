@@ -11,6 +11,42 @@ from native_asr import FRAME, Segmenter, SpeechModel, model_directory, record
 
 
 class SegmentTests(unittest.TestCase):
+    def test_sensevoice_uses_packaged_sleep_policy_without_changing_quality_parameters(self):
+        options = []
+        sherpa = types.SimpleNamespace(OfflineRecognizer=types.SimpleNamespace(
+            from_sense_voice=lambda **kwargs: options.append(kwargs) or object()))
+        with patch.dict('sys.modules', {'sherpa_onnx': sherpa}):
+            model = SpeechModel('sensevoice-small', Path('fixture-model'), 'CPU', 'en-US')
+            model.close()
+        self.assertEqual(options[0]['num_threads'], 2)
+        self.assertEqual(options[0]['language'], 'en')
+        self.assertTrue(options[0]['use_itn'])
+        provider, path = options[0]['provider'].split(':', 1)
+        self.assertEqual(provider, 'cpu')
+        policy = Path(path).read_text('utf-8')
+        self.assertIn('SessionConfig.session.intra_op.allow_spinning=0', policy)
+        self.assertIn('SessionConfig.session.inter_op.allow_spinning=0', policy)
+        with patch.dict('sys.modules', {'sherpa_onnx': sherpa}), patch.object(Path, 'is_file', return_value=False):
+            with self.assertRaisesRegex(RuntimeError, 'runtime'):
+                SpeechModel('sensevoice-small', Path('fixture-model'), 'CPU')
+        self.assertEqual(len(options), 1)  # Never start a fatal native load with a missing policy file.
+
+    def test_microphone_identity_survives_portaudio_indexes_and_rejects_disconnected_device(self):
+        from microphones import resolve_input
+        devices = [{'id':'winmm:one','name':'Virtual mic','index':0,'default':True},
+                   {'id':'winmm:two','name':'Surface mic','index':1,'default':False}]
+        indexed = {40:{'name':'Mapper','max_input_channels':2},
+                   12:{'name':'Virtual mic','max_input_channels':2},
+                   5:{'name':'Surface mic','max_input_channels':2}}
+        audio = types.SimpleNamespace(query_hostapis=lambda:[{'name':'MME','devices':[40,12,5]}],query_devices=lambda i:indexed[i])
+        with patch('microphones.enumerate_inputs',return_value=devices):
+            self.assertEqual(resolve_input(audio,'winmm:two')[0],5)
+            self.assertEqual(resolve_input(audio)[0],12)
+            with self.assertRaisesRegex(ValueError,'microphone-missing'):
+                resolve_input(audio,'winmm:unplugged')
+            devices[0]['default'],devices[1]['default']=False,True
+            self.assertEqual(resolve_input(audio)[0],5)
+
     def test_whisper_keeps_complete_npu_compilation_cache_for_next_load(self):
         import os
         with tempfile.TemporaryDirectory() as temp:
@@ -100,6 +136,7 @@ class SegmentTests(unittest.TestCase):
             active = True
             def __init__(self, **values):
                 self.callback = values['callback']
+                self.device = values['device']
                 streams.append(self)
             def __enter__(self):
                 for _ in range(20):
@@ -114,9 +151,10 @@ class SegmentTests(unittest.TestCase):
 
         audio = types.SimpleNamespace(InputStream=Input, check_input_settings=lambda **kw: None)
         vad = types.SimpleNamespace(Vad=lambda mode: types.SimpleNamespace(is_speech=lambda frame, rate: True))
-        with patch.dict('sys.modules', {'sounddevice': audio, 'webrtcvad': vad}):
+        with patch.dict('sys.modules', {'sounddevice': audio, 'webrtcvad': vad}), patch('microphones.resolve_input', return_value=(3, {'name':'Surface mic'})):
             record(stop, lambda event, session, **values: events.append(event), {'id':'fixture','device':'CPU'}, segments)
         self.assertFalse(streams[0].active)
+        self.assertEqual(streams[0].device,3)
         self.assertEqual(len(segments.get_nowait()), 20 * FRAME * 2)
         self.assertIsNone(segments.get_nowait())
         self.assertNotIn('error', events)

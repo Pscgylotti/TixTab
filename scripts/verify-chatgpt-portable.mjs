@@ -103,7 +103,7 @@ try {
   ];
   assert.equal(archives.length, 1);
   const archive = archives[0],
-    lite = /-lite-x64\.exe$/i.test(executable);
+    lite = process.argv.includes('--lite') || /-lite-x64\.exe$/i.test(executable);
   execFileSync(
     process.execPath,
     ['scripts/verify-package.mjs', archive, ...(lite ? ['--lite'] : [])],

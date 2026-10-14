@@ -171,6 +171,7 @@ test('OCR, formula and speech use distinct HTTP profiles, returned content and v
   await page.mouse.down();
   await page.mouse.move(r.x + r.width * 0.9, r.y + r.height * 0.25, { steps: 5 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   await page.getByLabel('OCR 后端').selectOption('web');
   await page.getByLabel('OCR 接口地址').fill('https://api.test/ocr');
   await page.getByLabel('OCR API Key').fill('ocr-secret');
@@ -187,7 +188,7 @@ test('OCR, formula and speech use distinct HTTP profiles, returned content and v
   await page.getByLabel('公式接口地址').fill('https://api.test/formula');
   await page.getByLabel('公式 API Key').fill('formula-secret');
   await draw(page);
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await expect(page.getByLabel('LaTeX · 可直接修改')).toHaveValue('x^2');
   expect((calls.formula as { image: string }).image).toMatch(/^data:image\/png;base64,/);
   await page

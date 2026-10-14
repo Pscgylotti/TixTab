@@ -1,6 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { fitPageZoom, fitPageWithControls } from './pageFit';
+import { fitPageZoom, fitPageWithControls, fitWidthZoom } from './pageFit';
 describe('fit visible PDF page edges', () => {
+  it('fits width independently of tall page height and uses the widest continuous page', () => {
+    const pages = [
+      { width: 600, height: 1600 },
+      { width: 900, height: 700 },
+    ];
+    expect(fitWidthZoom(pages, 0, 'single', 1216)).toBe(2);
+    expect(fitWidthZoom(pages, 0, 'continuous', 1216)).toBeCloseTo(1200 / 900);
+    expect(fitWidthZoom(pages, 0, 'dual', 1532)).toBe(1);
+    expect(fitWidthZoom(pages, 1, 'dual', 916)).toBe(1);
+  });
   it('fills the viewport for small pages without the old 160% cap', () => {
     expect(fitPageZoom([{ width: 200, height: 300 }], 0, 'single', 1000, 900)).toBeCloseTo(
       884 / 300,

@@ -1,5 +1,7 @@
 import { newNotebook, uid, validNotebook, type Notebook, type Page } from './model';
 import { restore } from './storage';
+import { deleteFormulaDrafts } from './formulaDraft';
+import { performanceLedger, trackPerformance } from './performanceLedger';
 
 export interface WorkspaceView {
   index: number;
@@ -17,6 +19,7 @@ export interface WorkspaceDocument {
   view: WorkspaceView;
   scene?: Record<string, unknown>;
   zotero?: Notebook['zotero'];
+  bookmarks?: Notebook['bookmarks'];
 }
 export interface WorkspaceFolder {
   id: string;
@@ -79,7 +82,17 @@ export async function listWorkspace() {
   documents.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt);
   return { documents, folders };
 }
-export async function saveWorkspaceDocument(
+export function saveWorkspaceDocument(
+  id: string,
+  notebook: Notebook,
+  view = defaultView,
+  folderId?: string | null,
+) {
+  return trackPerformance('workspace-transaction', () =>
+    saveWorkspaceDocumentImpl(id, notebook, view, folderId),
+  );
+}
+async function saveWorkspaceDocumentImpl(
   id: string,
   notebook: Notebook,
   view = defaultView,
@@ -117,10 +130,13 @@ export async function saveWorkspaceDocument(
       view: { ...view },
       scene: notebook.scene,
       zotero: notebook.zotero,
+      bookmarks: notebook.bookmarks,
     };
     store.put(record);
     tx.objectStore('preferences').put(id, 'activeDocument');
     await done;
+    performanceLedger?.count('workspacePageWrites', pageWrites);
+    performanceLedger?.count('workspaceSourceWrites', sourceWrites);
     saved = { id, notebook };
     return { pageWrites, sourceWrites };
   } catch (error) {
@@ -151,6 +167,7 @@ export async function loadWorkspaceDocument(id: string, track = true) {
     pages: meta.pageIds.map((id) => pages.get(id)!),
     scene: meta.scene,
     zotero: meta.zotero,
+    bookmarks: meta.bookmarks,
   };
   if (
     !validNotebook(notebook) ||
@@ -226,4 +243,5 @@ export async function deleteWorkspaceDocument(id: string) {
   tx.objectStore('sources').delete(id);
   await done;
   if (saved?.id === id) saved = undefined;
+  await deleteFormulaDrafts(id);
 }

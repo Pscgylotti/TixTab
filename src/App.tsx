@@ -1,13 +1,19 @@
+import { performanceDelay, trackPerformance } from './performanceLedger';
 import {
   useAppearance,
   setNight,
   setPowerMode,
   setOriginal,
   setRenderQuality,
+  setPreRenderRange,
+  preRenderChoices,
+  type PreRenderRange,
   type RenderQuality,
   type PowerMode,
 } from './appearance';
 import { t as tr, useLocale, setLocale, type Locale } from './i18n';
+import { formulaDraftKey } from './formulaDraft';
+import { loadBlankPaper, saveBlankPaper } from './blankPaper';
 import {
   lazy,
   Suspense,
@@ -18,7 +24,7 @@ import {
   useState,
   type SetStateAction,
 } from 'react';
-import { fitPageWithControls, MIN_ZOOM, MAX_ZOOM } from './pageFit';
+import { fitPageWithControls, fitWidthZoom, MIN_ZOOM, MAX_ZOOM } from './pageFit';
 import {
   MessageSquare,
   Moon,
@@ -39,12 +45,14 @@ import {
   ChevronUp,
   ChevronDown,
   Maximize,
+  MoveHorizontal,
   Settings2,
   Shapes,
   Sigma,
   PanelLeftClose,
   PanelLeft,
   Save,
+  HardDrive,
   CircleHelp,
   X,
   FilePlus2,
@@ -57,7 +65,10 @@ import {
   Type,
 } from 'lucide-react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import PdfSurface, { type PenDiagnostic } from './PdfSurface';
+import PdfSurface from './PdfSurface';
+import PdfPrefetch from './PdfPrefetchController';
+import { setPdfViewCacheKey } from './pdfRenderCache';
+import { PenStatus, PenDiagnosticCard, reportPenDiagnostic } from './penDiagnostic';
 import {
   blankPage,
   newNotebook,
@@ -67,7 +78,14 @@ import {
   type Page,
   type Tool,
 } from './model';
-import { exportPdf, importPdf, loadPdf, SignedPdfExportError, type PdfExportProgress } from './pdf';
+import {
+  destroyPdf,
+  exportPdf,
+  importPdf,
+  loadPdf,
+  SignedPdfExportError,
+  type PdfExportProgress,
+} from './pdf';
 import { decodeProject, download, encodeProject } from './storage';
 import {
   bootstrapWorkspace,
@@ -80,12 +98,19 @@ import {
   type WorkspaceView,
 } from './workspaceStore';
 import PageList from './PageList';
+import PageJump from './PageJump';
+import SidebarResizer from './SidebarResizer';
+import { NavigationContext, useDocumentNavigation } from './DocumentNavigator';
+import { duplicateNotebookPage } from './duplicatePage';
+import { historyTarget, historyViewportIndex } from './historyNavigation';
 import InkColors, { savedInkColor } from './InkColors';
 import FullscreenButton from './FullscreenButton';
 import TouchKeyboard from './TouchKeyboard';
 import RegionCapture from './RegionCapture';
+const BitmapOcrDialog = lazy(() => import('./BitmapOcrDialog'));
 import { imageFile, isImageFile, type ImportedImage } from './svgImport';
 import { objectsFromClipboard, placeClipboardObjects } from './objectClipboard';
+import { drawingTool, inkFromClipboard, inkGesture, placeInk, selectInk } from './inkSelection';
 import { appendPageImages } from './pageLayers';
 
 import type { PdfDropChoice } from './PdfDropDialog';
@@ -93,6 +118,7 @@ const PdfDropDialog = lazy(() => import('./PdfDropDialog'));
 const TextBoxDialog = lazy(() => import('./TextBoxDialog'));
 import { capturePage, type PageRegion } from './capturePage';
 const OcrDialog = lazy(() => import('./OcrDialog'));
+const CapturePreview = lazy(() => import('./CapturePreview'));
 const ModelManager = lazy(() => import('./ModelManager'));
 const CacheManager = lazy(() => import('./CacheManager'));
 const TaskCenter = lazy(() => import('./TaskCenter'));
@@ -106,6 +132,7 @@ import { useWritingHand, setWritingHand } from './inputPreferences';
 import type { WritingHand } from './selectionPlacement';
 import { inkTools as tools } from './inkTools';
 import PenToolWheel from './PenToolWheel';
+import { usePenInteractionTracking, activatePenTarget, penInteractionPage } from './penInteraction';
 const SketchDialog = lazy(() => import('./SketchDialog')),
   FormulaDialog = lazy(() => import('./FormulaDialog'));
 type DropAnchor = { pageId: string; x?: number; y?: number };
@@ -131,6 +158,7 @@ export default function App() {
   const locale = useLocale();
   const writingHand = useWritingHand();
   const appearance = useAppearance();
+  const [blankPaper, setBlankPaper] = useState(loadBlankPaper);
   const [notebook, setNotebook] = useState<Notebook>(newNotebook),
     [pdf, setPdf] = useState<PDFDocumentProxy | null>(null),
     [index, setIndex] = useState(0);
@@ -181,6 +209,7 @@ export default function App() {
     setIndex(next);
   }, []);
   const fitActive = useRef(false);
+  const fitMode = useRef<'page' | 'width'>('page');
   const setZoom = useCallback((value: SetStateAction<number>) => {
     fitActive.current = false;
     setZoomState(value);
@@ -199,8 +228,11 @@ export default function App() {
   const [focusObjectId, setFocusObjectId] = useState<string | string[] | null>(null);
   const [capturing, setCapturing] = useState(false),
     [ocrImage, setOcrImage] = useState<string | null>(null);
+  const [recognizingCapture, setRecognizingCapture] = useState(false);
+  const [bitmapOcrOpen, setBitmapOcrOpen] = useState(false);
   const capture = async (pageId: string | null, region: PageRegion) => {
     setCapturing(false);
+    setRecognizingCapture(false);
     setBusy(true);
     try {
       const selected = pageId ? notebook.pages.find((p) => p.id === pageId) : page;
@@ -232,6 +264,14 @@ export default function App() {
     [toolbarCollapsed, setToolbarCollapsed] = useState(() =>
       savedChrome('surfacetab.toolbarCollapsed'),
     );
+  const [compactWhenCollapsed, setCompactWhenCollapsed] = useState(() =>
+    savedChrome('tixtab.compactWhenCollapsed'),
+  );
+  useEffect(() => {
+    try {
+      localStorage.setItem('tixtab.compactWhenCollapsed', String(compactWhenCollapsed));
+    } catch {}
+  }, [compactWhenCollapsed]);
   useEffect(() => {
     try {
       localStorage.setItem('surfacetab.headerCollapsed', String(headerCollapsed));
@@ -287,12 +327,6 @@ export default function App() {
     window.addEventListener('keydown', cancel, true);
     return () => window.removeEventListener('keydown', cancel, true);
   }, [!!exportProgress]);
-  const [diagnostic, setDiagnostic] = useState<PenDiagnostic>({
-    type: tr('\u7B49\u5F85\u7B14\u8F93\u5165'),
-    pressure: 0,
-    eraser: false,
-    samples: 0,
-  });
   const history = useRef<Notebook[]>([]),
     future = useRef<Notebook[]>([]),
     file = useRef<HTMLInputElement>(null),
@@ -303,6 +337,48 @@ export default function App() {
   current.current = notebook;
   pdfRef.current = pdf;
   const page = notebook.pages[Math.min(index, notebook.pages.length - 1)];
+  const currentPageId = useRef(page.id);
+  currentPageId.current = page.id;
+  usePenInteractionTracking(
+    currentPageId,
+    (event, pageId, signal) => {
+      lastBarrel.current = performance.now();
+      const documentId = activeRef.current;
+      const paper = (event.target as Element).closest<HTMLElement>('.paper,.reading-paper');
+      const targetPage = current.current.pages.find((p) => p.id === pageId);
+      if (paper && targetPage) {
+        const rect = paper.getBoundingClientRect();
+        pasteAnchor.current = {
+          documentId,
+          pageId,
+          x: ((event.clientX - rect.left) / rect.width) * targetPage.width,
+          y: ((event.clientY - rect.top) / rect.height) * targetPage.height,
+        };
+      }
+      void activatePenTarget(pageId, event.clientX, event.clientY, signal).then((activated) => {
+        if (signal.aborted || documentId !== activeRef.current) return;
+        if (activated) {
+          setPenWheel(null);
+          return;
+        }
+        if (document.querySelector('[aria-modal="true"]')) return;
+        setSelection(null);
+        const selection = window.getSelection();
+        const text =
+          !!selection?.toString().trim() &&
+          !!selection.anchorNode?.parentElement?.closest('.textLayer');
+        setPenWheel({ x: event.clientX, y: event.clientY, text });
+      });
+    },
+    {
+      enabled: drawingTool(tool),
+      handle: (phase, event, pageId) => {
+        setPenWheel(null);
+        if (phase === 'start') setSelection(null);
+        inkGesture(pageId, phase, event.clientX, event.clientY);
+      },
+    },
+  );
   const insertionPage =
     viewMode === 'dual' &&
     pasteAnchor.current?.documentId === activeId &&
@@ -360,7 +436,7 @@ export default function App() {
           restoredTabs.push({ id: meta.id, name: n.name });
         const doc = n.source ? await loadPdf(n.source) : null;
         if (dead) {
-          void doc?.destroy();
+          void destroyPdf(doc);
           return;
         }
         setDocumentTabs(restoredTabs);
@@ -398,14 +474,14 @@ export default function App() {
     void (source ? loadPdf(source) : Promise.resolve(null))
       .then((document) => {
         if (dead) {
-          void document?.destroy();
+          void destroyPdf(document);
           return;
         }
         const old = pdfRef.current;
         renderedSource.current = source;
         pdfRef.current = document;
         setPdf(document);
-        if (old !== document) void old?.destroy();
+        if (old !== document) void destroyPdf(old);
       })
       .catch(() => {
         if (!dead) notify(tr('无法加载 PDF 页面，请重新打开文档。'));
@@ -417,26 +493,41 @@ export default function App() {
   const persist = useCallback((n: Notebook, id = activeRef.current, view = viewRef.current) => {
     if (!id)
       return Promise.reject(new Error(tr('\u5DE5\u4F5C\u7A7A\u95F4\u5C1A\u672A\u5C31\u7EEA')));
-    saveQueue.current = saveQueue.current
-      .catch(() => {})
-      .then(() => saveWorkspaceDocument(id, n, view))
-      .then(() => {});
+    saveQueue.current = trackPerformance('workspace-save-queue', () =>
+      saveQueue.current
+        .catch(() => {})
+        .then(() => saveWorkspaceDocument(id, n, view))
+        .then(() => {}),
+    );
     return saveQueue.current;
   }, []);
+  const scheduledNotebook = useRef<Notebook | null>(null),
+    unsavedContent = useRef(false);
   useEffect(() => {
     if (!ready || !activeId || busy) return;
-    setSaveStatus(tr('\u4FDD\u5B58\u4E2D'));
-    const t = setTimeout(() => {
-      if (operation.current) return;
-      void persist(notebook, activeId, { index, zoom, mode: viewMode })
-        .then(() => setSaveStatus(tr('\u5DF2\u81EA\u52A8\u4FDD\u5B58')))
-        .catch(() =>
-          setSaveStatus(
-            tr('\u81EA\u52A8\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u4FDD\u5B58\u5DE5\u7A0B'),
-          ),
-        );
-    }, 450);
-    return () => clearTimeout(t);
+    // Turning pages or zooming only moves the saved reading position. Let those
+    // settle longer and leave the status alone, so reading does not write to disk
+    // and re-render the window on every step. Hiding the window still saves at once.
+    if (scheduledNotebook.current !== notebook) {
+      scheduledNotebook.current = notebook;
+      unsavedContent.current = true;
+      setSaveStatus(tr('\u4FDD\u5B58\u4E2D'));
+    }
+    return performanceDelay(
+      'save-debounce',
+      () => {
+        if (operation.current) return;
+        unsavedContent.current = false;
+        void persist(notebook, activeId, { index, zoom, mode: viewMode })
+          .then(() => setSaveStatus(tr('\u5DF2\u81EA\u52A8\u4FDD\u5B58')))
+          .catch(() =>
+            setSaveStatus(
+              tr('\u81EA\u52A8\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u4FDD\u5B58\u5DE5\u7A0B'),
+            ),
+          );
+      },
+      unsavedContent.current ? 450 : 2000,
+    );
   }, [notebook, ready, activeId, index, zoom, viewMode, busy, persist]);
   useEffect(() => {
     const hidden = () => {
@@ -448,7 +539,7 @@ export default function App() {
   }, [ready, persist]);
   useEffect(
     () => () => {
-      void pdfRef.current?.destroy();
+      void destroyPdf(pdfRef.current);
     },
     [],
   );
@@ -458,6 +549,20 @@ export default function App() {
     current.current = n;
     setNotebook(n);
   }, []);
+  const selectNavigationPage = useCallback((next: number) => {
+    readingObserved.current = false;
+    setIndex(next);
+    setResetView((v) => v + 1);
+  }, []);
+  const navigation = useDocumentNavigation({
+    notebook,
+    pdf,
+    index,
+    documentId: activeId,
+    commit,
+    onSelect: selectNavigationPage,
+    notify,
+  });
   const updatePage = useCallback(
     (p: Page) =>
       commit({
@@ -467,27 +572,39 @@ export default function App() {
     [commit],
   );
   const undo = () => {
+    const activePageId = currentPageId.current;
     const prev = history.current.pop();
     if (prev) {
+      const target = historyViewportIndex(
+        prev,
+        historyTarget(current.current, prev, activePageId),
+        activePageId,
+        viewRef.current.mode,
+      );
       future.current.push(current.current);
       current.current = prev;
       setNotebook(prev);
-      setIndex((i) => {
-        const active = prev.pages.findIndex((p) => p.id === page.id);
-        return active >= 0 ? active : Math.min(i, prev.pages.length - 1);
-      });
+      readingObserved.current = false;
+      setIndex(target);
+      if (prev.pages[target].id !== activePageId) setResetView((v) => v + 1);
     }
   };
   const redo = () => {
+    const activePageId = currentPageId.current;
     const next = future.current.pop();
     if (next) {
+      const target = historyViewportIndex(
+        next,
+        historyTarget(current.current, next, activePageId),
+        activePageId,
+        viewRef.current.mode,
+      );
       history.current.push(current.current);
       current.current = next;
       setNotebook(next);
-      setIndex((i) => {
-        const active = next.pages.findIndex((p) => p.id === page.id);
-        return active >= 0 ? active : Math.min(i, next.pages.length - 1);
-      });
+      readingObserved.current = false;
+      setIndex(target);
+      if (next.pages[target].id !== activePageId) setResetView((v) => v + 1);
     }
   };
   const measurePageViewport = useCallback(() => {
@@ -509,22 +626,29 @@ export default function App() {
     }
     return { el, width: el.clientWidth, height: el.clientHeight, controls };
   }, []);
-  const fit = useCallback(() => {
-    const viewport = measurePageViewport();
-    if (!viewport) return;
-    fitActive.current = true;
-    const result = fitPageWithControls(
-      notebook.pages,
-      index,
-      viewMode,
-      viewport.width,
-      viewport.height,
-      viewport.controls,
-    );
-    viewport.el.style.setProperty('--page-controls-inset', `${result.inset}px`);
-    setZoomState(result.zoom);
-    setResetView((v) => v + 1);
-  }, [viewMode, notebook.pages, index, measurePageViewport]);
+  const fit = useCallback(
+    (mode: 'page' | 'width' = fitMode.current) => {
+      const viewport = measurePageViewport();
+      if (!viewport) return;
+      fitActive.current = true;
+      fitMode.current = mode;
+      const result =
+        mode === 'width'
+          ? { zoom: fitWidthZoom(notebook.pages, index, viewMode, viewport.width), inset: 0 }
+          : fitPageWithControls(
+              notebook.pages,
+              index,
+              viewMode,
+              viewport.width,
+              viewport.height,
+              viewport.controls,
+            );
+      viewport.el.style.setProperty('--page-controls-inset', `${result.inset}px`);
+      setZoomState(result.zoom);
+      setResetView((v) => v + 1);
+    },
+    [viewMode, notebook.pages, index, measurePageViewport],
+  );
   useLayoutEffect(() => {
     if (readingObserved.current) return;
     if (!ready) return;
@@ -535,6 +659,13 @@ export default function App() {
     fit();
   }, [sidebar, ready, pdf, viewMode, page.width, page.height]);
   const fitRef = useRef(fit);
+  useLayoutEffect(() => {
+    if (pdf)
+      setPdfViewCacheKey(
+        pdf,
+        `${viewMode}:${zoom.toFixed(5)}:${appearance.mode}:${appearance.quality}:${appearance.battery}`,
+      );
+  }, [pdf, zoom, viewMode, appearance.mode, appearance.quality, appearance.battery]);
   fitRef.current = fit;
   useLayoutEffect(() => {
     if (!ready) return;
@@ -555,7 +686,15 @@ export default function App() {
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [ready, bottomCollapsed, headerCollapsed, toolbarCollapsed, chatOpen, measurePageViewport]);
+  }, [
+    ready,
+    bottomCollapsed,
+    headerCollapsed,
+    toolbarCollapsed,
+    compactWhenCollapsed,
+    chatOpen,
+    measurePageViewport,
+  ]);
   useLayoutEffect(() => {
     if (readingObserved.current) {
       readingObserved.current = false;
@@ -640,6 +779,7 @@ export default function App() {
         (e.target as HTMLElement).closest('input, textarea, select, [contenteditable="true"]') ||
         dialog ||
         ocrImage ||
+        bitmapOcrOpen ||
         workspaceOpen ||
         zoteroOpen ||
         pendingDrop ||
@@ -652,6 +792,12 @@ export default function App() {
         setCapturing(true);
       }
       if (e.ctrlKey || e.metaKey) {
+        if (e.key.toLowerCase() === 'f') {
+          e.preventDefault();
+          setSidebar(true);
+          navigation.setMode('search');
+          return;
+        }
         if (e.key.toLowerCase() === 'z') {
           e.preventDefault();
           e.shiftKey ? redo() : undo();
@@ -679,7 +825,7 @@ export default function App() {
     };
     window.addEventListener('keydown', keydown);
     return () => window.removeEventListener('keydown', keydown);
-  }, [dialog, viewMode, ocrImage, workspaceOpen, zoteroOpen, pendingDrop, busy]);
+  }, [dialog, viewMode, ocrImage, bitmapOcrOpen, workspaceOpen, zoteroOpen, pendingDrop, busy]);
   const activate = (
     id: string,
     next: Notebook,
@@ -707,9 +853,10 @@ export default function App() {
     setEditingId(null);
     setCapturing(false);
     setOcrImage(null);
+    setBitmapOcrOpen(false);
     setDialog(null);
     setResetView((v) => v + 1);
-    if (old && old !== doc) void old.destroy();
+    if (old && old !== doc) void destroyPdf(old);
   };
   const documentOperation = async (action: () => Promise<void>) => {
     if (!ready || operation.current || busyRef.current) return;
@@ -734,7 +881,7 @@ export default function App() {
       await persist(n, id, meta.view);
       activate(id, n, doc, meta.view);
     } catch (e) {
-      void doc?.destroy();
+      void destroyPdf(doc);
       throw e;
     }
   };
@@ -840,7 +987,7 @@ export default function App() {
           starterId = null;
           doc = null;
         } catch (e) {
-          void doc?.destroy();
+          void destroyPdf(doc);
           failures.push(`${f.name}: ${e instanceof Error ? e.message : e}`);
         }
       }
@@ -870,7 +1017,7 @@ export default function App() {
         await persist(next, id, defaultView);
         activate(id, next, imported.pdf);
       } catch (e) {
-        void imported.pdf.destroy();
+        void destroyPdf(imported.pdf);
         throw e;
       }
     });
@@ -988,11 +1135,11 @@ export default function App() {
             ],
           });
           setIndex(at + 1);
-          void old?.destroy();
+          void destroyPdf(old);
           await droppedImages(request.files, { pageId: inserted[0].id });
           notify(tr('已插入 {0} 页 PDF', inserted.length));
         } catch (error) {
-          if (pdfRef.current !== document) void document.destroy();
+          if (pdfRef.current !== document) void destroyPdf(document);
           throw error;
         }
       });
@@ -1011,13 +1158,15 @@ export default function App() {
         workspaceOpen ||
         zoteroOpen ||
         ocrImage ||
+        bitmapOcrOpen ||
         target?.closest('input,textarea,select,[contenteditable="true"],[role="textbox"]')
       )
         return;
       const files = Array.from(event.clipboardData?.files || []).filter(isImageFile);
       const text = event.clipboardData?.getData('text/plain') || '';
       const objects = event.clipboardData ? objectsFromClipboard(event.clipboardData) : null;
-      if (!objects && !files.length && !text.trim()) return;
+      const ink = event.clipboardData ? inkFromClipboard(event.clipboardData) : null;
+      if (!objects && !ink && !files.length && !text.trim()) return;
       event.preventDefault();
       const page = current.current.pages[viewRef.current.index] || current.current.pages[0];
       const anchorVisible =
@@ -1039,7 +1188,32 @@ export default function App() {
       setSelection(null);
       reportOperation(() =>
         documentOperation(async () => {
-          if (objects) {
+          if (ink) {
+            const notebook = current.current;
+            const at = notebook.pages.findIndex((p) => p.id === anchor.pageId);
+            if (at < 0) throw Error(tr('目标页面已不存在。'));
+            const page = notebook.pages[at];
+            const strokes = placeInk(ink, page, anchor);
+            commit({
+              ...notebook,
+              pages: notebook.pages.map((p) =>
+                p.id === page.id ? { ...p, strokes: [...p.strokes, ...strokes] } : p,
+              ),
+            });
+            if (
+              viewRef.current.mode !== 'dual' ||
+              at < viewRef.current.index ||
+              at > viewRef.current.index + 1
+            )
+              setIndex(at);
+            if (!drawingTool(tool)) setTool('pen');
+            requestAnimationFrame(() =>
+              selectInk(
+                page.id,
+                strokes.map((s) => s.id),
+              ),
+            );
+          } else if (objects) {
             const notebook = current.current;
             const at = notebook.pages.findIndex((p) => p.id === anchor.pageId);
             if (at < 0) throw Error(tr('目标页面已不存在。'));
@@ -1076,7 +1250,7 @@ export default function App() {
     };
     window.addEventListener('paste', paste);
     return () => window.removeEventListener('paste', paste);
-  }, [ready, dialog, pendingDrop, workspaceOpen, zoteroOpen, ocrImage]);
+  }, [ready, dialog, pendingDrop, workspaceOpen, zoteroOpen, ocrImage, bitmapOcrOpen, tool]);
   useEffect(() => {
     let depth = 0;
     const isFiles = (e: DragEvent) => e.dataTransfer?.types.includes('Files');
@@ -1154,7 +1328,7 @@ export default function App() {
   }, [activeId, notebook.name]);
   const addPage = () => {
     const n = current.current,
-      p = blankPage(page.width, page.height);
+      p = { ...blankPage(page.width, page.height), paper: blankPaper };
     commit({ ...n, pages: [...n.pages.slice(0, index + 1), p, ...n.pages.slice(index + 1)] });
     setIndex(index + 1);
   };
@@ -1167,6 +1341,16 @@ export default function App() {
     commit({ ...current.current, pages });
     setIndex(pages.findIndex((p) => p.id === activeId));
   };
+  const duplicatePage = (at: number) =>
+    reportOperation(() =>
+      documentOperation(async () => {
+        const before = current.current;
+        const next = await duplicateNotebookPage(before, at);
+        if (current.current !== before) throw new Error(tr('文档已改变，请重试复制页面'));
+        commit(next);
+        setIndex(at + 1);
+      }),
+    );
   const insertImage = (
     data: string,
     w: number,
@@ -1322,8 +1506,11 @@ export default function App() {
           <Plus size={16} />
         </button>
         <div />
-        <button title={tr('适合页面')} aria-label={tr('适合页面')} onClick={fit}>
+        <button title={tr('适合页面')} aria-label={tr('适合页面')} onClick={() => fit('page')}>
           <Maximize size={16} />
+        </button>
+        <button title={tr('适合宽度')} aria-label={tr('适合宽度')} onClick={() => fit('width')}>
+          <MoveHorizontal size={16} />
         </button>
       </div>
       <div className="page-navigation">
@@ -1345,9 +1532,12 @@ export default function App() {
             <ChevronLeft size={17} />
           </button>
         )}
-        <span>
-          {index + 1} <i>/ {notebook.pages.length}</i>
-        </span>
+        <PageJump
+          key={activeId}
+          index={index}
+          total={notebook.pages.length}
+          onJump={(at) => navigation.go(notebook.pages[at].id)}
+        />
         {viewMode === 'dual' && (
           <button
             aria-label={tr('向后移动一页')}
@@ -1396,1000 +1586,1091 @@ export default function App() {
     </div>
   );
   return (
-    <div
-      className={`app-shell ${headerCollapsed && toolbarCollapsed && bottomCollapsed ? 'chrome-minimal' : ''}`}
-      onPointerDownCapture={(event) => {
-        const element = (event.target as HTMLElement).closest<HTMLElement>('.paper,.reading-paper');
-        if (element) {
-          const id = element.closest<HTMLElement>('[data-page-id]')?.dataset.pageId;
-          const p =
-            current.current.pages.find((p) => p.id === id) ||
-            current.current.pages[viewRef.current.index];
-          const rect = element.getBoundingClientRect();
-          if (p)
-            pasteAnchor.current = {
-              documentId: activeRef.current,
-              pageId: p.id,
-              x: ((event.clientX - rect.left) / rect.width) * p.width,
-              y: ((event.clientY - rect.top) / rect.height) * p.height,
-            };
-        }
-        if (
-          event.pointerType !== 'pen' ||
-          !(event.button === 2 || event.buttons & 2) ||
-          !(event.target as HTMLElement).closest('.canvas-container')
-        )
-          return;
-        event.preventDefault();
-        event.stopPropagation();
-        lastBarrel.current = performance.now();
-        setSelection(null);
-        const selection = window.getSelection();
-        const text =
-          !!selection?.toString().trim() &&
-          !!selection.anchorNode?.parentElement?.closest('.textLayer');
-        setPenWheel({ x: event.clientX, y: event.clientY, text });
-      }}
-      onContextMenuCapture={(event) => {
-        if (
-          (penWheel || performance.now() - lastBarrel.current < 1000) &&
-          (event.target as HTMLElement).closest('.canvas-container')
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-      }}
-    >
-      {penWheel && (
-        <PenToolWheel
-          x={penWheel.x}
-          y={penWheel.y}
-          tool={tool}
-          onClose={() => setPenWheel(null)}
-          onSelect={(id) => {
-            setTool(id);
-            if (id === 'highlighter') setSize(18);
-            else if (size >= 10) setSize(2.8);
-            setPenWheel(null);
-          }}
-          onText={
-            penWheel.text
-              ? () => {
-                  selectedText(penWheel.x, penWheel.y);
-                  setPenWheel(null);
-                }
-              : undefined
+    <NavigationContext.Provider value={navigation.value}>
+      <div
+        className={`app-shell ${compactWhenCollapsed && headerCollapsed && toolbarCollapsed && bottomCollapsed ? 'chrome-minimal' : ''}`}
+        onPointerDownCapture={(event) => {
+          const element = (event.target as HTMLElement).closest<HTMLElement>(
+            '.paper,.reading-paper',
+          );
+          if (element) {
+            const id = element.closest<HTMLElement>('[data-page-id]')?.dataset.pageId;
+            const p =
+              current.current.pages.find((p) => p.id === id) ||
+              current.current.pages[viewRef.current.index];
+            const rect = element.getBoundingClientRect();
+            if (p)
+              pasteAnchor.current = {
+                documentId: activeRef.current,
+                pageId: p.id,
+                x: ((event.clientX - rect.left) / rect.width) * p.width,
+                y: ((event.clientY - rect.top) / rect.height) * p.height,
+              };
           }
-        />
-      )}
-      <TouchKeyboard chatOpen={chatOpen} onModels={() => setDialog('models')} />
-      {pendingDrop && (
-        <Suspense fallback={null}>
-          <PdfDropDialog
-            files={pendingDrop.pdfs}
-            onClose={() => setPendingDrop(null)}
-            onConfirm={confirmPdfDrop}
-          />
-        </Suspense>
-      )}
-      {dialog === 'signed-export' && (
-        <div className="modal-scrim">
-          <section
-            className="modal small-modal signed-export"
-            role="dialog"
-            aria-modal="true"
-            aria-label={tr('导出含签名的修改副本')}
-          >
-            <header>
-              <h2>{tr('导出含签名的修改副本')}</h2>
-              <button
-                className="icon-button"
-                aria-label={tr('关闭')}
-                disabled={busy}
-                onClick={() => setDialog(null)}
-              >
-                <X size={20} />
-              </button>
-            </header>
-            <div className="small-modal-body">
-              <p>
-                {tr(
-                  '此 PDF 含数字签名。修改页面或添加标注后重新保存，签名将不再有效。原文件和工程内的源 PDF 保持不变。',
-                )}
-              </p>
-              <p>{tr('未修改的文档会直接导出原始文件；修改副本需要重新签名。')}</p>
-              <div className="row">
-                <button disabled={busy} onClick={() => setDialog(null)}>
-                  {tr('取消')}
-                </button>
-                <button
-                  className="primary"
-                  disabled={busy}
-                  onClick={() => void exportCurrentPdf(true)}
-                >
-                  {tr('导出修改副本')}
-                </button>
-              </div>
-            </div>
-          </section>
-        </div>
-      )}
-      <input
-        type="file"
-        ref={file}
-        hidden
-        multiple
-        accept=".pdf,.tixtab"
-        onChange={(e) => {
-          const files = Array.from(e.target.files || []);
-          e.target.value = '';
-          if (files.length) reportOperation(() => openFiles(files));
         }}
-      />
-      <header className={`topbar ${headerCollapsed ? 'collapsed' : ''}`}>
-        <span className="collapsed-title">{notebook.name}</span>
-        <div className="brand">
-          <span className="brand-mark">
-            <BookOpen size={23} />
-          </span>
-          <span>
-            Tix<span className="brand-light">Tab</span>
-          </span>
-          <span className="version">PREVIEW</span>
-        </div>
-        <div className="document-title">
-          <span className="document-dot" />
-          <input
-            aria-label={tr('文档名称')}
-            value={notebook.name}
-            onChange={(e) =>
-              setNotebook((n) => ({ ...n, name: e.target.value || tr('未命名笔记') }))
+        onContextMenuCapture={(event) => {
+          if (
+            (penWheel || penInteractionPage() || performance.now() - lastBarrel.current < 1000) &&
+            (event.target as HTMLElement).closest('.canvas-container')
+          ) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }}
+      >
+        {penWheel && (
+          <PenToolWheel
+            x={penWheel.x}
+            y={penWheel.y}
+            tool={tool}
+            onClose={() => setPenWheel(null)}
+            onSelect={(id) => {
+              setTool(id);
+              if (id === 'highlighter') setSize(18);
+              else if (size >= 10) setSize(2.8);
+              setPenWheel(null);
+            }}
+            onText={
+              penWheel.text
+                ? () => {
+                    selectedText(penWheel.x, penWheel.y);
+                    setPenWheel(null);
+                  }
+                : undefined
             }
           />
-          <span className="save-state">
-            <Check size={12} />
-            {tr(saveStatus)}
-          </span>
-        </div>
-        <div className="top-actions">
-          <FullscreenButton />
-          <button onClick={() => file.current?.click()} disabled={busy || !ready}>
-            <FileUp size={17} />
-            {tr('打开')}
-          </button>
-          <button
-            className="icon-button"
-            title={tr('保存可编辑工程 (Ctrl+S)')}
-            aria-label={tr('保存工程')}
-            onClick={saveProject}
-          >
-            <Save size={18} />
-          </button>
-          <button
-            className="primary"
-            disabled={busy || !ready}
-            onClick={() => void exportCurrentPdf()}
-          >
-            <Download size={16} />
-            {tr('导出 PDF')}
-          </button>
-        </div>
-        <button
-          className="icon-button chrome-toggle"
-          aria-label={headerCollapsed ? tr('展开顶部区域') : tr('收起顶部区域')}
-          title={headerCollapsed ? tr('展开顶部区域') : tr('收起顶部区域')}
-          aria-expanded={!headerCollapsed}
-          onClick={() => setHeaderCollapsed((v) => !v)}
-        >
-          {headerCollapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}
-        </button>
-      </header>
-      <div className="document-tabs" role="tablist" aria-label={tr('文档标签页')}>
-        {tabs.map((tab) => (
-          <div className={`document-tab ${tab.id === activeId ? 'active' : ''}`} key={tab.id}>
-            <button
-              role="tab"
-              aria-selected={tab.id === activeId}
-              disabled={busy || !ready}
-              title={tab.name}
-              onClick={() => reportOperation(() => switchDocument(tab.id))}
-              onKeyDown={(e) => {
-                if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
-                  e.preventDefault();
-                  const at = tabs.findIndex((t) => t.id === tab.id),
-                    target =
-                      e.key === 'Home'
-                        ? 0
-                        : e.key === 'End'
-                          ? tabs.length - 1
-                          : (at + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-                  const buttons = e.currentTarget
-                    .closest('[role=tablist]')!
-                    .querySelectorAll<HTMLButtonElement>('[role=tab]');
-                  buttons[target]?.focus();
-                  reportOperation(() => switchDocument(tabs[target].id));
-                }
-              }}
-            >
-              <File size={14} />
-              <span>{tab.name}</span>
-            </button>
-            <button
-              className="close-tab"
-              aria-label={tr('关闭标签 {0}', tab.name)}
-              title={tr('关闭标签，保留文档')}
-              disabled={busy || !ready}
-              onClick={() => reportOperation(() => closeTab(tab.id))}
-            >
-              <X size={14} />
-            </button>
-          </div>
-        ))}
-        <button
-          className="new-document-tab"
-          disabled={busy || !ready}
-          aria-label={tr('打开 Zotero 资料库')}
-          title={tr('打开 Zotero 资料库')}
-          onClick={() => setZoteroOpen(true)}
-        >
-          <BookOpen size={16} />
-          <span>Zotero</span>
-        </button>
-        <button
-          className="new-document-tab"
-          disabled={busy || !ready}
-          aria-label={tr('新建文档标签')}
-          onClick={() => reportOperation(() => createDocument(null))}
-        >
-          <Plus size={17} />
-        </button>
-      </div>
-      {dragging && (
-        <div className="pdf-drop-overlay">
-          <FileUp size={36} />
-          <strong>{tr('松开以导入文档')}</strong>
-          <span>{tr('PDF 可新开标签或插入页面；图片和 SVG 插入为对象')}</span>
-        </div>
-      )}
-      <div className="workspace">
-        {sidebar && (
-          <aside className="sidebar">
-            <div className="sidebar-heading">
-              <span>{tr('页面')}</span>
-              <span className="count">{notebook.pages.length}</span>
-              <button
-                className="icon-button"
-                aria-label={tr('收起页面栏')}
-                onClick={() => setSidebar(false)}
-              >
-                <PanelLeftClose size={17} />
-              </button>
-            </div>
-            <PageList
-              pages={notebook.pages}
-              pdf={pdf}
-              index={index}
-              onSelect={setIndex}
-              onMove={movePage}
-              onDelete={(i) => {
-                setIndex(i);
-                setDialog('delete');
-              }}
-            />
-            <button className="add-page" onClick={addPage}>
-              <Plus size={16} />
-              {tr('插入空白页')}
-            </button>
-            <div className="sidebar-bottom">
-              <span className="local-dot" />
-              {tr('本地工作空间')}
-              <span>{tr('你的笔记，留在设备上')}</span>
-            </div>
-          </aside>
         )}
-        <main className="main-workspace">
-          <div className={`workspace-heading${toolbarCollapsed ? ' tools-inline' : ''}`}>
-            <div className="row workspace-path">
-              {!sidebar && (
-                <button
-                  className="icon-button"
-                  title={tr('展开页面栏')}
-                  aria-label={tr('展开页面栏')}
-                  onClick={() => setSidebar(true)}
-                >
-                  <PanelLeft size={18} />
-                </button>
-              )}
-              <button
-                className="breadcrumb workspace-library-button"
-                aria-label={tr('管理工作空间')}
-                disabled={busy || !ready}
-                onClick={() => {
-                  void persist(current.current)
-                    .then(() => setWorkspaceOpen(true))
-                    .catch(() => notify(tr('保存失败，请先保存工程后再管理工作空间')));
-                }}
-              >
-                {toolbarCollapsed && <BookOpen size={16} />}
-                <span>{tr('工作空间')}</span>
-              </button>
-            </div>
-            {toolbarCollapsed && renderTools(true)}
-            <div className="row workspace-controls">
-              <button
-                className="icon-button"
-                aria-label={tr('打开 ChatGPT 聊天')}
-                title={tr('打开 ChatGPT 聊天')}
-                aria-pressed={chatOpen}
-                onClick={() => {
-                  setChatSelection(null);
-                  setChatOpen((v) => !v);
-                }}
-              >
-                <MessageSquare size={18} />
-              </button>
-              <button
-                className="icon-button toolbar-toggle"
-                aria-label={toolbarCollapsed ? tr('展开工具栏') : tr('收起工具栏')}
-                title={toolbarCollapsed ? tr('展开工具栏') : tr('收起工具栏')}
-                aria-expanded={!toolbarCollapsed}
-                aria-controls="drawing-toolbar"
-                onClick={() => setToolbarCollapsed((v) => !v)}
-              >
-                {toolbarCollapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}
-              </button>
-              <div className="view-switch" role="group" aria-label={tr('页面预览方式')}>
-                <button
-                  className={viewMode === 'single' ? 'active' : ''}
-                  title={tr('单页标注')}
-                  aria-label={tr('单页标注')}
-                  onClick={() => setViewMode('single')}
-                >
-                  <File size={16} />
-                </button>
-                <button
-                  className={viewMode === 'continuous' ? 'active' : ''}
-                  title={tr('连续页面预览')}
-                  aria-label={tr('连续页面预览')}
-                  onClick={() => setViewMode('continuous')}
-                >
-                  <GalleryVerticalEnd size={16} />
-                </button>
-                <button
-                  className={viewMode === 'dual' ? 'active' : ''}
-                  title={tr('双页预览')}
-                  aria-label={tr('双页预览')}
-                  onClick={() => setViewMode('dual')}
-                >
-                  <Columns2 size={16} />
-                </button>
-              </div>
-              {appearance.night && (
-                <button
-                  className="night-original-toggle"
-                  aria-pressed={appearance.original}
-                  aria-label={appearance.original ? tr('恢复夜间颜色') : tr('查看原色')}
-                  title={appearance.original ? tr('恢复夜间颜色') : tr('查看原色')}
-                  onClick={() => setOriginal(!appearance.original)}
-                >
-                  {toolbarCollapsed ? (
-                    <Eye size={16} />
-                  ) : appearance.original ? (
-                    tr('恢复夜间颜色')
-                  ) : (
-                    tr('查看原色')
-                  )}
-                </button>
-              )}
-              <button
-                className={`icon-button night-toggle ${appearance.night ? 'active' : ''}`}
-                aria-label={tr('实验性夜间模式')}
-                title={tr('实验性夜间模式')}
-                aria-pressed={appearance.night}
-                onClick={() => setNight(!appearance.night)}
-              >
-                {appearance.night ? <Sun size={17} /> : <Moon size={17} />}
-              </button>
-              <button
-                className="icon-button"
-                title={tr('设置与笔诊断')}
-                aria-label={tr('设置')}
-                onClick={() => setDialog('settings')}
-              >
-                <Settings2 size={18} />
-              </button>
-            </div>
-          </div>
-          <div id="drawing-toolbar" className="toolbar" hidden={toolbarCollapsed}>
-            {!toolbarCollapsed && renderTools()}
-            <div className="toolbar-divider" />
-            <InkColors color={color} onChange={setColor} />
-            <div className="toolbar-divider" />
-            <label className="size-control">
-              <span style={{ width: Math.min(12, size + 2), height: Math.min(12, size + 2) }} />
-              <input
-                aria-label={tr('笔触粗细')}
-                type="range"
-                min=".6"
-                max={tool === 'highlighter' ? 32 : 12}
-                step=".2"
-                value={size}
-                onChange={(e) => setSize(Number(e.target.value))}
-              />
-              <output>{size.toFixed(1)}</output>
-            </label>
-            <div className="toolbar-divider" />
-            <div className="row history-buttons">
-              <button
-                className="icon-button"
-                title={tr('撤销 (Ctrl+Z)')}
-                aria-label={tr('撤销')}
-                disabled={!history.current.length}
-                onClick={undo}
-              >
-                <Undo2 size={19} />
-              </button>
-              <button
-                className="icon-button"
-                title={tr('重做 (Ctrl+Y)')}
-                aria-label={tr('重做')}
-                disabled={!future.current.length}
-                onClick={redo}
-              >
-                <Redo2 size={19} />
-              </button>
-            </div>
-          </div>
-          <div className="canvas-container">
-            {viewMode === 'single' ? (
-              <PdfSurface
-                page={page}
-                pdf={pdf}
-                tool={tool}
-                color={color}
-                size={size}
-
-                zoom={zoom}
-                resetView={resetView}
-                setZoom={setZoom}
-                onChange={updatePage}
-                onDiagnostic={setDiagnostic}
-                onRender={setRenderStatus}
-                onContext={selectedText}
-                focusObjectId={focusObjectId}
-                onEditObject={(id) => editObject(page, id)}
-              />
-            ) : (
-              <ReadingView
-                pages={notebook.pages}
-                pdf={pdf}
-                mode={viewMode}
-                index={index}
-                tool={tool}
-                zoom={zoom}
-                setZoom={setZoom}
-                resetView={resetView}
-
-                color={color}
-                size={size}
-                onChange={updatePage}
-                onDiagnostic={setDiagnostic}
-                onContext={selectedText}
-                onEditObject={editObject}
-                focusObjectId={focusObjectId}
-                onEdit={editReadingPage}
-                onPageChange={readingPageChanged}
-              />
-            )}
-            {capturing && <RegionCapture onCapture={capture} onClose={() => setCapturing(false)} />}
-            {viewMode === 'single' &&
-              !notebook.source &&
-              page.strokes.length === 0 &&
-              page.images.length === 0 &&
-              index === 0 && (
-                <div className="welcome-note">
-                  <span className="eyebrow">A SPACE FOR YOUR THOUGHTS</span>
-                  <h1>{tr('思考，从这一笔开始。')}</h1>
-                  <p>
-                    {tr('拿起笔，自由书写。')}
-                    <br />
-                    {tr('或打开一份 PDF，让想法落在纸上。')}
-                  </p>
-                  <button onClick={() => file.current?.click()}>
-                    {tr('打开 PDF')}
-                    <MoveUpRight size={15} />
-                  </button>
-                  <span className="welcome-foot">{tr('灵感无需等待，笔记自动保存。')}</span>
-                </div>
-              )}
-            {!bottomCollapsed && bottomControls}
-          </div>
-          <footer className={`statusbar ${bottomCollapsed ? 'tools-collapsed' : ''}`}>
-            <button
-              className="icon-button bottom-tools-toggle"
-              aria-label={tr(bottomCollapsed ? '展开底部工具' : '收起底部工具')}
-              title={tr(bottomCollapsed ? '展开底部工具' : '收起底部工具')}
-              aria-expanded={!bottomCollapsed}
-              onClick={() => setBottomCollapsed((v) => !v)}
-            >
-              {bottomCollapsed ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
-            </button>
-            {bottomCollapsed && (
-              <div className="status-tools" aria-label={tr('底部工具')}>
-                {bottomControls}
-              </div>
-            )}
-            <div className="row pen-status">
-              <span className={`status-dot ${diagnostic.eraser ? 'orange' : ''}`} />
-              <span>
-                {diagnostic.eraser
-                  ? tr('背面笔擦')
-                  : diagnostic.type === 'pen'
-                    ? 'Surface Pen'
-                    : tr('笔输入就绪')}
-              </span>
-              <span className="status-separator" />
-              <span>
-                {tr('压感')}
-                {diagnostic.pressure.toFixed(2)}
-              </span>
-              <span className="pressure-meter">
-                <span style={{ width: `${diagnostic.pressure * 100}%` }} />
-              </span>
-            </div>
-            <div className="row">
-              <span className="sr-only" aria-live="polite">
-                {tr(renderStatus)}
-              </span>
-              <span className="status-separator" />
-              <button
-                className="delete-button"
-                disabled={notebook.pages.length <= 1}
-                onClick={() => setDialog('delete')}
-              >
-                <Trash2 size={13} />
-                {tr('删除当前页')}
-              </button>
-              <button
-                className="icon-button"
-                aria-label={tr('使用帮助')}
-                onClick={() => setDialog('help')}
-              >
-                <CircleHelp size={15} />
-              </button>
-            </div>
-          </footer>
-        </main>
-        {chatOpen && (
+        <TouchKeyboard chatOpen={chatOpen} onModels={() => setDialog('models')} />
+        {pendingDrop && (
           <Suspense fallback={null}>
-            <ChatPanel
-              onModels={() => setDialog('models')}
-              onSvgInsert={(image) => {
-                if (activeRef.current === activeId)
-                  addImages([image], {
-                    pageId:
-                      current.current.pages[viewRef.current.index]?.id ||
-                      current.current.pages[0].id,
-                  });
-              }}
-              key={activeId}
-              documentId={activeId}
-              source={notebook.source}
-              name={notebook.name}
-              pages={notebook.pages}
-              page={page}
-              pdf={pdf}
-              index={index}
-              selection={chatSelection?.documentId === activeId ? chatSelection : null}
-              onClose={() => setChatOpen(false)}
-              onNavigate={(id) => {
-                const at = notebook.pages.findIndex((p) => p.id === id);
-                if (at >= 0) setIndex(at);
-              }}
+            <PdfDropDialog
+              files={pendingDrop.pdfs}
+              onClose={() => setPendingDrop(null)}
+              onConfirm={confirmPdfDrop}
             />
           </Suspense>
         )}
-      </div>
-      {message && (
-        <div className="toast" role="status">
-          {tr(message)}
-          <button
-            className="icon-button"
-            aria-label={tr('关闭提示')}
-            onClick={() => setMessage('')}
-          >
-            <X size={15} />
-          </button>
-        </div>
-      )}
-      {selection && (
-        <SelectionFlyout
-          selection={selection}
-          onAsk={() => {
-            setChatSelection({
-              id: Date.now(),
-              documentId: activeId,
-              text: selection.text,
-              pageId: selection.pageId ?? page.id,
-              pageNumber: selection.pageNumber ?? index + 1,
-            });
-            setChatOpen(true);
-            setSelection(null);
-            window.getSelection()?.removeAllRanges();
-          }}
-          onClose={() => {
-            setSelection(null);
-            window.getSelection()?.removeAllRanges();
-          }}
-        />
-      )}
-      {(busy || !ready) &&
-        (exportProgress ? (
-          <div className="busy-overlay pdf-export-overlay">
+        {dialog === 'signed-export' && (
+          <div className="modal-scrim">
             <section
-              className="modal pdf-export-progress"
+              className="modal small-modal signed-export"
               role="dialog"
               aria-modal="true"
-              aria-label={tr('PDF 导出进度')}
+              aria-label={tr('导出含签名的修改副本')}
             >
-              <h2>{tr('正在导出 PDF')}</h2>
-              <div className="row" role="status">
-                <span className="spinner" />
-                <span>
+              <header>
+                <h2>{tr('导出含签名的修改副本')}</h2>
+                <button
+                  className="icon-button"
+                  aria-label={tr('关闭')}
+                  disabled={busy}
+                  onClick={() => setDialog(null)}
+                >
+                  <X size={20} />
+                </button>
+              </header>
+              <div className="small-modal-body">
+                <p>
                   {tr(
-                    {
-                      preparing: '准备导出数据…',
-                      loading: '读取源 PDF…',
-                      structure: '整理页面与文档结构…',
-                      annotations: '写入标注…',
-                      saving: '保存 PDF…',
-                    }[exportProgress.stage],
+                    '此 PDF 含数字签名。修改页面或添加标注后重新保存，签名将不再有效。原文件和工程内的源 PDF 保持不变。',
                   )}
-                </span>
+                </p>
+                <p>{tr('未修改的文档会直接导出原始文件；修改副本需要重新签名。')}</p>
+                <div className="row">
+                  <button disabled={busy} onClick={() => setDialog(null)}>
+                    {tr('取消')}
+                  </button>
+                  <button
+                    className="primary"
+                    disabled={busy}
+                    onClick={() => void exportCurrentPdf(true)}
+                  >
+                    {tr('导出修改副本')}
+                  </button>
+                </div>
               </div>
-              {exportProgress.stage === 'annotations' && (
-                <>
-                  <progress
-                    aria-label={tr('标注页面进度')}
-                    max={exportProgress.total}
-                    value={exportProgress.completed}
-                  />
-                  <p>{tr('已处理 {0} / {1} 页', exportProgress.completed, exportProgress.total)}</p>
-                </>
-              )}
-              <button onClick={() => exportAbort.current?.abort()}>{tr('取消导出')}</button>
             </section>
           </div>
-        ) : (
-          <div className="busy-overlay">
-            <span className="spinner" />
-            <span>{!ready ? tr('恢复工作空间…') : tr('正在处理文档…')}</span>
+        )}
+        <input
+          type="file"
+          ref={file}
+          hidden
+          multiple
+          accept=".pdf,.tixtab"
+          onChange={(e) => {
+            const files = Array.from(e.target.files || []);
+            e.target.value = '';
+            if (files.length) reportOperation(() => openFiles(files));
+          }}
+        />
+        <header className={`topbar ${headerCollapsed ? 'collapsed' : ''}`}>
+          <span className="collapsed-title">{notebook.name}</span>
+          <div className="brand">
+            <span className="brand-mark">
+              <BookOpen size={23} />
+            </span>
+            <span>
+              Tix<span className="brand-light">Tab</span>
+            </span>
+            <span className="version">PREVIEW</span>
           </div>
-        ))}
-      <Suspense
-        fallback={
-          <div className="busy-overlay">
-            <span className="spinner" />
-            {tr('加载工具…')}
+          <div className="document-title">
+            <span className="document-dot" />
+            <input
+              aria-label={tr('文档名称')}
+              value={notebook.name}
+              onChange={(e) =>
+                setNotebook((n) => ({ ...n, name: e.target.value || tr('未命名笔记') }))
+              }
+            />
+            <span className="save-state">
+              <Check size={12} />
+              {tr(saveStatus)}
+            </span>
           </div>
-        }
-      >
-        {dialog === 'tasks' && <TaskCenter onClose={() => setDialog('settings')} />}
-        {dialog === 'models' && <ModelManager onClose={() => setDialog('settings')} />}
-        {dialog === 'caches' && <CacheManager onClose={() => setDialog('settings')} />}
-        {zoteroOpen && (
-          <ZoteroDialog
-            current={notebook.zotero}
-            onOpen={openZotero}
-            onClose={() => setZoteroOpen(false)}
-          />
-        )}
-        {workspaceOpen && (
-          <WorkspaceManager
-            activeId={activeId}
-            onOpen={switchDocument}
-            onCreate={createDocument}
-            onDelete={removeDocument}
-            onRename={renameDocument}
-            onExport={exportDocument}
-            onImport={() => file.current?.click()}
-            onClose={() => setWorkspaceOpen(false)}
-          />
-        )}
-        {ocrImage && (
-          <OcrDialog
-            image={ocrImage}
-            onClose={() => setOcrImage(null)}
-            onRead={(text) => {
-              setOcrImage(null);
-              setSelection({ text, x: window.innerWidth / 2 - 200, y: 100 });
-            }}
-          />
-        )}
-        {dialog === 'sketch' && (
-          <SketchDialog
-            scene={editingImage ? editingImage.scene : notebook.scene}
-            bitmap={editingImage && !editingImage.scene ? editingImage : undefined}
-            editing={!!editingImage}
-            onClose={(scene) => {
-              if (scene && !editingImage) commit({ ...current.current, scene });
-              setDialog(null);
-              setEditingId(null);
-            }}
-            onInsert={(data, w, h, scene, displayData) =>
-              insertImage(data, w, h, 'sketch', undefined, scene, displayData)
-            }
-          />
-        )}
-        {dialog === 'text' && (
-          <TextBoxDialog
-            initial={editingImage?.textBox}
-            onClose={() => {
-              setDialog(null);
-              setEditingId(null);
-            }}
-            onInsert={(image) => {
-              if (editingImage) {
-                const width = Math.min(
-                    image.width / 2,
-                    editingPage.width * 0.8,
-                    (editingPage.height * 0.8 * image.width) / image.height,
-                  ),
-                  height = (width * image.height) / image.width;
-                updatePage({
-                  ...editingPage,
-                  images: editingPage.images.map((i) =>
-                    i.id === editingImage.id
-                      ? {
-                          ...i,
-                          data: image.data,
-                          displayData: image.displayData,
-                          textBox: image.textBox,
-                          width,
-                          height,
-                          x: Math.max(0, Math.min(editingPage.width - width, i.x)),
-                          y: Math.max(0, Math.min(editingPage.height - height, i.y)),
-                        }
-                      : i,
-                  ),
-                });
-              } else addImages([image], { pageId: editingPage.id });
-              setDialog(null);
-              setEditingId(null);
-              setTool('object');
-            }}
-          />
-        )}
-        {dialog === 'formula' && (
-          <FormulaDialog
-            initialLatex={editingImage?.latex}
-            initialMacros={editingImage?.macros}
-            editing={!!editingImage}
-            onClose={() => {
-              setDialog(null);
-              setEditingId(null);
-            }}
-            onInsert={(data, w, h, latex, macros) =>
-              insertImage(data, w, h, 'formula', latex, undefined, undefined, macros)
-            }
-          />
-        )}
-      </Suspense>
-      {(dialog === 'help' || dialog === 'settings' || dialog === 'delete') && (
-        <div className="modal-scrim">
-          <section
-            className="modal small-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label={
-              dialog === 'settings'
-                ? tr('设置与笔诊断')
-                : dialog === 'delete'
-                  ? tr('删除页面')
-                  : tr('使用帮助')
-            }
+          <div className="top-actions">
+            <FullscreenButton />
+            <button onClick={() => file.current?.click()} disabled={busy || !ready}>
+              <FileUp size={17} />
+              {tr('打开')}
+            </button>
+            <button
+              className="icon-button"
+              title={tr('保存可编辑工程 (Ctrl+S)')}
+              aria-label={tr('保存工程')}
+              onClick={saveProject}
+            >
+              <Save size={18} />
+            </button>
+            <button
+              className="primary"
+              disabled={busy || !ready}
+              onClick={() => void exportCurrentPdf()}
+            >
+              <Download size={16} />
+              {tr('导出 PDF')}
+            </button>
+          </div>
+          <button
+            className="icon-button chrome-toggle"
+            aria-label={headerCollapsed ? tr('展开顶部区域') : tr('收起顶部区域')}
+            title={headerCollapsed ? tr('展开顶部区域') : tr('收起顶部区域')}
+            aria-expanded={!headerCollapsed}
+            onClick={() => setHeaderCollapsed((v) => !v)}
           >
-            <header>
-              <h2>
-                {dialog === 'settings'
-                  ? tr('纸张与笔输入')
-                  : dialog === 'delete'
-                    ? tr('删除这一页？')
-                    : tr('像在纸上一样自然')}
-              </h2>
+            {headerCollapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}
+          </button>
+        </header>
+        <div className="document-tabs" role="tablist" aria-label={tr('文档标签页')}>
+          {tabs.map((tab) => (
+            <div className={`document-tab ${tab.id === activeId ? 'active' : ''}`} key={tab.id}>
               <button
-                className="icon-button"
-                aria-label={tr('关闭')}
-                onClick={() => setDialog(null)}
+                role="tab"
+                aria-selected={tab.id === activeId}
+                disabled={busy || !ready}
+                title={tab.name}
+                onClick={() => reportOperation(() => switchDocument(tab.id))}
+                onKeyDown={(e) => {
+                  if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+                    e.preventDefault();
+                    const at = tabs.findIndex((t) => t.id === tab.id),
+                      target =
+                        e.key === 'Home'
+                          ? 0
+                          : e.key === 'End'
+                            ? tabs.length - 1
+                            : (at + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+                    const buttons = e.currentTarget
+                      .closest('[role=tablist]')!
+                      .querySelectorAll<HTMLButtonElement>('[role=tab]');
+                    buttons[target]?.focus();
+                    reportOperation(() => switchDocument(tabs[target].id));
+                  }
+                }}
               >
-                <X size={20} />
+                <File size={14} />
+                <span>{tab.name}</span>
               </button>
-            </header>
-            <div className="small-modal-body">
-              {dialog === 'settings' ? (
+              <button
+                className="close-tab"
+                aria-label={tr('关闭标签 {0}', tab.name)}
+                title={tr('关闭标签，保留文档')}
+                disabled={busy || !ready}
+                onClick={() => reportOperation(() => closeTab(tab.id))}
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+          <button
+            className="new-document-tab"
+            disabled={busy || !ready}
+            aria-label={tr('打开 Zotero 资料库')}
+            title={tr('打开 Zotero 资料库')}
+            onClick={() => setZoteroOpen(true)}
+          >
+            <BookOpen size={16} />
+            <span>Zotero</span>
+          </button>
+          <button
+            className="new-document-tab"
+            disabled={busy || !ready}
+            aria-label={tr('新建文档标签')}
+            onClick={() => reportOperation(() => createDocument(null))}
+          >
+            <Plus size={17} />
+          </button>
+        </div>
+        {dragging && (
+          <div className="pdf-drop-overlay">
+            <FileUp size={36} />
+            <strong>{tr('松开以导入文档')}</strong>
+            <span>{tr('PDF 可新开标签或插入页面；图片和 SVG 插入为对象')}</span>
+          </div>
+        )}
+        <div className="workspace">
+          {sidebar && (
+            <aside className="sidebar">
+              <SidebarResizer />
+              <div className="sidebar-heading">
+                <span>{tr('页面')}</span>
+                <span className="count">{notebook.pages.length}</span>
+                <button
+                  className="icon-button"
+                  aria-label={tr('收起页面栏')}
+                  onClick={() => setSidebar(false)}
+                >
+                  <PanelLeftClose size={17} />
+                </button>
+              </div>
+              {navigation.header}
+              {navigation.panel}
+              {navigation.mode === 'pages' && (
                 <>
-                  <button
-                    className="zotero-open"
-                    onClick={() => {
-                      setDialog(null);
-                      setZoteroOpen(true);
+                  <PageList
+                    pages={notebook.pages}
+                    pdf={pdf}
+                    index={index}
+                    onSelect={(i) => navigation.go(notebook.pages[i].id)}
+                    onMove={movePage}
+                    onDuplicate={duplicatePage}
+                    onDelete={(i) => {
+                      setIndex(i);
+                      setDialog('delete');
                     }}
-                  >
-                    Zotero
+                  />
+                  <button className="add-page" onClick={addPage}>
+                    <Plus size={16} />
+                    {tr('插入空白页')}
                   </button>
-                  <button className="task-center-open" onClick={() => setDialog('tasks')}>
-                    {tr('任务与后端')}
+                  <button className="add-page" onClick={() => duplicatePage(index)} disabled={busy}>
+                    <FilePlus2 size={16} />
+                    {tr('复制当前页')}
                   </button>
-                  <button className="model-manager-open" onClick={() => setDialog('models')}>
-                    {tr('本地模型管理')}
-                  </button>
-                  <button className="cache-manager-open" onClick={() => setDialog('caches')}>
-                    {tr('磁盘缓存管理')}
-                  </button>
-                  <p className="appearance-note">
-                    TixTab · AGPL-3.0-only ·{' '}
-                    <a href="https://github.com/Pscgylotti/TixTab" target="_blank" rel="noreferrer">
-                      {tr('源码与许可')}
-                    </a>
-                  </p>
-                  <label className="language-setting">
-                    界面语言 / Interface language
-                    <select
-                      aria-label="界面语言 / Interface language"
-                      value={locale}
-                      onChange={(e) => setLocale(e.target.value as Locale)}
-                    >
-                      <option value="zh-CN">简体中文</option>
-                      <option value="en">English</option>
-                    </select>
-                  </label>
-                  <label className="writing-hand-setting">
-                    {tr('书写惯用手')}
-                    <select
-                      aria-label={tr('书写惯用手')}
-                      value={writingHand}
-                      onChange={(e) => setWritingHand(e.target.value as WritingHand)}
-                    >
-                      <option value="right">{tr('右手')}</option>
-                      <option value="left">{tr('左手')}</option>
-                    </select>
-                  </label>
-                  <p className="appearance-note">
-                    {tr('划词浮窗优先放在惯用手另一侧；空间不足时移到选区上方或下方。')}
-                  </p>
-                  <label className="appearance-setting">
-                    <span>
-                      <input
-                        type="checkbox"
-                        checked={appearance.night}
-                        onChange={(e) => setNight(e.target.checked)}
-                      />{' '}
-                      {tr('实验性夜间模式')}
-                    </span>
-                  </label>
-                  <p className="appearance-note">
-                    {tr(
-                      '文字与矢量内容调整为暗底亮色，位图降亮度。移动工具下点击图片角标查看原图；顶部可查看整页原色。复杂裁剪、透明图和图上文字可能不准确，不影响导出与 OCR。',
-                    )}
-                  </p>
-                  <label className="appearance-setting">
-                    {tr('渲染与能耗')}
-                    <select
-                      aria-label={tr('渲染与能耗')}
-                      value={appearance.mode}
-                      onChange={(e) => setPowerMode(e.target.value as PowerMode)}
-                    >
-                      <option value="auto">{tr('自动（电池供电时节能）')}</option>
-                      <option value="eco">{tr('节能优先')}</option>
-                      <option value="quality">{tr('画质优先')}</option>
-                    </select>
-                  </label>
-                  <label className="appearance-setting">
-                    {tr('PDF 渲染清晰度')}
-                    <select
-                      aria-label={tr('PDF 渲染清晰度')}
-                      value={appearance.quality}
-                      onChange={(e) => setRenderQuality(e.target.value as RenderQuality)}
-                    >
-                      <option value="standard">{tr('标准')}</option>
-                      <option value="high">{tr('高清（推荐）')}</option>
-                      <option value="ultra">{tr('超清')}</option>
-                    </select>
-                  </label>
-                  <p className="appearance-note">
-                    {tr('缩小页面时使用更高采样密度，停下后补绘。超清会增加内存与耗电。')}
-                  </p>
-                  <p className="appearance-note">
-                    {tr(
-                      '节能档降低补绘并行度与像素预算；交互期间复用已有画面，窗口隐藏时暂停 PDF 绘制。',
-                    )}
-                    {appearance.battery
-                      ? tr('当前使用电池。')
-                      : tr('当前连接电源或未报告电池状态。')}
-                  </p>
-                  <p>{tr('默认用笔书写、手指移动。书写时忽略触摸，减少手掌误触。')}</p>
-                  <label className="field-label">{tr('空白页纸张')}</label>
-                  <div className="row">
-                    {(['plain', 'dots', 'lines'] as const).map((p, i) => (
-                      <button
-                        key={p}
-                        disabled={page.sourceIndex !== null}
-                        className={page.paper === p ? 'primary' : ''}
-                        onClick={() => updatePage({ ...page, paper: p })}
-                      >
-                        {[tr('纯白'), tr('点阵'), tr('横线')][i]}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="diagnostic-card">
-                    <span>{tr('最近输入')}</span>
-                    <strong>{diagnostic.type}</strong>
-                    <span>{tr('原始压感')}</span>
-                    <strong>{diagnostic.pressure.toFixed(4)}</strong>
-                    <span>{tr('背面擦除')}</span>
-                    <strong>{diagnostic.eraser ? tr('已检测') : tr('未激活')}</strong>
-                    <span>{tr('当前笔划采样')}</span>
-                    <strong>{diagnostic.samples}</strong>
-                    <span>{tr('屏幕像素比例')}</span>
-                    <strong>{window.devicePixelRatio.toFixed(2)}×</strong>
-                  </div>
-                  <p className="muted">
-                    {tr(
-                      '支持标准笔擦信号 button=5 / buttons=32；实际压感与笔擦需由 Surface 驱动上报。',
-                    )}
-                  </p>
-                </>
-              ) : dialog === 'delete' ? (
-                <>
-                  <p>{tr('删除第 {0} 页及其标注？可通过撤销恢复。', index + 1)}</p>
-                  <button
-                    className="danger"
-                    onClick={() => {
-                      commit({
-                        ...current.current,
-                        pages: current.current.pages.filter((p) => p.id !== page.id),
-                      });
-                      setIndex(Math.max(0, index - 1));
-                      setDialog(null);
-                    }}
-                  >
-                    {tr('删除当前页')}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p>
-                    {tr(
-                      '笔尖直接书写，翻转 Surface Slim Pen 使用背面橡皮擦。橡皮擦滑过新增笔迹和插入对象时先高亮，松手删除；保留原始 PDF 内容。',
-                    )}
-                  </p>
-                  <p>
-                    {tr(
-                      '单指拖动页面，双指缩放与拖动，按钮左右翻页。鼠标滚轮平移，Ctrl + 滚轮缩放。复杂页面可开启“快速预览”，固定低清背景。',
-                    )}
-                  </p>
-                  <p>{tr('框选多个对象，拖动选中对象统一移动；Shift 可加选或取消。')}</p>
-                  <p>
-                    {tr(
-                      'S 选择对象 · T 选择文字 · Delete 删除选中对象 · Ctrl+Z 撤销 · Ctrl+Y 重做 · Ctrl+S 保存工程 · Ctrl+O 打开',
-                    )}
-                  </p>
-                  <p>
-                    {tr(
-                      '工程保留可编辑笔迹；导出 PDF 合入笔迹与草图。基础版支持标注和页面管理，尚不支持修改原 PDF 的文字。',
-                    )}
-                  </p>
-                  <p>
-                    {tr(
-                      'Texo 公式识别与中英翻译在本机运行。选文后可复制、翻译和朗读；按笔侧键或右键打开工具。',
-                    )}
-                  </p>
                 </>
               )}
+              <div className="sidebar-bottom">
+                <HardDrive className="local-workspace-icon" size={14} aria-hidden="true" />
+                <span>{tr('本地工作空间')}</span>
+              </div>
+            </aside>
+          )}
+          <main className="main-workspace">
+            <div className={`workspace-heading${toolbarCollapsed ? ' tools-inline' : ''}`}>
+              <div className="row workspace-path">
+                {!sidebar && (
+                  <button
+                    className="icon-button"
+                    title={tr('展开页面栏')}
+                    aria-label={tr('展开页面栏')}
+                    onClick={() => setSidebar(true)}
+                  >
+                    <PanelLeft size={18} />
+                  </button>
+                )}
+                <button
+                  className="breadcrumb workspace-library-button"
+                  aria-label={tr('管理工作空间')}
+                  disabled={busy || !ready}
+                  onClick={() => {
+                    void persist(current.current)
+                      .then(() => setWorkspaceOpen(true))
+                      .catch(() => notify(tr('保存失败，请先保存工程后再管理工作空间')));
+                  }}
+                >
+                  {toolbarCollapsed && <BookOpen size={16} />}
+                  <span>{tr('工作空间')}</span>
+                </button>
+              </div>
+              {toolbarCollapsed && renderTools(true)}
+              <div className="row workspace-controls">
+                <button
+                  className="icon-button"
+                  aria-label={tr('打开 ChatGPT 聊天')}
+                  title={tr('打开 ChatGPT 聊天')}
+                  aria-pressed={chatOpen}
+                  onClick={() => {
+                    setChatSelection(null);
+                    setChatOpen((v) => !v);
+                  }}
+                >
+                  <MessageSquare size={18} />
+                </button>
+                <button
+                  className="icon-button toolbar-toggle"
+                  aria-label={toolbarCollapsed ? tr('展开工具栏') : tr('收起工具栏')}
+                  title={toolbarCollapsed ? tr('展开工具栏') : tr('收起工具栏')}
+                  aria-expanded={!toolbarCollapsed}
+                  aria-controls="drawing-toolbar"
+                  onClick={() => setToolbarCollapsed((v) => !v)}
+                >
+                  {toolbarCollapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}
+                </button>
+                <div className="view-switch" role="group" aria-label={tr('页面预览方式')}>
+                  <button
+                    className={viewMode === 'single' ? 'active' : ''}
+                    title={tr('单页标注')}
+                    aria-label={tr('单页标注')}
+                    onClick={() => setViewMode('single')}
+                  >
+                    <File size={16} />
+                  </button>
+                  <button
+                    className={viewMode === 'continuous' ? 'active' : ''}
+                    title={tr('连续页面预览')}
+                    aria-label={tr('连续页面预览')}
+                    onClick={() => setViewMode('continuous')}
+                  >
+                    <GalleryVerticalEnd size={16} />
+                  </button>
+                  <button
+                    className={viewMode === 'dual' ? 'active' : ''}
+                    title={tr('双页预览')}
+                    aria-label={tr('双页预览')}
+                    onClick={() => setViewMode('dual')}
+                  >
+                    <Columns2 size={16} />
+                  </button>
+                </div>
+                {appearance.night && (
+                  <button
+                    className="night-original-toggle"
+                    aria-pressed={appearance.original}
+                    aria-label={appearance.original ? tr('恢复夜间颜色') : tr('查看原色')}
+                    title={appearance.original ? tr('恢复夜间颜色') : tr('查看原色')}
+                    onClick={() => setOriginal(!appearance.original)}
+                  >
+                    {toolbarCollapsed ? (
+                      <Eye size={16} />
+                    ) : appearance.original ? (
+                      tr('恢复夜间颜色')
+                    ) : (
+                      tr('查看原色')
+                    )}
+                  </button>
+                )}
+                <button
+                  className={`icon-button night-toggle ${appearance.night ? 'active' : ''}`}
+                  aria-label={tr('实验性夜间模式')}
+                  title={tr('实验性夜间模式')}
+                  aria-pressed={appearance.night}
+                  onClick={() => setNight(!appearance.night)}
+                >
+                  {appearance.night ? <Sun size={17} /> : <Moon size={17} />}
+                </button>
+                <button
+                  className="icon-button"
+                  title={tr('设置与笔诊断')}
+                  aria-label={tr('设置')}
+                  onClick={() => setDialog('settings')}
+                >
+                  <Settings2 size={18} />
+                </button>
+              </div>
             </div>
-          </section>
+            <div id="drawing-toolbar" className="toolbar" hidden={toolbarCollapsed}>
+              {!toolbarCollapsed && renderTools()}
+              <div className="toolbar-divider" />
+              <InkColors color={color} onChange={setColor} />
+              <div className="toolbar-divider" />
+              <label className="size-control">
+                <span style={{ width: Math.min(12, size + 2), height: Math.min(12, size + 2) }} />
+                <input
+                  aria-label={tr('笔触粗细')}
+                  type="range"
+                  min=".6"
+                  max={tool === 'highlighter' ? 32 : 12}
+                  step=".2"
+                  value={size}
+                  onChange={(e) => setSize(Number(e.target.value))}
+                />
+                <output>{size.toFixed(1)}</output>
+              </label>
+              <div className="toolbar-divider" />
+              <div className="row history-buttons">
+                <button
+                  className="icon-button"
+                  title={tr('撤销 (Ctrl+Z)')}
+                  aria-label={tr('撤销')}
+                  disabled={!history.current.length}
+                  onClick={undo}
+                >
+                  <Undo2 size={19} />
+                </button>
+                <button
+                  className="icon-button"
+                  title={tr('重做 (Ctrl+Y)')}
+                  aria-label={tr('重做')}
+                  disabled={!future.current.length}
+                  onClick={redo}
+                >
+                  <Redo2 size={19} />
+                </button>
+              </div>
+            </div>
+            <div className="canvas-container">
+              <PdfPrefetch
+                pdf={pdf}
+                pages={notebook.pages}
+                index={index}
+                mode={viewMode}
+                zoom={zoom}
+              />
+              {viewMode === 'single' ? (
+                <PdfSurface
+                  page={page}
+                  pdf={pdf}
+                  tool={tool}
+                  color={color}
+                  size={size}
+
+                  zoom={zoom}
+                  resetView={resetView}
+                  fitWidth={fitActive.current && fitMode.current === 'width'}
+                  setZoom={setZoom}
+                  onChange={updatePage}
+                  onDiagnostic={reportPenDiagnostic}
+                  onRender={setRenderStatus}
+                  onContext={selectedText}
+                  focusObjectId={focusObjectId}
+                  onEditObject={(id) => editObject(page, id)}
+                />
+              ) : (
+                <ReadingView
+                  pages={notebook.pages}
+                  pdf={pdf}
+                  mode={viewMode}
+                  index={index}
+                  tool={tool}
+                  zoom={zoom}
+                  setZoom={setZoom}
+                  resetView={resetView}
+
+                  color={color}
+                  size={size}
+                  onChange={updatePage}
+                  onDiagnostic={reportPenDiagnostic}
+                  onContext={selectedText}
+                  onEditObject={editObject}
+                  focusObjectId={focusObjectId}
+                  onEdit={editReadingPage}
+                  onPageChange={readingPageChanged}
+                />
+              )}
+              {capturing && (
+                <RegionCapture
+                  onCapture={capture}
+                  onClose={() => setCapturing(false)}
+                  onBitmapOcr={() => {
+                    setCapturing(false);
+                    setBitmapOcrOpen(true);
+                  }}
+                />
+              )}
+              {viewMode === 'single' &&
+                !notebook.source &&
+                page.strokes.length === 0 &&
+                page.images.length === 0 &&
+                index === 0 && (
+                  <div className="welcome-note">
+                    <span className="eyebrow">A SPACE FOR YOUR THOUGHTS</span>
+                    <h1>{tr('思考，从这一笔开始。')}</h1>
+                    <p>
+                      {tr('拿起笔，自由书写。')}
+                      <br />
+                      {tr('或打开一份 PDF，让想法落在纸上。')}
+                    </p>
+                    <button onClick={() => file.current?.click()}>
+                      {tr('打开 PDF')}
+                      <MoveUpRight size={15} />
+                    </button>
+                    <span className="welcome-foot">{tr('灵感无需等待，笔记自动保存。')}</span>
+                  </div>
+                )}
+              {!bottomCollapsed && bottomControls}
+            </div>
+            <footer className={`statusbar ${bottomCollapsed ? 'tools-collapsed' : ''}`}>
+              <button
+                className="icon-button bottom-tools-toggle"
+                aria-label={tr(bottomCollapsed ? '展开底部工具' : '收起底部工具')}
+                title={tr(bottomCollapsed ? '展开底部工具' : '收起底部工具')}
+                aria-expanded={!bottomCollapsed}
+                onClick={() => setBottomCollapsed((v) => !v)}
+              >
+                {bottomCollapsed ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+              </button>
+              {bottomCollapsed && (
+                <div className="status-tools" aria-label={tr('底部工具')}>
+                  {bottomControls}
+                </div>
+              )}
+              <PenStatus />
+              <div className="row">
+                <span className="sr-only" aria-live="polite">
+                  {tr(renderStatus)}
+                </span>
+                <span className="status-separator" />
+                <button
+                  className="delete-button"
+                  disabled={notebook.pages.length <= 1}
+                  onClick={() => setDialog('delete')}
+                >
+                  <Trash2 size={13} />
+                  {tr('删除当前页')}
+                </button>
+                <button
+                  className="icon-button"
+                  aria-label={tr('使用帮助')}
+                  onClick={() => setDialog('help')}
+                >
+                  <CircleHelp size={15} />
+                </button>
+              </div>
+            </footer>
+          </main>
+          {chatOpen && (
+            <Suspense fallback={null}>
+              <ChatPanel
+                viewMode={viewMode}
+                onModels={() => setDialog('models')}
+                onSvgInsert={(image) => {
+                  if (activeRef.current === activeId)
+                    addImages([image], {
+                      pageId:
+                        current.current.pages[viewRef.current.index]?.id ||
+                        current.current.pages[0].id,
+                    });
+                }}
+                key={activeId}
+                documentId={activeId}
+                source={notebook.source}
+                name={notebook.name}
+                pages={notebook.pages}
+                page={page}
+                pdf={pdf}
+                index={index}
+                selection={chatSelection?.documentId === activeId ? chatSelection : null}
+                onClose={() => setChatOpen(false)}
+                onNavigate={(id) => {
+                  const at = notebook.pages.findIndex((p) => p.id === id);
+                  if (at >= 0) setIndex(at);
+                }}
+              />
+            </Suspense>
+          )}
         </div>
-      )}
-    </div>
+        {message && (
+          <div className="toast" role="status">
+            {tr(message)}
+            <button
+              className="icon-button"
+              aria-label={tr('关闭提示')}
+              onClick={() => setMessage('')}
+            >
+              <X size={15} />
+            </button>
+          </div>
+        )}
+        {selection && (
+          <SelectionFlyout
+            selection={selection}
+            onAsk={() => {
+              setChatSelection({
+                id: Date.now(),
+                documentId: activeId,
+                text: selection.text,
+                pageId: selection.pageId ?? page.id,
+                pageNumber: selection.pageNumber ?? index + 1,
+              });
+              setChatOpen(true);
+              setSelection(null);
+              window.getSelection()?.removeAllRanges();
+            }}
+            onClose={() => {
+              setSelection(null);
+              window.getSelection()?.removeAllRanges();
+            }}
+          />
+        )}
+        {(busy || !ready) &&
+          (exportProgress ? (
+            <div className="busy-overlay pdf-export-overlay">
+              <section
+                className="modal pdf-export-progress"
+                role="dialog"
+                aria-modal="true"
+                aria-label={tr('PDF 导出进度')}
+              >
+                <h2>{tr('正在导出 PDF')}</h2>
+                <div className="row" role="status">
+                  <span className="spinner" />
+                  <span>
+                    {tr(
+                      {
+                        preparing: '准备导出数据…',
+                        loading: '读取源 PDF…',
+                        structure: '整理页面与文档结构…',
+                        annotations: '写入标注…',
+                        saving: '保存 PDF…',
+                      }[exportProgress.stage],
+                    )}
+                  </span>
+                </div>
+                {exportProgress.stage === 'annotations' && (
+                  <>
+                    <progress
+                      aria-label={tr('标注页面进度')}
+                      max={exportProgress.total}
+                      value={exportProgress.completed}
+                    />
+                    <p>
+                      {tr('已处理 {0} / {1} 页', exportProgress.completed, exportProgress.total)}
+                    </p>
+                  </>
+                )}
+                <button onClick={() => exportAbort.current?.abort()}>{tr('取消导出')}</button>
+              </section>
+            </div>
+          ) : (
+            <div className="busy-overlay">
+              <span className="spinner" />
+              <span>{!ready ? tr('恢复工作空间…') : tr('正在处理文档…')}</span>
+            </div>
+          ))}
+        <Suspense
+          fallback={
+            <div className="busy-overlay">
+              <span className="spinner" />
+              {tr('加载工具…')}
+            </div>
+          }
+        >
+          {dialog === 'tasks' && <TaskCenter onClose={() => setDialog('settings')} />}
+          {dialog === 'models' && <ModelManager onClose={() => setDialog('settings')} />}
+          {dialog === 'caches' && <CacheManager onClose={() => setDialog('settings')} />}
+          {zoteroOpen && (
+            <ZoteroDialog
+              current={notebook.zotero}
+              onOpen={openZotero}
+              onClose={() => setZoteroOpen(false)}
+            />
+          )}
+          {workspaceOpen && (
+            <WorkspaceManager
+              activeId={activeId}
+              onOpen={switchDocument}
+              onCreate={createDocument}
+              onDelete={removeDocument}
+              onRename={renameDocument}
+              onExport={exportDocument}
+              onImport={() => file.current?.click()}
+              onClose={() => setWorkspaceOpen(false)}
+            />
+          )}
+          {ocrImage && !recognizingCapture && (
+            <CapturePreview
+              image={ocrImage}
+              onClose={() => setOcrImage(null)}
+              onOcr={() => setRecognizingCapture(true)}
+            />
+          )}
+          {bitmapOcrOpen && (
+            <BitmapOcrDialog
+              key={activeId}
+              pages={notebook.pages}
+              pdf={pdf}
+              onClose={() => setBitmapOcrOpen(false)}
+              onApply={(pages) => {
+                const replacements = new Map(pages.map((p) => [p.id, p]));
+                commit({
+                  ...current.current,
+                  pages: current.current.pages.map((p) => replacements.get(p.id) ?? p),
+                });
+              }}
+            />
+          )}
+          {ocrImage && recognizingCapture && (
+            <OcrDialog
+              image={ocrImage}
+              onClose={() => setOcrImage(null)}
+              onRead={(text) => {
+                setOcrImage(null);
+                setSelection({ text, x: window.innerWidth / 2 - 200, y: 100 });
+              }}
+            />
+          )}
+          {dialog === 'sketch' && (
+            <SketchDialog
+              scene={editingImage ? editingImage.scene : notebook.scene}
+              bitmap={editingImage && !editingImage.scene ? editingImage : undefined}
+              editing={!!editingImage}
+              onClose={(scene) => {
+                if (scene && !editingImage) commit({ ...current.current, scene });
+                setDialog(null);
+                setEditingId(null);
+              }}
+              onInsert={(data, w, h, scene, displayData) =>
+                insertImage(data, w, h, 'sketch', undefined, scene, displayData)
+              }
+            />
+          )}
+          {dialog === 'text' && (
+            <TextBoxDialog
+              initial={editingImage?.textBox}
+              onClose={() => {
+                setDialog(null);
+                setEditingId(null);
+              }}
+              onInsert={(image) => {
+                if (editingImage) {
+                  const width = Math.min(
+                      image.width / 2,
+                      editingPage.width * 0.8,
+                      (editingPage.height * 0.8 * image.width) / image.height,
+                    ),
+                    height = (width * image.height) / image.width;
+                  updatePage({
+                    ...editingPage,
+                    images: editingPage.images.map((i) =>
+                      i.id === editingImage.id
+                        ? {
+                            ...i,
+                            data: image.data,
+                            displayData: image.displayData,
+                            textBox: image.textBox,
+                            width,
+                            height,
+                            x: Math.max(0, Math.min(editingPage.width - width, i.x)),
+                            y: Math.max(0, Math.min(editingPage.height - height, i.y)),
+                          }
+                        : i,
+                    ),
+                  });
+                } else addImages([image], { pageId: editingPage.id });
+                setDialog(null);
+                setEditingId(null);
+                setTool('object');
+              }}
+            />
+          )}
+          {dialog === 'formula' && (
+            <FormulaDialog
+              key={formulaDraftKey(activeId, editingImage?.id)}
+              draftKey={formulaDraftKey(activeId, editingImage?.id)}
+              initialLatex={editingImage?.latex}
+              initialMacros={editingImage?.macros}
+              editing={!!editingImage}
+              onClose={() => {
+                setDialog(null);
+                setEditingId(null);
+              }}
+              onInsert={(data, w, h, latex, macros) =>
+                insertImage(data, w, h, 'formula', latex, undefined, undefined, macros)
+              }
+            />
+          )}
+        </Suspense>
+        {(dialog === 'help' || dialog === 'settings' || dialog === 'delete') && (
+          <div className="modal-scrim">
+            <section
+              className="modal small-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label={
+                dialog === 'settings'
+                  ? tr('设置与笔诊断')
+                  : dialog === 'delete'
+                    ? tr('删除页面')
+                    : tr('使用帮助')
+              }
+            >
+              <header>
+                <h2>
+                  {dialog === 'settings'
+                    ? tr('纸张与笔输入')
+                    : dialog === 'delete'
+                      ? tr('删除这一页？')
+                      : tr('像在纸上一样自然')}
+                </h2>
+                <button
+                  className="icon-button"
+                  aria-label={tr('关闭')}
+                  onClick={() => setDialog(null)}
+                >
+                  <X size={20} />
+                </button>
+              </header>
+              <div className="small-modal-body">
+                {dialog === 'settings' ? (
+                  <>
+                    <button
+                      className="zotero-open"
+                      onClick={() => {
+                        setDialog(null);
+                        setZoteroOpen(true);
+                      }}
+                    >
+                      Zotero
+                    </button>
+                    <button className="task-center-open" onClick={() => setDialog('tasks')}>
+                      {tr('任务与后端')}
+                    </button>
+                    <button className="model-manager-open" onClick={() => setDialog('models')}>
+                      {tr('本地模型管理')}
+                    </button>
+                    <button className="cache-manager-open" onClick={() => setDialog('caches')}>
+                      {tr('磁盘缓存管理')}
+                    </button>
+                    {window.surfaceDesktop?.createDesktopShortcut && (
+                      <button
+                        className="task-center-open"
+                        onClick={async () => {
+                          try {
+                            const result = await window.surfaceDesktop!.createDesktopShortcut!();
+                            notify(
+                              tr(
+                                result.ok
+                                  ? '桌面快捷方式已创建'
+                                  : '无法创建快捷方式，请运行已安装的应用或完整发布包。',
+                              ),
+                            );
+                          } catch {
+                            notify(tr('无法创建桌面快捷方式'));
+                          }
+                        }}
+                      >
+                        {tr('发送快捷方式到桌面')}
+                      </button>
+                    )}
+                    <p className="appearance-note">
+                      TixTab · AGPL-3.0-only ·{' '}
+                      <a
+                        href="https://github.com/Pscgylotti/TixTab"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {tr('源码与许可')}
+                      </a>
+                    </p>
+                    <label className="language-setting">
+                      界面语言 / Interface language
+                      <select
+                        aria-label="界面语言 / Interface language"
+                        value={locale}
+                        onChange={(e) => setLocale(e.target.value as Locale)}
+                      >
+                        <option value="zh-CN">简体中文</option>
+                        <option value="en">English</option>
+                      </select>
+                    </label>
+                    <label className="writing-hand-setting">
+                      {tr('书写惯用手')}
+                      <select
+                        aria-label={tr('书写惯用手')}
+                        value={writingHand}
+                        onChange={(e) => setWritingHand(e.target.value as WritingHand)}
+                      >
+                        <option value="right">{tr('右手')}</option>
+                        <option value="left">{tr('左手')}</option>
+                      </select>
+                    </label>
+                    <label className="appearance-setting">
+                      <span>
+                        <input
+                          type="checkbox"
+                          checked={compactWhenCollapsed}
+                          onChange={(e) => setCompactWhenCollapsed(e.target.checked)}
+                        />{' '}
+                        {tr('工具栏全部收起时使用紧凑布局')}
+                      </span>
+                    </label>
+                    <p className="appearance-note">
+                      {tr('划词浮窗优先放在惯用手另一侧；空间不足时移到选区上方或下方。')}
+                    </p>
+                    <label className="appearance-setting">
+                      <span>
+                        <input
+                          type="checkbox"
+                          checked={appearance.night}
+                          onChange={(e) => setNight(e.target.checked)}
+                        />{' '}
+                        {tr('实验性夜间模式')}
+                      </span>
+                    </label>
+                    <p className="appearance-note">
+                      {tr(
+                        '文字与矢量内容调整为暗底亮色，位图降亮度。移动工具下双击图片查看原图；顶部可查看整页原色。复杂裁剪、透明图和图上文字可能不准确，不影响导出与 OCR。',
+                      )}
+                    </p>
+                    <label className="appearance-setting">
+                      {tr('渲染与能耗')}
+                      <select
+                        aria-label={tr('渲染与能耗')}
+                        value={appearance.mode}
+                        onChange={(e) => setPowerMode(e.target.value as PowerMode)}
+                      >
+                        <option value="auto">{tr('自动（电池供电时节能）')}</option>
+                        <option value="eco">{tr('节能优先')}</option>
+                        <option value="quality">{tr('画质优先')}</option>
+                      </select>
+                    </label>
+                    <label className="appearance-setting">
+                      {tr('PDF 渲染清晰度')}
+                      <select
+                        aria-label={tr('PDF 渲染清晰度')}
+                        value={appearance.quality}
+                        onChange={(e) => setRenderQuality(e.target.value as RenderQuality)}
+                      >
+                        <option value="standard">{tr('标准')}</option>
+                        <option value="high">{tr('高清（推荐）')}</option>
+                        <option value="ultra">{tr('超清')}</option>
+                      </select>
+                    </label>
+                    <p className="appearance-note">
+                      {tr('缩小页面时使用更高采样密度，停下后补绘。超清会增加内存与耗电。')}
+                    </p>
+                    <label className="appearance-setting">
+                      {tr('前后预渲染页数')}
+                      <select
+                        aria-label={tr('前后预渲染页数')}
+                        value={appearance.preRender}
+                        onChange={(e) =>
+                          setPreRenderRange(Number(e.target.value) as PreRenderRange)
+                        }
+                      >
+                        {preRenderChoices.map((n) => (
+                          <option key={n} value={n}>
+                            {n === 0
+                              ? tr('关闭')
+                              : n === 0.5
+                                ? tr('0.5（前后半页）')
+                                : n === 1
+                                  ? tr('1（默认）')
+                                  : n}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <p className="appearance-note">
+                      {tr(
+                        '保留最近 15 页；额外页面缓存普通模式 200 MiB、节能模式 120 MiB。缩放或切换视图后重建。',
+                      )}
+                    </p>
+                    <p className="appearance-note">
+                      {tr(
+                        '节能档降低补绘并行度与像素预算；交互期间复用已有画面，窗口隐藏时暂停 PDF 绘制。',
+                      )}
+                      {appearance.battery
+                        ? tr('当前使用电池。')
+                        : tr('当前连接电源或未报告电池状态。')}
+                    </p>
+                    <p>{tr('默认用笔书写、手指移动。书写时忽略触摸，减少手掌误触。')}</p>
+                    <label className="field-label">{tr('空白页纸张')}</label>
+                    <div className="row">
+                      {(['plain', 'dots', 'lines'] as const).map((p, i) => (
+                        <button
+                          key={p}
+                          aria-pressed={(page.sourceIndex === null ? page.paper : blankPaper) === p}
+                          className={
+                            (page.sourceIndex === null ? page.paper : blankPaper) === p
+                              ? 'primary'
+                              : ''
+                          }
+                          onClick={() => {
+                            setBlankPaper(p);
+                            saveBlankPaper(p);
+                            if (page.sourceIndex === null) updatePage({ ...page, paper: p });
+                          }}
+                        >
+                          {[tr('纯白'), tr('点阵'), tr('横线')][i]}
+                        </button>
+                      ))}
+                    </div>
+                    {page.sourceIndex !== null && (
+                      <p className="appearance-note">
+                        {tr('PDF 原稿保持不变；纸张设置应用于新插入的空白页。')}
+                      </p>
+                    )}
+                    <PenDiagnosticCard />
+                    <p className="muted">
+                      {tr(
+                        '支持标准笔擦信号 button=5 / buttons=32；实际压感与笔擦需由设备驱动上报。',
+                      )}
+                    </p>
+                  </>
+                ) : dialog === 'delete' ? (
+                  <>
+                    <p>{tr('删除第 {0} 页及其标注？可通过撤销恢复。', index + 1)}</p>
+                    <button
+                      className="danger"
+                      onClick={() => {
+                        commit({
+                          ...current.current,
+                          pages: current.current.pages.filter((p) => p.id !== page.id),
+                        });
+                        setIndex(Math.max(0, index - 1));
+                        setDialog(null);
+                      }}
+                    >
+                      {tr('删除当前页')}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      {tr(
+                        '笔尖直接书写，翻转手写笔使用背面橡皮擦。橡皮擦滑过新增笔迹和插入对象时先高亮，松手删除；保留原始 PDF 内容。',
+                      )}
+                    </p>
+                    <p>
+                      {tr(
+                        '单指拖动页面，双指缩放与拖动，按钮左右翻页。鼠标滚轮平移，Ctrl + 滚轮缩放。复杂页面可开启“快速预览”，固定低清背景。',
+                      )}
+                    </p>
+                    <p>{tr('框选多个对象，拖动选中对象统一移动；Shift 可加选或取消。')}</p>
+                    <p>
+                      {tr(
+                        'S 选择对象 · T 选择文字 · Delete 删除选中对象 · Ctrl+Z 撤销 · Ctrl+Y 重做 · Ctrl+S 保存工程 · Ctrl+O 打开',
+                      )}
+                    </p>
+                    <p>
+                      {tr(
+                        '工程保留可编辑笔迹；导出 PDF 合入笔迹与草图。基础版支持标注和页面管理，尚不支持修改原 PDF 的文字。',
+                      )}
+                    </p>
+                    <p>
+                      {tr(
+                        'Texo 公式识别与中英翻译在本机运行。选文后可复制、翻译和朗读；按笔侧键或右键打开工具。',
+                      )}
+                    </p>
+                  </>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
+      </div>
+    </NavigationContext.Provider>
   );
 }

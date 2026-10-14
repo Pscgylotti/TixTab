@@ -43,6 +43,7 @@ test('native OCR shows devices, preserves input and handles busy without startin
   await page.mouse.down();
   await page.mouse.move(r.x + 200, r.y + 200, { steps: 4 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   await expect(page.getByLabel('OCR 后端')).toHaveValue('native');
   await page.getByRole('button', { name: '开始识别', exact: true }).click();
   await expect(page.getByLabel('识别结果 · 可修改')).toHaveValue('competitive\n本地识别');
@@ -66,6 +67,7 @@ test('native OCR shows devices, preserves input and handles busy without startin
   await page.mouse.down();
   await page.mouse.move(b.x + 150, b.y + 150, { steps: 4 });
   await page.mouse.up();
+  await page.getByRole('button', { name: 'Recognize text (OCR)', exact: true }).click();
   await page.locator('.native-settings summary').click();
   await page.getByLabel('OCR inference device').selectOption('GPU');
   await expect(

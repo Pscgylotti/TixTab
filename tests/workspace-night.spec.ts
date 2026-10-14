@@ -125,7 +125,7 @@ test('night workspace stays dark after lazy editors load, including OCR image pi
   await page.getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '草图', exact: true }).click();
   await expect(page.locator('.excalidraw.theme--dark')).toBeVisible();
-  await page.getByRole('button', { name: '保存草图并关闭', exact: true }).click();
+  await page.locator('.sketch-modal').getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '管理工作空间' }).click();
   await expect(page.locator('.workspace-document')).toHaveCount(1);
   await page.getByRole('button', { name: '新建分组', exact: true }).click();
@@ -142,6 +142,7 @@ test('night workspace stays dark after lazy editors load, including OCR image pi
   await page.mouse.down();
   await page.mouse.move(paper.x + paper.width * 0.75, paper.y + paper.height * 0.6, { steps: 5 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   const image = page.getByRole('img', { name: '选中区域', exact: true });
   await expect(image).toBeVisible();
   // Recognition must still receive the original bright pixels, despite the

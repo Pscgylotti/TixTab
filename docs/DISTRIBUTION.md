@@ -1,12 +1,12 @@
 # Distribution and licenses / 发布与许可
 
-TixTab application code is licensed under **AGPL-3.0-only**; see the root LICENSE. Copyright © 2026 TixTab contributors. Preserve the license and notices when redistributing. Modified distributions must meet AGPL source-availability obligations, including applicable network-use obligations. Source for v0.2.35 is available at https://github.com/Pscgylotti/TixTab/tree/v0.2.35.
+TixTab application code is licensed under **AGPL-3.0-only**; see the root LICENSE. Copyright © 2026 TixTab contributors. Preserve the license and notices when redistributing. Modified distributions must meet AGPL source-availability obligations, including applicable network-use obligations. Corresponding source for v0.3.0: https://github.com/Pscgylotti/TixTab/tree/v0.3.0.
 
 TixTab 应用代码采用 **AGPL-3.0-only**。再分发须保留许可、版权及第三方声明，并按 AGPL 提供相应源码；修改版本及适用的网络使用场景也须履行协议义务。第三方组件和模型保留各自协议，不能仅凭应用协议判断模型可否商用。
 
-## First public release
+## Public distribution
 
-- **Only the lite x64 portable executable is publicly distributed.** It contains no neural model weights or Piper phonemizer WASM/data files. Models are optional downloads from their pinned upstream sources; read the model terms before downloading or redistributing them.
+- **The primary 0.3.0 artifact is a lite x64 installer; portable builds remain optional.** Neither variant contains neural model weights or Piper phonemizer WASM/data files. Models are optional downloads from their pinned upstream sources; read the model terms before downloading or redistributing them.
 - The existing full/offline local prototype is not part of this public release. In particular, `zh_CN-huayan-x_low` reports an **Unknown** dataset license in its model card. This release does not claim permission to redistribute that voice.
 - Texo / FormulaNet: upstream AGPL-3.0 attribution retained; see https://github.com/alephpi/Texo and the model catalog.
 - SenseVoice weights: **FunASR Model Open Source License Agreement 1.1**, not simply the Apache license of its inference code. See SENSEVOICE-MODEL-LICENSE.txt. Whisper weights and Sherpa inference code have separate notices in this directory.
@@ -19,6 +19,6 @@ TixTab 应用代码采用 **AGPL-3.0-only**。再分发须保留许可、版权�
 
 ## Build and publication
 
-Use Node.js 22.17+ and `npm ci`, then `npm run pack:release`. The published portable is unsigned and does not install a background service. Windows SmartScreen may show a reputation warning. Only use builds from this repository's Releases page and compare SHA256SUMS.txt.
+Use Node.js 22.17+ and `npm ci`, then `npm run pack:release` for the lite installer, or `npm run pack:portable` for a portable build. Both variants are unsigned and do not install a background service. Windows SmartScreen may show a reputation warning. Only use builds from this repository's Releases page and compare SHA256SUMS.txt. See [installation and persistent data](INSTALLATION.md).
 
-仅支持已验证的 Windows 11 x64 路径；ARM64、高通 NPU、其他 Surface 型号与实际笔硬件组合仍待验证。便携程序无代码签名，首次运行可能显示 SmartScreen 提示。发布时应同时提供对应源码、许可证、第三方说明和 SHA256 校验值。
+仅支持已验证的 Windows 11 x64 路径；ARM64、高通 NPU、其它设备与实际笔硬件组合仍待验证。安装版与便携版均无代码签名，首次运行可能显示 SmartScreen 提示。发布时应同时提供对应源码、许可证、第三方说明和 SHA256 校验值。

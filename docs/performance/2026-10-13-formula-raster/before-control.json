@@ -1,0 +1,6 @@
+{
+  "fullReplay": true,
+  "originalSha256": "bbc95d45c005e42b5671219623e4bc40710f7ed6cf053b66ad64b661e881965d",
+  "compiledSha256": "1616c98f6d48cbd4220c56713b79aae3f4bde9b1601a6d5849c29f14608ae4c3",
+  "mechanism": "Only reset FormulaInk before each dirty paint for A. Both sides keep the same immutable stroke arrays, immediate pointerup redraw, white 960px raster, save strategy and UI."
+}

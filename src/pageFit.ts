@@ -3,6 +3,24 @@ export const MIN_ZOOM = 0.01,
   PAGE_EDGE = 8;
 export type PageSize = { width: number; height: number };
 export type FitControl = { left: number; right: number; top: number; bottom: number };
+/** Width fitting permits vertical scrolling/panning. Continuous layouts use
+ * the widest page so a wider sheet cannot create horizontal overflow. */
+export function fitWidthZoom(
+  pages: PageSize[],
+  index: number,
+  mode: 'single' | 'continuous' | 'dual',
+  width: number,
+) {
+  const spread =
+    mode === 'continuous' ? pages : pages.slice(index, index + (mode === 'dual' ? 2 : 1));
+  if (!spread.length || width <= 0) return 1;
+  const paperWidth =
+      mode === 'continuous'
+        ? Math.max(...spread.map((p) => p.width))
+        : spread.reduce((sum, p) => sum + p.width, 0),
+    gap = mode === 'dual' && spread.length === 2 ? 16 : 0;
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, (width - PAGE_EDGE * 2 - gap) / paperWidth));
+}
 /** PDF sizes already include the visible crop box and rotation. Never crop content. */
 export function fitPageZoom(
   pages: PageSize[],

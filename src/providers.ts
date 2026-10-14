@@ -61,8 +61,10 @@ export interface ProviderRequest {
   device?: NativeDevice;
   localPreference?: string;
   operation?: 'run' | 'check';
+  ocrLayout?: boolean;
 }
 export interface ProviderResult {
+  lines?: import('./ocrLayout').OcrLine[];
   text?: string;
   audio?: Blob;
   systemVoice?: SpeechSynthesisVoice;
@@ -320,7 +322,13 @@ async function attempt(
       await activate(`${type}:tesseract`, wasm.releaseOcr, type === 'native', ctx.signal);
       if (type === 'native') {
         const native = await import('./nativeOcr');
-        const r = await native.recognizePowerOcr(input, device, ctx.progress, ctx.signal);
+        const r = await native.recognizePowerOcr(
+          input,
+          device,
+          ctx.progress,
+          ctx.signal,
+          request.ocrLayout,
+        );
         return {
           ...local(),
           ...r,
@@ -328,7 +336,7 @@ async function attempt(
           modelId: r.engine === 'Tesseract' ? 'tesseract' : modelId,
         };
       }
-      const r = await wasm.localOcr(input, ctx.progress, ctx.signal);
+      const r = await wasm.localOcr(input, ctx.progress, ctx.signal, request.ocrLayout);
       return {
         ...local(),
         ...r,

@@ -1,10 +1,22 @@
-import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist';
 import { renderPolicy, subscribeAppearance } from './appearance';
 import { applyPdfNight } from './pdfNight';
+import {
+  performanceDelay,
+  performanceLedger,
+  performanceOutcome,
+  trackPerformance,
+  type PerformanceFinish,
+} from './performanceLedger';
 
 interface State {
+  thumbnail?: boolean;
   cache: Map<string, HTMLCanvasElement>;
   bytes: number;
+  pageKeys: Map<number, string>;
+  pageBytes: number;
+  generation: number;
+  viewKey?: string;
   jobs: Map<string, Job>;
   renders: number;
   hits: number;
@@ -32,21 +44,118 @@ interface Job {
   promise: Promise<HTMLCanvasElement>;
   resolve: (canvas: HTMLCanvasElement) => void;
   reject: (error: unknown) => void;
+  finish?: PerformanceFinish;
+  generation: number;
+}
+function bitmapKey(sourceIndex: number, scale: number, night: boolean, region?: PdfPixelRegion) {
+  return `${sourceIndex}:${scale.toFixed(3)}:${night ? 'night' : 'day'}${region ? `:tile:${region.x},${region.y},${region.width},${region.height}` : ''}`;
+}
+export function pageHalves(width: number, height: number) {
+  const top = Math.floor(height / 2);
+  return [
+    { x: 0, y: 0, width, height: top },
+    { x: 0, y: top, width, height: height - top },
+  ] as const;
 }
 const states = new WeakMap<PDFDocumentProxy, State>(),
+  thumbnailStates = new WeakMap<PDFDocumentProxy, State>(),
+  thumbnailLru = new Map<HTMLCanvasElement, { state: State; key: string }>(),
   queue: Job[] = [];
+const cachedLocations = new WeakMap<HTMLCanvasElement, { state: State; key: string }>();
+const retiredBitmaps = new WeakSet<HTMLCanvasElement>();
+export const isRetiredPdfBitmap = (canvas: HTMLCanvasElement) => retiredBitmaps.has(canvas);
+
+/** Document switching must release rasters without waiting for PDF.js, React
+ * alternate effects or the GC to drop their last proxy reference. */
+export function releasePdfRenderCache(pdf: PDFDocumentProxy) {
+  for (const state of [states.get(pdf), thumbnailStates.get(pdf)]) {
+    if (!state) continue;
+    state.generation++;
+    for (const job of [...state.jobs.values()]) {
+      job.cancelled = true;
+      job.abort.abort();
+      if (job.started) job.task?.cancel();
+      else {
+        const at = queue.indexOf(job);
+        if (at >= 0) queue.splice(at, 1);
+        job.reject(cancelled());
+        job.finish?.('cancelled');
+        state.jobs.delete(job.key);
+      }
+    }
+    for (const canvas of [...state.cache.values()]) {
+      invalidatePdfBitmap(canvas);
+      // A borrowed visible raster is cleared by its display after unmount.
+      if (!canvas.isConnected) canvas.width = canvas.height = 1;
+    }
+  }
+}
+
+/** A lost display surface must never remain a successful cached raster. */
+export function invalidatePdfBitmap(canvas: HTMLCanvasElement) {
+  const entry = cachedLocations.get(canvas);
+  if (!entry) return;
+  if (entry.state.cache.get(entry.key) === canvas) {
+    entry.state.cache.delete(entry.key);
+    entry.state.bytes -= canvas.width * canvas.height * 4;
+    const page = Number(entry.key.split(':')[0]);
+    if (entry.state.pageKeys.get(page) === entry.key) {
+      entry.state.pageKeys.delete(page);
+      entry.state.pageBytes -= canvas.width * canvas.height * 4;
+    }
+  }
+  cachedLocations.delete(canvas);
+  retiredBitmaps.add(canvas);
+  thumbnailLru.delete(canvas);
+  canvas.removeEventListener('contextlost', cachedContextLost);
+}
+function cachedContextLost(event: Event) {
+  invalidatePdfBitmap(event.currentTarget as HTMLCanvasElement);
+}
+interface OperatorBounds {
+  isEmpty(index: number): boolean;
+  minX(index: number): number;
+  minY(index: number): number;
+  maxX(index: number): number;
+  maxY(index: number): number;
+}
+/** Operator bounds from a page render that ran to completion, in 0..1 page units. */
+const completeBounds = new WeakMap<PDFPageProxy, OperatorBounds>();
+/** In power-saving mode a detail tile executes only the drawing operators that
+ * touch it instead of replaying the whole page. PDF.js still marks this path as
+ * optional, so the full-quality modes keep the complete replay. */
+function partialTiles() {
+  return renderPolicy().eco;
+}
+function tileFilter(
+  bounds: OperatorBounds,
+  region: PdfPixelRegion,
+  viewport: { width: number; height: number },
+) {
+  // One pixel of slack covers antialiasing that spills over the tile edge.
+  const minX = (region.x - 1) / viewport.width,
+    minY = (region.y - 1) / viewport.height,
+    maxX = (region.x + region.width + 1) / viewport.width,
+    maxY = (region.y + region.height + 1) / viewport.height;
+  return (index: number) =>
+    !bounds.isEmpty(index) &&
+    bounds.minX(index) <= maxX &&
+    bounds.maxX(index) >= minX &&
+    bounds.minY(index) <= maxY &&
+    bounds.maxY(index) >= minY;
+}
 const continuations = new Map<Job, () => void>();
 let running = 0;
 let interacting = false,
   nativeHidden = false,
-  idleTimer: ReturnType<typeof setTimeout> | undefined;
+  idleTimer: (() => void) | undefined;
 let schedulerInitialized = false;
 export function initializeRenderScheduler() {
   if (schedulerInitialized || typeof document.addEventListener !== 'function') return;
   schedulerInitialized = true;
   const down = new Set<number>();
   let visibilityRevision = 0;
-  let stalePointerTimer: ReturnType<typeof setTimeout> | undefined;
+  let stalePointerTimer: (() => void) | undefined;
   const resume = () => {
     interacting = false;
     for (const [job, next] of continuations) {
@@ -62,7 +171,7 @@ export function initializeRenderScheduler() {
     nativeHidden = !visible;
     document.documentElement.dataset.windowHidden = String(nativeHidden);
     down.clear();
-    clearTimeout(idleTimer);
+    idleTimer?.();
     if (visible) resume();
   };
   void window.surfaceDesktop
@@ -75,20 +184,28 @@ export function initializeRenderScheduler() {
   window.surfaceDesktop?.onWindowVisibility?.(nativeVisibility);
   const activity = () => {
     interacting = true;
-    clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => {
-      if (!down.size) resume();
-    }, renderPolicy().settleMs);
+    idleTimer?.();
+    idleTimer = performanceDelay(
+      'render-resume',
+      () => {
+        if (!down.size) resume();
+      },
+      renderPolicy().settleMs,
+    );
   };
   const pointerActivity = () => {
     activity();
-    clearTimeout(stalePointerTimer);
+    stalePointerTimer?.();
     // Windows may consume pointerup during native menus, dragging or pen loss.
     // A stationary contact must never freeze every PDF render indefinitely.
-    stalePointerTimer = setTimeout(() => {
-      down.clear();
-      resume();
-    }, 1500);
+    stalePointerTimer = performanceDelay(
+      'pointer-recovery',
+      () => {
+        down.clear();
+        resume();
+      },
+      1500,
+    );
   };
   document.addEventListener(
     'pointerdown',
@@ -104,7 +221,7 @@ export function initializeRenderScheduler() {
       if (!down.size) return; // Hovering over controls must not postpone rendering.
       if (!e.buttons && e.pointerType !== 'touch') {
         down.clear();
-        clearTimeout(stalePointerTimer);
+        stalePointerTimer?.();
         activity();
       } else if (down.has(e.pointerId)) pointerActivity();
     },
@@ -112,7 +229,7 @@ export function initializeRenderScheduler() {
   );
   const up = (e: PointerEvent) => {
     down.delete(e.pointerId);
-    if (!down.size) clearTimeout(stalePointerTimer);
+    if (!down.size) stalePointerTimer?.();
     activity();
   };
   document.addEventListener('pointerup', up, { passive: true, capture: true });
@@ -136,11 +253,22 @@ export function initializeRenderScheduler() {
 function paused() {
   return nativeHidden || !!document.hidden || interacting;
 }
-function stateFor(pdf: PDFDocumentProxy) {
-  let state = states.get(pdf);
+function stateFor(pdf: PDFDocumentProxy, thumbnail = false) {
+  const store = thumbnail ? thumbnailStates : states;
+  let state = store.get(pdf);
   if (!state) {
-    state = { cache: new Map(), bytes: 0, jobs: new Map(), renders: 0, hits: 0 };
-    states.set(pdf, state);
+    state = {
+      cache: new Map(),
+      bytes: 0,
+      pageKeys: new Map(),
+      pageBytes: 0,
+      generation: 0,
+      jobs: new Map(),
+      renders: 0,
+      hits: 0,
+    };
+    state.thumbnail = thumbnail;
+    store.set(pdf, state);
   }
   return state;
 }
@@ -186,26 +314,72 @@ function boundedStage<T>(promise: Promise<T>, job: Job): Promise<T> {
   });
 }
 function cache(state: State, key: string, canvas: HTMLCanvasElement) {
-  state.cache.set(key, canvas);
-  state.bytes += canvas.width * canvas.height * 4;
-  while (state.bytes > renderPolicy().cacheBytes && state.cache.size > 1) {
-    const key = state.cache.keys().next().value!,
-      old = state.cache.get(key)!;
-    state.bytes -= old.width * old.height * 4;
-    state.cache.delete(key);
+  const page = Number(key.split(':')[0]),
+    fullPage = !state.thumbnail && !key.includes(':tile:');
+  if (fullPage) {
+    const oldKey = state.pageKeys.get(page);
+    if (oldKey && state.cache.get(oldKey)) invalidatePdfBitmap(state.cache.get(oldKey)!);
   }
+  state.cache.set(key, canvas);
+  retiredBitmaps.delete(canvas);
+  cachedLocations.set(canvas, { state, key });
+  canvas.addEventListener('contextlost', cachedContextLost, { once: true });
+  state.bytes += canvas.width * canvas.height * 4;
+  if (state.thumbnail) {
+    thumbnailLru.set(canvas, { state, key });
+    while (thumbnailLru.size > 150) invalidatePdfBitmap(thumbnailLru.keys().next().value!);
+    return;
+  }
+  if (fullPage) {
+    state.pageKeys.set(page, key);
+    state.pageBytes += canvas.width * canvas.height * 4;
+  }
+  trimPageCache(state);
+  while (state.bytes - state.pageBytes > renderPolicy().cacheBytes) {
+    const key = [...state.cache.keys()].find((k) => k.includes(':tile:'));
+    if (!key) break;
+    const old = state.cache.get(key)!;
+    performanceLedger?.count('pdfCacheEvictedBytes', old.width * old.height * 4);
+    invalidatePdfBitmap(old);
+  }
+}
+function trimPageCache(state: State) {
+  const keys = [...state.pageKeys.values()];
+  let extra = keys.slice(0, -15).reduce((sum, key) => {
+    const c = state.cache.get(key);
+    return sum + (c ? c.width * c.height * 4 : 0);
+  }, 0);
+  while (state.pageKeys.size > 15 && extra > renderPolicy().extraPageBytes) {
+    const key = state.pageKeys.values().next().value!,
+      c = state.cache.get(key)!;
+    const bytes = c.width * c.height * 4;
+    extra -= bytes;
+    performanceLedger?.count('pdfCacheEvictedBytes', bytes);
+    invalidatePdfBitmap(c);
+  }
+}
+export function setPdfViewCacheKey(pdf: PDFDocumentProxy, key: string) {
+  const state = stateFor(pdf);
+  if (state.viewKey === key) return;
+  state.viewKey = key;
+  state.generation++;
+  for (const canvas of [...state.cache.values()]) invalidatePdfBitmap(canvas);
 }
 function pump() {
   if (paused()) return;
   queue.sort((a, b) => a.priority - b.priority);
   while (running < renderPolicy().concurrency && queue.length) {
+    if (queue[0].priority >= 3 && running > 0) break;
     const job = queue.shift()!;
     if (job.cancelled) continue;
     running++;
     job.started = true;
     void (async () => {
       try {
-        const page = await boundedStage(job.pdf.getPage(job.sourceIndex + 1), job);
+        const page = await boundedStage(
+          trackPerformance('pdf-page', () => job.pdf.getPage(job.sourceIndex + 1)),
+          job,
+        );
         if (job.cancelled) throw cancelled();
         const viewport = page.getViewport({ scale: job.scale }),
           canvas = document.createElement('canvas');
@@ -217,33 +391,161 @@ function pump() {
         // share that source across day/night, thumbnails and tiles without rerendering.
         const canvasContext = canvas.getContext('2d', { alpha: true })!;
         const original = job.night && job.state.cache.get(job.key.replace(':night', ':day'));
-        if (original) canvasContext.drawImage(original, 0, 0);
-        else {
+        const halves = pageHalves(canvas.width, canvas.height),
+          warm =
+            !job.region && !job.state.thumbnail && !original
+              ? halves.map((region) => ({
+                  region,
+                  canvas: job.state.cache.get(
+                    bitmapKey(job.sourceIndex, job.scale, job.night, region),
+                  ),
+                }))
+              : [],
+          ready = warm.filter((part) => part.canvas),
+          missing = ready.length === 1 ? warm.find((part) => !part.canvas)?.region : undefined,
+          targetRegion = job.region ?? missing,
+          fullWidth = Math.ceil(viewport.width),
+          fullHeight = Math.ceil(viewport.height),
+          isHalf =
+            !!targetRegion &&
+            targetRegion.x === 0 &&
+            targetRegion.width === fullWidth &&
+            pageHalves(fullWidth, fullHeight).some(
+              (r) => r.y === targetRegion.y && r.height === targetRegion.height,
+            ),
+          region = isHalf
+            ? {
+                ...targetRegion!,
+                y: Math.max(0, targetRegion!.y - 2),
+                height:
+                  Math.min(fullHeight, targetRegion!.y + targetRegion!.height + 2) -
+                  Math.max(0, targetRegion!.y - 2),
+              }
+            : targetRegion,
+          work = missing || isHalf ? document.createElement('canvas') : canvas;
+        if (region && (missing || isHalf)) {
+          work.width = region.width;
+          work.height = region.height;
+        }
+        const workContext =
+          work !== canvas ? work.getContext('2d', { alpha: true })! : canvasContext;
+        // Preserve page coordinates for rotated fractional image sampling.
+        const raster = isHalf ? document.createElement('canvas') : work;
+        if (isHalf) {
+          raster.width = fullWidth;
+          raster.height = fullHeight;
+        }
+        const rasterContext = isHalf ? raster.getContext('2d', { alpha: true })! : workContext;
+        if (isHalf) {
+          rasterContext.save();
+          rasterContext.beginPath();
+          rasterContext.rect(region!.x, region!.y, region!.width, region!.height);
+          rasterContext.clip();
+        }
+        if (original) workContext.drawImage(original, 0, 0);
+        else if (ready.length !== 2) {
+          const partial = partialTiles(),
+            bounds = partial && region ? completeBounds.get(page) : undefined;
+          const recording = partial && !region && !completeBounds.has(page);
           job.task = page.render({
-            canvas,
-            canvasContext,
+            canvas: raster,
+            canvasContext: rasterContext,
             viewport,
-            ...(job.region ? { transform: [1, 0, 0, 1, -job.region.x, -job.region.y] } : {}),
+            // PDF.js already defaults to white. Make the opaque source contract
+            // explicit for exact bitmap GPU dimming, including detail tiles.
+            background: '#ffffff',
+            ...(region && !isHalf ? { transform: [1, 0, 0, 1, -region.x, -region.y] } : {}),
+            ...(recording ? { recordOperations: true } : {}),
+            ...(bounds ? { operationsFilter: tileFilter(bounds, region!, viewport) } : {}),
           });
           job.state.renders++;
+          performanceLedger?.count('pdfPixels', work.width * work.height);
           job.task.onContinue = (next: () => void) => {
             if (paused()) continuations.set(job, next);
             else next();
           };
-          await boundedStage(job.task.promise, job);
+          try {
+            await boundedStage(
+              trackPerformance('pdf-raster', () => job.task!.promise),
+              job,
+            );
+            if (recording && page.recordedBBoxes) completeBounds.set(page, page.recordedBBoxes);
+          } finally {
+            if (isHalf) rasterContext.restore();
+            // PDF.js also stores the bounds of an interrupted render. Operators
+            // it never reached would look empty and vanish from later tiles.
+            if (recording && !completeBounds.has(page)) page.recordedBBoxes = null;
+          }
         }
         if (job.cancelled) throw cancelled();
-        if (job.night) {
+        if (isHalf)
+          workContext.drawImage(
+            raster,
+            region!.x,
+            region!.y,
+            region!.width,
+            region!.height,
+            0,
+            0,
+            region!.width,
+            region!.height,
+          );
+        if (job.night && ready.length !== 2) {
           const transform = [...viewport.transform];
-          transform[4] -= job.region?.x ?? 0;
-          transform[5] -= job.region?.y ?? 0;
-          await boundedStage(applyPdfNight(canvas, job.pdf, job.sourceIndex, transform), job);
+          if (!isHalf) {
+            transform[4] -= region?.x ?? 0;
+            transform[5] -= region?.y ?? 0;
+          }
+          await boundedStage(
+            trackPerformance('pdf-night', () =>
+              applyPdfNight(
+                work,
+                job.pdf,
+                job.sourceIndex,
+                transform,
+                true,
+                isHalf
+                  ? { width: fullWidth, height: fullHeight, x: region!.x, y: region!.y }
+                  : undefined,
+              ),
+            ),
+            job,
+          );
         }
+        if (ready.length) {
+          for (const part of ready)
+            canvasContext.drawImage(part.canvas!, part.region.x, part.region.y);
+          if (missing)
+            canvasContext.drawImage(
+              work,
+              0,
+              missing.y - region!.y,
+              missing.width,
+              missing.height,
+              missing.x,
+              missing.y,
+              missing.width,
+              missing.height,
+            );
+        } else if (isHalf && targetRegion)
+          canvasContext.drawImage(
+            work,
+            0,
+            targetRegion.y - region!.y,
+            targetRegion.width,
+            targetRegion.height,
+            0,
+            0,
+            targetRegion.width,
+            targetRegion.height,
+          );
         if (job.cancelled) throw cancelled();
-        cache(job.state, job.key, canvas);
+        if (job.generation === job.state.generation) cache(job.state, job.key, canvas);
         job.resolve(canvas);
+        job.finish?.();
       } catch (e) {
         job.reject(e);
+        job.finish?.(performanceOutcome(e));
       } finally {
         continuations.delete(job);
         if (job.state.jobs.get(job.key) === job) job.state.jobs.delete(job.key);
@@ -263,6 +565,50 @@ export function requestPdfBitmap(
   night = false,
 ) {
   return requestBitmap(pdf, sourceIndex, scale, priority, undefined, night);
+}
+export function requestPdfHalf(
+  pdf: PDFDocumentProxy,
+  sourceIndex: number,
+  scale: number,
+  width: number,
+  height: number,
+  side: 'top' | 'bottom',
+  night = false,
+) {
+  const rounded = Number(scale.toFixed(3)),
+    regions = pageHalves(Math.ceil(width * rounded), Math.ceil(height * rounded)),
+    region = regions[side === 'top' ? 0 : 1];
+  if (region.height < 1) return requestPdfBitmap(pdf, sourceIndex, scale, 3, night);
+  return requestBitmap(pdf, sourceIndex, scale, 3, region, night);
+}
+export function hasPdfBitmap(
+  pdf: PDFDocumentProxy,
+  sourceIndex: number,
+  scale: number,
+  night = false,
+) {
+  return stateFor(pdf).cache.has(bitmapKey(sourceIndex, scale, night));
+}
+/** A separate, global 150-image LRU prevents large PDF pages from evicting
+ * sidebar previews. It retains thumbnail states only, never full-size caches. */
+export function requestPdfThumbnail(
+  pdf: PDFDocumentProxy,
+  sourceIndex: number,
+  width: number,
+  height: number,
+  night = false,
+) {
+  if (![width, height].every((v) => Number.isFinite(v) && v > 0))
+    throw new RangeError('无效的缩略图尺寸');
+  return requestBitmap(
+    pdf,
+    sourceIndex,
+    Math.min(180 / width, 240 / height),
+    2,
+    undefined,
+    night,
+    true,
+  );
 }
 /** Tile coordinates are integer pixels of the rotated/cropped PDF viewport. */
 export function requestPdfTile(
@@ -291,16 +637,28 @@ function requestBitmap(
   priority: number,
   region?: PdfPixelRegion,
   night = false,
+  thumbnail = false,
 ) {
   initializeRenderScheduler();
   if (!Number.isFinite(scale) || scale <= 0) throw new RangeError('无效的 PDF 渲染倍率');
-  const state = stateFor(pdf),
-    key = `${sourceIndex}:${scale.toFixed(3)}:${night ? 'night' : 'day'}${region ? `:tile:${region.x},${region.y},${region.width},${region.height}` : ''}`;
+  const state = stateFor(pdf, thumbnail),
+    key = bitmapKey(sourceIndex, scale, night, region);
   const existing = state.cache.get(key);
   if (existing) {
     state.hits++;
+    performanceLedger?.count('pdfCacheHits');
     state.cache.delete(key);
     state.cache.set(key, existing);
+    if (state.pageKeys.get(sourceIndex) === key) {
+      state.pageKeys.delete(sourceIndex);
+      state.pageKeys.set(sourceIndex, key);
+      trimPageCache(state);
+    }
+    const thumbnailEntry = thumbnailLru.get(existing);
+    if (thumbnailEntry) {
+      thumbnailLru.delete(existing);
+      thumbnailLru.set(existing, thumbnailEntry);
+    }
     return { promise: Promise.resolve(existing), cancel: () => {} };
   }
   let job = state.jobs.get(key);
@@ -326,6 +684,8 @@ function requestBitmap(
       promise,
       resolve,
       reject,
+      finish: performanceLedger?.begin('pdf-job'),
+      generation: state.generation,
     };
     state.jobs.set(key, job);
     queue.push(job);
@@ -350,6 +710,7 @@ function requestBitmap(
         const position = queue.indexOf(leased);
         if (position >= 0) queue.splice(position, 1);
         leased.reject(cancelled());
+        leased.finish?.('cancelled');
       }
     },
   };
@@ -368,13 +729,18 @@ export function priorPdfBitmap(pdf: PDFDocumentProxy, sourceIndex: number, night
 }
 export function getPdfRenderStats(pdf: PDFDocumentProxy) {
   const s = stateFor(pdf);
+  const t = thumbnailStates.get(pdf);
+  const jobs = [...s.jobs.values(), ...(t?.jobs.values() ?? [])];
   return {
-    bytes: s.bytes,
-    bitmaps: s.cache.size,
-    renders: s.renders,
-    hits: s.hits,
-    running: [...s.jobs.values()].filter((j) => j.started).length,
-    queued: [...s.jobs.values()].filter((j) => !j.started).length,
+    bytes: s.bytes + (t?.bytes ?? 0),
+    bitmaps: s.cache.size + (t?.cache.size ?? 0),
+    thumbnails: t?.cache.size ?? 0,
+    pages: s.pageKeys.size,
+    pageBytes: s.pageBytes,
+    renders: s.renders + (t?.renders ?? 0),
+    hits: s.hits + (t?.hits ?? 0),
+    running: jobs.filter((j) => j.started).length,
+    queued: jobs.filter((j) => !j.started).length,
   };
 }
 export function renderingCancelled(error: unknown) {

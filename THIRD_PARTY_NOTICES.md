@@ -70,6 +70,7 @@ Generated from the locked dependency tree, including development tools. Exact pa
 | @jridgewell/resolve-uri | 3.1.2 | MIT | https://github.com/jridgewell/resolve-uri |
 | @jridgewell/sourcemap-codec | 1.6.0 | MIT | https://github.com/jridgewell/sourcemaps |
 | @jridgewell/trace-mapping | 0.3.31 | MIT | https://github.com/jridgewell/sourcemaps |
+| @koromix/koffi-win32-x64 | 3.3.3 | MIT | https://github.com/Koromix/koffi |
 | @malept/cross-spawn-promise | 2.0.0 | Apache-2.0 | https://github.com/malept/cross-spawn-promise |
 | @malept/flatpak-bundler | 0.4.0 | MIT | https://github.com/malept/flatpak-bundler |
 | @mermaid-js/parser | 0.6.3 | MIT | https://github.com/mermaid-js/mermaid |
@@ -193,6 +194,7 @@ Generated from the locked dependency tree, including development tools. Exact pa
 | @types/ms | 2.1.0 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
 | @types/node | 22.20.5 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
 | @types/node | 24.19.2 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
+| @types/rbush | 4.0.0 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
 | @types/react | 19.3.0 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
 | @types/react-dom | 19.3.0 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
 | @types/responselike | 1.0.3 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
@@ -480,6 +482,7 @@ Generated from the locked dependency tree, including development tools. Exact pa
 | katex | 0.16.47 | MIT | https://github.com/KaTeX/KaTeX |
 | keyv | 4.5.4 | MIT | https://github.com/jaredwray/keyv |
 | khroma | 2.1.0 | "See upstream" | github:fabiospampinato/khroma |
+| koffi | 3.3.3 | MIT | https://github.com/Koromix/koffi |
 | langium | 3.3.1 | MIT | https://github.com/eclipse-langium/langium |
 | layout-base | 1.0.2 | MIT | https://github.com/iVis-at-Bilkent/layout-base |
 | layout-base | 2.0.1 | MIT | https://github.com/iVis-at-Bilkent/layout-base |
@@ -634,6 +637,8 @@ Generated from the locked dependency tree, including development tools. Exact pa
 | pvutils | 1.2.0 | MIT | https://github.com/PeculiarVentures/pvutils |
 | pwacompat | 2.0.17 | Apache-2.0 | https://github.com/GoogleChrome/pwacompat |
 | quick-lru | 5.1.1 | MIT | sindresorhus/quick-lru |
+| quickselect | 3.0.0 | ISC | github:mourner/quickselect |
+| rbush | 4.0.1 | MIT | git://github.com/mourner/rbush |
 | react | 19.3.0 | MIT | https://github.com/react/react |
 | react-dom | 19.3.0 | MIT | https://github.com/react/react |
 | react-markdown | 10.1.0 | MIT | remarkjs/react-markdown |

@@ -1,0 +1,6 @@
+{
+  "referenceSource": null,
+  "originalSha256": "bfe96b2a86aa84325630c43b3c3e5824c5b6c624fbc736d30ecaccefd7727a99",
+  "compiledSha256": "bfe96b2a86aa84325630c43b3c3e5824c5b6c624fbc736d30ecaccefd7727a99",
+  "mechanism": "Only useForegroundViewport.ts differs: share one viewport rect per scroll frame and remove duplicate mount measurement. Preserve root resize measurements, synchronous first paint, clip geometry, quality and scheduling."
+}

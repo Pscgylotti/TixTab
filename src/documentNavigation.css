@@ -1,0 +1,316 @@
+.document-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 7px 7px;
+  border-bottom: 1px solid var(--border);
+}
+.document-nav-tabs > span {
+  flex: 1;
+}
+.document-nav-tabs .active {
+  background: var(--accent-soft, #4778bf30);
+  color: var(--accent, #669bfa);
+}
+.document-nav-tabs .icon-button {
+  flex: 1;
+  width: 24px;
+  min-width: 20px;
+  height: 28px;
+  padding: 3px;
+}
+.document-nav-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overflow-x: hidden;
+  min-width: 0;
+  padding: 8px;
+}
+.document-search-results {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+.document-search-input {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 5px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--input-bg, transparent);
+}
+.document-search-input > svg,
+.document-search-input > button {
+  flex-shrink: 0;
+}
+.document-search-input input {
+  flex: 1;
+  width: 0;
+}
+.document-search-input input,
+.document-bookmark input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 6px 1px;
+  outline-offset: 2px;
+}
+.document-search-status {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  padding: 5px 0;
+  color: var(--muted);
+}
+.document-search-status > span {
+  flex: 1;
+}
+.document-search-results button {
+  align-items: flex-start;
+  justify-content: center;
+  font-weight: 400;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  width: 100%;
+  gap: 2px;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+}
+.document-search-results button:hover,
+.document-outline-row:hover {
+  background: var(--accent-soft, #4778bf20);
+}
+.document-search-results button.active {
+  background: var(--accent-soft, #4778bf30);
+  border-color: var(--accent, #669bfa);
+}
+.document-search-results small {
+  color: var(--muted);
+}
+.document-search-results span {
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.sidebar .document-search-results button {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  white-space: normal;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.document-outline,
+.document-outline ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.document-outline-row {
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+}
+.document-outline-row > button:not(.outline-toggle),
+.document-outline-row a {
+  display: block;
+  white-space: normal;
+  line-height: 1.45;
+  font-weight: 400;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 8px 2px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+.sidebar {
+  min-width: 212px;
+  position: relative;
+}
+.document-context-preview {
+  position: fixed;
+  z-index: 100000;
+  padding: 12px 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md, 10px);
+  box-shadow: var(--shadow-3);
+  pointer-events: auto;
+  max-height: 240px;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.document-context-preview small {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+}
+.document-context-preview > div {
+  white-space: pre-wrap;
+}
+.document-search-results mark,
+.document-context-preview mark {
+  background: #e4b53d55;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 650;
+}
+.latex-history-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.latex-source-header {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sidebar-resizer {
+  position: absolute;
+  right: -5px;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  z-index: 30;
+  cursor: col-resize;
+  touch-action: none;
+}
+.sidebar-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: transparent;
+}
+.sidebar-resizer:hover::after,
+.sidebar-resizer:focus-visible::after,
+.sidebar-resizing .sidebar-resizer::after {
+  background: var(--accent);
+}
+.sidebar-resizing {
+  user-select: none;
+}
+.sidebar .document-outline-row {
+  min-width: 0;
+}
+.sidebar .document-outline-row > button:not(.outline-toggle),
+.sidebar .document-outline-row > a {
+  display: block;
+  text-align: left;
+  white-space: normal;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 400;
+}
+@media (max-width: 1000px) {
+  .sidebar {
+    position: absolute;
+  }
+}
+.document-outline-row .outline-toggle {
+  flex-shrink: 0;
+}
+.document-nav-empty {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  padding: 20px 0;
+}
+.document-add-bookmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+}
+.document-bookmark {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 8px;
+}
+.pdf-navigation-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20000;
+  pointer-events: none;
+}
+.pdf-document-link {
+  position: absolute;
+  display: block;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.pdf-document-link:hover,
+.pdf-document-link.link-highlighted,
+.pdf-document-link:focus-visible {
+  background: #518feb22;
+  outline: var(--link-outline-width, 1px) solid #518feb;
+}
+.pen-interaction-active .pdf-document-link {
+  background: #518feb22;
+  outline: var(--link-outline-width, 1px) solid #518feb;
+}
+.pen-interaction-active .pdf-document-link.pen-target-hover {
+  background: #f59e0b38;
+  outline-color: #f59e0b;
+}
+.page-editor .pdf-navigation-layer .pdf-document-link {
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  font-size: 0;
+  border: 0;
+  box-sizing: border-box;
+}
+.pdf-search-mark {
+  position: absolute;
+  background: #ffbd3455;
+  outline: 1px solid #d99220;
+  pointer-events: none;
+}
+.pdf-search-mark.destination-mark {
+  background: transparent;
+  outline: 0;
+}

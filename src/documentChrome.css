@@ -2,30 +2,32 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   overflow-x: auto;
   scrollbar-width: thin;
   padding: 2px 12px;
-  border-bottom: 1px solid var(--line);
-  background: #edf2f8;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
   min-height: 40px;
+  user-select: none;
 }
 .document-tab {
   display: flex;
   flex-shrink: 0;
-  border-radius: 7px;
+  border-radius: var(--r-md);
   border: 1px solid transparent;
   max-width: 240px;
   align-items: center;
-  color: #6c7c92;
+  color: var(--text-muted);
 }
 .document-tab.active {
-  background: #fff;
-  border-color: #d9e2ef;
-  color: var(--accent);
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--accent-text);
+  box-shadow: var(--shadow-1);
 }
 .document-tab > [role='tab'] {
-  padding: 5px 9px;
+  padding: 5px 10px;
   min-height: 34px;
   min-width: 0;
   gap: 6px;
@@ -38,7 +40,7 @@
 }
 .document-tab .close-tab {
   padding: 5px;
-  min-width: 30px;
+  min-width: 32px;
   min-height: 34px;
   flex-shrink: 0;
 }
@@ -58,26 +60,26 @@
   align-items: center;
   justify-content: center;
   gap: 14px;
-  border: 3px dashed #749ae5;
-  border-radius: 14px;
-  background: #edf4fff2;
-  color: #4775db;
-  font-size: 18px;
+  border: 3px dashed var(--accent);
+  border-radius: var(--r-xl);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--accent-text);
+  font-size: var(--fs-2xl);
 }
 .pdf-drop-overlay span {
-  font-size: 14px;
+  font-size: var(--fs-lg);
 }
 .statusbar .bottom-tools-toggle {
   flex-shrink: 0;
-  min-width: 32px;
-  min-height: 32px;
+  min-width: 36px;
+  min-height: 28px;
   padding: 4px;
 }
 .statusbar .pen-status {
   margin-right: auto;
 }
 .statusbar.tools-collapsed {
-  height: 50px;
+  height: 52px;
   gap: 4px;
   padding-left: 8px;
 }
@@ -119,10 +121,10 @@
   min-height: 44px;
   padding: 6px;
   gap: 5px;
-  font-size: 10px;
+  font-size: var(--fs-xs);
 }
 .status-tools :is(.zoom-dock, .page-navigation) button {
-  min-width: 38px;
+  min-width: 40px;
   min-height: 44px;
   padding: 5px;
 }
@@ -147,7 +149,7 @@
   height: 7px;
   border-radius: 50%;
   background: var(--swatch);
-  box-shadow: 0 0 0 1px var(--line);
+  box-shadow: 0 0 0 1px var(--border-strong);
 }
 .ink-color-panel {
   position: fixed;
@@ -157,12 +159,12 @@
   max-height: calc(100dvh - 16px);
   overflow: auto;
   padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: #f5f8fe;
-  box-shadow: 0 8px 36px #24395a40;
-  color: #526079;
-  font-size: 12px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+  color: var(--text);
+  font-size: var(--fs-sm);
   letter-spacing: 0;
 }
 .ink-color-panel header {
@@ -172,13 +174,13 @@
   gap: 8px;
 }
 .ink-color-panel button {
-  min-height: 40px;
+  min-height: var(--ctl);
 }
 .ink-color-panel .row {
   gap: 4px;
 }
 .ink-color-panel .row button {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   padding: 7px;
 }
 .ink-color-input {
@@ -191,11 +193,11 @@
 .ink-color-input input {
   min-width: 0;
   width: 140px;
-  min-height: 40px;
+  min-height: var(--ctl);
   padding: 5px 8px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
   color: inherit;
 }
 .ink-color-input input[type='color'] {
@@ -212,28 +214,14 @@
   gap: 2px;
 }
 .saved-ink-colors .color-swatch {
-  width: 30px;
-  height: 30px;
-  min-height: 30px;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
 }
 .saved-ink-colors > div > button:last-child {
   padding: 4px;
-  min-width: 24px;
-  min-height: 32px;
-}
-[data-night='true'] :is(.document-tabs, .ink-color-panel) {
-  background: #1e242f;
-  color: #d5dff0;
-  border-color: #394251;
-}
-[data-night='true'] .document-tab.active {
-  background: #304468;
-  color: #c4d6ff;
-  border-color: #55719a;
-}
-[data-night='true'] .pdf-drop-overlay {
-  background: #1e293bf5;
-  color: #b5caff;
+  min-width: 28px;
+  min-height: 36px;
 }
 @media (max-width: 1000px) {
   .status-tools {
@@ -259,6 +247,37 @@
   }
 }
 /* Fully folded reading layout shares the header restore control with the tabs. */
+.app-shell {
+  position: relative;
+}
+.app-shell > .topbar.collapsed {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  z-index: 25;
+  width: 32px;
+  height: var(--compact-row, 40px);
+  min-height: var(--compact-row, 40px);
+  padding: 0;
+  gap: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.app-shell > .topbar.collapsed > .collapsed-title {
+  display: none;
+}
+.app-shell > .topbar.collapsed > .chrome-toggle {
+  width: 32px;
+  min-width: 32px;
+  height: var(--compact-row, 40px);
+  min-height: var(--compact-row, 40px);
+  padding: 4px;
+}
+.app-shell > .topbar.collapsed + .document-tabs {
+  padding-right: 42px;
+}
 .chrome-minimal {
   position: relative;
   --compact-row: 30px;
@@ -298,7 +317,7 @@
   height: var(--compact-row);
   min-height: var(--compact-row);
   padding: 3px 6px;
-  font-size: 11px;
+  font-size: var(--fs-sm);
 }
 .chrome-minimal .new-document-tab {
   min-width: 30px;

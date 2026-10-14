@@ -1,0 +1,6 @@
+{
+  "referenceSource": null,
+  "originalSha256": "cbe02d9ed230313c9511426ce71142b6f79865fda8b221de48ff0fe5c35f96a8",
+  "compiledSha256": "cbe02d9ed230313c9511426ce71142b6f79865fda8b221de48ff0fe5c35f96a8",
+  "mechanism": "Only pdfRenderCache.ts differs: omit render-resume timers while a tracked contact remains down; preserve final-release quiet period, stale pointer recovery, visibility, priorities, concurrency and pixels."
+}

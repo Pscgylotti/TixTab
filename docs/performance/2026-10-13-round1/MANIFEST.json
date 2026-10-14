@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "entries": [
+    {
+      "file": "gated-baseline-1.json.gz",
+      "sha256": "164b399ad26988bcf2b75b9be1b2366d3ad1abb53ddaa1e4c29feebdf493c96e",
+      "reportSha256": "94d82ad59ec08daec6198e0954a4a52c1a049fa63caa311ed38c52f4b9c6a2c3",
+      "buildSha256": "9f63da84416fac5246e6031de4916cb6dd1c2990c58552ccdfed80c7ac2489ba",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f",
+      "formulaWrites": 253
+    },
+    {
+      "file": "gated-baseline-2.json.gz",
+      "sha256": "82a58bca0cfaaa167cdc9a63d97e2cde8437cd0c3c8af16038b1030bf2c6e9c9",
+      "reportSha256": "3163c9f732d4a4ea2702214dcec2834c175d1557639b8dfc0e1eb655b89373e5",
+      "buildSha256": "9f63da84416fac5246e6031de4916cb6dd1c2990c58552ccdfed80c7ac2489ba",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f",
+      "formulaWrites": 253
+    },
+    {
+      "file": "gated-baseline-3.json.gz",
+      "sha256": "75c58c64ec568c20289d14772d479949903435c8f8218a5318d772ac32774f21",
+      "reportSha256": "98732acc0c6fab79f658f8ef96f8931ceb9746ea44cb9d731c4c1114c25a9e8d",
+      "buildSha256": "9f63da84416fac5246e6031de4916cb6dd1c2990c58552ccdfed80c7ac2489ba",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f",
+      "formulaWrites": 253
+    },
+    {
+      "file": "round1-1.json.gz",
+      "sha256": "54f5f2182be3df4ec2f0cbb81963a368d3c98cac34f2fb81b33a8bc068d018ce",
+      "reportSha256": "82d0db635489d34ed8e2753d044f59785fe8b0f0892f18bab7c7acb5dad0f225",
+      "buildSha256": "bca236b714c30f3927132fbe4e51efc48db0fc8d483f4429b3f05adc091b4c10",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f",
+      "formulaWrites": 2
+    },
+    {
+      "file": "round1-2.json.gz",
+      "sha256": "debeb64744c9bd5c3a4f5ef4824f92ceb2feea73f213f2d1e16c21f123519b5e",
+      "reportSha256": "386af98ea75f28fb31bd7e629a282cbd42dc8115355bb4074ac6354360d121fa",
+      "buildSha256": "bca236b714c30f3927132fbe4e51efc48db0fc8d483f4429b3f05adc091b4c10",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f",
+      "formulaWrites": 2
+    },
+    {
+      "file": "round1-3.json.gz",
+      "sha256": "ac3ff6482e12fc28a0a5c9362ec1c1df99038e3b11f6ecd32d033ed4c8457627",
+      "reportSha256": "bee00bba052d295afdbf14f8bf4ced9f4de465c4ed9fe1b666d2f7d4aae016b6",
+      "buildSha256": "bca236b714c30f3927132fbe4e51efc48db0fc8d483f4429b3f05adc091b4c10",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f",
+      "formulaWrites": 2
+    }
+  ]
+}

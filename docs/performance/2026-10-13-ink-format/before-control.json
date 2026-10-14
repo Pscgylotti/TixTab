@@ -1,0 +1,6 @@
+{
+  "referenceSource": ".cache/ink-pre-format-fusion.ts",
+  "originalSha256": "274f154aff1245f61c2036b8ca45b4a24e048bd9c6dad4c188d8eb2f4f4074ff",
+  "compiledSha256": "2e2729a2f1114fe8e966caa43390754568258a850f23f09ab994d3b5715a6116",
+  "mechanism": "Only ink.ts differs: format outline coordinates once for both the exact path and bounds. Rounding, geometry, pressure, pixels, caches, layer order and scheduling stay fixed."
+}

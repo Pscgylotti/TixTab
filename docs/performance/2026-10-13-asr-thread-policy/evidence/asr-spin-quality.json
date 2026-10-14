@@ -1,0 +1,193 @@
+{
+  "schema": 1,
+  "kind": "asr-thread-policy-quality",
+  "createdUnixMs": 1791837645147,
+  "harnessSha256": "48ab89c9b85687bb078ca38aa4b488b846d95cb3f024e1a156d91692e585472d",
+  "sources": {
+    "before": {
+      "schema": 1,
+      "group": "before",
+      "mechanism": "Only intra/inter-op allow_spinning policy differs; same model, decoding and two threads.",
+      "files": {
+        "backend/native_asr.py": "f5d1e23debc822e27fefe90aabe1078fe27ec3eee252b8dfe8bf942258c928ab",
+        "backend/asr_worker.py": "3e2aec17bac07fc2155672da514d384e4f6586715916752373c9a9e91221dd19",
+        "backend/asr_lifecycle.py": "b737c6f33469b6b57258687ddd3a44a6a20e0d49640f605caabd321376f02f6d",
+        "backend/cache_lease.py": "95095b3dd1fe593d21451537f7fc06c14f822d99e2de7253d23d7459f5f12588",
+        "backend/opus_cache.py": "2c976ffbb488e1a0e7f98d99f9216618a58b1906e19626753a0e94bfa28f1e72",
+        "backend/microphones.py": "dcf906cd3c57db74ed7ef9ca97305b66f86a02ca06be0b81912c81c342d1c2f7",
+        "backend/asr-manifest.json": "eb16819dddedd2304e81d7a452cb292dd208d93f30d389b4e2ce0c1c2e949dc3",
+        "backend/asr-ort.config": "afee788d1f2ec7d94f76efda38b34f5cd3d8fb67f6c696b1bf082923951de580",
+        "backend/requirements-asr.txt": "486d10ebf33a7cad54488af9e747163b29055096c20f0c93e40047c0447db2c9"
+      }
+    },
+    "candidate": {
+      "schema": 1,
+      "group": "candidate",
+      "mechanism": "Only intra/inter-op allow_spinning policy differs; same model, decoding and two threads.",
+      "files": {
+        "backend/native_asr.py": "f5d1e23debc822e27fefe90aabe1078fe27ec3eee252b8dfe8bf942258c928ab",
+        "backend/asr_worker.py": "3e2aec17bac07fc2155672da514d384e4f6586715916752373c9a9e91221dd19",
+        "backend/asr_lifecycle.py": "b737c6f33469b6b57258687ddd3a44a6a20e0d49640f605caabd321376f02f6d",
+        "backend/cache_lease.py": "95095b3dd1fe593d21451537f7fc06c14f822d99e2de7253d23d7459f5f12588",
+        "backend/opus_cache.py": "2c976ffbb488e1a0e7f98d99f9216618a58b1906e19626753a0e94bfa28f1e72",
+        "backend/microphones.py": "dcf906cd3c57db74ed7ef9ca97305b66f86a02ca06be0b81912c81c342d1c2f7",
+        "backend/asr-manifest.json": "eb16819dddedd2304e81d7a452cb292dd208d93f30d389b4e2ce0c1c2e949dc3",
+        "backend/asr-ort.config": "b1096790d38062c6f2a161085fb960579966dffc76679c0b9da36416d6193d9f",
+        "backend/requirements-asr.txt": "486d10ebf33a7cad54488af9e747163b29055096c20f0c93e40047c0447db2c9"
+      }
+    }
+  },
+  "model": {
+    "id": "sensevoice-small",
+    "name": "SenseVoiceSmall INT8",
+    "feature": "dictation",
+    "revision": "2365baeacb507f821a0c8120fcee3d484dba7a07",
+    "license": "SenseVoice model license (see source); Apache-2.0 (sherpa-onnx)",
+    "source": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
+    "device": "CPU (2 threads)",
+    "optional": true,
+    "files": [
+      {
+        "path": "sensevoice-small/LICENSE",
+        "bytes": 71,
+        "sha256": "221c6df10b0931a5629adad671ea48fb7747e034c414b6d2bfa275bc3dd4ea17",
+        "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/LICENSE"
+      },
+      {
+        "path": "sensevoice-small/README.md",
+        "bytes": 104,
+        "sha256": "763991a00edaea534ab36bf1b7cf89e61e911666dcfabbba71f91f9f7c593a63",
+        "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/README.md"
+      },
+      {
+        "path": "sensevoice-small/model.int8.onnx",
+        "bytes": 239233841,
+        "sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51",
+        "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/model.int8.onnx"
+      },
+      {
+        "path": "sensevoice-small/tokens.txt",
+        "bytes": 315894,
+        "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc",
+        "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/tokens.txt"
+      }
+    ],
+    "bytes": 239549910
+  },
+  "fixture": {
+    "samples": [
+      {
+        "voice": "Microsoft David Desktop",
+        "text": "The library opens at nine in the morning and closes at five in the afternoon.",
+        "sha256": "87f81ef7f0eb99fad6a3a8f5bbdccc9a4e5b5abeb7977de664a67927e90ff15a",
+        "bytes": 158926,
+        "language": "en-US",
+        "file": "en.wav"
+      },
+      {
+        "voice": "Microsoft Huihui Desktop",
+        "text": "图书馆上午九点开放，下午五点关闭。",
+        "sha256": "6eb5f0f6f53d60d8e14f33d773de3cd3f81a464c87be0b8096e2f937f26f0d47",
+        "bytes": 151566,
+        "language": "zh-CN",
+        "file": "zh.wav"
+      }
+    ],
+    "schema": 1,
+    "source": "Local Windows desktop TTS, fixed project-authored test sentences; no microphone recording."
+  },
+  "rows": [
+    {
+      "language": "en-US",
+      "variant": "clean",
+      "audioSeconds": 4.965,
+      "float32Sha256": "ba4d90f2164ad33a64406a1077c93fd23f84f93d58f5cb26d6de31f1c87009a2",
+      "text": {
+        "before": "The library opens at9 in the morning and closes at5 in the afternoon.",
+        "candidate": "The library opens at9 in the morning and closes at5 in the afternoon."
+      },
+      "equal": true
+    },
+    {
+      "language": "en-US",
+      "variant": "leading-trailing-silence",
+      "audioSeconds": 5.965,
+      "float32Sha256": "d48c3a97b60a628dce5b68f02ffd044f839191ccfc895db84c279354ef611b0c",
+      "text": {
+        "before": "The library opens at9 in the morning and closes at5 in the afternoon.",
+        "candidate": "The library opens at9 in the morning and closes at5 in the afternoon."
+      },
+      "equal": true
+    },
+    {
+      "language": "en-US",
+      "variant": "synthetic-noise-12dB",
+      "audioSeconds": 4.965,
+      "float32Sha256": "2054009b89e92af086948530c5e5b23f7e8a8321e042bcee58f67d2bf7e844de",
+      "text": {
+        "before": "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+        "candidate": "The library opens at 9 in the morning and closes at 5 in the afternoon."
+      },
+      "equal": true
+    },
+    {
+      "language": "en-US",
+      "variant": "three-phrases",
+      "audioSeconds": 15.895,
+      "float32Sha256": "c42727a8d3d6890c60b85ec5d16d76c24e2669461da2885ae9c8faca60113889",
+      "text": {
+        "before": "The library opens at9 in the morning and closes at5 in the afternoon The library opens at9 in the morning and closes at5 in the afternoon the library opens at9 in the morning and closes at 5 in the afternoon.",
+        "candidate": "The library opens at9 in the morning and closes at5 in the afternoon The library opens at9 in the morning and closes at5 in the afternoon the library opens at9 in the morning and closes at 5 in the afternoon."
+      },
+      "equal": true
+    },
+    {
+      "language": "zh-CN",
+      "variant": "clean",
+      "audioSeconds": 4.735,
+      "float32Sha256": "02e7d191a60011af46e78bbff62aee033f0d5a0e80207b1e9e4d0d157cabd3f2",
+      "text": {
+        "before": "图书馆上午9点开放，下午5点关闭。",
+        "candidate": "图书馆上午9点开放，下午5点关闭。"
+      },
+      "equal": true
+    },
+    {
+      "language": "zh-CN",
+      "variant": "leading-trailing-silence",
+      "audioSeconds": 5.735,
+      "float32Sha256": "515df9fe7992f2be98861ee417e2c4501a4d26a05a291deb0eb9cdc1eb3e9086",
+      "text": {
+        "before": "图书馆上午9点开放，下午5点关闭。",
+        "candidate": "图书馆上午9点开放，下午5点关闭。"
+      },
+      "equal": true
+    },
+    {
+      "language": "zh-CN",
+      "variant": "synthetic-noise-12dB",
+      "audioSeconds": 4.735,
+      "float32Sha256": "948c9fdd9e6a5f7d17e6ea393f61b4deb9fefcc15373dd953d4ac9db407831c5",
+      "text": {
+        "before": "图书馆上午9点开放，下午5点关闭。",
+        "candidate": "图书馆上午9点开放，下午5点关闭。"
+      },
+      "equal": true
+    },
+    {
+      "language": "zh-CN",
+      "variant": "three-phrases",
+      "audioSeconds": 15.205,
+      "float32Sha256": "a18b0763ea01fba816da7698d9d3e71bf1a61b00aeb7d795d5ad3481a7f0af1f",
+      "text": {
+        "before": "图书馆上午9点开放，下午5点关闭。图书馆上午9点开放下午5点关闭。图书馆上午9点开放，下午5点关闭。",
+        "candidate": "图书馆上午9点开放，下午5点关闭。图书馆上午9点开放下午5点关闭。图书馆上午9点开放，下午5点关闭。"
+      },
+      "equal": true
+    }
+  ],
+  "limitations": [
+    "Authored TTS variants, not a real microphone or recognition accuracy benchmark.",
+    "Strict output equality between policies; no resource/latency claim from this quality test."
+  ]
+}

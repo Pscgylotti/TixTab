@@ -52,7 +52,7 @@ test('task panel cancels queued work without sending it, shows actual route, and
     await page.getByRole('button', { name: '实验性夜间模式', exact: true }).click();
     await page.getByRole('button', { name: '公式', exact: true }).click();
     await draw(page);
-    await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+    await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
     await expect.poll(() => formulaRequests).toBe(1);
     await page.evaluate(async () => {
       const loaded = performance
@@ -150,13 +150,13 @@ test('cancelling active formula through task panel restores its controls and blo
     await expect(page.locator('.busy-overlay')).toHaveCount(0);
     await page.getByRole('button', { name: '公式', exact: true }).click();
     await draw(page);
-    await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+    await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
     await expect.poll(() => started).toBe(1);
     await page.getByRole('button', { name: '任务与后端', exact: true }).click();
     await page.getByRole('button', { name: '取消任务 公式识别', exact: true }).click();
     await expect(page.locator('.task-card')).toHaveAttribute('data-phase', 'cancelled');
     await page.getByRole('button', { name: '关闭任务面板' }).click();
-    await expect(page.getByRole('button', { name: '识别手写公式', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: '识别并覆盖', exact: true })).toBeEnabled();
     await expect(page.locator('.formula-status')).toHaveText('已取消');
     release();
     await expect(page.getByLabel('LaTeX · 可直接修改')).toHaveValue('');
@@ -200,6 +200,7 @@ test('real OCR initialization cancellation terminates its worker, then succeeds 
   await page.mouse.down();
   await page.mouse.move(r.x + r.width * 0.93, r.y + r.height * 0.3, { steps: 5 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   await page.getByLabel('OCR 后端').selectOption('local');
   let release!: () => void;
   const gate = new Promise<void>((r) => {
@@ -318,7 +319,7 @@ test('manual memory release waits for native work and closing its panel cancels 
     await expect(page.locator('.busy-overlay')).toHaveCount(0);
     await page.getByRole('button', { name: '公式', exact: true }).click();
     await draw(page);
-    await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+    await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
     await expect.poll(() => inference).toBe(1);
     await page.getByRole('button', { name: '任务与后端', exact: true }).click();
     const panel = page.getByRole('dialog', { name: '任务与后端', exact: true });
@@ -376,7 +377,7 @@ test('a supported native session is released before WASM; busy release starts no
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   await page.getByRole('button', { name: '公式', exact: true }).click();
   await draw(page);
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await expect(page.getByLabel('LaTeX · 可直接修改')).toHaveValue('x');
   await page
     .getByRole('dialog', { name: '手写公式' })
@@ -388,6 +389,7 @@ test('a supported native session is released before WASM; busy release starts no
   await page.mouse.down();
   await page.mouse.move(r.x + 200, r.y + 160, { steps: 5 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   await page.getByLabel('OCR 后端').selectOption('local');
   await page.getByRole('button', { name: '开始识别', exact: true }).click();
   await expect(page.locator('.ocr-task-status')).toContainText('已有本地推理正在运行');

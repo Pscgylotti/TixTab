@@ -9,8 +9,12 @@ const {
   powerMonitor,
   nativeTheme,
   safeStorage,
+  screen,
 } = require('electron');
+const { attachNativePen } = require('./pen-native.cjs');
 const { createProviderVault } = require('./provider-vault.cjs');
+const { lowerPriority } = require('./low-priority.cjs');
+const { createDesktopShortcut } = require('./desktop-shortcut.cjs');
 const { createProviderRelay } = require('./provider-relay.cjs');
 const { createModelLibrary } = require('./model-library.cjs');
 const { createCacheManager } = require('./cache-manager.cjs');
@@ -41,6 +45,7 @@ else app.setPath('userData', path.join(app.getPath('appData'), 'surfacetab'));
 app.setAppUserModelId('local.surfacetab.app');
 app.whenReady().then(() => {
   const root = path.resolve(__dirname, '../dist');
+  const appIcon = path.join(root, process.platform === 'win32' ? 'tixtab.ico' : 'tixtab.png');
   const modelRoot = path.join(app.getPath('userData'), 'model-library', 'v1');
   const modelLibrary = createModelLibrary({
     root: modelRoot,
@@ -80,6 +85,23 @@ app.whenReady().then(() => {
   const providerSender = (event) =>
     event.senderFrame === event.sender.mainFrame && trusted(event.senderFrame.url);
   const editWindows = new Set();
+  ipcMain.handle('app:desktop-shortcut', (event) =>
+    providerSender(event)
+      ? createDesktopShortcut({ app, shell })
+      : { ok: false, error: 'untrusted' },
+  );
+  ipcMain.handle('document:open-url', async (event, value) => {
+    if (!providerSender(event) || typeof value !== 'string' || value.length > 8192) return false;
+    try {
+      const url = new URL(value);
+      if (!['https:', 'http:', 'mailto:'].includes(url.protocol) || url.username || url.password)
+        return false;
+      await shell.openExternal(url.href);
+      return true;
+    } catch {
+      return false;
+    }
+  });
   ipcMain.handle('edit:command', (event, command) => {
     if (
       !(
@@ -332,6 +354,7 @@ app.whenReady().then(() => {
           },
         );
         const child = nativeProcess;
+        lowerPriority(child);
         child.on('error', () => {
           if (nativeProcess === child) nativeProcess = null;
         });
@@ -385,6 +408,7 @@ app.whenReady().then(() => {
     minHeight: 600,
     show: false,
     title: 'TixTab',
+    icon: appIcon,
     backgroundColor: '#00000000',
     backgroundMaterial: 'mica',
     autoHideMenuBar: true,
@@ -396,6 +420,7 @@ app.whenReady().then(() => {
     },
   });
   win.once('ready-to-show', () => win.show());
+  attachNativePen(win, { screen, trusted });
   const visibility = () =>
     win.webContents.send('window:visibility', win.isVisible() && !win.isMinimized());
   for (const event of ['hide', 'show', 'minimize', 'restore']) win.on(event, visibility);
@@ -427,6 +452,7 @@ app.whenReady().then(() => {
           minWidth: 340,
           minHeight: 460,
           title: 'TixTab · ChatGPT',
+          icon: appIcon,
           autoHideMenuBar: true,
           backgroundMaterial: 'mica',
           webPreferences: {

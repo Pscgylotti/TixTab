@@ -1,13 +1,28 @@
 import { extractFile, listPackage } from '@electron/asar';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
-import { normalize } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { dirname, join, normalize } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
+import { verifyExecutableIcon } from './verify-icons.mjs';
 const archive =
   process.argv[2] ||
   `release/${JSON.parse(readFileSync('package.json', 'utf8')).version}/win-unpacked/resources/app.asar`;
 const entries = listPackage(archive).map((name) => name.replaceAll('\\', '/'));
+for (const folder of ['performance', 'maintenance'])
+  assert.equal(
+    existsSync(join(dirname(dirname(archive)), 'docs', folder)),
+    false,
+    'Raw experiment archives must not ship: ' + folder,
+  );
+for (const name of ['tixtab.svg', 'tixtab.png', 'tixtab.ico'])
+  assert.deepEqual(
+    extractFile(archive, normalize('dist/' + name)),
+    readFileSync('public/' + name),
+    'Bundled application icon differs: ' + name,
+  );
+await verifyExecutableIcon(join(dirname(dirname(archive)), 'TixTab.exe'));
 assert.ok(entries.includes('/electron/preload.cjs'));
+assert.ok(entries.includes('/electron/desktop-shortcut.cjs'), 'Desktop shortcut module missing');
 assert.ok(
   entries.includes('/electron/provider-vault.cjs'),
   'Encrypted provider settings module missing',
@@ -42,10 +57,24 @@ if (!lite)
       entries.includes('/dist/models/ppocrv4/' + name),
       'OCR license/notice missing: ' + name,
     );
-assert.equal(
-  entries.filter((name) => name.startsWith('/node_modules/')).length,
-  0,
-  'Desktop main only uses built-ins; bundled browser code should not duplicate node_modules',
+const nativeDependency = (name) =>
+  name.startsWith('/node_modules/koffi/') ||
+  name.startsWith('/node_modules/@koromix/koffi-win32-x64/') ||
+  [
+    '/node_modules',
+    '/node_modules/koffi',
+    '/node_modules/@koromix',
+    '/node_modules/@koromix/koffi-win32-x64',
+  ].includes(name);
+assert.deepEqual(
+  entries.filter((name) => name.startsWith('/node_modules/') && !nativeDependency(name)),
+  [],
+  'Only the Windows pen native dependency may ship in node_modules',
+);
+assert.ok(entries.includes('/electron/pen-native.cjs'), 'Native pen bridge missing');
+assert.ok(
+  existsSync(archive + '.unpacked/node_modules/@koromix/koffi-win32-x64/win32_x64/koffi.node'),
+  'Unpacked pen native binding missing',
 );
 const json = (name) => JSON.parse(extractFile(archive, normalize(name)).toString());
 const pkg = json('package.json');

@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import Keyboard from 'simple-keyboard';
 import DictationButton from './DictationButton';
 import { copyText } from './clipboard';
+import FieldEditMenu from './FieldEditMenu';
 import './chat.css';
 import {
   Keyboard as KeyboardIcon,
@@ -588,6 +589,10 @@ export default function TouchKeyboard({
   );
   return (
     <>
+      <FieldEditMenu
+        hostDocument={hostDocument}
+        onCommand={(command) => shortcut(command, shortcuts.find((s) => s[0] === command)![1])}
+      />
       {dock ? createPortal(toggle, dock) : toggle}
       {open && (
         <section

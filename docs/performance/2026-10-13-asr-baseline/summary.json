@@ -1,0 +1,3610 @@
+{
+  "schema": 1,
+  "kind": "asr-baseline-summary",
+  "reportCount": 17,
+  "host": {
+    "platform": "Windows-10-10.0.26120-SP0",
+    "logicalProcessors": 8,
+    "processor": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+    "python": "3.10.5 (tags/v3.10.5:f377153, Jun  6 2022, 16:14:13) [MSC v.1929 64 bit (AMD64)]"
+  },
+  "runtimeVersions": {
+    "numpy": "2.2.6",
+    "openvino": "2026.2.0",
+    "openvino-genai": "2026.2.0.0",
+    "sherpa-onnx": "1.13.8"
+  },
+  "groups": [
+    {
+      "key": "whisper-small/NPU/cold/en-US+zh-CN",
+      "runs": 1,
+      "loadMs": {
+        "median": 40836.00199999637,
+        "min": 40836.00199999637,
+        "max": 40836.00199999637,
+        "count": 1
+      },
+      "loadCpuSeconds": {
+        "median": 73.09375,
+        "min": 73.09375,
+        "max": 73.09375,
+        "count": 1
+      },
+      "cpuSeconds": {
+        "median": 73.65625,
+        "min": 73.65625,
+        "max": 73.65625,
+        "count": 1
+      },
+      "residentWorkingSetBytes": {
+        "median": 1264611328,
+        "min": 1264611328,
+        "max": 1264611328,
+        "count": 1
+      },
+      "releasedWorkingSetBytes": {
+        "median": 232931328,
+        "min": 232931328,
+        "max": 232931328,
+        "count": 1
+      },
+      "sampledPeakWorkingSetBytes": {
+        "median": 2061504512,
+        "min": 2061504512,
+        "max": 2061504512,
+        "count": 1
+      },
+      "residentIdleCpuSeconds": {
+        "median": 0.015625,
+        "min": 0.015625,
+        "max": 0.015625,
+        "count": 1
+      },
+      "releasedIdleCpuSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 1
+      },
+      "releaseMs": {
+        "median": 76.31950000359211,
+        "min": 76.31950000359211,
+        "max": 76.31950000359211,
+        "count": 1
+      },
+      "collectorCpuSeconds": {
+        "median": 0.21875,
+        "min": 0.21875,
+        "max": 0.21875,
+        "count": 1
+      },
+      "maximumSamplingGapMs": {
+        "median": 234.13969999819528,
+        "min": 234.13969999819528,
+        "max": 234.13969999819528,
+        "count": 1
+      },
+      "cpuDemand200MsP99": {
+        "median": 7.453933947728226,
+        "min": 7.453933947728226,
+        "max": 7.453933947728226,
+        "count": 1
+      },
+      "cpuDemand200MsPeak": {
+        "median": 7.674322633601848,
+        "min": 7.674322633601848,
+        "max": 7.674322633601848,
+        "count": 1
+      },
+      "compileCacheBytes": {
+        "median": 891492889,
+        "min": 891492889,
+        "max": 891492889,
+        "count": 1
+      },
+      "transcriptions": {
+        "en-US": {
+          "firstMs": {
+            "median": 312.1129000064684,
+            "min": 312.1129000064684,
+            "max": 312.1129000064684,
+            "count": 1
+          },
+          "firstCpuSeconds": {
+            "median": 0.046875,
+            "min": 0.046875,
+            "max": 0.046875,
+            "count": 1
+          },
+          "warmMs": {
+            "median": 185.839700003271,
+            "min": 185.839700003271,
+            "max": 185.839700003271,
+            "count": 1
+          },
+          "warmCpuSeconds": {
+            "median": 0.015625,
+            "min": 0.015625,
+            "max": 0.015625,
+            "count": 1
+          }
+        },
+        "zh-CN": {
+          "firstMs": {
+            "median": 214.11310000985395,
+            "min": 214.11310000985395,
+            "max": 214.11310000985395,
+            "count": 1
+          },
+          "firstCpuSeconds": {
+            "median": 0.0625,
+            "min": 0.0625,
+            "max": 0.0625,
+            "count": 1
+          },
+          "warmMs": {
+            "median": 207.12869999260874,
+            "min": 207.12869999260874,
+            "max": 207.12869999260874,
+            "count": 1
+          },
+          "warmCpuSeconds": {
+            "median": 0.0390625,
+            "min": 0.0390625,
+            "max": 0.0390625,
+            "count": 1
+          }
+        }
+      }
+    },
+    {
+      "key": "sensevoice-small/CPU/cold/en-US",
+      "runs": 3,
+      "loadMs": {
+        "median": 1065.8490000059828,
+        "min": 1058.570299996063,
+        "max": 1183.2448999921326,
+        "count": 3
+      },
+      "loadCpuSeconds": {
+        "median": 1.390625,
+        "min": 1.390625,
+        "max": 1.40625,
+        "count": 3
+      },
+      "cpuSeconds": {
+        "median": 2.75,
+        "min": 2.71875,
+        "max": 2.78125,
+        "count": 3
+      },
+      "residentWorkingSetBytes": {
+        "median": 365916160,
+        "min": 365387776,
+        "max": 366546944,
+        "count": 3
+      },
+      "releasedWorkingSetBytes": {
+        "median": 64270336,
+        "min": 63160320,
+        "max": 64946176,
+        "count": 3
+      },
+      "sampledPeakWorkingSetBytes": {
+        "median": 365916160,
+        "min": 365387776,
+        "max": 366546944,
+        "count": 3
+      },
+      "residentIdleCpuSeconds": {
+        "median": 0.359375,
+        "min": 0.3125,
+        "max": 0.375,
+        "count": 3
+      },
+      "releasedIdleCpuSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 3
+      },
+      "releaseMs": {
+        "median": 38.238900000578724,
+        "min": 37.54020000633318,
+        "max": 41.1898000020301,
+        "count": 3
+      },
+      "collectorCpuSeconds": {
+        "median": 0.15625,
+        "min": 0.15625,
+        "max": 0.1875,
+        "count": 3
+      },
+      "maximumSamplingGapMs": {
+        "median": 215.1095000008354,
+        "min": 205.01720000174828,
+        "max": 218.56199999456294,
+        "count": 3
+      },
+      "cpuDemand200MsP99": {
+        "median": 1.9798815909735084,
+        "min": 1.965128620472562,
+        "max": 1.9997988590192322,
+        "count": 3
+      },
+      "cpuDemand200MsPeak": {
+        "median": 1.9798815909735084,
+        "min": 1.965128620472562,
+        "max": 1.9997988590192322,
+        "count": 3
+      },
+      "compileCacheBytes": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 3
+      },
+      "transcriptions": {
+        "en-US": {
+          "firstMs": {
+            "median": 128.16269999893848,
+            "min": 124.63869999919552,
+            "max": 135.68300000042655,
+            "count": 3
+          },
+          "firstCpuSeconds": {
+            "median": 0.234375,
+            "min": 0.21875,
+            "max": 0.28125,
+            "count": 3
+          },
+          "warmMs": {
+            "median": 127.79939999745693,
+            "min": 119.86810000234982,
+            "max": 127.90535000385717,
+            "count": 3
+          },
+          "warmCpuSeconds": {
+            "median": 0.2421875,
+            "min": 0.234375,
+            "max": 0.2578125,
+            "count": 3
+          }
+        }
+      }
+    },
+    {
+      "key": "sensevoice-small/CPU/cold/zh-CN",
+      "runs": 3,
+      "loadMs": {
+        "median": 1001.8923999887193,
+        "min": 994.8597000038717,
+        "max": 1052.9162000020733,
+        "count": 3
+      },
+      "loadCpuSeconds": {
+        "median": 1.34375,
+        "min": 1.328125,
+        "max": 1.421875,
+        "count": 3
+      },
+      "cpuSeconds": {
+        "median": 2.609375,
+        "min": 2.609375,
+        "max": 2.65625,
+        "count": 3
+      },
+      "residentWorkingSetBytes": {
+        "median": 366055424,
+        "min": 365932544,
+        "max": 366084096,
+        "count": 3
+      },
+      "releasedWorkingSetBytes": {
+        "median": 63336448,
+        "min": 63295488,
+        "max": 63459328,
+        "count": 3
+      },
+      "sampledPeakWorkingSetBytes": {
+        "median": 366055424,
+        "min": 365932544,
+        "max": 366604288,
+        "count": 3
+      },
+      "residentIdleCpuSeconds": {
+        "median": 0.375,
+        "min": 0.359375,
+        "max": 0.375,
+        "count": 3
+      },
+      "releasedIdleCpuSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 3
+      },
+      "releaseMs": {
+        "median": 36.96579999814276,
+        "min": 36.325399996712804,
+        "max": 38.896500002010725,
+        "count": 3
+      },
+      "collectorCpuSeconds": {
+        "median": 0.125,
+        "min": 0.125,
+        "max": 0.171875,
+        "count": 3
+      },
+      "maximumSamplingGapMs": {
+        "median": 215.01509999507107,
+        "min": 214.6872000012081,
+        "max": 215.53539999877103,
+        "count": 3
+      },
+      "cpuDemand200MsP99": {
+        "median": 1.9601039732057388,
+        "min": 1.9450237948804472,
+        "max": 1.986939612795608,
+        "count": 3
+      },
+      "cpuDemand200MsPeak": {
+        "median": 1.9601039732057388,
+        "min": 1.9450237948804472,
+        "max": 1.986939612795608,
+        "count": 3
+      },
+      "compileCacheBytes": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 3
+      },
+      "transcriptions": {
+        "zh-CN": {
+          "firstMs": {
+            "median": 118.12020000070333,
+            "min": 117.12290000286885,
+            "max": 123.7087000044994,
+            "count": 3
+          },
+          "firstCpuSeconds": {
+            "median": 0.234375,
+            "min": 0.140625,
+            "max": 0.25,
+            "count": 3
+          },
+          "warmMs": {
+            "median": 115.81430000660475,
+            "min": 110.50955000246176,
+            "max": 120.79005000123288,
+            "count": 3
+          },
+          "warmCpuSeconds": {
+            "median": 0.21875,
+            "min": 0.2109375,
+            "max": 0.234375,
+            "count": 3
+          }
+        }
+      }
+    },
+    {
+      "key": "whisper-small/CPU/cold/en-US+zh-CN",
+      "runs": 3,
+      "loadMs": {
+        "median": 1345.665500004543,
+        "min": 1334.2696000036085,
+        "max": 1430.734699999448,
+        "count": 3
+      },
+      "loadCpuSeconds": {
+        "median": 1.25,
+        "min": 1.234375,
+        "max": 1.265625,
+        "count": 3
+      },
+      "cpuSeconds": {
+        "median": 16.125,
+        "min": 16.09375,
+        "max": 16.421875,
+        "count": 3
+      },
+      "residentWorkingSetBytes": {
+        "median": 857358336,
+        "min": 856686592,
+        "max": 858337280,
+        "count": 3
+      },
+      "releasedWorkingSetBytes": {
+        "median": 133390336,
+        "min": 128688128,
+        "max": 133496832,
+        "count": 3
+      },
+      "sampledPeakWorkingSetBytes": {
+        "median": 924606464,
+        "min": 923631616,
+        "max": 928751616,
+        "count": 3
+      },
+      "residentIdleCpuSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 3
+      },
+      "releasedIdleCpuSeconds": {
+        "median": 0.015625,
+        "min": 0.015625,
+        "max": 0.015625,
+        "count": 3
+      },
+      "releaseMs": {
+        "median": 80.68840000487398,
+        "min": 79.44669999415055,
+        "max": 85.97220000228845,
+        "count": 3
+      },
+      "collectorCpuSeconds": {
+        "median": 0.140625,
+        "min": 0.125,
+        "max": 0.1875,
+        "count": 3
+      },
+      "maximumSamplingGapMs": {
+        "median": 207.36759999999776,
+        "min": 207.04370000748895,
+        "max": 214.9420000059763,
+        "count": 3
+      },
+      "cpuDemand200MsP99": {
+        "median": 2.0320577306688996,
+        "min": 2.0119940253660618,
+        "max": 2.091309594349782,
+        "count": 3
+      },
+      "cpuDemand200MsPeak": {
+        "median": 2.0320577306688996,
+        "min": 2.023056975410907,
+        "max": 2.091309594349782,
+        "count": 3
+      },
+      "compileCacheBytes": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 3
+      },
+      "transcriptions": {
+        "en-US": {
+          "firstMs": {
+            "median": 1391.835300004459,
+            "min": 1366.2217000091914,
+            "max": 1417.8026000008686,
+            "count": 3
+          },
+          "firstCpuSeconds": {
+            "median": 2.578125,
+            "min": 2.5625,
+            "max": 2.609375,
+            "count": 3
+          },
+          "warmMs": {
+            "median": 1264.3326500037801,
+            "min": 1243.284299998777,
+            "max": 1367.538100006641,
+            "count": 3
+          },
+          "warmCpuSeconds": {
+            "median": 2.390625,
+            "min": 2.3671875,
+            "max": 2.40625,
+            "count": 3
+          }
+        },
+        "zh-CN": {
+          "firstMs": {
+            "median": 1307.5037999951746,
+            "min": 1299.2671999963932,
+            "max": 1325.292299996363,
+            "count": 3
+          },
+          "firstCpuSeconds": {
+            "median": 2.421875,
+            "min": 2.34375,
+            "max": 2.4375,
+            "count": 3
+          },
+          "warmMs": {
+            "median": 1269.5130499996594,
+            "min": 1268.4857999993255,
+            "max": 1312.5003499953891,
+            "count": 3
+          },
+          "warmCpuSeconds": {
+            "median": 2.4140625,
+            "min": 2.3515625,
+            "max": 2.5078125,
+            "count": 3
+          }
+        }
+      }
+    },
+    {
+      "key": "whisper-small/GPU/cached/en-US+zh-CN",
+      "runs": 3,
+      "loadMs": {
+        "median": 917.7402999921469,
+        "min": 911.7999000009149,
+        "max": 919.1977000009501,
+        "count": 3
+      },
+      "loadCpuSeconds": {
+        "median": 1.0625,
+        "min": 0.890625,
+        "max": 1.109375,
+        "count": 3
+      },
+      "cpuSeconds": {
+        "median": 2.828125,
+        "min": 2.6875,
+        "max": 2.96875,
+        "count": 3
+      },
+      "residentWorkingSetBytes": {
+        "median": 842682368,
+        "min": 841269248,
+        "max": 844701696,
+        "count": 3
+      },
+      "releasedWorkingSetBytes": {
+        "median": 762531840,
+        "min": 759947264,
+        "max": 762814464,
+        "count": 3
+      },
+      "sampledPeakWorkingSetBytes": {
+        "median": 843804672,
+        "min": 842350592,
+        "max": 845791232,
+        "count": 3
+      },
+      "residentIdleCpuSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 3
+      },
+      "releasedIdleCpuSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 3
+      },
+      "releaseMs": {
+        "median": 30.590299997129478,
+        "min": 30.262200001743622,
+        "max": 31.880599999567494,
+        "count": 3
+      },
+      "collectorCpuSeconds": {
+        "median": 0.171875,
+        "min": 0.09375,
+        "max": 0.171875,
+        "count": 3
+      },
+      "maximumSamplingGapMs": {
+        "median": 215.54060000926256,
+        "min": 215.24059999501333,
+        "max": 215.88079999492038,
+        "count": 3
+      },
+      "cpuDemand200MsP99": {
+        "median": 1.636783519414783,
+        "min": 1.4569589601553279,
+        "max": 2.1956826382472534,
+        "count": 3
+      },
+      "cpuDemand200MsPeak": {
+        "median": 1.636783519414783,
+        "min": 1.4569589601553279,
+        "max": 2.1956826382472534,
+        "count": 3
+      },
+      "compileCacheBytes": {
+        "median": 264435186,
+        "min": 264435186,
+        "max": 264435186,
+        "count": 3
+      },
+      "transcriptions": {
+        "en-US": {
+          "firstMs": {
+            "median": 564.4450999971014,
+            "min": 562.5425000034738,
+            "max": 584.162599989213,
+            "count": 3
+          },
+          "firstCpuSeconds": {
+            "median": 0.546875,
+            "min": 0.546875,
+            "max": 0.546875,
+            "count": 3
+          },
+          "warmMs": {
+            "median": 171.78399999829708,
+            "min": 171.45840000011958,
+            "max": 185.97220000083325,
+            "count": 3
+          },
+          "warmCpuSeconds": {
+            "median": 0.1796875,
+            "min": 0.15625,
+            "max": 0.1796875,
+            "count": 3
+          }
+        },
+        "zh-CN": {
+          "firstMs": {
+            "median": 193.89529999170918,
+            "min": 188.45729999884497,
+            "max": 198.7236999993911,
+            "count": 3
+          },
+          "firstCpuSeconds": {
+            "median": 0.1875,
+            "min": 0.1875,
+            "max": 0.25,
+            "count": 3
+          },
+          "warmMs": {
+            "median": 200.37040000170236,
+            "min": 188.58904999797232,
+            "max": 233.2324500021059,
+            "count": 3
+          },
+          "warmCpuSeconds": {
+            "median": 0.2109375,
+            "min": 0.1875,
+            "max": 0.21875,
+            "count": 3
+          }
+        }
+      }
+    },
+    {
+      "key": "whisper-small/GPU/cold/en-US+zh-CN",
+      "runs": 1,
+      "loadMs": {
+        "median": 2739.533499989193,
+        "min": 2739.533499989193,
+        "max": 2739.533499989193,
+        "count": 1
+      },
+      "loadCpuSeconds": {
+        "median": 3.390625,
+        "min": 3.390625,
+        "max": 3.390625,
+        "count": 1
+      },
+      "cpuSeconds": {
+        "median": 6.171875,
+        "min": 6.171875,
+        "max": 6.171875,
+        "count": 1
+      },
+      "residentWorkingSetBytes": {
+        "median": 882941952,
+        "min": 882941952,
+        "max": 882941952,
+        "count": 1
+      },
+      "releasedWorkingSetBytes": {
+        "median": 778014720,
+        "min": 778014720,
+        "max": 778014720,
+        "count": 1
+      },
+      "sampledPeakWorkingSetBytes": {
+        "median": 884047872,
+        "min": 884047872,
+        "max": 884047872,
+        "count": 1
+      },
+      "residentIdleCpuSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 1
+      },
+      "releasedIdleCpuSeconds": {
+        "median": 0.015625,
+        "min": 0.015625,
+        "max": 0.015625,
+        "count": 1
+      },
+      "releaseMs": {
+        "median": 43.05000000749715,
+        "min": 43.05000000749715,
+        "max": 43.05000000749715,
+        "count": 1
+      },
+      "collectorCpuSeconds": {
+        "median": 0.109375,
+        "min": 0.109375,
+        "max": 0.109375,
+        "count": 1
+      },
+      "maximumSamplingGapMs": {
+        "median": 216.59100000397302,
+        "min": 216.59100000397302,
+        "max": 216.59100000397302,
+        "count": 1
+      },
+      "cpuDemand200MsP99": {
+        "median": 2.1477973548560216,
+        "min": 2.1477973548560216,
+        "max": 2.1477973548560216,
+        "count": 1
+      },
+      "cpuDemand200MsPeak": {
+        "median": 2.1477973548560216,
+        "min": 2.1477973548560216,
+        "max": 2.1477973548560216,
+        "count": 1
+      },
+      "compileCacheBytes": {
+        "median": 264296282,
+        "min": 264296282,
+        "max": 264296282,
+        "count": 1
+      },
+      "transcriptions": {
+        "en-US": {
+          "firstMs": {
+            "median": 1174.342099999194,
+            "min": 1174.342099999194,
+            "max": 1174.342099999194,
+            "count": 1
+          },
+          "firstCpuSeconds": {
+            "median": 0.9375,
+            "min": 0.9375,
+            "max": 0.9375,
+            "count": 1
+          },
+          "warmMs": {
+            "median": 305.7811499966192,
+            "min": 305.7811499966192,
+            "max": 305.7811499966192,
+            "count": 1
+          },
+          "warmCpuSeconds": {
+            "median": 0.28125,
+            "min": 0.28125,
+            "max": 0.28125,
+            "count": 1
+          }
+        },
+        "zh-CN": {
+          "firstMs": {
+            "median": 228.2240000058664,
+            "min": 228.2240000058664,
+            "max": 228.2240000058664,
+            "count": 1
+          },
+          "firstCpuSeconds": {
+            "median": 0.25,
+            "min": 0.25,
+            "max": 0.25,
+            "count": 1
+          },
+          "warmMs": {
+            "median": 414.0969500003848,
+            "min": 414.0969500003848,
+            "max": 414.0969500003848,
+            "count": 1
+          },
+          "warmCpuSeconds": {
+            "median": 0.34375,
+            "min": 0.34375,
+            "max": 0.34375,
+            "count": 1
+          }
+        }
+      }
+    },
+    {
+      "key": "whisper-small/NPU/cached/en-US+zh-CN",
+      "runs": 3,
+      "loadMs": {
+        "median": 1779.5230000047013,
+        "min": 1768.2588000025135,
+        "max": 1793.0964999977732,
+        "count": 3
+      },
+      "loadCpuSeconds": {
+        "median": 2.015625,
+        "min": 1.96875,
+        "max": 2.015625,
+        "count": 3
+      },
+      "cpuSeconds": {
+        "median": 2.609375,
+        "min": 2.609375,
+        "max": 2.78125,
+        "count": 3
+      },
+      "residentWorkingSetBytes": {
+        "median": 1199243264,
+        "min": 1198149632,
+        "max": 1199726592,
+        "count": 3
+      },
+      "releasedWorkingSetBytes": {
+        "median": 169394176,
+        "min": 169308160,
+        "max": 171266048,
+        "count": 3
+      },
+      "sampledPeakWorkingSetBytes": {
+        "median": 2416119808,
+        "min": 2391367680,
+        "max": 2450960384,
+        "count": 3
+      },
+      "residentIdleCpuSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 3
+      },
+      "releasedIdleCpuSeconds": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "count": 3
+      },
+      "releaseMs": {
+        "median": 93.45380000013392,
+        "min": 88.93939999688882,
+        "max": 98.94460000214167,
+        "count": 3
+      },
+      "collectorCpuSeconds": {
+        "median": 0.109375,
+        "min": 0.09375,
+        "max": 0.125,
+        "count": 3
+      },
+      "maximumSamplingGapMs": {
+        "median": 209.8549000074854,
+        "min": 204.33809999667574,
+        "max": 215.4590999998618,
+        "count": 3
+      },
+      "cpuDemand200MsP99": {
+        "median": 2.058204783654749,
+        "min": 1.7489877560367157,
+        "max": 2.0879197766206716,
+        "count": 3
+      },
+      "cpuDemand200MsPeak": {
+        "median": 2.058204783654749,
+        "min": 1.7489877560367157,
+        "max": 2.0879197766206716,
+        "count": 3
+      },
+      "compileCacheBytes": {
+        "median": 891492889,
+        "min": 891492889,
+        "max": 891492889,
+        "count": 3
+      },
+      "transcriptions": {
+        "en-US": {
+          "firstMs": {
+            "median": 323.0987999995705,
+            "min": 321.75180000194814,
+            "max": 325.13310000649653,
+            "count": 3
+          },
+          "firstCpuSeconds": {
+            "median": 0.0625,
+            "min": 0.046875,
+            "max": 0.0625,
+            "count": 3
+          },
+          "warmMs": {
+            "median": 181.8914500036044,
+            "min": 179.96955000126036,
+            "max": 183.00719999388093,
+            "count": 3
+          },
+          "warmCpuSeconds": {
+            "median": 0.0625,
+            "min": 0.03125,
+            "max": 0.0625,
+            "count": 3
+          }
+        },
+        "zh-CN": {
+          "firstMs": {
+            "median": 210.18330000515562,
+            "min": 207.53110000805464,
+            "max": 212.27119999821298,
+            "count": 3
+          },
+          "firstCpuSeconds": {
+            "median": 0.015625,
+            "min": 0,
+            "max": 0.078125,
+            "count": 3
+          },
+          "warmMs": {
+            "median": 208.26305000082357,
+            "min": 207.2415000075125,
+            "max": 210.77285000501433,
+            "count": 3
+          },
+          "warmCpuSeconds": {
+            "median": 0.078125,
+            "min": 0.0234375,
+            "max": 0.125,
+            "count": 3
+          }
+        }
+      }
+    }
+  ],
+  "runs": [
+    {
+      "file": "raw/asr-round3-npu-external-cold.json.gz",
+      "engine": "whisper-small",
+      "device": "NPU",
+      "mode": "cold",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 40836.00199999637,
+      "loadCpuSeconds": 73.09375,
+      "verifyMs": 200.37219999358058,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 312.1129000064684,
+          "firstCpuSeconds": 0.046875,
+          "warmMs": 185.839700003271,
+          "warmCpuSeconds": 0.015625
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 214.11310000985395,
+          "firstCpuSeconds": 0.0625,
+          "warmMs": 207.12869999260874,
+          "warmCpuSeconds": 0.0390625
+        }
+      },
+      "residentWorkingSetBytes": 1264611328,
+      "releasedWorkingSetBytes": 232931328,
+      "sampledPeakWorkingSetBytes": 2061504512,
+      "residentIdleCpuSeconds": 0.015625,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 76.31950000359211,
+      "cpuSeconds": 73.65625,
+      "cpuDemand200MsP99": 7.453933947728226,
+      "cpuDemand200MsPeak": 7.674322633601848,
+      "collectorCpuSeconds": 0.21875,
+      "maximumSamplingGapMs": 234.13969999819528,
+      "compileCacheBytes": 891492889,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1867,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101770
+        },
+        "verify-model": {
+          "readOperations": 304,
+          "writeOperations": 2,
+          "otherOperations": 5935,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 70784
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 834,
+          "writeOperations": 27,
+          "otherOperations": 5821,
+          "readTransferBytes": 3669881,
+          "writeTransferBytes": 891493098,
+          "otherTransferBytes": 272736
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 32,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 1599
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-en-US-1.json.gz",
+      "engine": "sensevoice-small",
+      "device": "CPU",
+      "mode": "cold",
+      "languages": [
+        "en-US"
+      ],
+      "loadMs": 1183.2448999921326,
+      "loadCpuSeconds": 1.390625,
+      "verifyMs": 185.53219999012072,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at9 in the morning and closes at5 in the afternoon.",
+            "The library opens at9 in the morning and closes at5 in the afternoon.",
+            "The library opens at9 in the morning and closes at5 in the afternoon."
+          ],
+          "firstMs": 124.63869999919552,
+          "firstCpuSeconds": 0.21875,
+          "warmMs": 119.86810000234982,
+          "warmCpuSeconds": 0.234375
+        }
+      },
+      "residentWorkingSetBytes": 365387776,
+      "releasedWorkingSetBytes": 63160320,
+      "sampledPeakWorkingSetBytes": 365387776,
+      "residentIdleCpuSeconds": 0.375,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 41.1898000020301,
+      "cpuSeconds": 2.75,
+      "cpuDemand200MsP99": 1.9997988590192322,
+      "cpuDemand200MsPeak": 1.9997988590192322,
+      "collectorCpuSeconds": 0.15625,
+      "maximumSamplingGapMs": 205.01720000174828,
+      "compileCacheBytes": 0,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 245,
+          "writeOperations": 2,
+          "otherOperations": 1199,
+          "readTransferBytes": 239550449,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 14400
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 153,
+          "writeOperations": 2,
+          "otherOperations": 451,
+          "readTransferBytes": 239653044,
+          "writeTransferBytes": 99,
+          "otherTransferBytes": 9856
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-en-US-2.json.gz",
+      "engine": "sensevoice-small",
+      "device": "CPU",
+      "mode": "cold",
+      "languages": [
+        "en-US"
+      ],
+      "loadMs": 1058.570299996063,
+      "loadCpuSeconds": 1.40625,
+      "verifyMs": 157.30059999623336,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at9 in the morning and closes at5 in the afternoon.",
+            "The library opens at9 in the morning and closes at5 in the afternoon.",
+            "The library opens at9 in the morning and closes at5 in the afternoon."
+          ],
+          "firstMs": 128.16269999893848,
+          "firstCpuSeconds": 0.234375,
+          "warmMs": 127.90535000385717,
+          "warmCpuSeconds": 0.2578125
+        }
+      },
+      "residentWorkingSetBytes": 366546944,
+      "releasedWorkingSetBytes": 64946176,
+      "sampledPeakWorkingSetBytes": 366546944,
+      "residentIdleCpuSeconds": 0.359375,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 38.238900000578724,
+      "cpuSeconds": 2.78125,
+      "cpuDemand200MsP99": 1.965128620472562,
+      "cpuDemand200MsPeak": 1.965128620472562,
+      "collectorCpuSeconds": 0.15625,
+      "maximumSamplingGapMs": 215.1095000008354,
+      "compileCacheBytes": 0,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 245,
+          "writeOperations": 2,
+          "otherOperations": 1199,
+          "readTransferBytes": 239550449,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 14400
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 153,
+          "writeOperations": 2,
+          "otherOperations": 439,
+          "readTransferBytes": 239653044,
+          "writeTransferBytes": 99,
+          "otherTransferBytes": 9784
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 2,
+          "writeOperations": 2,
+          "otherOperations": 2,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 16
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-en-US-3.json.gz",
+      "engine": "sensevoice-small",
+      "device": "CPU",
+      "mode": "cold",
+      "languages": [
+        "en-US"
+      ],
+      "loadMs": 1065.8490000059828,
+      "loadCpuSeconds": 1.390625,
+      "verifyMs": 162.08069999993313,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at9 in the morning and closes at5 in the afternoon.",
+            "The library opens at9 in the morning and closes at5 in the afternoon.",
+            "The library opens at9 in the morning and closes at5 in the afternoon."
+          ],
+          "firstMs": 135.68300000042655,
+          "firstCpuSeconds": 0.28125,
+          "warmMs": 127.79939999745693,
+          "warmCpuSeconds": 0.2421875
+        }
+      },
+      "residentWorkingSetBytes": 365916160,
+      "releasedWorkingSetBytes": 64270336,
+      "sampledPeakWorkingSetBytes": 365916160,
+      "residentIdleCpuSeconds": 0.3125,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 37.54020000633318,
+      "cpuSeconds": 2.71875,
+      "cpuDemand200MsP99": 1.9798815909735084,
+      "cpuDemand200MsPeak": 1.9798815909735084,
+      "collectorCpuSeconds": 0.1875,
+      "maximumSamplingGapMs": 218.56199999456294,
+      "compileCacheBytes": 0,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 245,
+          "writeOperations": 2,
+          "otherOperations": 1199,
+          "readTransferBytes": 239550449,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 14400
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 153,
+          "writeOperations": 2,
+          "otherOperations": 439,
+          "readTransferBytes": 239653044,
+          "writeTransferBytes": 99,
+          "otherTransferBytes": 9784
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 4,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-zh-CN-1.json.gz",
+      "engine": "sensevoice-small",
+      "device": "CPU",
+      "mode": "cold",
+      "languages": [
+        "zh-CN"
+      ],
+      "loadMs": 1052.9162000020733,
+      "loadCpuSeconds": 1.421875,
+      "verifyMs": 165.52610001235735,
+      "transcriptions": {
+        "zh-CN": {
+          "text": [
+            "图书馆上午9点开放，下午5点关闭。",
+            "图书馆上午9点开放，下午5点关闭。",
+            "图书馆上午9点开放，下午5点关闭。"
+          ],
+          "firstMs": 118.12020000070333,
+          "firstCpuSeconds": 0.140625,
+          "warmMs": 115.81430000660475,
+          "warmCpuSeconds": 0.2109375
+        }
+      },
+      "residentWorkingSetBytes": 366055424,
+      "releasedWorkingSetBytes": 63295488,
+      "sampledPeakWorkingSetBytes": 366055424,
+      "residentIdleCpuSeconds": 0.375,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 38.896500002010725,
+      "cpuSeconds": 2.609375,
+      "cpuDemand200MsP99": 1.986939612795608,
+      "cpuDemand200MsPeak": 1.986939612795608,
+      "collectorCpuSeconds": 0.125,
+      "maximumSamplingGapMs": 215.53539999877103,
+      "compileCacheBytes": 0,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 245,
+          "writeOperations": 2,
+          "otherOperations": 1199,
+          "readTransferBytes": 239550449,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 14400
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 153,
+          "writeOperations": 2,
+          "otherOperations": 439,
+          "readTransferBytes": 239653044,
+          "writeTransferBytes": 99,
+          "otherTransferBytes": 9784
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 2,
+          "writeOperations": 2,
+          "otherOperations": 2,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 16
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-zh-CN-2.json.gz",
+      "engine": "sensevoice-small",
+      "device": "CPU",
+      "mode": "cold",
+      "languages": [
+        "zh-CN"
+      ],
+      "loadMs": 1001.8923999887193,
+      "loadCpuSeconds": 1.34375,
+      "verifyMs": 163.08520000893623,
+      "transcriptions": {
+        "zh-CN": {
+          "text": [
+            "图书馆上午9点开放，下午5点关闭。",
+            "图书馆上午9点开放，下午5点关闭。",
+            "图书馆上午9点开放，下午5点关闭。"
+          ],
+          "firstMs": 123.7087000044994,
+          "firstCpuSeconds": 0.25,
+          "warmMs": 120.79005000123288,
+          "warmCpuSeconds": 0.234375
+        }
+      },
+      "residentWorkingSetBytes": 366084096,
+      "releasedWorkingSetBytes": 63336448,
+      "sampledPeakWorkingSetBytes": 366604288,
+      "residentIdleCpuSeconds": 0.359375,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 36.96579999814276,
+      "cpuSeconds": 2.65625,
+      "cpuDemand200MsP99": 1.9450237948804472,
+      "cpuDemand200MsPeak": 1.9450237948804472,
+      "collectorCpuSeconds": 0.171875,
+      "maximumSamplingGapMs": 215.01509999507107,
+      "compileCacheBytes": 0,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 245,
+          "writeOperations": 2,
+          "otherOperations": 1199,
+          "readTransferBytes": 239550449,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 14400
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 153,
+          "writeOperations": 2,
+          "otherOperations": 439,
+          "readTransferBytes": 239653044,
+          "writeTransferBytes": 99,
+          "otherTransferBytes": 9784
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-zh-CN-3.json.gz",
+      "engine": "sensevoice-small",
+      "device": "CPU",
+      "mode": "cold",
+      "languages": [
+        "zh-CN"
+      ],
+      "loadMs": 994.8597000038717,
+      "loadCpuSeconds": 1.328125,
+      "verifyMs": 151.12140000564978,
+      "transcriptions": {
+        "zh-CN": {
+          "text": [
+            "图书馆上午9点开放，下午5点关闭。",
+            "图书馆上午9点开放，下午5点关闭。",
+            "图书馆上午9点开放，下午5点关闭。"
+          ],
+          "firstMs": 117.12290000286885,
+          "firstCpuSeconds": 0.234375,
+          "warmMs": 110.50955000246176,
+          "warmCpuSeconds": 0.21875
+        }
+      },
+      "residentWorkingSetBytes": 365932544,
+      "releasedWorkingSetBytes": 63459328,
+      "sampledPeakWorkingSetBytes": 365932544,
+      "residentIdleCpuSeconds": 0.375,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 36.325399996712804,
+      "cpuSeconds": 2.609375,
+      "cpuDemand200MsP99": 1.9601039732057388,
+      "cpuDemand200MsPeak": 1.9601039732057388,
+      "collectorCpuSeconds": 0.125,
+      "maximumSamplingGapMs": 214.6872000012081,
+      "compileCacheBytes": 0,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 245,
+          "writeOperations": 2,
+          "otherOperations": 1199,
+          "readTransferBytes": 239550449,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 14400
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 153,
+          "writeOperations": 2,
+          "otherOperations": 455,
+          "readTransferBytes": 239653044,
+          "writeTransferBytes": 99,
+          "otherTransferBytes": 9928
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 2,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-CPU-cold-bilingual-1.json.gz",
+      "engine": "whisper-small",
+      "device": "CPU",
+      "mode": "cold",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 1430.734699999448,
+      "loadCpuSeconds": 1.234375,
+      "verifyMs": 211.8869999976596,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 1417.8026000008686,
+          "firstCpuSeconds": 2.5625,
+          "warmMs": 1367.538100006641,
+          "warmCpuSeconds": 2.40625
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 1325.292299996363,
+          "firstCpuSeconds": 2.421875,
+          "warmMs": 1269.5130499996594,
+          "warmCpuSeconds": 2.3515625
+        }
+      },
+      "residentWorkingSetBytes": 856686592,
+      "releasedWorkingSetBytes": 133390336,
+      "sampledPeakWorkingSetBytes": 928751616,
+      "residentIdleCpuSeconds": 0,
+      "releasedIdleCpuSeconds": 0.015625,
+      "releaseMs": 79.44669999415055,
+      "cpuSeconds": 16.09375,
+      "cpuDemand200MsP99": 2.0119940253660618,
+      "cpuDemand200MsPeak": 2.023056975410907,
+      "collectorCpuSeconds": 0.140625,
+      "maximumSamplingGapMs": 207.04370000748895,
+      "compileCacheBytes": 0,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 304,
+          "writeOperations": 2,
+          "otherOperations": 5935,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 70784
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 834,
+          "writeOperations": 4,
+          "otherOperations": 5632,
+          "readTransferBytes": 3669881,
+          "writeTransferBytes": 161,
+          "otherTransferBytes": 268364
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 4,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 8,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 33,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 1599
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-CPU-cold-bilingual-2.json.gz",
+      "engine": "whisper-small",
+      "device": "CPU",
+      "mode": "cold",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 1334.2696000036085,
+      "loadCpuSeconds": 1.25,
+      "verifyMs": 207.55239999562036,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 1366.2217000091914,
+          "firstCpuSeconds": 2.578125,
+          "warmMs": 1264.3326500037801,
+          "warmCpuSeconds": 2.390625
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 1299.2671999963932,
+          "firstCpuSeconds": 2.4375,
+          "warmMs": 1312.5003499953891,
+          "warmCpuSeconds": 2.5078125
+        }
+      },
+      "residentWorkingSetBytes": 857358336,
+      "releasedWorkingSetBytes": 128688128,
+      "sampledPeakWorkingSetBytes": 923631616,
+      "residentIdleCpuSeconds": 0,
+      "releasedIdleCpuSeconds": 0.015625,
+      "releaseMs": 80.68840000487398,
+      "cpuSeconds": 16.421875,
+      "cpuDemand200MsP99": 2.0320577306688996,
+      "cpuDemand200MsPeak": 2.0320577306688996,
+      "collectorCpuSeconds": 0.1875,
+      "maximumSamplingGapMs": 214.9420000059763,
+      "compileCacheBytes": 0,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 304,
+          "writeOperations": 2,
+          "otherOperations": 5935,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 70784
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 838,
+          "writeOperations": 3,
+          "otherOperations": 5582,
+          "readTransferBytes": 3669943,
+          "writeTransferBytes": 125,
+          "otherTransferBytes": 268374
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 8,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 2,
+          "writeOperations": 2,
+          "otherOperations": 32,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 46,
+          "otherTransferBytes": 1583
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-CPU-cold-bilingual-3.json.gz",
+      "engine": "whisper-small",
+      "device": "CPU",
+      "mode": "cold",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 1345.665500004543,
+      "loadCpuSeconds": 1.265625,
+      "verifyMs": 212.93199999490753,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 1391.835300004459,
+          "firstCpuSeconds": 2.609375,
+          "warmMs": 1243.284299998777,
+          "warmCpuSeconds": 2.3671875
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 1307.5037999951746,
+          "firstCpuSeconds": 2.34375,
+          "warmMs": 1268.4857999993255,
+          "warmCpuSeconds": 2.4140625
+        }
+      },
+      "residentWorkingSetBytes": 858337280,
+      "releasedWorkingSetBytes": 133496832,
+      "sampledPeakWorkingSetBytes": 924606464,
+      "residentIdleCpuSeconds": 0,
+      "releasedIdleCpuSeconds": 0.015625,
+      "releaseMs": 85.97220000228845,
+      "cpuSeconds": 16.125,
+      "cpuDemand200MsP99": 2.091309594349782,
+      "cpuDemand200MsPeak": 2.091309594349782,
+      "collectorCpuSeconds": 0.125,
+      "maximumSamplingGapMs": 207.36759999999776,
+      "compileCacheBytes": 0,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 304,
+          "writeOperations": 2,
+          "otherOperations": 5935,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 70784
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 838,
+          "writeOperations": 3,
+          "otherOperations": 5582,
+          "readTransferBytes": 3669943,
+          "writeTransferBytes": 125,
+          "otherTransferBytes": 268374
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 8,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 31,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 779
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-GPU-cached-bilingual-1.json.gz",
+      "engine": "whisper-small",
+      "device": "GPU",
+      "mode": "cached",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 917.7402999921469,
+      "loadCpuSeconds": 1.109375,
+      "verifyMs": 205.87700000032783,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 564.4450999971014,
+          "firstCpuSeconds": 0.546875,
+          "warmMs": 185.97220000083325,
+          "warmCpuSeconds": 0.1796875
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 188.45729999884497,
+          "firstCpuSeconds": 0.1875,
+          "warmMs": 233.2324500021059,
+          "warmCpuSeconds": 0.21875
+        }
+      },
+      "residentWorkingSetBytes": 841269248,
+      "releasedWorkingSetBytes": 762531840,
+      "sampledPeakWorkingSetBytes": 842350592,
+      "residentIdleCpuSeconds": 0,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 30.590299997129478,
+      "cpuSeconds": 2.96875,
+      "cpuDemand200MsP99": 2.1956826382472534,
+      "cpuDemand200MsPeak": 2.1956826382472534,
+      "collectorCpuSeconds": 0.09375,
+      "maximumSamplingGapMs": 215.54060000926256,
+      "compileCacheBytes": 264435186,
+      "changedCacheDuringInference": [
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/4634444063516412755.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/4634444063516412755.onednn.cl_cache",
+            "bytes": 138904,
+            "mtimeNs": 1791834859415069400
+          }
+        }
+      ],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 304,
+          "writeOperations": 2,
+          "otherOperations": 5935,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 70784
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 57893,
+          "writeOperations": 3,
+          "otherOperations": 6534,
+          "readTransferBytes": 292706667,
+          "writeTransferBytes": 125,
+          "otherTransferBytes": 295022
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 652,
+          "writeOperations": 6,
+          "otherOperations": 187,
+          "readTransferBytes": 2598675,
+          "writeTransferBytes": 277923,
+          "otherTransferBytes": 114
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-GPU-cached-bilingual-2.json.gz",
+      "engine": "whisper-small",
+      "device": "GPU",
+      "mode": "cached",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 911.7999000009149,
+      "loadCpuSeconds": 0.890625,
+      "verifyMs": 203.31799999985378,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 584.162599989213,
+          "firstCpuSeconds": 0.546875,
+          "warmMs": 171.45840000011958,
+          "warmCpuSeconds": 0.15625
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 193.89529999170918,
+          "firstCpuSeconds": 0.25,
+          "warmMs": 188.58904999797232,
+          "warmCpuSeconds": 0.2109375
+        }
+      },
+      "residentWorkingSetBytes": 844701696,
+      "releasedWorkingSetBytes": 759947264,
+      "sampledPeakWorkingSetBytes": 845791232,
+      "residentIdleCpuSeconds": 0,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 31.880599999567494,
+      "cpuSeconds": 2.6875,
+      "cpuDemand200MsP99": 1.4569589601553279,
+      "cpuDemand200MsPeak": 1.4569589601553279,
+      "collectorCpuSeconds": 0.171875,
+      "maximumSamplingGapMs": 215.24059999501333,
+      "compileCacheBytes": 264435186,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 304,
+          "writeOperations": 2,
+          "otherOperations": 5935,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 70784
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 57893,
+          "writeOperations": 3,
+          "otherOperations": 6547,
+          "readTransferBytes": 292706667,
+          "writeTransferBytes": 125,
+          "otherTransferBytes": 295582
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 720,
+          "writeOperations": 2,
+          "otherOperations": 163,
+          "readTransferBytes": 2876483,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-GPU-cached-bilingual-3.json.gz",
+      "engine": "whisper-small",
+      "device": "GPU",
+      "mode": "cached",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 919.1977000009501,
+      "loadCpuSeconds": 1.0625,
+      "verifyMs": 216.36320000106934,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 562.5425000034738,
+          "firstCpuSeconds": 0.546875,
+          "warmMs": 171.78399999829708,
+          "warmCpuSeconds": 0.1796875
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 198.7236999993911,
+          "firstCpuSeconds": 0.1875,
+          "warmMs": 200.37040000170236,
+          "warmCpuSeconds": 0.1875
+        }
+      },
+      "residentWorkingSetBytes": 842682368,
+      "releasedWorkingSetBytes": 762814464,
+      "sampledPeakWorkingSetBytes": 843804672,
+      "residentIdleCpuSeconds": 0,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 30.262200001743622,
+      "cpuSeconds": 2.828125,
+      "cpuDemand200MsP99": 1.636783519414783,
+      "cpuDemand200MsPeak": 1.636783519414783,
+      "collectorCpuSeconds": 0.171875,
+      "maximumSamplingGapMs": 215.88079999492038,
+      "compileCacheBytes": 264435186,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 304,
+          "writeOperations": 2,
+          "otherOperations": 5935,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 70784
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 57893,
+          "writeOperations": 3,
+          "otherOperations": 6547,
+          "readTransferBytes": 292706667,
+          "writeTransferBytes": 125,
+          "otherTransferBytes": 295582
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 720,
+          "writeOperations": 2,
+          "otherOperations": 163,
+          "readTransferBytes": 2876483,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 387,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 382,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-GPU-cold-bilingual-0.json.gz",
+      "engine": "whisper-small",
+      "device": "GPU",
+      "mode": "cold",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 2739.533499989193,
+      "loadCpuSeconds": 3.390625,
+      "verifyMs": 215.15019999060314,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 1174.342099999194,
+          "firstCpuSeconds": 0.9375,
+          "warmMs": 305.7811499966192,
+          "warmCpuSeconds": 0.28125
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 228.2240000058664,
+          "firstCpuSeconds": 0.25,
+          "warmMs": 414.0969500003848,
+          "warmCpuSeconds": 0.34375
+        }
+      },
+      "residentWorkingSetBytes": 882941952,
+      "releasedWorkingSetBytes": 778014720,
+      "sampledPeakWorkingSetBytes": 884047872,
+      "residentIdleCpuSeconds": 0,
+      "releasedIdleCpuSeconds": 0.015625,
+      "releaseMs": 43.05000000749715,
+      "cpuSeconds": 6.171875,
+      "cpuDemand200MsP99": 2.1477973548560216,
+      "cpuDemand200MsPeak": 2.1477973548560216,
+      "collectorCpuSeconds": 0.109375,
+      "maximumSamplingGapMs": 216.59100000397302,
+      "compileCacheBytes": 264296282,
+      "changedCacheDuringInference": [
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/10176454667458881186.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/10176454667458881186.onednn.cl_cache",
+            "bytes": 44232,
+            "mtimeNs": 1791834845746851600
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/14876890666841793976.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/14876890666841793976.onednn.cl_cache",
+            "bytes": 46104,
+            "mtimeNs": 1791834845707923000
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/15436216197396845065.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/15436216197396845065.onednn.cl_cache",
+            "bytes": 137736,
+            "mtimeNs": 1791834845518983200
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/1592126770736499752.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/1592126770736499752.onednn.cl_cache",
+            "bytes": 44936,
+            "mtimeNs": 1791834845755848700
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/15978488026855892112.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/15978488026855892112.onednn.cl_cache",
+            "bytes": 46408,
+            "mtimeNs": 1791834845759493400
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/17487404702923433106.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/17487404702923433106.onednn.cl_cache",
+            "bytes": 140456,
+            "mtimeNs": 1791834845383926800
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/1953321478748977124.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/1953321478748977124.onednn.cl_cache",
+            "bytes": 44936,
+            "mtimeNs": 1791834845760636700
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/2469852595585184077.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/2469852595585184077.onednn.cl_cache",
+            "bytes": 44792,
+            "mtimeNs": 1791834845694980000
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/3291504497199635661.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/3291504497199635661.onednn.cl_cache",
+            "bytes": 46408,
+            "mtimeNs": 1791834845706262300
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/3682061900026349440.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/3682061900026349440.onednn.cl_cache",
+            "bytes": 19176,
+            "mtimeNs": 1791834845057131000
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/4177037940502277921.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/4177037940502277921.onednn.cl_cache",
+            "bytes": 46104,
+            "mtimeNs": 1791834845683456800
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/5119106897148294750.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/5119106897148294750.onednn.cl_cache",
+            "bytes": 19160,
+            "mtimeNs": 1791834844895893500
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/5218831110899951072.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/5218831110899951072.onednn.cl_cache",
+            "bytes": 44232,
+            "mtimeNs": 1791834845669148200
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/5998280204039768434.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/5998280204039768434.onednn.cl_cache",
+            "bytes": 29548,
+            "mtimeNs": 1791834844874457000
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/6736935253752217866.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/6736935253752217866.onednn.cl_cache",
+            "bytes": 138904,
+            "mtimeNs": 1791834845108181000
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/7128819939605041789.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/7128819939605041789.onednn.cl_cache",
+            "bytes": 167272,
+            "mtimeNs": 1791834845277212000
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/7358415352317274835.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/7358415352317274835.onednn.cl_cache",
+            "bytes": 149384,
+            "mtimeNs": 1791834845196523800
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/7486417390531714685.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/7486417390531714685.onednn.cl_cache",
+            "bytes": 149384,
+            "mtimeNs": 1791834845281210400
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/7660938205404545017.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/7660938205404545017.onednn.cl_cache",
+            "bytes": 45900,
+            "mtimeNs": 1791834845046145500
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/8382164127353713803.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/8382164127353713803.onednn.cl_cache",
+            "bytes": 43720,
+            "mtimeNs": 1791834845742851600
+          }
+        },
+        {
+          "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/840942733418413425.onednn.cl_cache",
+          "before": null,
+          "after": {
+            "file": "SurfaceTab/whisper-openvino-cache/2026.2.0/840942733418413425.onednn.cl_cache",
+            "bytes": 44792,
+            "mtimeNs": 1791834845757868000
+          }
+        }
+      ],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 304,
+          "writeOperations": 2,
+          "otherOperations": 5935,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 70784
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 1632,
+          "writeOperations": 1964,
+          "otherOperations": 7138,
+          "readTransferBytes": 12906569,
+          "writeTransferBytes": 263113483,
+          "otherTransferBytes": 289832
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 123,
+          "writeOperations": 70,
+          "otherOperations": 567,
+          "readTransferBytes": 482998,
+          "writeTransferBytes": 2390891,
+          "otherTransferBytes": 1102
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 390,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 390,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 390,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 390,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 390,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 385,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 385,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 385,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-NPU-cached-bilingual-1.json.gz",
+      "engine": "whisper-small",
+      "device": "NPU",
+      "mode": "cached",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 1793.0964999977732,
+      "loadCpuSeconds": 2.015625,
+      "verifyMs": 206.25779998954386,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 323.0987999995705,
+          "firstCpuSeconds": 0.0625,
+          "warmMs": 179.96955000126036,
+          "warmCpuSeconds": 0.0625
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 210.18330000515562,
+          "firstCpuSeconds": 0,
+          "warmMs": 210.77285000501433,
+          "warmCpuSeconds": 0.0234375
+        }
+      },
+      "residentWorkingSetBytes": 1199243264,
+      "releasedWorkingSetBytes": 169394176,
+      "sampledPeakWorkingSetBytes": 2450960384,
+      "residentIdleCpuSeconds": 0,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 98.94460000214167,
+      "cpuSeconds": 2.609375,
+      "cpuDemand200MsP99": 1.7489877560367157,
+      "cpuDemand200MsPeak": 1.7489877560367157,
+      "collectorCpuSeconds": 0.09375,
+      "maximumSamplingGapMs": 209.8549000074854,
+      "compileCacheBytes": 891492889,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 304,
+          "writeOperations": 2,
+          "otherOperations": 5935,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 70784
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 838,
+          "writeOperations": 3,
+          "otherOperations": 5719,
+          "readTransferBytes": 3669943,
+          "writeTransferBytes": 125,
+          "otherTransferBytes": 273985
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 7,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-NPU-cached-bilingual-2.json.gz",
+      "engine": "whisper-small",
+      "device": "NPU",
+      "mode": "cached",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 1768.2588000025135,
+      "loadCpuSeconds": 1.96875,
+      "verifyMs": 203.4921000013128,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 321.75180000194814,
+          "firstCpuSeconds": 0.046875,
+          "warmMs": 183.00719999388093,
+          "warmCpuSeconds": 0.0625
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 212.27119999821298,
+          "firstCpuSeconds": 0.015625,
+          "warmMs": 207.2415000075125,
+          "warmCpuSeconds": 0.078125
+        }
+      },
+      "residentWorkingSetBytes": 1198149632,
+      "releasedWorkingSetBytes": 171266048,
+      "sampledPeakWorkingSetBytes": 2416119808,
+      "residentIdleCpuSeconds": 0,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 88.93939999688882,
+      "cpuSeconds": 2.609375,
+      "cpuDemand200MsP99": 2.058204783654749,
+      "cpuDemand200MsPeak": 2.058204783654749,
+      "collectorCpuSeconds": 0.109375,
+      "maximumSamplingGapMs": 204.33809999667574,
+      "compileCacheBytes": 891492889,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 181,
+          "writeOperations": 2,
+          "otherOperations": 1869,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101802
+        },
+        "verify-model": {
+          "readOperations": 304,
+          "writeOperations": 2,
+          "otherOperations": 5935,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 103,
+          "otherTransferBytes": 70784
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 838,
+          "writeOperations": 3,
+          "otherOperations": 5719,
+          "readTransferBytes": 3669943,
+          "writeTransferBytes": 125,
+          "otherTransferBytes": 273985
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 7,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 2,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 16
+        }
+      }
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-NPU-cached-bilingual-3.json.gz",
+      "engine": "whisper-small",
+      "device": "NPU",
+      "mode": "cached",
+      "languages": [
+        "en-US",
+        "zh-CN"
+      ],
+      "loadMs": 1779.5230000047013,
+      "loadCpuSeconds": 2.015625,
+      "verifyMs": 195.86969999363646,
+      "transcriptions": {
+        "en-US": {
+          "text": [
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+            "The library opens at 9 in the morning and closes at 5 in the afternoon."
+          ],
+          "firstMs": 325.13310000649653,
+          "firstCpuSeconds": 0.0625,
+          "warmMs": 181.8914500036044,
+          "warmCpuSeconds": 0.03125
+        },
+        "zh-CN": {
+          "text": [
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。",
+            "圖書館上午9點開放,下午5點關閉。"
+          ],
+          "firstMs": 207.53110000805464,
+          "firstCpuSeconds": 0.078125,
+          "warmMs": 208.26305000082357,
+          "warmCpuSeconds": 0.125
+        }
+      },
+      "residentWorkingSetBytes": 1199726592,
+      "releasedWorkingSetBytes": 169308160,
+      "sampledPeakWorkingSetBytes": 2391367680,
+      "residentIdleCpuSeconds": 0,
+      "releasedIdleCpuSeconds": 0,
+      "releaseMs": 93.45380000013392,
+      "cpuSeconds": 2.78125,
+      "cpuDemand200MsP99": 2.0879197766206716,
+      "cpuDemand200MsPeak": 2.0879197766206716,
+      "collectorCpuSeconds": 0.125,
+      "maximumSamplingGapMs": 215.4590999998618,
+      "compileCacheBytes": 891492889,
+      "changedCacheDuringInference": [],
+      "phaseIoLogicalTransfers": {
+        "import-runtime": {
+          "readOperations": 180,
+          "writeOperations": 2,
+          "otherOperations": 1868,
+          "readTransferBytes": 1829894,
+          "writeTransferBytes": 107,
+          "otherTransferBytes": 101786
+        },
+        "verify-model": {
+          "readOperations": 305,
+          "writeOperations": 2,
+          "otherOperations": 5939,
+          "readTransferBytes": 256760833,
+          "writeTransferBytes": 161,
+          "otherTransferBytes": 70800
+        },
+        "prepare-audio": {
+          "readOperations": 21,
+          "writeOperations": 2,
+          "otherOperations": 263,
+          "readTransferBytes": 351516,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 8028
+        },
+        "load-model": {
+          "readOperations": 838,
+          "writeOperations": 3,
+          "otherOperations": 5716,
+          "readTransferBytes": 3669943,
+          "writeTransferBytes": 125,
+          "otherTransferBytes": 273160
+        },
+        "transcribe/en-US/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 9,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 857
+        },
+        "transcribe/zh-CN/0": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/1": {
+          "readOperations": 2,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 16
+        },
+        "transcribe/zh-CN/1": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/en-US/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "transcribe/zh-CN/2": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 6,
+          "readTransferBytes": 389,
+          "writeTransferBytes": 115,
+          "otherTransferBytes": 32
+        },
+        "idle-resident": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        },
+        "release-model": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 7,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 40
+        },
+        "idle-released": {
+          "readOperations": 3,
+          "writeOperations": 2,
+          "otherOperations": 3,
+          "readTransferBytes": 384,
+          "writeTransferBytes": 105,
+          "otherTransferBytes": 32
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Resource baseline, not a before/after optimization experiment or whole UI workflow",
+    "Group medians use process runs; warm per-run medians use repeats 1 and 2, excluding first inference",
+    "Cold means empty compiler cache, not cold OS file cache; cached means a fresh process with existing files",
+    "Only inference-process CPU/memory/logical I/O; collector cost separate; driver/service energy and GPU/NPU activity unknown",
+    "200 ms demand uses interpolation across actual sample intervals; it cannot recover shorter spikes",
+    "Literal Chinese character distance includes simplified/traditional variants; two TTS sentences do not measure recognition accuracy",
+    "Five-second idle phases and explicit close do not represent the 1800-second production idle policy",
+    "GPU kernel-cache changes do not by themselves establish full graph recompilation",
+    "No energy, battery-life, or lowest-power-device claim"
+  ]
+}

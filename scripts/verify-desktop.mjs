@@ -147,6 +147,7 @@ try {
   await page.mouse.down();
   await page.mouse.move(paper.x + paper.width * 0.95, paper.y + paper.height * 0.23, { steps: 5 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   // This check verifies the bundled WASM path. Select it explicitly rather than
   // relying on the current default (native PP-OCR can require cold setup).
   await page.getByLabel('OCR 后端').selectOption('local');
@@ -174,7 +175,7 @@ try {
     await page.mouse.up();
   }
   await page.getByLabel('公式识别后端').selectOption('texo-gpu');
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await page.waitForFunction(
     () =>
       document.querySelector('.formula-status')?.textContent.includes('秒') ||

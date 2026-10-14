@@ -529,7 +529,7 @@ test('公式手动输入与插入，草图编辑器可用，保存界面截图',
   expect((await project(page)).pages[0].images[0].latex).toBe('x^2 + y^2 = 1');
   await page.getByRole('button', { name: '草图', exact: true }).click();
   await expect(page.locator('.excalidraw')).toBeVisible();
-  await page.getByRole('button', { name: '保存草图并关闭', exact: true }).click();
+  await page.locator('.sketch-modal').getByRole('button', { name: '关闭', exact: true }).click();
   await fs.mkdir(path.resolve('test-results'), { recursive: true });
   await page.screenshot({ path: 'test-results/workspace.png', fullPage: true });
 });
@@ -1117,7 +1117,9 @@ test('长按缩略图拖动排序、页面管理删除和撤销', async ({ page 
   await page.mouse.move(first.x + first.width / 2, first.y + 30);
   await page.mouse.down();
   await page.waitForTimeout(500);
-  await page.mouse.move(third.x + third.width / 2, third.y + 60, { steps: 10 });
+  await page.mouse.move(third.x + third.width / 2, third.y + third.height - 10, { steps: 10 });
+  await expect(page.locator('.page-insertion-line')).toHaveAttribute('data-insertion-index', '3');
+  await expect(page.locator('.drop-target')).toHaveCount(0);
   await page.mouse.up();
   moved = await project(page);
   expect(moved.pages[2].id).toBe(original.pages[1].id);
@@ -1159,6 +1161,7 @@ test('扫描页框选 OCR 可复制翻译，远程 OCR 回退真实本地；Pipe
   await page.mouse.down();
   await page.mouse.move(r.x + r.width * 0.93, r.y + r.height * 0.3, { steps: 6 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '区域识别' })).toBeVisible();
   await page.getByLabel('OCR 后端').selectOption('web');
   await page.route('http://127.0.0.1:8765/ocr', (r) => r.abort());

@@ -17,12 +17,12 @@
 }
 .model-manager h2 {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--fs-2xl);
 }
 .model-manager > header p {
   margin: 4px 0 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .model-manager-body {
   padding: 12px 20px 20px;
@@ -35,9 +35,9 @@
 }
 .model-card {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 14px;
-  background: rgba(243, 246, 252, 0.7);
+  background: var(--surface-sunken);
 }
 .model-card-title {
   display: flex;
@@ -46,25 +46,25 @@
   gap: 12px;
 }
 .model-card h3 {
-  font-size: 15px;
+  font-size: var(--fs-lg);
   margin: 0;
 }
 .model-card-title > span {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 .model-summary {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 16px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   margin-top: 10px;
 }
 .model-summary strong {
   font-variant-numeric: tabular-nums;
 }
 .model-note {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.6;
   color: var(--muted);
   margin: 8px 0 12px;
@@ -76,7 +76,7 @@
   margin: 10px 0;
 }
 .model-manager button {
-  min-height: 44px;
+  min-height: var(--hit);
 }
 .model-actions button {
   display: flex;
@@ -85,10 +85,10 @@
   padding: 8px 10px;
 }
 .model-card details {
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .model-card summary {
-  min-height: 40px;
+  min-height: var(--hit);
   display: list-item;
   align-content: center;
   cursor: pointer;
@@ -107,7 +107,7 @@
   overflow-wrap: anywhere;
 }
 .model-card a {
-  color: #3564b7;
+  color: var(--accent-text);
 }
 .model-file {
   border-top: 1px solid var(--line);
@@ -116,7 +116,7 @@
 }
 .model-file code {
   display: block;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   line-height: 1.6;
   user-select: text;
 }
@@ -124,11 +124,11 @@
 .model-confirm,
 .model-message {
   padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-md);
   margin: 10px 0;
-  background: #e9f0fc;
-  font-size: 13px;
+  background: var(--accent-soft);
+  font-size: var(--fs-md);
   line-height: 1.6;
 }
 .model-progress progress {
@@ -138,18 +138,6 @@
 }
 .model-progress button {
   min-width: 90px;
-}
-[data-night='true'] .model-card {
-  background: #232b38;
-  border-color: #3a4353;
-}
-[data-night='true'] :is(.model-progress, .model-confirm, .model-message) {
-  background: #293851;
-  color: #dce5f5;
-  border-color: #4a5770;
-}
-[data-night='true'] .model-card a {
-  color: #a5c2ff;
 }
 @media (max-width: 600px) {
   .model-manager-body {
@@ -172,13 +160,13 @@
 .runtime-setup {
   padding: 14px;
   margin-bottom: 16px;
-  border: 1px solid var(--line, #63758c55);
-  border-radius: 12px;
-  background: color-mix(in srgb, currentColor 3%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface-sunken);
 }
 .runtime-setup h3 {
   margin: 0 0 8px;
-  font-size: 14px;
+  font-size: var(--fs-lg);
 }
 .runtime-profile {
   display: flex;
@@ -191,14 +179,14 @@
   min-width: 0;
 }
 .runtime-profile strong {
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .runtime-profile small {
   display: block;
   margin-top: 4px;
   color: inherit;
   opacity: 0.7;
-  font-size: 11px;
+  font-size: var(--fs-sm);
 }
 .runtime-profile button {
   flex-shrink: 0;
@@ -211,7 +199,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .runtime-setup progress {
   max-width: 100%;
@@ -224,8 +212,7 @@
   display: grid;
   place-items: center;
   padding: 16px;
-  background: #11182766;
-  backdrop-filter: blur(5px);
+  background: var(--scrim);
 }
 .model-confirm-dialog {
   width: min(460px, 100%);
@@ -233,22 +220,22 @@
   padding: 0 !important;
   margin: 0 !important;
   overflow: auto;
-  box-shadow: 0 18px 64px #0004;
+  box-shadow: var(--shadow-3);
 }
 .model-confirm-dialog header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #8090a633;
+  border-bottom: 1px solid var(--border);
 }
 .model-confirm-dialog h2 {
-  font-size: 17px;
+  font-size: var(--fs-xl);
   margin: 0;
 }
 .model-confirm-body {
   padding: 16px 20px;
-  font-size: 13px;
+  font-size: var(--fs-md);
   overflow-wrap: anywhere;
 }
 .model-confirm-license {
@@ -259,11 +246,11 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid #8090a633;
+  border-top: 1px solid var(--border);
 }
 .model-confirm-dialog footer button {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 40px;
+  min-height: var(--hit);
 }

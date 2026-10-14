@@ -10,7 +10,7 @@ import {
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { Page } from './model';
 import PageThumbnail from './PageThumbnail';
-import { itemAt, makeLayout, visibleRange } from './virtualLayout';
+import { insertionAt, insertionDestination, makeLayout, visibleRange } from './virtualLayout';
 import { useScrollViewport } from './useScrollViewport';
 export default function PageList({
   pages,
@@ -19,6 +19,7 @@ export default function PageList({
   onSelect,
   onMove,
   onDelete,
+  onDuplicate,
 }: {
   pages: Page[];
   pdf: PDFDocumentProxy | null;
@@ -26,6 +27,7 @@ export default function PageList({
   onSelect: (i: number) => void;
   onMove: (from: number, to: number) => void;
   onDelete: (i: number) => void;
+  onDuplicate: (i: number) => void;
 }) {
   useLocale();
   const root = useRef<HTMLDivElement>(null),
@@ -59,9 +61,40 @@ export default function PageList({
     clearTimeout(timer.current);
     cancelAnimationFrame(autoFrame.current);
     autoFrame.current = 0;
+    const pointer = contact.current?.id;
     contact.current = null;
+    if (pointer !== undefined && root.current?.hasPointerCapture(pointer))
+      root.current.releasePointerCapture(pointer);
     setDrag(null);
   };
+  useEffect(() => {
+    const cancel = () => {
+      if (contact.current) suppressClick.current = performance.now() + 800;
+      cleanup();
+      setMenu(null);
+    };
+    const key = (event: KeyboardEvent) => {
+      if (
+        event.key !== 'Escape' ||
+        (!contact.current && !root.current?.querySelector('[role="menu"]'))
+      )
+        return;
+      event.preventDefault();
+      event.stopPropagation();
+      cancel();
+    };
+    const hidden = () => {
+      if (document.hidden) cancel();
+    };
+    window.addEventListener('keydown', key, true);
+    window.addEventListener('blur', cancel);
+    document.addEventListener('visibilitychange', hidden);
+    return () => {
+      window.removeEventListener('keydown', key, true);
+      window.removeEventListener('blur', cancel);
+      document.removeEventListener('visibilitychange', hidden);
+    };
+  }, []);
   useEffect(
     () => () => {
       clearTimeout(timer.current);
@@ -86,7 +119,10 @@ export default function PageList({
     const c = contact.current,
       el = root.current;
     if (!c || !el) return;
-    c.to = itemAt(geometry.current, el.scrollTop + c.lastY - el.getBoundingClientRect().top - 4);
+    c.to = insertionAt(
+      geometry.current,
+      el.scrollTop + c.lastY - el.getBoundingClientRect().top - 4,
+    );
     setDrag((old) => (old?.from === c.from && old.to === c.to ? old : { from: c.from, to: c.to }));
   };
   const autoScroll = () => {
@@ -162,7 +198,10 @@ export default function PageList({
       suppressClick.current = performance.now() + 800;
       onSelect(c.from);
     }
-    if (!cancel && c.held && c.moved && c.from !== c.to) onMove(c.from, c.to);
+    if (!cancel && c.held && c.moved) {
+      const destination = insertionDestination(c.from, c.to);
+      if (c.from !== destination) onMove(c.from, destination);
+    }
     cleanup();
   };
   return (
@@ -175,6 +214,14 @@ export default function PageList({
       onLostPointerCapture={(e) => end(e, true)}
     >
       <div className="virtual-thumbnail-layout" style={{ height: layout.total }}>
+        {drag && (
+          <div
+            className="page-insertion-line"
+            data-insertion-index={drag.to}
+            aria-hidden="true"
+            style={{ top: Math.max(0, Math.min(layout.total - 2, layout.offsets[drag.to])) }}
+          />
+        )}
         {pages.slice(range.start, range.end).map((p, n) => {
           const i = range.start + n;
           return (
@@ -190,7 +237,7 @@ export default function PageList({
               }}
             >
               <button
-                className={`page-card ${i === index ? 'selected' : ''} ${drag?.from === i ? 'dragging' : ''} ${drag?.to === i ? 'drop-target' : ''}`}
+                className={`page-card ${i === index ? 'selected' : ''} ${drag?.from === i ? 'dragging' : ''}`}
                 aria-label={tr('第 {0} 页', i + 1)}
                 data-page-index={i}
                 draggable={false}
@@ -239,6 +286,15 @@ export default function PageList({
                     }}
                   >
                     {tr('删除')}
+                  </button>
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setMenu(null);
+                      onDuplicate(i);
+                    }}
+                  >
+                    {tr('复制页面')}
                   </button>
                   <button role="menuitem" onClick={() => setMenu(null)}>
                     {tr('关闭')}

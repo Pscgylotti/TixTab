@@ -107,11 +107,14 @@ class SpeechModel:
         self.language = language
         if engine == 'sensevoice-small':
             import sherpa_onnx
+            thread_policy = Path(__file__).with_name('asr-ort.config')
+            if not thread_policy.is_file():
+                raise RuntimeError('runtime')
             self.pipeline = sherpa_onnx.OfflineRecognizer.from_sense_voice(
                 model=str(directory / 'model.int8.onnx'),
                 tokens=str(directory / 'tokens.txt'), num_threads=2,
                 use_itn=True, language='en' if language.startswith('en') else 'zh',
-                provider='cpu', debug=False)
+                provider='cpu:' + str(thread_policy), debug=False)
         else:
             import openvino as ov
             import openvino_genai as genai
@@ -204,16 +207,18 @@ def record(stop, emit, session, segments):
     try:
         if stop.is_set():
             return
+        from microphones import resolve_input
+        microphone, chosen = resolve_input(sd, session.get('microphone', ''))
         # Prefer native 16 kHz; fall back to the microphone's native sample rate.
         try:
-            sd.check_input_settings(channels=1, dtype='float32', samplerate=RATE)
+            sd.check_input_settings(device=microphone, channels=1, dtype='float32', samplerate=RATE)
             rate = RATE
         except sd.PortAudioError:
-            rate = int(sd.query_devices(kind='input')['default_samplerate'])
+            rate = int(sd.query_devices(microphone)['default_samplerate'])
         resampler = soxr.ResampleStream(rate, RATE, 1, dtype='float32') if rate != RATE else None
-        with sd.InputStream(channels=1, samplerate=rate, dtype='float32',
+        with sd.InputStream(device=microphone, channels=1, samplerate=rate, dtype='float32',
                             blocksize=int(rate * .03), callback=callback) as input_stream:
-            emit('ready', session, device=session['device'])
+            emit('ready', session, device=session['device'], microphoneName=chosen['name'])
             while not stop.is_set() or not frames.empty():
                 if stop.is_set() and input_stream.active:
                     # Close capture first, then drain all audio already received.
@@ -243,7 +248,7 @@ def record(stop, emit, session, segments):
     except queue.Full:
         emit('error', session, error='overload')
     except Exception as error:
-        emit('error', session, error='overload' if str(error) == 'overload' else 'microphone')
+        emit('error', session, error=str(error) if str(error) in ['overload', 'microphone-missing'] else 'microphone')
     finally:
         stop.set()
         # Queue is bounded. Wait only for already queued inference to drain.

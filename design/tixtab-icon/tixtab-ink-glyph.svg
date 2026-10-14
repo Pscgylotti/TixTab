@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="104 112 292 292" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">TixTab — Ink T glyph</title>
+  <desc id="desc">The TixTab mark without its tile, for compact interface use. Inherits the surrounding text color.</desc>
+  <path d="M277 138h38a30 30 0 0 1 30 30v36h-98v-36a30 30 0 0 1 30-30Z" fill="currentColor" opacity=".38"/>
+  <path d="m234 204 51 12-33 124a29 29 0 0 1-7 12l-25 26a5 5 0 0 1-8-2l-11-34a29 29 0 0 1 0-17l33-121Z" fill="currentColor"/>
+  <path d="M151 210c63-19 130-22 198-10" stroke="currentColor" stroke-width="52" stroke-linecap="round"/>
+</svg>

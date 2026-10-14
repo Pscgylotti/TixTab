@@ -1,15 +1,22 @@
 import { t as tr, useLocale } from './i18n';
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import type { ForegroundClip } from './foregroundViewport';
 import { isEraser, isPicture, type Page, type PlacedImage } from './model';
 import { objectBox, objectsInBox, transformObjects, type ObjectBox } from './objectSelection';
+import { groupDisplay } from './objectGroup';
+import { useAppearance } from './appearance';
+import type { SpatialIndex } from './spatialIndex';
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
 interface Props {
   page: Page;
+  index: SpatialIndex<PlacedImage>;
   active: boolean;
   zoom: number;
   selected: string[];
   onSelect: (ids: string[]) => void;
   onChange: (page: Page) => void;
+  clip?: ForegroundClip;
+  pinned?: string[];
 }
 interface Gesture {
   pointer: number;
@@ -23,8 +30,19 @@ interface Gesture {
   prior: string[];
   initial: string[];
 }
-export default function ObjectLayer({ page, active, zoom, selected, onSelect, onChange }: Props) {
+export default function ObjectLayer({
+  page,
+  index,
+  active,
+  zoom,
+  selected,
+  onSelect,
+  onChange,
+  clip,
+  pinned,
+}: Props) {
   useLocale();
+  const { night, pdfNight } = useAppearance();
   const root = useRef<HTMLDivElement>(null),
     [preview, setPreview] = useState<PlacedImage[] | null>(null),
     [marquee, setMarquee] = useState<ObjectBox | null>(null);
@@ -45,7 +63,7 @@ export default function ObjectLayer({ page, active, zoom, selected, onSelect, on
       y: Math.max(0, Math.min(page.height, ((e.clientY - r.top) / r.height) * page.height)),
     };
   };
-  const start = (e: PointerEvent, image?: PlacedImage, handle?: Corner) => {
+  const start = (e: PointerEvent, image?: PlacedImage, handle?: Corner, selectionBody = false) => {
     if (!active || isEraser(e) || e.button !== 0 || e.pointerType === 'touch' || gesture.current)
       return;
     e.stopPropagation();
@@ -74,11 +92,11 @@ export default function ObjectLayer({ page, active, zoom, selected, onSelect, on
       from: from ?? { ...p, width: 0, height: 0 },
       latest: from ?? { ...p, width: 0, height: 0 },
       handle,
-      marquee: !image && !handle,
+      marquee: !image && !handle && !selectionBody,
       prior: e.shiftKey ? selected : [],
       initial: selected,
     };
-    if (!image && !handle) {
+    if (!image && !handle && !selectionBody) {
       if (!e.shiftKey) onSelect([]);
       setMarquee({ ...p, width: 0, height: 0 });
     }
@@ -130,7 +148,7 @@ export default function ObjectLayer({ page, active, zoom, selected, onSelect, on
     if (!g) return;
     if (g.marquee) {
       setMarquee(g.latest);
-      onSelect([...new Set([...g.prior, ...objectsInBox(g.original, g.latest)])]);
+      onSelect([...new Set([...g.prior, ...objectsInBox(g.original, g.latest, index)])]);
     } else setPreview(transformObjects(g.original, g.ids, g.from, g.latest));
   };
   const move = (e: PointerEvent) => {
@@ -151,7 +169,9 @@ export default function ObjectLayer({ page, active, zoom, selected, onSelect, on
     setMarquee(null);
     if (g.marquee)
       onSelect(
-        cancel ? g.initial : [...new Set([...g.prior, ...objectsInBox(g.original, g.latest)])],
+        cancel
+          ? g.initial
+          : [...new Set([...g.prior, ...objectsInBox(g.original, g.latest, index)])],
       );
     else if (
       !cancel &&
@@ -177,6 +197,18 @@ export default function ObjectLayer({ page, active, zoom, selected, onSelect, on
   }, [active, onSelect]);
   const images = preview ?? page.images,
     box = objectBox(images, selected);
+  const order = useMemo(() => new Map(page.images.map((i, n) => [i.id, n])), [page.images]);
+  const visible = useMemo(() => {
+    if (clip === undefined) return images;
+    index.update(page.images);
+    const ids = new Set([
+      ...(clip === false ? [] : index.search(clip).map((i) => i.id)),
+      ...selected,
+      ...(pinned ?? []),
+      ...(gesture.current?.ids ?? []),
+    ]);
+    return images.filter((i) => ids.has(i.id));
+  }, [images, page.images, clip, selected, pinned, index]);
   const handlers = {
     onPointerMove: move,
     onPointerUp: (e: PointerEvent) => end(e),
@@ -188,28 +220,39 @@ export default function ObjectLayer({ page, active, zoom, selected, onSelect, on
       <div
         className={`object-layer ${active ? 'active' : ''}`}
         ref={root}
+        data-total-objects={images.length}
+        data-visible-objects={visible.length}
         onPointerDown={(e) => start(e)}
         {...handlers}
       >
-        {images.map((i, index) => (
+        {visible.map((i) => (
           <div
             key={i.id}
             className={`placed-object ${selected.includes(i.id) ? 'chosen' : ''}`}
             data-object-id={i.id}
             aria-label={
-              i.kind === 'text'
-                ? tr('文本框对象')
-                : isPicture(i)
-                  ? tr('图片对象')
-                  : i.kind === 'sketch'
-                    ? tr('草图对象')
-                    : tr('公式对象')
+              i.group
+                ? tr('组合对象')
+                : i.kind === 'text'
+                  ? tr('文本框对象')
+                  : isPicture(i)
+                    ? tr('图片对象')
+                    : i.kind === 'sketch'
+                      ? tr('草图对象')
+                      : tr('公式对象')
             }
-            style={{ left: i.x, top: i.y, width: i.width, height: i.height, zIndex: index * 2 + 2 }}
+            style={{
+              left: i.x,
+              top: i.y,
+              width: i.width,
+              height: i.height,
+              zIndex: order.get(i.id)! * 2 + 2,
+            }}
             onPointerDown={(e) => start(e, i)}
           >
             <img
-              src={i.displayData ?? i.data}
+              src={groupDisplay(i, night, pdfNight)}
+              style={i.group ? { filter: 'none' } : undefined}
               data-night-ink={!isPicture(i)}
               alt={
                 i.kind === 'text'
@@ -241,12 +284,21 @@ export default function ObjectLayer({ page, active, zoom, selected, onSelect, on
         <div
           className="object-selection"
           data-selected-count={selected.length}
+          onPointerDown={(e) => {
+            if ((e.target as HTMLElement).closest('button')) return;
+            const p = point(e);
+            index.update(page.images);
+            const hit = index.search({ minX: p.x, minY: p.y, maxX: p.x, maxY: p.y }).at(-1);
+            start(e, hit, undefined, !hit);
+          }}
+          {...handlers}
           style={
             {
               left: box.x,
               top: box.y,
               width: box.width,
               height: box.height,
+              pointerEvents: selected.length > 1 ? 'auto' : 'none',
               '--handle-size': `${22 / zoom}px`,
               '--outline-size': `${1.5 / zoom}px`,
             } as React.CSSProperties

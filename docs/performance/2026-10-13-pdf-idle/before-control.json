@@ -1,0 +1,6 @@
+{
+  "referenceSource": ".cache/scheduler-idle-original.ts",
+  "originalSha256": "cbe02d9ed230313c9511426ce71142b6f79865fda8b221de48ff0fe5c35f96a8",
+  "compiledSha256": "9d87afb61172f4bdc895ed86710fb3c96d759bff74fdc57d4f7318835f32ab79",
+  "mechanism": "Only pdfRenderCache.ts differs: omit render-resume timers while a tracked contact remains down; preserve final-release quiet period, stale pointer recovery, visibility, priorities, concurrency and pixels."
+}

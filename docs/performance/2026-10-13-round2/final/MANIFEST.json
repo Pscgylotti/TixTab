@@ -1,0 +1,343 @@
+{
+  "schema": 1,
+  "entries": [
+    {
+      "file": "before-1.json.gz",
+      "sha256": "38ab97d15b501730b14595d4ecc665f20ae1a8043bc75453a80b0481e03f7ec2",
+      "reportSha256": "ea6a88a1b90e9167f0ae20d09a0a222973caf8867415150c585cbd62eaab5c6f",
+      "buildSha256": "8d68352f4499650d065cab38b869a5801529fc2336b17a07ab6d25632980b8ab",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    },
+    {
+      "file": "before-2.json.gz",
+      "sha256": "81d24811b7d9f3c6aa3667ccacaec0e1ea30fe78db3e7ab181d5346fa3d0bea3",
+      "reportSha256": "ea86bd193a126098a4ba0dc1abc8ddb396ca3627c3c89f90deecd321498e6700",
+      "buildSha256": "8d68352f4499650d065cab38b869a5801529fc2336b17a07ab6d25632980b8ab",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    },
+    {
+      "file": "before-3.json.gz",
+      "sha256": "a1167ab2702ce577607de240e84a1b505088fbb4eef47feff07dfe18e34bcb94",
+      "reportSha256": "dd92508e9e8d09884c79fb2f76c0cb9f68febdd0721ec11e2e85998ae650b50e",
+      "buildSha256": "8d68352f4499650d065cab38b869a5801529fc2336b17a07ab6d25632980b8ab",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    },
+    {
+      "file": "candidate-1.json.gz",
+      "sha256": "b23e7b295403384370f6a4ff95134bb4370d9d626cd2ddb89a607aed6681b24c",
+      "reportSha256": "38dbbc0d448e721a7ab38534a3618dd08015ac21dabff9c0d157c596d54fe0e7",
+      "buildSha256": "a5a0c5b43f3cdd1abb343cfe57344dec99eb6f78aa2e5456d7e9788bc09ec76b",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    },
+    {
+      "file": "candidate-2.json.gz",
+      "sha256": "25c70b5ed42b58f1b7e78b801b98d3573687aae6c7bdae3a6a3ff535c1532191",
+      "reportSha256": "4b1343e9d048266c0610ccb23f36b6d24eac5c90219d4cc6144b243e0aa3421b",
+      "buildSha256": "a5a0c5b43f3cdd1abb343cfe57344dec99eb6f78aa2e5456d7e9788bc09ec76b",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    },
+    {
+      "file": "candidate-3.json.gz",
+      "sha256": "23800b90776a72af040e5d97721fc49e551a17ba9e477854c5fd394fb169cbe7",
+      "reportSha256": "639b5524316aa31952c034b393dcdca75367bfd1029078fb1ac3a5c4db726c4d",
+      "buildSha256": "a5a0c5b43f3cdd1abb343cfe57344dec99eb6f78aa2e5456d7e9788bc09ec76b",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    }
+  ],
+  "sourceManifestSha256": "118624951cf1dcb427e66180d301203ab67f023165d7e4f7bdca966f70d3ce30",
+  "evidence": [
+    {
+      "file": "evidence/browser-prior-three/.last-run.json.gz",
+      "sha256": "eeb2d2f2d42ce7a6a891fb0b1fa5ae847db0110fdf2d769e41c519444aadb45d",
+      "rawSha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "source": ".cache/culling-final-browser-results/.last-run.json"
+    },
+    {
+      "file": "evidence/browser-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json.gz",
+      "sha256": "b8e8771b2040671c2cb75c14c17790ec0d4ea15f6d24624e0e74505d861d6ac8",
+      "rawSha256": "70d95b558b359d2e8924226b7bd533192fd07ab6ee8f8d6a1323b5c3b2aaafcb",
+      "source": ".cache/culling-final-browser-results/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/browser-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-final-browser-results/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json"
+    },
+    {
+      "file": "evidence/browser-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/pixel-comparisons.json.gz",
+      "sha256": "b8e8771b2040671c2cb75c14c17790ec0d4ea15f6d24624e0e74505d861d6ac8",
+      "rawSha256": "70d95b558b359d2e8924226b7bd533192fd07ab6ee8f8d6a1323b5c3b2aaafcb",
+      "source": ".cache/culling-final-browser-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/browser-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-final-browser-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/transient-coverage.json"
+    },
+    {
+      "file": "evidence/browser-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/pixel-comparisons.json.gz",
+      "sha256": "b8e8771b2040671c2cb75c14c17790ec0d4ea15f6d24624e0e74505d861d6ac8",
+      "rawSha256": "70d95b558b359d2e8924226b7bd533192fd07ab6ee8f8d6a1323b5c3b2aaafcb",
+      "source": ".cache/culling-final-browser-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/browser-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-final-browser-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/transient-coverage.json"
+    },
+    {
+      "file": "evidence/native-prior-three/.last-run.json.gz",
+      "sha256": "eeb2d2f2d42ce7a6a891fb0b1fa5ae847db0110fdf2d769e41c519444aadb45d",
+      "rawSha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "source": ".cache/culling-native-final-results/.last-run.json"
+    },
+    {
+      "file": "evidence/native-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json.gz",
+      "sha256": "4b4975e247bf48bb4d40611415c0c0dcd10c6f0f956ba8450ebe37356d260379",
+      "rawSha256": "5bfab57ac45b632ba4c5446880bba69671b9f2e293a14ce463136f744057a333",
+      "source": ".cache/culling-native-final-results/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/native-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-native-final-results/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json"
+    },
+    {
+      "file": "evidence/native-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/pixel-comparisons.json.gz",
+      "sha256": "6585e621c1566f352c779097bcfe377525984b060323d20f60bf57d10e4f2c91",
+      "rawSha256": "3228801f51a89576e73a14978f2a3d363d6a4727c0af9d3693f2a3e7f71a58c7",
+      "source": ".cache/culling-native-final-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/native-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-native-final-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/transient-coverage.json"
+    },
+    {
+      "file": "evidence/native-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/pixel-comparisons.json.gz",
+      "sha256": "bbfbe77548a4776486f45ec4d74d182e0d041fc7a546e1258c48eafa6ac8dfa6",
+      "rawSha256": "1594b06fb7d3919827ed73ba666d0fe8f3290307db43b40817503cd781bdeaab",
+      "source": ".cache/culling-native-final-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/native-prior-three/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-native-final-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/transient-coverage.json"
+    },
+    {
+      "file": "evidence/fast-jump-before-fix/.last-run.json.gz",
+      "sha256": "37d046005b8047d9027116066f54696900fe684461548b954b2a2b1385b2979e",
+      "rawSha256": "a656c28f27cf442a352fcf3dba9646509cbe7d1879bc4804b646fa3978304ae3",
+      "source": ".cache/culling-fast-only-results/.last-run.json"
+    },
+    {
+      "file": "evidence/fast-jump-before-fix/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json.gz",
+      "sha256": "50c15d921df28492e2d9bf2da5d1cd5c78ee416bdcf478074db63d76d2381cba",
+      "rawSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "source": ".cache/culling-fast-only-results/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/fast-jump-before-fix/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json.gz",
+      "sha256": "61deea93ff314a3441b02f369bfef889a4b3cbbfbe5d67db907b24df56cef784",
+      "rawSha256": "c6ad6a02d714e3fec36bc276c84aa8d690eed29c1dd2c8e92241911452d0dff8",
+      "source": ".cache/culling-fast-only-results/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json"
+    },
+    {
+      "file": "evidence/fast-jump-after-fix/.last-run.json.gz",
+      "sha256": "eeb2d2f2d42ce7a6a891fb0b1fa5ae847db0110fdf2d769e41c519444aadb45d",
+      "rawSha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "source": ".cache/culling-fast-fixed-results/.last-run.json"
+    },
+    {
+      "file": "evidence/fast-jump-after-fix/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json.gz",
+      "sha256": "50c15d921df28492e2d9bf2da5d1cd5c78ee416bdcf478074db63d76d2381cba",
+      "rawSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "source": ".cache/culling-fast-fixed-results/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/fast-jump-after-fix/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-fast-fixed-results/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json"
+    },
+    {
+      "file": "evidence/native-save-test-harness-failures/.last-run.json.gz",
+      "sha256": "0882a237003e6f7191518a0a140af8855b57b50c71d6ee591fa0f8ed9b97dc88",
+      "rawSha256": "2a4bf72a162d747e8205dc3c5a702975e836529d21c4e90b10f091cb13729951",
+      "source": ".cache/culling-native-channel-stable-results/.last-run.json"
+    },
+    {
+      "file": "evidence/native-save-test-harness-failures/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json.gz",
+      "sha256": "6585e621c1566f352c779097bcfe377525984b060323d20f60bf57d10e4f2c91",
+      "rawSha256": "3228801f51a89576e73a14978f2a3d363d6a4727c0af9d3693f2a3e7f71a58c7",
+      "source": ".cache/culling-native-channel-stable-results/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/native-save-test-harness-failures/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-native-channel-stable-results/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json"
+    },
+    {
+      "file": "evidence/native-save-test-harness-failures/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/pixel-comparisons.json.gz",
+      "sha256": "bbfbe77548a4776486f45ec4d74d182e0d041fc7a546e1258c48eafa6ac8dfa6",
+      "rawSha256": "1594b06fb7d3919827ed73ba666d0fe8f3290307db43b40817503cd781bdeaab",
+      "source": ".cache/culling-native-channel-stable-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/native-save-test-harness-failures/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-native-channel-stable-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat1/transient-coverage.json"
+    },
+    {
+      "file": "evidence/native-save-test-harness-failures/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/pixel-comparisons.json.gz",
+      "sha256": "bbfbe77548a4776486f45ec4d74d182e0d041fc7a546e1258c48eafa6ac8dfa6",
+      "rawSha256": "1594b06fb7d3919827ed73ba666d0fe8f3290307db43b40817503cd781bdeaab",
+      "source": ".cache/culling-native-channel-stable-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/native-save-test-harness-failures/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-native-channel-stable-results/foreground-culling-foregro-92dd9-e-full-project-across-views-repeat2/transient-coverage.json"
+    },
+    {
+      "file": "evidence/native-export-targeted/.last-run.json.gz",
+      "sha256": "eeb2d2f2d42ce7a6a891fb0b1fa5ae847db0110fdf2d769e41c519444aadb45d",
+      "rawSha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "source": ".cache/culling-native-export-fixed-results/.last-run.json"
+    },
+    {
+      "file": "evidence/native-export-targeted/foreground-culling-foregro-92dd9-e-full-project-across-views/full-foreground.pdf.gz",
+      "sha256": "48b5040c62a04ece3746ac68b20c2e41ce9d338610890c38e561e83d9420d0a9",
+      "rawSha256": "527db8627fac33475d8ea49bbff87c14833254cdaddb1cbea865fce1f7eee27b",
+      "source": ".cache/culling-native-export-fixed-results/foreground-culling-foregro-92dd9-e-full-project-across-views/full-foreground.pdf"
+    },
+    {
+      "file": "evidence/native-export-targeted/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json.gz",
+      "sha256": "50c15d921df28492e2d9bf2da5d1cd5c78ee416bdcf478074db63d76d2381cba",
+      "rawSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "source": ".cache/culling-native-export-fixed-results/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/native-export-targeted/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-native-export-fixed-results/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json"
+    },
+    {
+      "file": "evidence/native-measured-build/.last-run.json.gz",
+      "sha256": "eeb2d2f2d42ce7a6a891fb0b1fa5ae847db0110fdf2d769e41c519444aadb45d",
+      "rawSha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "source": ".cache/culling-round2-frozen-results/.last-run.json"
+    },
+    {
+      "file": "evidence/native-measured-build/foreground-culling-foregro-92dd9-e-full-project-across-views/full-foreground.pdf.gz",
+      "sha256": "d76ca2ffdaf04bc76822ba572bd4cec1170bfc7de97d79bac3d21dcb7013b67b",
+      "rawSha256": "1ef8e918883f67531c3dd31da6118f9e36ac25220e2b6966b59efc4915872f30",
+      "source": ".cache/culling-round2-frozen-results/foreground-culling-foregro-92dd9-e-full-project-across-views/full-foreground.pdf"
+    },
+    {
+      "file": "evidence/native-measured-build/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json.gz",
+      "sha256": "0c5e42433bbdabb7548511d4471e3ff0c6ac5ed0be59cb7f0d036f3c1b5aa65d",
+      "rawSha256": "5e9b31ee3517a1ed8f21fe007b0b6f503816951f3312b47c352314e4a9d9f166",
+      "source": ".cache/culling-round2-frozen-results/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/native-measured-build/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-round2-frozen-results/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json"
+    },
+    {
+      "file": "evidence/browser-final-export/.last-run.json.gz",
+      "sha256": "eeb2d2f2d42ce7a6a891fb0b1fa5ae847db0110fdf2d769e41c519444aadb45d",
+      "rawSha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "source": ".cache/culling-round2-browser-export-results/.last-run.json"
+    },
+    {
+      "file": "evidence/browser-final-export/foreground-culling-foregro-92dd9-e-full-project-across-views/full-foreground.pdf.gz",
+      "sha256": "bce490f4e275f8ab1e14d6d72c274166585da686d37d26b953e555d526850e0f",
+      "rawSha256": "bb9c01bd9b5518f52679d32a83a8a0318bb2422e857a2d53881106d3d0902de9",
+      "source": ".cache/culling-round2-browser-export-results/foreground-culling-foregro-92dd9-e-full-project-across-views/full-foreground.pdf"
+    },
+    {
+      "file": "evidence/browser-final-export/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json.gz",
+      "sha256": "b8e8771b2040671c2cb75c14c17790ec0d4ea15f6d24624e0e74505d861d6ac8",
+      "rawSha256": "70d95b558b359d2e8924226b7bd533192fd07ab6ee8f8d6a1323b5c3b2aaafcb",
+      "source": ".cache/culling-round2-browser-export-results/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json"
+    },
+    {
+      "file": "evidence/browser-final-export/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146",
+      "source": ".cache/culling-round2-browser-export-results/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json"
+    },
+    {
+      "file": "browser-prior-three.log",
+      "sha256": "7cceb0667899c53a99bd2e88f3ff8aa8eb2e225bf6aabcc94f120b2f1ae24699",
+      "source": ".cache/culling-final-browser.log"
+    },
+    {
+      "file": "native-prior-three.log",
+      "sha256": "1b304cccbb9e08cc2a7f79b3e992a91e7d9090add89ad83f08f52ea536ccb9c1",
+      "source": ".cache/culling-native-final.log"
+    },
+    {
+      "file": "native-measured-build.log",
+      "sha256": "99bafe2690d1cb7977b3375c79df8c4febbebd656986f4557105bcb714775de9",
+      "source": ".cache/culling-round2-frozen.log"
+    },
+    {
+      "file": "browser-final-export.log",
+      "sha256": "928a550577e4b2f25a867aa233f32fab0348f524d863767d9c322485b9812502",
+      "source": ".cache/culling-round2-browser-export.log"
+    },
+    {
+      "file": "evidence/sources/tests/foreground-culling.spec.ts.gz",
+      "sha256": "b1963c203e196de12c6967a188b8faf3e566c5c0fdc89b6948e6e263ce5a92dd",
+      "rawSha256": "08b2d85872abc4cc6b5695efdf6394cfdacd704ea2f9e15a65f46c092e18b609",
+      "source": "tests/foreground-culling.spec.ts"
+    },
+    {
+      "file": "evidence/sources/scripts/build-foreground-control.mjs.gz",
+      "sha256": "bcaf61484892ba09981d064764b1464ffbb0b39f8511d9accb4dd078b6c60aa5",
+      "rawSha256": "a39928c7093e86de5ba43028f7aec2f6523ffaeda4e38079cccbc0e2ec65ae5d",
+      "source": "scripts/build-foreground-control.mjs"
+    },
+    {
+      "file": "evidence/sources/src/useForegroundViewport.ts.gz",
+      "sha256": "eae130771f4fde003d9b2d2cbe1ecebfef56748cfd23319619f40ed5fcad6af8",
+      "rawSha256": "7b229c08eec33cb6fd5913535d92044c57be7cc293efda890d95f22d53cb451b",
+      "source": "src/useForegroundViewport.ts"
+    },
+    {
+      "file": "evidence/sources/src/foregroundViewport.ts.gz",
+      "sha256": "c95b7f5c7592cc403d28e0298043e8d913da3fcc24785f2c5066d9696e503840",
+      "rawSha256": "6604216e1274c2d8e8a154a365e23009151bf69f8a2e8da8433782e884db794a",
+      "source": "src/foregroundViewport.ts"
+    },
+    {
+      "file": "evidence/native-unchanged-captures/0-unstable-first.png",
+      "sha256": "5fff789522dc731755221a5f407ed697bad9912f0faadccea238a21997d4278a",
+      "source": ".cache/culling-native-unstable-results (unchanged scene stability probe)"
+    },
+    {
+      "file": "evidence/native-unchanged-captures/1-unstable-last.png",
+      "sha256": "f238164f4c83c1be3157e0224d7e2ec5d2fc79ef2d86aacf719d2f1432379df6",
+      "source": ".cache/culling-native-unstable-results (unchanged scene stability probe)"
+    },
+    {
+      "file": "evidence/native-unchanged-captures/difference.json",
+      "sha256": "cf1093bbe2d1a3b079f79277ff943cec6758fc2365209a6fd6d94bf63e484754",
+      "source": ".cache/culling-native-unstable-results (unchanged scene stability probe)"
+    }
+  ]
+}

@@ -2,8 +2,13 @@
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const validMicrophone = (id) =>
+  id === undefined ||
+  id === '' ||
+  (typeof id === 'string' && /^winmm:[A-Za-z0-9+/=]{1,4096}$/.test(id));
 function createDictation({ helper, spawnProcess = spawn, platform = process.platform }) {
   let job = null;
+  let listing = null;
   const stop = (owner) => {
     if (!job || job.done || (owner && job.owner !== owner)) return;
     const current = job;
@@ -38,11 +43,65 @@ function createDictation({ helper, spawnProcess = spawn, platform = process.plat
   return {
     async run(owner, r) {
       if (platform !== 'win32') return { ok: false, error: 'desktop' };
+      if (r?.action === 'microphones') {
+        if (listing) return listing;
+        listing = new Promise((resolve) => {
+          const child = launch(['-Microphones']);
+          child.stdout.setEncoding('utf8');
+          let output = '';
+          const complete = (result) => {
+            clearTimeout(timer);
+            resolve(result);
+          };
+          const timer = setTimeout(() => {
+            child.kill();
+            complete({ ok: false, error: 'microphone' });
+          }, 10000);
+          child.stdout.on('data', (chunk) => {
+            output += chunk.toString('utf8');
+            if (output.length > 65536) {
+              child.kill();
+              complete({ ok: false, error: 'microphone' });
+            }
+          });
+          child.once('error', () => complete({ ok: false, error: 'microphone' }));
+          child.once('close', (code) => {
+            try {
+              const value = JSON.parse(output.trim());
+              if (code !== 0 || !Array.isArray(value.microphones)) throw Error('invalid');
+              const microphones = value.microphones
+                .filter(
+                  (m) =>
+                    validMicrophone(m.id) &&
+                    m.id &&
+                    typeof m.name === 'string' &&
+                    m.name.length <= 256,
+                )
+                .slice(0, 64);
+              complete({
+                ok: true,
+                data: {
+                  microphones,
+                  defaultId: microphones.some((m) => m.id === value.defaultId)
+                    ? value.defaultId
+                    : '',
+                },
+              });
+            } catch {
+              complete({ ok: false, error: 'microphone' });
+            }
+          });
+        }).finally(() => {
+          listing = null;
+        });
+        return listing;
+      }
       if (r?.action === 'stop') {
         stop(owner);
         return { ok: true, data: true };
       }
       if (r?.action === 'start') {
+        if (!validMicrophone(r.microphone)) return { ok: false, error: 'invalid' };
         if (job && !job.done) return { ok: false, error: 'busy' };
         if (!['zh-CN', 'zh-TW', 'en-US', 'en-GB'].includes(r.language))
           return { ok: false, error: 'language' };
@@ -54,12 +113,17 @@ function createDictation({ helper, spawnProcess = spawn, platform = process.plat
         const current = {
           id: crypto.randomUUID(),
           owner,
-          process: launch(['-Language', r.language]),
+          process: launch([
+            '-Language',
+            r.language,
+            ...(r.microphone ? ['-Microphone', r.microphone] : []),
+          ]),
           done: false,
           ready: false,
           error: '',
           text: '',
           level: 0,
+          microphoneName: '',
           buffer: '',
           wake: null,
           timer: null,
@@ -74,9 +138,10 @@ function createDictation({ helper, spawnProcess = spawn, platform = process.plat
           clearTimeout(current.kill);
           current.done = true;
           current.wake?.();
-          current.expiry = setTimeout(() => {
-            if (job === current) job = null;
-          }, 30000);
+          if (job === current)
+            current.expiry = setTimeout(() => {
+              if (job === current) job = null;
+            }, 30000);
         };
         current.process.stdout.on('data', (chunk) => {
           current.buffer += chunk.toString('utf8');
@@ -90,6 +155,10 @@ function createDictation({ helper, spawnProcess = spawn, platform = process.plat
             const line = current.buffer.slice(0, at).trim();
             current.buffer = current.buffer.slice(at + 1);
             if (line === 'READY') current.ready = true;
+            else if (line.startsWith('INPUT '))
+              current.microphoneName = Buffer.from(line.slice(6), 'base64')
+                .toString('utf8')
+                .slice(0, 256);
             else if (line.startsWith('LEVEL ') && !current.done)
               current.level = Math.max(0, Math.min(100, Number(line.slice(6)) || 0));
             else if (line.startsWith('TEXT ') && !current.done) {
@@ -97,7 +166,9 @@ function createDictation({ helper, spawnProcess = spawn, platform = process.plat
               current.text += (current.text ? '\n' : '') + text.slice(0, 8000);
               if (current.text.length > 16000) stop(owner);
             } else if (line.startsWith('ERROR '))
-              current.error = line.slice(6) === 'language' ? 'language' : 'microphone';
+              current.error = ['language', 'microphone-missing'].includes(line.slice(6))
+                ? line.slice(6)
+                : 'microphone';
             current.wake?.();
           }
         });
@@ -136,6 +207,7 @@ function createDictation({ helper, spawnProcess = spawn, platform = process.plat
               ready: current.ready,
               done: current.done,
               error: current.error,
+              microphoneName: current.microphoneName,
             },
           };
         } finally {
@@ -157,4 +229,4 @@ function createDictation({ helper, spawnProcess = spawn, platform = process.plat
     },
   };
 }
-module.exports = { createDictation };
+module.exports = { createDictation, validMicrophone };

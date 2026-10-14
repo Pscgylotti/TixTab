@@ -60,7 +60,7 @@ export async function verifyProviderTasksUi(page) {
       steps: 5,
     });
     await page.mouse.up();
-    await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+    await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
     await page.waitForFunction(() =>
       document.querySelector('.formula-status')?.textContent.includes('本地加速识别中'),
     );
@@ -74,10 +74,10 @@ export async function verifyProviderTasksUi(page) {
     await panel.getByRole('button', { name: '关闭任务面板' }).click();
     assert.equal(await page.locator('.formula-status').textContent(), '已取消');
     assert.equal(
-      await page.getByRole('button', { name: '识别手写公式', exact: true }).isEnabled(),
+      await page.getByRole('button', { name: '识别并覆盖', exact: true }).isEnabled(),
       true,
     );
-    await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+    await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('#latex')?.value === 'x');
     await page.getByRole('button', { name: '任务与后端', exact: true }).click();
     const completed = panel.locator('.task-card[data-phase=completed]');

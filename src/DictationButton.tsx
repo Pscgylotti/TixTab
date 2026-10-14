@@ -29,6 +29,7 @@ function save(key: string, value: string) {
 const errors: Record<string, string> = {
   language: '请在 Windows 设置中安装当前语言的语音识别包。',
   microphone: '无法启动麦克风，请检查 Windows 麦克风权限与输入设备。',
+  'microphone-missing': '所选麦克风不可用，请重新连接设备或在语音设置中选择其他麦克风。',
   'model-missing': '请打开语音设置，下载所选语音模型。',
   runtime: '请打开语音设置，安装本地语音运行时。',
   device: '当前设备无法运行 Whisper，请在语音设置中切换到 CPU。',
@@ -67,6 +68,15 @@ export default function DictationButton({
     [listening, setListening] = useState(false),
     [finishing, setFinishing] = useState(false),
     [levels, setLevels] = useState<number[]>(Array(20).fill(0));
+  const [microphone, setMicrophone] = useState(() => saved('voiceMicrophone', ''));
+  const [microphones, setMicrophones] = useState<
+      { id: string; name: string; isDefault?: boolean }[]
+    >([]),
+    [defaultInput, setDefaultInput] = useState(''),
+    [microphonesBusy, setMicrophonesBusy] = useState(false),
+    [microphoneError, setMicrophoneError] = useState(''),
+    [activeInput, setActiveInput] = useState('');
+  const inputRequest = useRef(0);
   const [runtime, setRuntime] = useState<{ installed: boolean; devices: string[] } | null>(null),
     [states, setStates] = useState<ModelState[]>([]),
     [settingBusy, setSettingBusy] = useState(''),
@@ -148,8 +158,33 @@ export default function DictationButton({
       if (mounted.current) setMessage(t('无法读取语音引擎状态。'));
     }
   };
+  const refreshMicrophones = async () => {
+    const request = ++inputRequest.current;
+    setMicrophonesBusy(true);
+    setMicrophoneError('');
+    try {
+      const result = await bridge?.run({ action: 'microphones' });
+      if (!mounted.current || request !== inputRequest.current) return;
+      if (!result?.ok || !Array.isArray(result.data?.microphones)) throw Error('microphone');
+      setMicrophones(result.data.microphones);
+      setDefaultInput(result.data.defaultId || '');
+    } catch {
+      if (mounted.current && request === inputRequest.current)
+        setMicrophoneError(t('无法读取麦克风列表，请检查设备连接后重试。'));
+    } finally {
+      if (mounted.current && request === inputRequest.current) setMicrophonesBusy(false);
+    }
+  };
   useEffect(() => {
-    if (open) void refresh();
+    const sync = () => setMicrophone(saved('voiceMicrophone', ''));
+    window.addEventListener('surfacetab-voice-microphone', sync);
+    return () => window.removeEventListener('surfacetab-voice-microphone', sync);
+  }, []);
+  useEffect(() => {
+    if (open) {
+      void refresh();
+      void refreshMicrophones();
+    }
   }, [open]);
   useEffect(
     () =>
@@ -170,6 +205,7 @@ export default function DictationButton({
     setListening(true);
     setFinishing(false);
     setLevels(Array(20).fill(0));
+    setActiveInput('');
     const token = ++generation.current;
     statusCallback.current(t('正在加载语音模型，首次运行可能需要较长时间…'));
     try {
@@ -179,6 +215,7 @@ export default function DictationButton({
         engine,
         device,
         idleReleaseSeconds: getModelIdleSeconds(),
+        microphone,
       });
       if (!started.ok) throw new Error(started.error);
       if (token !== generation.current) return;
@@ -189,6 +226,7 @@ export default function DictationButton({
         if (next.data.text) textCallback.current(next.data.text);
         if (next.data.error) throw new Error(next.data.error);
         const level = Number(next.data.level) || 0;
+        if (next.data.microphoneName) setActiveInput(next.data.microphoneName);
         setLevels((old) => [...old.slice(1), Math.max(0, Math.min(100, level))]);
         const suffix = next.data.device
           ? ' · ' + next.data.device + (next.data.fallback ? ' ' + t('已回退') : '')
@@ -313,6 +351,11 @@ export default function DictationButton({
           ))}
         </div>
       )}
+      {listening && activeInput && (
+        <span className="chat-voice-input" title={activeInput} role="status">
+          {activeInput}
+        </span>
+      )}
       {open && (
         <section className="chat-voice-settings" role="dialog" aria-label={t('本地语音输入')}>
           <header>
@@ -325,6 +368,46 @@ export default function DictationButton({
               <X size={15} />
             </button>
           </header>
+          <label>
+            {t('麦克风')}
+            <select
+              aria-label={t('语音输入麦克风')}
+              value={microphone}
+              disabled={listening || finishing || microphonesBusy || !!settingBusy}
+              onChange={(e) => {
+                save('voiceMicrophone', e.target.value);
+                setMicrophone(e.target.value);
+                window.dispatchEvent(new Event('surfacetab-voice-microphone'));
+              }}
+            >
+              <option value="">
+                {t('跟随系统默认')}
+                {microphones.find((m) => m.id === defaultInput)?.name
+                  ? ' · ' + microphones.find((m) => m.id === defaultInput)!.name
+                  : ''}
+              </option>
+              {microphone && !microphones.some((m) => m.id === microphone) && (
+                <option value={microphone} disabled>
+                  {t('所选麦克风不可用')}
+                </option>
+              )}
+              {microphones.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            disabled={listening || finishing || microphonesBusy || !!settingBusy}
+            onClick={() => void refreshMicrophones()}
+          >
+            {t(microphonesBusy ? '正在读取麦克风…' : '刷新麦克风列表')}
+          </button>
+          {microphoneError && <p role="status">{microphoneError}</p>}
+          <p className="chat-voice-note">
+            {t('三种语音引擎共用此选择，不更改 Windows 默认输入设备。')}
+          </p>
           <label>
             {t('识别引擎')}
             <select

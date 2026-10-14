@@ -1,0 +1,6 @@
+{
+  "referenceSource": null,
+  "originalSha256": "ba6f8075435be8f22947ac2f2522af1371afa162b9f0fa02ab133d84a0d7cdce",
+  "compiledSha256": "ba6f8075435be8f22947ac2f2522af1371afa162b9f0fa02ab133d84a0d7cdce",
+  "mechanism": "Only objectGroup.ts differs: asynchronous PNG/blob encoding versus synchronous toDataURL. SVG display, hierarchy, image pixels, density/canvas bounds and commit ordering stay fixed."
+}

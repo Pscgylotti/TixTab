@@ -280,13 +280,14 @@ test('continuous page tracking updates attachment, page entry navigates, and off
   });
   await expect(page.getByLabel('聊天附件页码')).toHaveValue('2');
   await expect(page.locator('.page-navigation>span')).toHaveText('2 / 12');
-  await expect(page.locator('.chat-context')).toContainText('第 2 页');
+  await expect(page.locator('.chat-context')).toContainText('第 1 页');
   await page.waitForTimeout(180);
   expect(await root.evaluate((el) => el.scrollTop)).toBeCloseTo(target, 0);
   await page.getByLabel('聊天附件页码').fill('6');
   await page.getByLabel('聊天附件页码').press('Enter');
   await expect(page.locator('.page-navigation>span')).toHaveText('6 / 12');
   await expect(page.getByLabel('聊天附件页码')).toHaveValue('6');
+  await page.getByRole('button', { name: '附加页面文字', exact: true }).click();
   expect(
     await page.evaluate(() => (window as any).chatCalls.some((c: any) => c.action === 'start')),
   ).toBe(false);

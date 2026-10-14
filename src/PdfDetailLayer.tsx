@@ -2,7 +2,14 @@ import { useAppearance, renderPolicy, renderDensity } from './appearance';
 import { memo, useEffect, useRef, useState, type RefObject } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { requestPdfTile, renderingCancelled, type PdfPixelRegion } from './pdfRenderCache';
+import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
 import { planPdfTiles, type TilePlan } from './pdfTiles';
+import {
+  performanceDelay,
+  performanceLedger,
+  trackPerformance,
+  type PerformanceFinish,
+} from './performanceLedger';
 
 const DetailTile = memo(function DetailTile({
   pdf,
@@ -18,32 +25,39 @@ const DetailTile = memo(function DetailTile({
   priority: number;
 }) {
   const { pdfNight } = useAppearance();
-  const canvas = useRef<HTMLCanvasElement>(null),
-    [ready, setReady] = useState(false),
+  const { host, display, recovery } = usePdfBitmapDisplay();
+  const [ready, setReady] = useState(false),
     [error, setError] = useState(false);
   useEffect(() => {
     let dead = false;
     setReady(false);
     setError(false);
     const lease = requestPdfTile(pdf, sourceIndex, scale, tile, priority, pdfNight);
-    void lease.promise
-      .then((bitmap) => {
+    void trackPerformance('pdf-display', () =>
+      lease.promise.then((bitmap) => {
         if (dead) return;
-        const c = canvas.current!;
-        c.width = bitmap.width;
-        c.height = bitmap.height;
-        c.getContext('2d')!.drawImage(bitmap, 0, 0);
-        c.dataset.renderedNight = String(pdfNight);
+        display.current!.show(bitmap, pdfNight);
         setReady(true);
-      })
-      .catch((e) => {
-        if (!dead && !renderingCancelled(e)) setError(true);
-      });
+      }),
+    ).catch((e) => {
+      if (!dead && !renderingCancelled(e)) setError(true);
+    });
     return () => {
       dead = true;
       lease.cancel();
     };
-  }, [pdf, sourceIndex, scale, tile.x, tile.y, tile.width, tile.height, priority, pdfNight]);
+  }, [
+    pdf,
+    sourceIndex,
+    scale,
+    tile.x,
+    tile.y,
+    tile.width,
+    tile.height,
+    priority,
+    pdfNight,
+    recovery,
+  ]);
   return (
     <div
       className="pdf-detail-tile"
@@ -61,7 +75,7 @@ const DetailTile = memo(function DetailTile({
         visibility: ready ? 'visible' : 'hidden',
       }}
     >
-      <canvas ref={canvas} />
+      <div ref={host} style={{ display: 'contents' }} />
     </div>
   );
 });
@@ -90,7 +104,8 @@ export default memo(function PdfDetailLayer(props: Props) {
   useEffect(() => {
     const viewport = props.viewport.current!;
     let frame = 0,
-      timer: ReturnType<typeof setTimeout> | undefined;
+      timer: (() => void) | undefined,
+      finish: PerformanceFinish | undefined;
     const measure = () => {
       const p = latest.current,
         el = layer.current;
@@ -153,12 +168,16 @@ export default memo(function PdfDetailLayer(props: Props) {
       );
     };
     const changed = () => {
-      clearTimeout(timer);
-      if (!frame)
+      timer?.();
+      if (!frame) {
+        finish = performanceLedger?.begin('pdf-detail-plan');
         frame = requestAnimationFrame(() => {
           frame = 0;
-          timer = setTimeout(measure, renderPolicy().detailMs);
+          timer = performanceDelay('pdf-detail-plan', measure, renderPolicy().detailMs);
+          finish?.();
+          finish = undefined;
         });
+      }
     };
     trigger.current = changed;
     const observer = new ResizeObserver(changed);
@@ -170,7 +189,8 @@ export default memo(function PdfDetailLayer(props: Props) {
     return () => {
       trigger.current = () => {};
       cancelAnimationFrame(frame);
-      clearTimeout(timer);
+      timer?.();
+      finish?.('cancelled');
       observer.disconnect();
       viewport.removeEventListener('scroll', changed);
       window.removeEventListener('resize', changed);

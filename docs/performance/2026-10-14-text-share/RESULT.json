@@ -1,0 +1,456 @@
+{
+  "schema": 1,
+  "review": "Existing single-pair text reuse and broad correctness measurements; no rerun",
+  "sourceFiles": [
+    262,
+    262
+  ],
+  "sourceDifferences": [
+    "src/pdfTextContent.ts"
+  ],
+  "runtimeFiles": [
+    313,
+    313
+  ],
+  "nativeBindings": [
+    {
+      "path": "C:\\UserData\\Projects\\surfacetab\\.cache\\text-selection-before\\selection-start-mouse-and--26583-th-gutters-columns-and-zoom\\native-selection-binding.json",
+      "sha256": "53c068b10540f9ce4a5c8a0417deff37567b0261f666b46ed2029c7ea45d50ab"
+    },
+    {
+      "path": "C:\\UserData\\Projects\\surfacetab\\.cache\\text-selection-candidate\\selection-start-mouse-and--26583-th-gutters-columns-and-zoom\\native-selection-binding.json",
+      "sha256": "822fe1b3eeb1e6be0933ee24ab89f989e376a561b0e580255a7e18f5cf48315d"
+    }
+  ],
+  "text": {
+    "cpuSeconds": [
+      13.325873999999986,
+      12.450118000000007
+    ],
+    "cpuChangePercent": -6.571846619591182,
+    "peak200ms": [
+      1.7178427683251507,
+      1.7913985839473923
+    ],
+    "peak1000ms": [
+      0.8653264870552173,
+      0.835297956886455
+    ],
+    "finalCounters": [
+      {
+        "pdfPixels": 69845400,
+        "pdfCacheHits": 21,
+        "pdfTextExtractions": 30,
+        "pdfTextCacheHits": 0,
+        "pdfCacheEvictedBytes": 0,
+        "workspacePageWrites": 13,
+        "workspaceSourceWrites": 2,
+        "formulaWrites": 0,
+        "nightGpuConversions": 0,
+        "nightCpuConversions": 7
+      },
+      {
+        "pdfPixels": 73300800,
+        "pdfCacheHits": 19,
+        "pdfTextExtractions": 12,
+        "pdfTextCacheHits": 18,
+        "pdfCacheEvictedBytes": 0,
+        "workspacePageWrites": 13,
+        "workspaceSourceWrites": 2,
+        "formulaWrites": 0,
+        "nightGpuConversions": 0,
+        "nightCpuConversions": 7
+      }
+    ],
+    "phases": [
+      {
+        "name": "import-text-document",
+        "cpuSeconds": [
+          0.962959,
+          0.9195259999999998
+        ],
+        "frameP99Ms": [
+          50.09999999999991,
+          58.30000000000018
+        ],
+        "frameMaxMs": [
+          58.40000000000009,
+          58.5
+        ]
+      },
+      {
+        "name": "search-all-pages",
+        "cpuSeconds": [
+          0.5636300000000003,
+          0.556141
+        ],
+        "frameP99Ms": [
+          8.800000000000182,
+          8.600000000000364
+        ],
+        "frameMaxMs": [
+          8.800000000000182,
+          8.699999999999818
+        ]
+      },
+      {
+        "name": "repeat-hand-and-selection",
+        "cpuSeconds": [
+          2.1764150000000004,
+          1.9646070000000002
+        ],
+        "frameP99Ms": [
+          8.600000000000364,
+          8.599999999998545
+        ],
+        "frameMaxMs": [
+          66.69999999999982,
+          50.099999999999454
+        ]
+      },
+      {
+        "name": "read-pages-and-return",
+        "cpuSeconds": [
+          4.3612629999999974,
+          3.8131490000000032
+        ],
+        "frameP99Ms": [
+          8.599999999998545,
+          8.599999999998545
+        ],
+        "frameMaxMs": [
+          9.19999999999709,
+          11.799999999999272
+        ]
+      },
+      {
+        "name": "reading-layouts",
+        "cpuSeconds": [
+          3.7205379999999995,
+          3.5527189999999997
+        ],
+        "frameP99Ms": [
+          8.5,
+          8.599999999998545
+        ],
+        "frameMaxMs": [
+          25.099999999998545,
+          25.30000000000291
+        ]
+      },
+      {
+        "name": "night-and-day",
+        "cpuSeconds": [
+          1.2972920000000003,
+          1.3757450000000002
+        ],
+        "frameP99Ms": [
+          8.5,
+          8.599999999998545
+        ],
+        "frameMaxMs": [
+          41.80000000000291,
+          16.80000000000291
+        ]
+      },
+      {
+        "name": "select-word-and-final-idle",
+        "cpuSeconds": [
+          0.21225100000000047,
+          0.23477899999999943
+        ],
+        "frameP99Ms": [
+          8.5,
+          8.400000000001455
+        ],
+        "frameMaxMs": [
+          8.5,
+          8.400000000001455
+        ]
+      }
+    ]
+  },
+  "broad": {
+    "cpuSeconds": [
+      34.12079,
+      25.581445999999982
+    ],
+    "cpuChangePercent": -25.02680623748752,
+    "peak200ms": [
+      2.927348416392145,
+      2.915691378979199
+    ],
+    "peak1000ms": [
+      2.439407104136216,
+      2.53977245795875
+    ],
+    "finalCounters": [
+      {
+        "pdfPixels": 67129235,
+        "pdfCacheHits": 11,
+        "pdfTextExtractions": 0,
+        "pdfTextCacheHits": 0,
+        "pdfCacheEvictedBytes": 0,
+        "workspacePageWrites": 25,
+        "workspaceSourceWrites": 2,
+        "formulaWrites": 3,
+        "nightGpuConversions": 0,
+        "nightCpuConversions": 7
+      },
+      {
+        "pdfPixels": 55283415,
+        "pdfCacheHits": 10,
+        "pdfTextExtractions": 0,
+        "pdfTextCacheHits": 0,
+        "pdfCacheEvictedBytes": 0,
+        "workspacePageWrites": 24,
+        "workspaceSourceWrites": 1,
+        "formulaWrites": 2,
+        "nightGpuConversions": 0,
+        "nightCpuConversions": 7
+      }
+    ],
+    "phases": [
+      {
+        "name": "idle-before",
+        "cpuSeconds": [
+          0.05185399999999998,
+          0.046514999999999876
+        ],
+        "frameP99Ms": [
+          null,
+          null
+        ],
+        "frameMaxMs": [
+          null,
+          null
+        ]
+      },
+      {
+        "name": "import-mixed-document",
+        "cpuSeconds": [
+          2.56936,
+          2.086815
+        ],
+        "frameP99Ms": [
+          91.69999999999982,
+          100
+        ],
+        "frameMaxMs": [
+          258.40000000000055,
+          174.89999999999964
+        ]
+      },
+      {
+        "name": "objects-select-move-resize",
+        "cpuSeconds": [
+          4.923331,
+          4.080291999999999
+        ],
+        "frameP99Ms": [
+          58.19999999999891,
+          49.899999999999636
+        ],
+        "frameMaxMs": [
+          66.69999999999891,
+          50.100000000000364
+        ]
+      },
+      {
+        "name": "objects-group-and-order",
+        "cpuSeconds": [
+          2.560565,
+          1.866516
+        ],
+        "frameP99Ms": [
+          133.3000000000011,
+          100
+        ],
+        "frameMaxMs": [
+          183.40000000000146,
+          133.3000000000011
+        ]
+      },
+      {
+        "name": "objects-ungroup-undo-redo",
+        "cpuSeconds": [
+          2.2878169999999987,
+          1.8204320000000005
+        ],
+        "frameP99Ms": [
+          41.70000000000073,
+          33.30000000000109
+        ],
+        "frameMaxMs": [
+          150,
+          100
+        ]
+      },
+      {
+        "name": "objects-project-and-pdf-export",
+        "cpuSeconds": [
+          4.341438,
+          3.703795
+        ],
+        "frameP99Ms": [
+          8.5,
+          8.5
+        ],
+        "frameMaxMs": [
+          91.70000000000073,
+          83.29999999999927
+        ]
+      },
+      {
+        "name": "write-30-strokes",
+        "cpuSeconds": [
+          1.8796480000000009,
+          1.6005270000000005
+        ],
+        "frameP99Ms": [
+          74.90000000000146,
+          24.900000000001455
+        ],
+        "frameMaxMs": [
+          83.20000000000073,
+          83.30000000000291
+        ]
+      },
+      {
+        "name": "erase-8-sweeps",
+        "cpuSeconds": [
+          0.9794930000000025,
+          0.5779729999999994
+        ],
+        "frameP99Ms": [
+          16.700000000000728,
+          8.599999999998545
+        ],
+        "frameMaxMs": [
+          25.099999999998545,
+          8.700000000000728
+        ]
+      },
+      {
+        "name": "undo-redo",
+        "cpuSeconds": [
+          0.5507340000000003,
+          0.32972400000000124
+        ],
+        "frameP99Ms": [
+          16.5,
+          8.5
+        ],
+        "frameMaxMs": [
+          16.600000000002183,
+          8.599999999998545
+        ]
+      },
+      {
+        "name": "continuous-scroll-roundtrip",
+        "cpuSeconds": [
+          3.0076950000000005,
+          1.854209
+        ],
+        "frameP99Ms": [
+          66.69999999999709,
+          24.900000000001455
+        ],
+        "frameMaxMs": [
+          116.70000000000437,
+          66.79999999999927
+        ]
+      },
+      {
+        "name": "facing-zoom",
+        "cpuSeconds": [
+          3.970007,
+          2.1618970000000006
+        ],
+        "frameP99Ms": [
+          199.90000000000146,
+          75.09999999999854
+        ],
+        "frameMaxMs": [
+          425.3999999999942,
+          216.6999999999971
+        ]
+      },
+      {
+        "name": "night-day-roundtrip",
+        "cpuSeconds": [
+          2.181989999999999,
+          1.6214049999999998
+        ],
+        "frameP99Ms": [
+          66.59999999999854,
+          33.30000000000291
+        ],
+        "frameMaxMs": [
+          191.6999999999971,
+          125
+        ]
+      },
+      {
+        "name": "formula-edit-and-save",
+        "cpuSeconds": [
+          4.327817999999999,
+          3.0193789999999994
+        ],
+        "frameP99Ms": [
+          125,
+          41.69999999999709
+        ],
+        "frameMaxMs": [
+          166.90000000000146,
+          200
+        ]
+      },
+      {
+        "name": "idle-tail",
+        "cpuSeconds": [
+          0.19818399999999942,
+          0.4084210000000015
+        ],
+        "frameP99Ms": [
+          null,
+          null
+        ],
+        "frameMaxMs": [
+          null,
+          null
+        ]
+      },
+      {
+        "name": "hidden-idle",
+        "cpuSeconds": [
+          0.12524600000000108,
+          0.2697550000000004
+        ],
+        "frameP99Ms": [
+          null,
+          null
+        ],
+        "frameMaxMs": [
+          null,
+          null
+        ]
+      }
+    ]
+  },
+  "geometrySpans": 46,
+  "raster": {
+    "width": 1425,
+    "height": 1900,
+    "sha256": "2094383b6ff02d522dcdafdc6115a5ad0806606e57e17aba79f42c83e4dd12bd"
+  },
+  "exportQualitySha256": "754f4f2e3e2659d7493e8138544e3b279a167d492e5a48c85009d4f117cb1a7b",
+  "decision": "Retain bounded raw PDF text reuse for fewer duplicate extractions. No peak, energy or whole-app CPU reduction claim.",
+  "limitations": [
+    "One A/B run per workload per user instruction; no repetition, averaging or statistical significance claim.",
+    "Broad workload performed zero text extractions in both builds; its CPU differences are not caused or explained by the cache. Raster/save counts and idle CPU also differ.",
+    "Targeted final raster hash is equal, but raw pixel files were not retained for independent decode; native selection covers layout semantics.",
+    "Cache estimates source bytes; 32 pages / 8 MB per document is not an exact heap or global multi-document memory limit.",
+    "Full application regression, hardware input and final release remain separate gates."
+  ]
+}

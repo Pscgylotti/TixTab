@@ -1,137 +1,19 @@
+/* Chrome colors come from tokens.css. This file only holds what tokens cannot
+   express: the root canvas, document pixels and the appearance controls. */
 :root[data-night='true'] {
   color-scheme: dark;
-  color: #e0e5ef;
-  background: #171b23;
-  --line: #394251;
-  --muted: #a3afc2;
-  --accent: #8cafff;
+  color: var(--text);
+  background: var(--bg-app);
   scrollbar-color: #52617a #1b222e;
 }
 [data-night='true'] :is(body, #root, .workspace) {
-  background: #171b23;
-  color: #e0e5ef;
+  background: var(--bg-app);
+  color: var(--text);
 }
 /* Switch surface colors immediately: interpolating from the light theme leaves
    pale cards/buttons visible during the first frames of night mode. */
 [data-night='true'] button {
-  transition-property: color, transform, opacity;
-}
-[data-night='true'] .app-shell,
-[data-night='true'] .main-workspace {
-  background: #171b23;
-  color: #e0e5ef;
-}
-[data-night='true']
-  :is(
-    .topbar,
-    .sidebar,
-    .toolbar,
-    .modal,
-    .selection-flyout,
-    .insert-dock,
-    .zoom-dock,
-    .page-navigation,
-    .touch-keyboard,
-    .keyboard-panel,
-    .object-inspector,
-    .page-context-menu,
-    .workspace-manager
-  ) {
-  background: rgba(30, 36, 47, 0.96);
-  border-color: #3a4353;
-  color: #e0e5ef;
-}
-[data-night='true'] :is(.workspace-heading, .statusbar) {
-  background: #1c222d;
-  color: #b6c2d7;
-  border-color: #3a4353;
-}
-[data-night='true']
-  :is(.toolbar-divider, .insert-dock > div, .zoom-dock > div, .status-separator, .pressure-meter) {
-  background: #394251;
-}
-[data-night='true'] :is(.add-page, .formula-canvas) {
-  border-color: #4a5770;
-}
-[data-night='true'] .object-handle {
-  background: #293851;
-  border-color: #8cafff;
-}
-[data-night='true'] .canvas-container {
-  box-shadow: inset 0 0 0 1px #394251;
-}
-[data-night='true']
-  :is(
-    button:hover,
-    .count,
-    .brand-mark,
-    .version,
-    .diagnostic-card,
-    .backend-settings,
-    .translation-settings,
-    .translation-source,
-    .speech-settings,
-    .ocr-settings,
-    .macro-settings
-  ) {
-  background: #2c3545;
-  color: #c3d1e8;
-  border-color: #44516a;
-}
-[data-night='true']
-  :is(.tool-button.active, .view-switch .active, .preview-toggle.active, .page-card.selected) {
-  background: #304468;
-  color: #c4d6ff;
-  border-color: #55719a;
-}
-[data-night='true'] .keyboard-toggle {
-  background: #202735eb;
-  color: #e0e5ef;
-  border-color: #3a4353;
-}
-[data-night='true'] .keyboard-toggle:hover {
-  background: #2c3545;
-  border-color: #55719a;
-}
-[data-night='true'] .color-swatch {
-  background: var(--swatch);
-  border-color: #1e242f;
-}
-[data-night='true'] .color-swatch:hover {
-  background: var(--swatch);
-  border-color: #354258;
-}
-[data-night='true'] .color-swatch.selected {
-  box-shadow: 0 0 0 1px #a4bfff;
-}
-[data-night='true'] :is(input, textarea, select) {
-  color: #e0e7f3;
-  background: #202734;
-  border-color: #4a5770;
-}
-[data-night='true'] .document-title input {
-  background: transparent;
-  color: #d7dfed;
-}
-[data-night='true']
-  :is(
-    .muted,
-    .sidebar-bottom,
-    .page-caption,
-    .breadcrumb,
-    .welcome-note p,
-    .field-label,
-    .save-state
-  ) {
-  color: #a7b4c9;
-}
-[data-night='true'] .welcome-note h1 {
-  color: #c5d4ec;
-}
-[data-night='true'] .canvas-container,
-[data-night='true'] .surface,
-[data-night='true'] .reading-view {
-  background: #12161d;
+  transition-property: color, opacity;
 }
 [data-night='true'] :is(.paper, .reading-paper, .page-mini) {
   background-color: #1c2027;
@@ -141,11 +23,11 @@
    pixels rendered for the requested palette, including cached tiles/thumbnails.
    Keep the dark paper underneath; no extra pixel copy or filter pass is needed. */
 [data-pdf-night='true']
-  :is(.pdf-layer, .reading-pdf, .pdf-detail-tile > canvas, .page-thumbnail > canvas):not(
+  :is(.pdf-layer, .reading-pdf, .pdf-detail-tile canvas, .page-thumbnail canvas):not(
     [data-rendered-night='true']
   ),
 [data-pdf-night='false']
-  :is(.pdf-layer, .reading-pdf, .pdf-detail-tile > canvas, .page-thumbnail > canvas):not(
+  :is(.pdf-layer, .reading-pdf, .pdf-detail-tile canvas, .page-thumbnail canvas):not(
     [data-rendered-night='false']
   ) {
   visibility: hidden;
@@ -180,139 +62,79 @@
   :is(.placed-object img, .reading-content > img, .page-thumbnail image)[data-night-ink='false'] {
   filter: brightness(0.62);
 }
-[data-night='true'] .touch-keyboard .hg-theme-default {
-  background: transparent;
-}
-[data-night='true'] .touch-keyboard .hg-theme-default .hg-button {
-  background: #303a4a;
-  color: #e2e8f2;
-  box-shadow: 0 2px 0 #0d1118;
-  border-color: #46516a;
-}
-[data-night='true'] .touch-keyboard .hg-theme-default .hg-button:is(:hover, .hg-activeButton) {
-  background: #40516d;
-}
-[data-night='true'] .touch-keyboard .hg-theme-default .hg-button.keyboard-modifier-active {
-  background: #5276bb;
-  color: #fff;
-}
-[data-night='true'] .touch-keyboard .latex-shortcuts button {
-  background: #2c3545;
-  color: #c3d1e8;
-  border-color: #44516a;
-}
-[data-night='true'] .keyboard-settings {
-  background: #242e3e;
-  color: #c3d1e8;
-}
-[data-night='true']
-  :is(.view-switch, .provider-config, .macro-library, .native-settings, .workspace-empty) {
-  background: #242e3e;
-  border-color: #42516a;
-}
-[data-night='true'] :is(.translation-content, .translation-divider) {
-  border-color: #394251;
-}
-[data-night='true'] :is(.welcome-note button, .page-manage, .capture-hint) {
-  background: #242e3e;
-  color: #c3d1e8;
-  border-color: #42516a;
-}
-[data-night='true'] :is(.translation-result, .formula-preview) {
+[data-night='true'] .formula-preview {
   color: #c1d6fb;
 }
 [data-night='true'] .formula-canvas {
   filter: invert(0.9) hue-rotate(180deg);
 }
 [data-night='true'] .formula-drawing {
-  border-color: #4a5770;
   background: #1c2027;
 }
-[data-night='true'] .ocr-body > img {
+[data-night='true'] .ocr-body > img,
+[data-night='true'] .capture-preview-image {
   background: transparent;
   filter: invert(0.9) hue-rotate(180deg);
-}
-[data-night='true'] :is(.badge, .badge.green) {
-  background: #293851;
-  color: #c3d1e8;
-}
-[data-night='true'] .selection-actions a:hover {
-  background: #2c3545;
-}
-[data-night='true'] .busy-overlay {
-  background: #151b25e6;
-  color: #c4d4f0;
-}
-[data-night='true'] .spinner {
-  border-color: #394b65;
-  border-top-color: #8cafff;
-}
-[data-night='true'] .small-modal p {
-  color: #b5c1d5;
-}
-[data-eco='true']
-  :is(
-    .topbar,
-    .sidebar,
-    .toolbar,
-    .modal,
-    .selection-flyout,
-    .insert-dock,
-    .zoom-dock,
-    .page-navigation,
-    .touch-keyboard,
-    .object-inspector
-  ) {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }
 .appearance-setting {
   display: grid;
   gap: 8px;
   margin: 16px 0;
   color: inherit;
-  font-size: 13px;
+  font-size: var(--fs-md);
 }
 .appearance-setting select {
   max-width: 100%;
-  padding: 8px;
-  border-radius: 8px;
 }
 .appearance-note {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.6;
-  color: var(--muted);
+  color: var(--text-muted);
   margin: 8px 0 14px;
 }
-.night-toggle.active {
-  color: #a4bfff;
-  background: #304468;
-}
 .night-original-toggle {
-  font-size: 11px;
-  padding: 4px 7px;
-}
-.pdf-original-image {
-  position: absolute;
-  z-index: 8;
-  min-height: 22px;
-  width: 24px;
-  padding: 3px;
-  background: #293445dd;
-  color: #ecf2ff;
-  border: 1px solid #a9bddc77;
-  border-radius: 4px;
-  touch-action: manipulation;
-}
-.pdf-original-image:hover {
-  background: #47679c;
-  color: white;
+  font-size: var(--fs-sm);
+  padding: 4px 8px;
 }
 .original-image-scrim {
   z-index: 1400;
 }
+.pdf-image-interactions {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+.pdf-image-interactions button {
+  position: absolute;
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.pdf-image-interactions svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.pdf-image-interactions polygon {
+  fill: #518feb22;
+  stroke: #518feb;
+  stroke-width: 2px;
+}
+.pdf-image-interactions button.pen-target-hover polygon {
+  fill: #f59e0b38;
+  stroke: #f59e0b;
+}
 .original-image-modal {
-  width: min(900px, 94vw);
+  width: min(1200px, 94vw);
+  height: min(840px, 90dvh);
   max-height: 90dvh;
   display: flex;
   flex-direction: column;
@@ -326,24 +148,58 @@
   flex-shrink: 0;
 }
 .original-image-modal h2 {
-  font-size: 16px;
+  font-size: var(--fs-xl);
   margin: 0;
 }
 .original-image-content {
   min-height: 0;
-  overflow: auto;
-  background: #fff;
-  text-align: center;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  touch-action: none;
+  overscroll-behavior: contain;
+  cursor: grab;
+  background: transparent;
+}
+.original-image-content:active {
+  cursor: grabbing;
+}
+.original-image-transform {
+  position: absolute;
+  inset: 0;
+  transform-origin: center;
+  pointer-events: none;
 }
 .original-image-content canvas {
   display: block;
-  max-width: 100%;
-  height: auto;
-  margin: auto;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   filter: none;
 }
+.original-image-zoom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.original-image-zoom output {
+  min-width: 46px;
+  text-align: center;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+.original-image-zoom .icon-button {
+  min-width: 32px;
+  min-height: 32px;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+}
 .original-image-modal p {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   margin: 0;
 }
 @media (max-width: 700px) {

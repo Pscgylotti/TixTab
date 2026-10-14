@@ -3,6 +3,8 @@ const fs = require('node:fs/promises');
 const { existsSync } = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { validMicrophone } = require('./dictation.cjs');
+const { lowerPriority } = require('./low-priority.cjs');
 const ENGINES = ['sensevoice-small', 'whisper-small'],
   DEVICES = ['AUTO', 'CPU', 'GPU', 'NPU'];
 
@@ -119,6 +121,7 @@ function createNeuralDictation({
   }
   return {
     async run(owner, r) {
+      if (r?.action === 'microphones') return system.run(owner, r);
       if (r?.action === 'idle-policy') {
         if (!validIdle(r.idleReleaseSeconds)) return { ok: false, error: 'invalid' };
         idleSeconds = r.idleReleaseSeconds;
@@ -193,7 +196,8 @@ function createNeuralDictation({
           if (
             !['system', ...ENGINES].includes(engine) ||
             !['zh-CN', 'en-US'].includes(r.language) ||
-            (r.device && !DEVICES.includes(r.device))
+            (r.device && !DEVICES.includes(r.device)) ||
+            !validMicrophone(r.microphone)
           )
             return { ok: false, error: 'invalid' };
           if (setup || (job && !job.done)) return { ok: false, error: 'busy' };
@@ -227,6 +231,7 @@ function createNeuralDictation({
             error: '',
             device: '',
             fallback: '',
+            microphoneName: '',
             reading: false,
             wake: null,
           };
@@ -256,6 +261,7 @@ function createNeuralDictation({
                 env: { ...process.env, PYTHONUTF8: '1', OMP_NUM_THREADS: '2' },
               },
             );
+            lowerPriority(child);
             const active = { child, key, buffer: '', device: '', fallback: '' };
             worker = active;
             child.stdin.on('error', () => {});
@@ -296,7 +302,10 @@ function createNeuralDictation({
                 if (message.id !== session.id) continue;
                 session.device = active.device;
                 session.fallback = active.fallback;
-                if (message.event === 'ready') session.ready = !session.stopping;
+                if (message.event === 'ready') {
+                  session.ready = !session.stopping;
+                  session.microphoneName = String(message.microphoneName || '').slice(0, 256);
+                }
                 if (message.event === 'level')
                   session.level = Math.min(100, Math.max(0, Number(message.level) || 0));
                 if (message.event === 'processing') session.processing = true;
@@ -308,7 +317,12 @@ function createNeuralDictation({
                   if (session.text.length > 16000) cancel(owner);
                 }
                 if (message.event === 'error')
-                  session.error = ['microphone', 'overload', 'inference'].includes(message.error)
+                  session.error = [
+                    'microphone',
+                    'microphone-missing',
+                    'overload',
+                    'inference',
+                  ].includes(message.error)
                     ? message.error
                     : 'runtime';
                 if (message.event === 'done') finish(session);
@@ -329,7 +343,12 @@ function createNeuralDictation({
           }
           current.device = worker.device;
           current.fallback = worker.fallback;
-          send(worker.child, { action: 'start', id: current.id, language: r.language });
+          send(worker.child, {
+            action: 'start',
+            id: current.id,
+            language: r.language,
+            microphone: r.microphone || '',
+          });
           // Loading/compiling may take longer on the first NPU run. Record itself
           // has a separate two-minute bound enforced in the native worker.
           current.timer = setTimeout(() => {
@@ -407,6 +426,7 @@ function createNeuralDictation({
               fallback: current.fallback,
               processing: !!current.processing,
               stopping: current.stopping,
+              microphoneName: current.microphoneName,
             },
           };
         } finally {

@@ -1,3 +1,4 @@
+import { validOcr, type OcrAnnotation } from './ocrLayout';
 export type Tool =
   'pen' | 'ballpoint' | 'pencil' | 'highlighter' | 'eraser' | 'hand' | 'select' | 'object';
 export type Point = [number, number, number];
@@ -21,6 +22,9 @@ export interface PlacedImage {
   latex?: string;
   macros?: Record<string, string>;
   scene?: Record<string, unknown>;
+  ocr?: OcrAnnotation;
+  /** Immediate editable children in local coordinates; groups may contain other groups. */
+  group?: { width: number; height: number; objects: PlacedImage[] };
 }
 export interface TextBox {
   content: string;
@@ -55,6 +59,8 @@ export interface Page {
   /** Number of image objects below the page's single handwriting layer. Legacy pages default to top. */
   inkLayer?: number;
   paper: 'plain' | 'dots' | 'lines';
+  /** Nonvisual OCR metadata for source PDF bitmaps, in page coordinates. */
+  bitmapOcr?: { imageIndex: number; polygon: number[]; result: OcrAnnotation }[];
 }
 import { validZoteroSource, type ZoteroSource } from './zoteroSource';
 export interface Notebook {
@@ -64,6 +70,7 @@ export interface Notebook {
   pages: Page[];
   scene?: Record<string, unknown>;
   zotero?: ZoteroSource;
+  bookmarks?: { id: string; pageId: string; title: string }[];
 }
 export const uid = () => crypto.randomUUID();
 export const blankPage = (width = 595.28, height = 841.89): Page => ({
@@ -150,6 +157,20 @@ function intersects(a: Point, b: Point, c: Point, d: Point) {
 export function validNotebook(value: unknown): value is Notebook {
   if (!value || typeof value !== 'object') return false;
   const n = value as Notebook;
+  if (
+    n.bookmarks !== undefined &&
+    (!Array.isArray(n.bookmarks) ||
+      n.bookmarks.length > 10000 ||
+      !n.bookmarks.every(
+        (b) =>
+          b &&
+          typeof b.id === 'string' &&
+          typeof b.pageId === 'string' &&
+          typeof b.title === 'string' &&
+          b.title.length <= 200,
+      ))
+  )
+    return false;
   if (n.zotero !== undefined && !validZoteroSource(n.zotero)) return false;
   return (
     n.version === 1 &&
@@ -183,6 +204,18 @@ export function validNotebook(value: unknown): value is Notebook {
             ),
         ) &&
         Array.isArray(p.images) &&
+        (p.bitmapOcr === undefined ||
+          (Array.isArray(p.bitmapOcr) &&
+            p.bitmapOcr.length <= 4096 &&
+            p.bitmapOcr.every(
+              (b) =>
+                Number.isInteger(b.imageIndex) &&
+                b.imageIndex >= 0 &&
+                Array.isArray(b.polygon) &&
+                b.polygon.length === 8 &&
+                b.polygon.every(Number.isFinite) &&
+                validOcr(b.result),
+            ))) &&
         (p.inkLayer === undefined ||
           (Number.isInteger(p.inkLayer) && p.inkLayer >= 0 && p.inkLayer <= p.images.length)) &&
         p.images.every(
@@ -191,6 +224,8 @@ export function validNotebook(value: unknown): value is Notebook {
             ['sketch', 'formula', 'image', 'text'].includes(i.kind) &&
             (i.kind !== 'text' || validTextBox(i.textBox)) &&
             (i.macros === undefined || validMacroSnapshot(i.macros)) &&
+            (i.ocr === undefined || validOcr(i.ocr)) &&
+            (i.group === undefined || validObjectGroup(i.group)) &&
             (i.displayData === undefined || /^data:image\/svg\+xml;base64,/.test(i.displayData)) &&
             (i.scene === undefined ||
               (i.scene !== null && typeof i.scene === 'object' && !Array.isArray(i.scene))) &&
@@ -201,6 +236,54 @@ export function validNotebook(value: unknown): value is Notebook {
         ),
     )
   );
+}
+export const MAX_GROUP_DEPTH = 8;
+export const MAX_GROUP_OBJECTS = 1000;
+export function validObjectGroup(value: unknown): value is NonNullable<PlacedImage['group']> {
+  const pending = [{ value, depth: 1 }];
+  let objects = 0;
+  // Iterative validation bounds both deep/cyclic input and the total work across branches.
+  while (pending.length) {
+    const { value, depth } = pending.pop()!;
+    if (!value || typeof value !== 'object' || depth > MAX_GROUP_DEPTH) return false;
+    const group = value as NonNullable<PlacedImage['group']>;
+    if (
+      !Number.isFinite(group.width) ||
+      !Number.isFinite(group.height) ||
+      group.width <= 0 ||
+      group.height <= 0 ||
+      group.width > 100000 ||
+      group.height > 100000 ||
+      !Array.isArray(group.objects) ||
+      group.objects.length < 2 ||
+      (objects += group.objects.length) > MAX_GROUP_OBJECTS
+    )
+      return false;
+    for (const image of group.objects) {
+      if (
+        !image ||
+        !validNotebook({
+          version: 1,
+          name: 'group child',
+          source: null,
+          pages: [
+            {
+              id: 'group',
+              sourceIndex: null,
+              width: 1000,
+              height: 1000,
+              paper: 'plain',
+              strokes: [],
+              images: [{ ...image, group: undefined }],
+            },
+          ],
+        })
+      )
+        return false;
+      if (image.group !== undefined) pending.push({ value: image.group, depth: depth + 1 });
+    }
+  }
+  return true;
 }
 export function validMacroSnapshot(value: unknown) {
   return (

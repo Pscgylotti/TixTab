@@ -1,0 +1,2685 @@
+{
+  "schema": 1,
+  "kind": "formula-context-recovery",
+  "files": [
+    {
+      "file": "before-source-manifest.json",
+      "sha256": "defb24c46d7a454f6fb0657669d48a971b6e99aee9598c565781fc529f9c189d",
+      "bytes": 22712
+    },
+    {
+      "file": "sources/before/index.html.gz",
+      "sha256": "e7f7adc3b73c16bf5345e81aa0152be6a6714108d8bf83cb6f934e2d49076877",
+      "bytes": 429,
+      "rawSha256": "417fd8bec19ecc0d6e5a9c48ecf48b767955d59b5fd314a33864f3e7cf09ef94"
+    },
+    {
+      "file": "sources/before/package-lock.json.gz",
+      "sha256": "eda9081b76b46f88e1bc80dcc59fa5083e12de29f635bc93bba0d8c0308d153c",
+      "bytes": 96913,
+      "rawSha256": "559fced89db641aded27e40a017ec3626bc5d1eccc7abe62c93c78812763b860"
+    },
+    {
+      "file": "sources/before/package.json.gz",
+      "sha256": "caa2631f22c74d32ae0eff69c1468e56df473d449f4c18160e504049917d831f",
+      "bytes": 1792,
+      "rawSha256": "99ae61df209eac5f822be031f58fa9bc5622e67c579c5b482e32d62a58d2bb6d"
+    },
+    {
+      "file": "sources/before/src/App.tsx.gz",
+      "sha256": "cf11c4de58b8590913f0651996fd3226e65d94a6063823ede4f2361c2ce1a1ed",
+      "bytes": 21549,
+      "rawSha256": "4015c9dcaf6c026f438241d09d3448a292360793ce71e773035a96ab44ec7420"
+    },
+    {
+      "file": "sources/before/src/appearance.ts.gz",
+      "sha256": "e2937ff5f8f0293e2ccbbe22c642d2dd9c00b96d1968ea0659c276e7aef53e86",
+      "bytes": 1536,
+      "rawSha256": "8c130f7ae615616bb5ecc3effdb76d9f418eef61a76434dd11bc484c02f353fe"
+    },
+    {
+      "file": "sources/before/src/blankPaper.ts.gz",
+      "sha256": "7126338ec49c50ab2bb6a8191f21c7e515a0c6dc4051afbdede1231aadb8e570",
+      "bytes": 222,
+      "rawSha256": "d15b7669ded4d819aab251c90d03852484aa9c9ec9de21a6a59c95af7bef2f7e"
+    },
+    {
+      "file": "sources/before/src/browserCaches.ts.gz",
+      "sha256": "1a4f87227a2a93f3fda9b2f37822a50c7d20e750881c8de1a5545c5d9b26508f",
+      "bytes": 1693,
+      "rawSha256": "7f0fd850109fc3b6193819086b36a257bdb1b90a917993b567df5c150e4f3405"
+    },
+    {
+      "file": "sources/before/src/cacheAccess.ts.gz",
+      "sha256": "88d2aa9b417e0e2f84534f901f5c7b94b8631e03fdef360abee6be14d9ecef6c",
+      "bytes": 447,
+      "rawSha256": "302f604a3fbad3298bef5d4a0294786d024366520f56c520ac8de79db832b5a9"
+    },
+    {
+      "file": "sources/before/src/cacheLibrary.ts.gz",
+      "sha256": "841e09371d683db59e12dc5e8f1ca270d44d705e94154a1fa9b755c62b72557a",
+      "bytes": 226,
+      "rawSha256": "f9a5ca1bbf8067df385824d26e5e8936ae306e1191d0c466be5345a5238f2ac3"
+    },
+    {
+      "file": "sources/before/src/cacheManager.css.gz",
+      "sha256": "16a12cef606d86564d137b2ebc84d546c31731cf84daac7e763f4a7f9dfe738b",
+      "bytes": 594,
+      "rawSha256": "5192f53a2dca869d0ccc38df28e9d39df8f8ee62b0bec8239db1e566097badf3"
+    },
+    {
+      "file": "sources/before/src/cacheManager.test.ts.gz",
+      "sha256": "e3b034dd09edfea3110dee621e686607a153622c0995c0cb53c09a56540163ed",
+      "bytes": 1503,
+      "rawSha256": "02f03d0995714894666c13c0d2d4e5e12cb178a2071b9fc5f0896ada78d6a762"
+    },
+    {
+      "file": "sources/before/src/CacheManager.tsx.gz",
+      "sha256": "b332164b89237ebc35e1a90c2633395543a5b4696eb67f1f6ca7bd42a4228348",
+      "bytes": 3034,
+      "rawSha256": "9ac079334ec1127f22e654f0b0ea546596cecf7de950197816a7152710f23142"
+    },
+    {
+      "file": "sources/before/src/capturePage.ts.gz",
+      "sha256": "c8d15ead171724b320866e6362410a9e2a0d58de0357eb766fe36bed2bbfe49c",
+      "bytes": 643,
+      "rawSha256": "3431e07808cdcaa610b912d4dafd32db08a421e6d646ec4d55294c0fabb6a51c"
+    },
+    {
+      "file": "sources/before/src/CapturePreview.tsx.gz",
+      "sha256": "25afac7f84455554f83b5264c0b20ad8add40b3f6248cf91864ab37ee27ae011",
+      "bytes": 874,
+      "rawSha256": "7c7136793af162b39c0c0bcd68b7b74160d670ff06338cb47611605fb96feb66"
+    },
+    {
+      "file": "sources/before/src/chat.css.gz",
+      "sha256": "0d97428c48fe834b74ff84c4e62d1649ecc6e45212ed39271bc1a700d1cb0fa5",
+      "bytes": 3951,
+      "rawSha256": "6ec293168001bac01b0ddc4c24c287e851524b61d6c21cd99f0317078b28209e"
+    },
+    {
+      "file": "sources/before/src/chatApi.test.ts.gz",
+      "sha256": "0c0e8175b25958900c637e86b328fa492b5546f5fe31c30ba4afd964fd9c7135",
+      "bytes": 1851,
+      "rawSha256": "b1964e661a9ebe93a74a233e1bfa4f099c3d93f49042b1d749d800dfbd288b43"
+    },
+    {
+      "file": "sources/before/src/chatApi.ts.gz",
+      "sha256": "6f0cf314302dcbba115b9be66bab9566e007c113dcaba4f0fe396bdc77b5524e",
+      "bytes": 2152,
+      "rawSha256": "563d512c5edd5400adf89eaa019b78bdd758aa5f5f3f03191dc2907fb20bd6f2"
+    },
+    {
+      "file": "sources/before/src/ChatApiSettings.tsx.gz",
+      "sha256": "9f66ab6df4a2ea80c4c573f9c31fa59f3f31cfbab6c8f77b0ff9f79f202718f0",
+      "bytes": 1531,
+      "rawSha256": "895e38f28d60a114a36fbc77f2acc75f65d75f91037eb8be5aeb91b8b5492203"
+    },
+    {
+      "file": "sources/before/src/chatAttachments.test.ts.gz",
+      "sha256": "984552287392258a10e65a04d2334d938f967b1818231ef27394828f91e9c7e2",
+      "bytes": 1336,
+      "rawSha256": "afaf16a87bd4a4d281b5f9e7153b132dd29756e6872433bc12afffe16bb59c90"
+    },
+    {
+      "file": "sources/before/src/chatAttachments.ts.gz",
+      "sha256": "2d4b907e641057264dd1458d552d70d03cd6d768a1437076e402fc64630b6a56",
+      "bytes": 1362,
+      "rawSha256": "093e03f82d87d403ab964710f944452edecae9acac902bc912ae1ff72f043792"
+    },
+    {
+      "file": "sources/before/src/chatContext.ts.gz",
+      "sha256": "f55b02f998a2508efc93b639f56fa6c4deb9b8dcc3f20f2662477b139b3d4304",
+      "bytes": 1476,
+      "rawSha256": "ac8d7e0756f6b013fd04c2adf0ee86708ed3ebf188d63e4e728092a67e32369a"
+    },
+    {
+      "file": "sources/before/src/chatFile.test.ts.gz",
+      "sha256": "436148b6bef11934db21f34c910937ce1c16ab35ffc2187b92cb8f939f7b784f",
+      "bytes": 817,
+      "rawSha256": "1c66c46d30dccc981ee3a7c07e1e910da92fa8d672ba8a061b5d1c967c28a3f3"
+    },
+    {
+      "file": "sources/before/src/chatFile.ts.gz",
+      "sha256": "b924f64edb546a6a7ec8e5bcc6e5616082f70f27c5950b07e243ff10ccb61877",
+      "bytes": 1425,
+      "rawSha256": "4106e1a8846e1f6e911f6890e1c20fe5f879085f492bf5c2a15e6a17c4d2a7ca"
+    },
+    {
+      "file": "sources/before/src/chatgpt.test.ts.gz",
+      "sha256": "115622b04d89c88fbfea274d567137cff3a9293b92efecbbe904ef039ee1d2af",
+      "bytes": 5169,
+      "rawSha256": "b7bc0b4c8c4eed1a6e86bcecb12200e6a828095a9847fe1b2cfe8ccf948c3c8d"
+    },
+    {
+      "file": "sources/before/src/chatgpt.ts.gz",
+      "sha256": "19cf48ccdbdc41511020624e5da364e765b72cea8921cca98e4373b39b71b01a",
+      "bytes": 2258,
+      "rawSha256": "4f559052f183f143187ac25b210dc20f1afe5748be172fdec9a8f37d75d2f0b3"
+    },
+    {
+      "file": "sources/before/src/chatMarkdown.test.ts.gz",
+      "sha256": "83f5d90eea8d71f79da3e7a3b98540a113792dc5f7cbe8aa597af68b79ca4dfd",
+      "bytes": 1284,
+      "rawSha256": "0567e09ee08e1bb351b17100e6eb8c323bd9f8709dd28382357bc1dce03a5eb1"
+    },
+    {
+      "file": "sources/before/src/ChatMarkdown.tsx.gz",
+      "sha256": "42531d4bd1e92ba9a530be4f15d855ccde53a4e3209046adb8a5e7b15c7a81a2",
+      "bytes": 1502,
+      "rawSha256": "25f97294d4a967e79ef20e2dc54e42d6f9b2d98972cecd326aa5df5f1dcff9ac"
+    },
+    {
+      "file": "sources/before/src/chatMarkdownText.ts.gz",
+      "sha256": "b00e386c9bcbcc17e479a8963dc9fb8bca8d0f39f4b4c6d5b5fa4ef83afc3a7d",
+      "bytes": 772,
+      "rawSha256": "3709536ae9ef3a087eb010787a176669d53c1de8055a2c65df85f2f48891b6db"
+    },
+    {
+      "file": "sources/before/src/ChatPanel.tsx.gz",
+      "sha256": "585cae05f7189a189d56e00bcbf62462be9f0bbe894fd37c97e619c13edea28d",
+      "bytes": 10264,
+      "rawSha256": "56bdcb6108d724bea2c934ac51bbc04ca65da46c04ffd6ad64e567ff1d2e5759"
+    },
+    {
+      "file": "sources/before/src/chatPrompts.ts.gz",
+      "sha256": "b8827121c5f6f1ca390072c010a2f7b26228dba6aa139cb547a657a4168c97f9",
+      "bytes": 828,
+      "rawSha256": "73092b52c9d2f723ee836a3b8581754fe1641f8a361ba388cd8e63ee97e67384"
+    },
+    {
+      "file": "sources/before/src/ChatSvgPreview.tsx.gz",
+      "sha256": "4c58ebc809ba0327e92585cbc0bbe86f3eae03fc42e3fe6ba7d563b5ef622bf5",
+      "bytes": 678,
+      "rawSha256": "ae0ee05c92432d8729ad0f44fc62fbc36f517b0712e83113bb3e971785a130f3"
+    },
+    {
+      "file": "sources/before/src/chrome.css.gz",
+      "sha256": "753309eefd389c964a0190e0aeb2e26440d44e54858de81978d84002678e438d",
+      "bytes": 7443,
+      "rawSha256": "58d7cd1b1aa9be96ae6cbb89110ed06992c0afd6414916089f440d3a4faa9e52"
+    },
+    {
+      "file": "sources/before/src/clipboard.ts.gz",
+      "sha256": "52e2f7355dd173669a1c0ce34ac72300702a9408b06cc79a406788b869c73943",
+      "bytes": 664,
+      "rawSha256": "bab86adaf7cd89350167bc813d220ed118861b97a2373d5605d84479cc442464"
+    },
+    {
+      "file": "sources/before/src/committedInk.ts.gz",
+      "sha256": "df8073148835aa106fa32c52aa296d63cee62c653be3b89807484a9507123def",
+      "bytes": 2079,
+      "rawSha256": "b77447da52ea2b244afb756d1210656dd26ebe7425fde71667dbc8141b237415"
+    },
+    {
+      "file": "sources/before/src/compactTools.css.gz",
+      "sha256": "1af02a0a25da012f1f8777ea58421900595060bc28d7112f2893f9825a926767",
+      "bytes": 663,
+      "rawSha256": "9a355fefda38874772923c89b9feae00d8a3eceeceaeb5fa4eb1438e180ab3da"
+    },
+    {
+      "file": "sources/before/src/deferredSave.test.ts.gz",
+      "sha256": "7e8243f287f85834804b2d1611d4b7dce65ce9b98fd7a7701112ae6d65180822",
+      "bytes": 584,
+      "rawSha256": "25327c628edc54a109f15d8b8f30acf9c217445ab3b86d4711dc207713d4d77b"
+    },
+    {
+      "file": "sources/before/src/deferredSave.ts.gz",
+      "sha256": "15dbb675e28e3c100bffc782f823a6dc8a01783a3b7bbabf4c62435bc009fc72",
+      "bytes": 376,
+      "rawSha256": "c724cc36064f80c1200b20bb51c6c3d5bfd37201a087711b550d4e1580590b07"
+    },
+    {
+      "file": "sources/before/src/desktop.d.ts.gz",
+      "sha256": "63ae4fbbe91fb2d81fc0c366462d0f76e2704700ecca0bbfdf13558446784130",
+      "bytes": 551,
+      "rawSha256": "50f49f79a0fd6941605d60137a5643863f2dfbe8c21d3124e60b7b2bee5a705d"
+    },
+    {
+      "file": "sources/before/src/dictation.test.ts.gz",
+      "sha256": "3edd5bcd432997487847632b21e19424e2fc073133e9f644d929cd572b456354",
+      "bytes": 1451,
+      "rawSha256": "e99ff62d796d210a176d959a22ad694ed058e9c64b68662568637f10e8809282"
+    },
+    {
+      "file": "sources/before/src/DictationButton.tsx.gz",
+      "sha256": "b6695961ee766af172d8d60721c9d3e9dfa3614ae11953d406aa749ce469ef02",
+      "bytes": 5609,
+      "rawSha256": "db77dd8fcf23922b0ed54dc863ac1ba945049dd9efd048416f66974b0e51e2b3"
+    },
+    {
+      "file": "sources/before/src/documentChrome.css.gz",
+      "sha256": "3c3190758c69e80d9a664b6d8823de92dae76047e4c8455620b6be12131ef646",
+      "bytes": 1797,
+      "rawSha256": "3ddf905f8300bc104a8782ac4010ee2bb36f0edae6be183615f91218703b3feb"
+    },
+    {
+      "file": "sources/before/src/FieldEditMenu.tsx.gz",
+      "sha256": "732cadefb0f54b2681d56e8160963ee4e37aad7587a0c9ba589ffd1261c3fd90",
+      "bytes": 1736,
+      "rawSha256": "1592aa173d6d33d033a4faa5ef8901f90f5230783a2e0bf2644bda9f9fb96001"
+    },
+    {
+      "file": "sources/before/src/foregroundViewport.test.ts.gz",
+      "sha256": "dbf6136cba96ce5842fae824946c009762ed55ad2489d2bb5a395dfe9cfc5987",
+      "bytes": 1127,
+      "rawSha256": "1b01336c700d6b6f1953ad216c446ce882f492d9fc26cba1a542d589f451c678"
+    },
+    {
+      "file": "sources/before/src/foregroundViewport.ts.gz",
+      "sha256": "bd5d42e6be1fe7edac21ed5ea14d1e60c13acb4b54080d5230364e5c374163a9",
+      "bytes": 571,
+      "rawSha256": "6604216e1274c2d8e8a154a365e23009151bf69f8a2e8da8433782e884db794a"
+    },
+    {
+      "file": "sources/before/src/FormulaDialog.tsx.gz",
+      "sha256": "4073574bd2f6e40e6e48f44222627a5a2804087ea07359d147b13f5ec00685b7",
+      "bytes": 7847,
+      "rawSha256": "68ebf13d0228f57f16ca449bbc482694ad6eb33a7ce7bb6bbb10c9a54bee544e"
+    },
+    {
+      "file": "sources/before/src/formulaDraft.test.ts.gz",
+      "sha256": "ed25bb465447bb8ee26f114f246f34cdd76d3b2934655cfbc9c42454bccd4155",
+      "bytes": 1037,
+      "rawSha256": "594905aced5efadc137ebb58960f4053de49e207013cf49b882e4e395ffc0ee0"
+    },
+    {
+      "file": "sources/before/src/formulaDraft.ts.gz",
+      "sha256": "7e4d81c73612363994444e4b0fe7104a0513ccb2fbb23bd355aa2501016e9a18",
+      "bytes": 1028,
+      "rawSha256": "742dc79b0db190fd8632f35006791342ede75654d29256da4adadd84acc6b35b"
+    },
+    {
+      "file": "sources/before/src/formulaInk.ts.gz",
+      "sha256": "0ce8f38f5409c1d601001c6dd12a1feeec7bacf02e38c564ea324514e07536b0",
+      "bytes": 668,
+      "rawSha256": "c087e67221e10842cd22678e1b2d95b41a4312340eda3e74681b24c9a68a6306"
+    },
+    {
+      "file": "sources/before/src/formulaLines.test.ts.gz",
+      "sha256": "0125ce7b012e99dd5a357c7988305aa83a5b3c72b130af8f7a6e31abc458b1f1",
+      "bytes": 910,
+      "rawSha256": "e27b8156fff5b64971bcae935330427ce2e294864f26944a8b8aab8ffcf7ea44"
+    },
+    {
+      "file": "sources/before/src/formulaLines.ts.gz",
+      "sha256": "1fb99c9baf186badf629a112afebf6aa70aea288d0ae440d83540527d4d2ee7d",
+      "bytes": 1056,
+      "rawSha256": "13baed1687fbf6f475d5dc2a25e5f412605a2f5f5a2fa14f22722468affd158b"
+    },
+    {
+      "file": "sources/before/src/FullscreenButton.tsx.gz",
+      "sha256": "bb467c303e46710947d84f4b3651b2916c471ceb625a2e247d0ac7e4fb52869a",
+      "bytes": 740,
+      "rawSha256": "001f3f2b13be610fb046f38958fd7dac067f0c84b3def0a679ad1d26cb428382"
+    },
+    {
+      "file": "sources/before/src/gestures.ts.gz",
+      "sha256": "bd2bba5203b989a1903a78097f6ccb26cfe62a810a64bdbf44784228f9d96816",
+      "bytes": 522,
+      "rawSha256": "ab3d46ae4b055645c4ef8a898bc0e141a20ae726601de55995f01b43eb7e4e5c"
+    },
+    {
+      "file": "sources/before/src/GroupHierarchy.tsx.gz",
+      "sha256": "9a716f1a4e20e9c6912247b9e3060434dffe3aa18667fa584b745c158d637f83",
+      "bytes": 881,
+      "rawSha256": "8e7742d97911d4ca6197d2399a3b5a732894ec6bc9d7ea726bc324aa8d01b218"
+    },
+    {
+      "file": "sources/before/src/i18n.ts.gz",
+      "sha256": "f223fb5ea78c6cb6447b1c4ecaf553a9ca4a0b4979e1e102b1eec15989a26ed0",
+      "bytes": 1192,
+      "rawSha256": "f2d4b03f8155ffe82654b9add20ab1f720a6f9807a7f648b3e001c929981eb94"
+    },
+    {
+      "file": "sources/before/src/ink.ts.gz",
+      "sha256": "8e4186302f6e78829482e0e132d50617f3605dc7a56d29338693d08afc02cc55",
+      "bytes": 1700,
+      "rawSha256": "2e2729a2f1114fe8e966caa43390754568258a850f23f09ab994d3b5715a6116"
+    },
+    {
+      "file": "sources/before/src/InkColors.tsx.gz",
+      "sha256": "0e1cb2467f80c5e8f0ad1c78ec75bfd9e00b8e15f8922f602d8b4e1ee650c89a",
+      "bytes": 2031,
+      "rawSha256": "5b522d5d722496a0c9d9a21601d68daf14fdf6a244b92d67c11be54a9b188bf6"
+    },
+    {
+      "file": "sources/before/src/inkTools.ts.gz",
+      "sha256": "fc145ce1907075ffa3af150d943eb34c7a43ee6775cf5ca3dcabe81548151e3f",
+      "bytes": 344,
+      "rawSha256": "eb642f4df5f642ba0a696f383c7641059d694cb3fbbc23b1348024ffc53d1c0b"
+    },
+    {
+      "file": "sources/before/src/inputPreferences.ts.gz",
+      "sha256": "a3c8d966cf0e49905c4b87559b77409a986c0bb836b01bd0bd78765ffbd0a0e4",
+      "bytes": 394,
+      "rawSha256": "22caa32031c2703dd400535e5a8ccb0c957183e5cb517d12ba7d8404e5353810"
+    },
+    {
+      "file": "sources/before/src/interaction.test.ts.gz",
+      "sha256": "d422b08266a05a120b1767bb5a72e7a565538970fbf2455075d5d5dcb6aeb1b4",
+      "bytes": 916,
+      "rawSha256": "61abb1a97fa34036b820ba27b034ec434f4024539fb2edc60e8d04b36537234d"
+    },
+    {
+      "file": "sources/before/src/latexMacros.ts.gz",
+      "sha256": "b37e82a3489e764dc31a1ae231697138957202cdb7099ee3b42c276500ba5e27",
+      "bytes": 1288,
+      "rawSha256": "605151848fea0a55f3625018e8005f796bf5bcac371d985eaa5368845abfb612"
+    },
+    {
+      "file": "sources/before/src/LatexSource.tsx.gz",
+      "sha256": "399bb59c718094173f4ab3d964d14480895a3d0ec945eaa96fd9182b1d218b45",
+      "bytes": 1158,
+      "rawSha256": "dcdf17d2c2091ff31bd9a87105796c76ae681ad20024a537a6c8cd63361820b6"
+    },
+    {
+      "file": "sources/before/src/locales/en.json.gz",
+      "sha256": "ada1c4fd9b3037e04a9919300ff69ac5225e5659720a1dfd42f938ab83974221",
+      "bytes": 29137,
+      "rawSha256": "bbedf405c1701dd2502b0a68fc02e8c1dc100f03e8cdb04179cc978a5d599bde"
+    },
+    {
+      "file": "sources/before/src/main.tsx.gz",
+      "sha256": "ce16edce1cd09800a1b7bc886a471950faa2f93a0b22932b1e0e41eab9495260",
+      "bytes": 242,
+      "rawSha256": "cdb5ba98f350c8bf5a1039bf621d7a34a2eaa46656d28ac42ee17d1ea78ca14d"
+    },
+    {
+      "file": "sources/before/src/model.test.ts.gz",
+      "sha256": "6784b2b43d6894c1d2f2bb2b093bad568a835d7fe5269666ab24ff8accb5312b",
+      "bytes": 1430,
+      "rawSha256": "06847edbd538d7ebf016adb2fc5c2f6b60a1faf63399dc7e3c9d89f1e90e66b5"
+    },
+    {
+      "file": "sources/before/src/model.ts.gz",
+      "sha256": "fb5a32d93d1653e345870ebccdfdc1c256393581995dd97601a0c96f588f4d68",
+      "bytes": 2826,
+      "rawSha256": "ca316b1d1eb307799b512f2486f839772d3eff78cea3f3f90d22222632ed7a96"
+    },
+    {
+      "file": "sources/before/src/ModelConfirmation.tsx.gz",
+      "sha256": "9c7786af9eca6e4b0bab04256a638704ad291b500f215246a631f3c7fdfeed4e",
+      "bytes": 1554,
+      "rawSha256": "16dc1c61724fc6c6fac414352d11e4aa5d02e80e8d228a564ce90916edc0122f"
+    },
+    {
+      "file": "sources/before/src/modelIdle.test.ts.gz",
+      "sha256": "0f26cdd07ed8281720b304841072002eb7bfbdb56dc02ea4f938ec8e5fbcb548",
+      "bytes": 623,
+      "rawSha256": "afc4d76b44da3bb1dfad7d42ed48156529eb1d3a843eff2c96c1991e79168d1e"
+    },
+    {
+      "file": "sources/before/src/modelIdle.ts.gz",
+      "sha256": "433b2c2d3d7e8f8a736b321f03485dff8e120b889745aef151fca01b0748ded8",
+      "bytes": 964,
+      "rawSha256": "44a88d17d7f0e5ec2f530baab2891dbe628cb3ce967060a3092765a4cf4de2d6"
+    },
+    {
+      "file": "sources/before/src/modelLibrary.css.gz",
+      "sha256": "069db8737e842530b0c4dac6b005282d015d64840c1e30b0ae54fedff056d095",
+      "bytes": 1332,
+      "rawSha256": "7ccd42f110196d32d8029d0586197051c832cac2652b9c35df0fca336166f644"
+    },
+    {
+      "file": "sources/before/src/modelLibrary.test.ts.gz",
+      "sha256": "e25159957846c63fcad263736dec2c384c25d129f38f725dff0f118a64d1945d",
+      "bytes": 2243,
+      "rawSha256": "0a2edd661f5b6e85b63ec9cc8cacfdd1c962296e603eb0d7620275cec34e1297"
+    },
+    {
+      "file": "sources/before/src/modelLibrary.ts.gz",
+      "sha256": "311a00da7d1e817a15fb6703b4b8685d4acbc5ece97c96a2e38d30df92a26b10",
+      "bytes": 634,
+      "rawSha256": "ba2994d866b2fdb00a002e83fd5e333f8702ca79e013b53566f4c5220874670b"
+    },
+    {
+      "file": "sources/before/src/ModelManager.tsx.gz",
+      "sha256": "3251582a08c7a488adaf4462ff5fb151b5a6d7c529d442af22c7168679940276",
+      "bytes": 3324,
+      "rawSha256": "2e010752e544318894d3ffe5077dd413e7d6e0a3cd473cced90369d2362e86d5"
+    },
+    {
+      "file": "sources/before/src/nativeOcr.test.ts.gz",
+      "sha256": "d2c9b57191934425fee57cb919161936ff02603017717af26c4dfbac1b2a5fcd",
+      "bytes": 1158,
+      "rawSha256": "a422dde0e84af2692d4f0267e44b469455efa4b9022a36f842518772d2f93ccf"
+    },
+    {
+      "file": "sources/before/src/nativeOcr.ts.gz",
+      "sha256": "0c7dcc40eb021ce5d8cfc150b62e6847a536f3a5bd881cbcab9747de3317bb16",
+      "bytes": 1673,
+      "rawSha256": "47ae3a7d942ff883ca996f30a5f7952e7444b1cddedd21f5c2dac34b58e87402"
+    },
+    {
+      "file": "sources/before/src/nativeOpus.test.ts.gz",
+      "sha256": "c2590cb7c8b6947a4dcc349fc59ddd7ee6c63f2950de1696ff45274f1d7f0d2f",
+      "bytes": 1263,
+      "rawSha256": "dc8d6a901d392cada7ed0fd8f8c9e2fc26fa2382b837d10a0364e3ff99fae993"
+    },
+    {
+      "file": "sources/before/src/nativeOpus.ts.gz",
+      "sha256": "fd050a8baa3bd7afdc8c346dcc278cbe8c9404dbb8edb1ad9f349af817be514f",
+      "bytes": 1853,
+      "rawSha256": "ae6ac7394569dbbe42bec72dbb0c6d181d71903654c82b5942c3c91aac504457"
+    },
+    {
+      "file": "sources/before/src/nativeResources.test.ts.gz",
+      "sha256": "8bc5b4ddf2d624721656efeee62c855bca44b12476e2314b288fdd550b52fcce",
+      "bytes": 950,
+      "rawSha256": "dc3ae9f2f8fc9e5cfe7e59f69cad07dd9725a64884312a08092c9bccc69e2c47"
+    },
+    {
+      "file": "sources/before/src/nativeResources.ts.gz",
+      "sha256": "3564303a2b22bf9f5f20ee961199f631c104ae9480ee7625edf1afb87f4a91e9",
+      "bytes": 809,
+      "rawSha256": "3ee04f870f598647b85a5be69267cc8a573aef2ab1b227640c7415094f9c9672"
+    },
+    {
+      "file": "sources/before/src/nativeTexo.test.ts.gz",
+      "sha256": "9681ca4cf8e9d1419ae598b419a6d07a7d669d76bea2253bbdba6b7bfac033a1",
+      "bytes": 1295,
+      "rawSha256": "0150f4dc4847de1c314507c96d9252df0b338dba45c76c5bc1c07048d2b8a4c6"
+    },
+    {
+      "file": "sources/before/src/nativeTexo.ts.gz",
+      "sha256": "494fad0aec8c74b27e69419f59ab922fe83f06da3484e1837f5968b83f6bbaf7",
+      "bytes": 1962,
+      "rawSha256": "7b6f784a685291b0d2cb5e69e8c757784c699469998094c4153a08a4a76cfefa"
+    },
+    {
+      "file": "sources/before/src/nativeTts.test.ts.gz",
+      "sha256": "52d4a28e982cd2256438c6fc1f84de59a4e79c7855bbfb181c0deb88994deafb",
+      "bytes": 1372,
+      "rawSha256": "710bfd761812849890bb41b08372a03a7768aafaa928568bde24fe82c6a6f6b4"
+    },
+    {
+      "file": "sources/before/src/nativeTts.ts.gz",
+      "sha256": "8d7a7163ee894910be1c876baef608f77ad829f19de7c44abf1eeee81ad49bcc",
+      "bytes": 1825,
+      "rawSha256": "673506665ac0443fee5d8c67819ee668882377d6055438b4e859815594c53ac6"
+    },
+    {
+      "file": "sources/before/src/nativeUnimumer.test.ts.gz",
+      "sha256": "0bde49d0b6f2933a2a32a7cc83712b7d24fc47c756723a02ea2665ac679b8c79",
+      "bytes": 888,
+      "rawSha256": "3eb2fc91588207f513992a55f6031430416be93a1d9488fec20cc81a50b670b5"
+    },
+    {
+      "file": "sources/before/src/nativeUnimumer.ts.gz",
+      "sha256": "2def385d3bd3795c2bc544e545a950acefe629ab58d488ff4db78d7c96a2e45c",
+      "bytes": 1021,
+      "rawSha256": "47155888aac621197ab6b7c8f22a90c045399b28b44a50f3cb102b763aeeea1e"
+    },
+    {
+      "file": "sources/before/src/neuralDictation.test.ts.gz",
+      "sha256": "7b22d8f2eab91b8fc7a33e390c92b40f11c39b6ec316f7e5818e5d34204e1857",
+      "bytes": 2150,
+      "rawSha256": "7481144280c19048243908d3f158e299e2e2a2ed1e7be10f25d517b0d999b0c3"
+    },
+    {
+      "file": "sources/before/src/night.css.gz",
+      "sha256": "e3844770abc5dea46438f0518998c532bffb9695f68621141c9eba62b5dd93c1",
+      "bytes": 2710,
+      "rawSha256": "73e826c7a3db57e9b0b8bb6db5848cf9ef8d055a99e474838656f252063f0097"
+    },
+    {
+      "file": "sources/before/src/objectClipboard.test.ts.gz",
+      "sha256": "238b69eaff7649a71991a89b46efc14a94cacae101a5d8765eed823c6a3ef307",
+      "bytes": 1515,
+      "rawSha256": "eac57711ddb173f6eb2daaece505f0299d7d79848a83bf7e66242b3954d67f63"
+    },
+    {
+      "file": "sources/before/src/objectClipboard.ts.gz",
+      "sha256": "e99a63142342d947571ea9ea1773676957d4d6581f9652b0510d23dcd651c789",
+      "bytes": 2266,
+      "rawSha256": "3fd3e288690ddb8a1aa1cabc93ea1d4299a588da258a403f4abd342a7245a938"
+    },
+    {
+      "file": "sources/before/src/objectGroup.test.ts.gz",
+      "sha256": "7e8f83b722ca85daf1c3365d114ea3465011978f60e0166c88fb3ef46d69df3b",
+      "bytes": 1549,
+      "rawSha256": "4f547a248b4bb72ebeb23855806f191becacbc09c41267d923fb978dd86c77a1"
+    },
+    {
+      "file": "sources/before/src/objectGroup.ts.gz",
+      "sha256": "017511223d8e73ac661bf10133cdce1175465746bf99e488234fae248fb71e83",
+      "bytes": 1794,
+      "rawSha256": "92436d46779c13f232dab21036184a80f3c1c92250b986394ea4f88627947d20"
+    },
+    {
+      "file": "sources/before/src/ObjectLayer.tsx.gz",
+      "sha256": "23a9d325f0f829221959f89dfff54918fc2f36099105f43612a7fe8a59a9b937",
+      "bytes": 3175,
+      "rawSha256": "c0b47bffa580448252ad11dd0c31eb2a782a8657064e03d31b3a05cdeda4204d"
+    },
+    {
+      "file": "sources/before/src/objectSelection.test.ts.gz",
+      "sha256": "23a299f69f317b567e0224bca099a9849aed58588b17569e9d8fe0aaa3662c44",
+      "bytes": 665,
+      "rawSha256": "df4cdb60eb008a6a1c71b3f05cdd596604a6e50fe3c007433ccccdfcd3b6c3ec"
+    },
+    {
+      "file": "sources/before/src/objectSelection.ts.gz",
+      "sha256": "88606679a03aec370bfb996f70873de8947f07ff0d542e29bf9a9e67eb09b5d0",
+      "bytes": 977,
+      "rawSha256": "b42400abb6a3cd809968c12163780167d68b5afce5992a1eafa54331601c1a41"
+    },
+    {
+      "file": "sources/before/src/ocr.ts.gz",
+      "sha256": "91141e46e04d8c1e0a647179e414d935e74d748d64d2ba50a2f7593ff913cc92",
+      "bytes": 79,
+      "rawSha256": "a61c7abacd1e9d2c1951d74a873987347f1327ae171587f0de1bbe4f9ab5463e"
+    },
+    {
+      "file": "sources/before/src/OcrDialog.tsx.gz",
+      "sha256": "b2ffd2d8e3bc2fe7e66caa431896f92202882051c336627f34f3d21eb587e8d6",
+      "bytes": 2390,
+      "rawSha256": "e1f2b7529b9f443372bb96a5547fba30140488b53f8284b715df8085a0c4d75b"
+    },
+    {
+      "file": "sources/before/src/ocrWorkerSession.test.ts.gz",
+      "sha256": "723ae03bf1cdf21d0a65880289fd4d8ace98be033cbec3a139619f48ded4f561",
+      "bytes": 1226,
+      "rawSha256": "fc970a67022bee9cff1dfd413f34fcb85081904a85d1ed863ef3ab9ff89595b8"
+    },
+    {
+      "file": "sources/before/src/ocrWorkerSession.ts.gz",
+      "sha256": "d981a7993b285979fc428be8602d57eee6af79e5fc5c953099ceb3a24d5321b7",
+      "bytes": 2080,
+      "rawSha256": "427e14be04256a97bfd96e97bafe4c787051ee2aa3e4e0607f368e5f272d6259"
+    },
+    {
+      "file": "sources/before/src/PageEditor.tsx.gz",
+      "sha256": "4fab10c43689b8f88aa5832eff026ac971fe46e2be0d3c505faa79fc9f7a7f9f",
+      "bytes": 6634,
+      "rawSha256": "2b90bb34ab2e340991f58d11f0fe2bea917a0ff810e60c287ff01b623ea5410e"
+    },
+    {
+      "file": "sources/before/src/pageFit.css.gz",
+      "sha256": "090ed7e281b3c041396088059255fb96d6552c3a4be37c3903187f328eb76993",
+      "bytes": 236,
+      "rawSha256": "0301027f2f24aa9615cda55ae1b950f8b88b324051344ad67d4c1d90ced9fcc6"
+    },
+    {
+      "file": "sources/before/src/pageFit.test.ts.gz",
+      "sha256": "427ac990d60f350e4960af4949e413f9fab59f43261a62a2f3444b3a3797b43c",
+      "bytes": 778,
+      "rawSha256": "b1b92869757971a86533dfa1377b17f59bed522c328f4b4a1c86135cbeee6cd7"
+    },
+    {
+      "file": "sources/before/src/pageFit.ts.gz",
+      "sha256": "d53ec08a9bef398f538652a21fc52da2c48c21366ba6fd6123127fc8a26557d2",
+      "bytes": 908,
+      "rawSha256": "3ca5ef91639ce80fb95378b7dbe9efb7030f5d9556a1438ab4abda35937fc79a"
+    },
+    {
+      "file": "sources/before/src/pageLayers.test.ts.gz",
+      "sha256": "1b937bafc05706a97b0e74a4847f7a3782c00aebdc56cf1fc37353c15617cd59",
+      "bytes": 1261,
+      "rawSha256": "145855ce37109df8f7ef81c11c8d02d9d4a33e977c82ba4704c5ed2db5b69864"
+    },
+    {
+      "file": "sources/before/src/pageLayers.ts.gz",
+      "sha256": "1b904a36c972bf07eb7a152cba5afba75039c14614fd25826f1f361826f70e84",
+      "bytes": 582,
+      "rawSha256": "0039048c7459030b2ebd5bce9751e9940105fef9d136ac2aae083e58b92dd091"
+    },
+    {
+      "file": "sources/before/src/PageList.tsx.gz",
+      "sha256": "96af42b524048777625d0b820e3b220d3a1328fc8f5680da93c42d6d3650c04b",
+      "bytes": 2551,
+      "rawSha256": "93a222aaf685da7522a5ea286a563c628c9f0e26542512349f1d8f3bddf46a03"
+    },
+    {
+      "file": "sources/before/src/PageThumbnail.tsx.gz",
+      "sha256": "7d1e995953835723d0507cf3c0f75fa7650d60d8736e0ec20f9336a7f014606c",
+      "bytes": 1303,
+      "rawSha256": "5da1307d25a9aec7b46ab134d046f86ff56be6b8d93c67509e687f9d532c8ba9"
+    },
+    {
+      "file": "sources/before/src/pdf.ts.gz",
+      "sha256": "e3344d993fcfb30778e6508d9258ed5378fa14a44b44c2aa9284692245c0410a",
+      "bytes": 619,
+      "rawSha256": "165a68d64af22354b8747d4e36e3496820d635a8688e96ec03e1e010b95e3945"
+    },
+    {
+      "file": "sources/before/src/pdfCompletion.test.ts.gz",
+      "sha256": "d2ffd36cf3c84a4dd0d310f1c8e82b87951fabb7abb7ce44a8688517ad777e0e",
+      "bytes": 1479,
+      "rawSha256": "62d912fa277b671be925c963a671920f3c8ab5f232a1843ce8bb477cd6693951"
+    },
+    {
+      "file": "sources/before/src/PdfDetailLayer.tsx.gz",
+      "sha256": "b324fbe645a9ea11346bf91b45f094187086a2a2a986c5a3cc8920264f19bf74",
+      "bytes": 2153,
+      "rawSha256": "b1598f9dfdcf69cff4d25641ac735df816da172f6dc51985b3d2325cb3b5adb3"
+    },
+    {
+      "file": "sources/before/src/PdfDropDialog.tsx.gz",
+      "sha256": "2fa1eb4bb6232004ca43e80ba2fbcfecd69f031221bde0a0ee06e8fdf618a325",
+      "bytes": 2052,
+      "rawSha256": "b0bc8f19457085c219711030ea9bdfc53af690a1be2acba6fe14f6ed25aaf6d5"
+    },
+    {
+      "file": "sources/before/src/pdfExport.test.ts.gz",
+      "sha256": "10a15aa138d9b031b9b891fa5c4cdc5d64dd5740282a6e2a65c03c148b2f489f",
+      "bytes": 2488,
+      "rawSha256": "aca91d73aa3e64a0d930d7ef02019c2e26c68240908d96d9147d3c597ecac074"
+    },
+    {
+      "file": "sources/before/src/pdfExport.ts.gz",
+      "sha256": "3e984b407503aae7bc7a0fc5c3bba3b6fcfeb2c7dff14cf6c42cff29d4b8d3ec",
+      "bytes": 5628,
+      "rawSha256": "1238f7d9c78da16d8bda53c27d14a80820de7bda5dbb34429306cada6c5087b3"
+    },
+    {
+      "file": "sources/before/src/pdfExport.worker.ts.gz",
+      "sha256": "b89022c8662d50325235390789e43e357c9aa3c5b309b6e74cd1383b03d82450",
+      "bytes": 675,
+      "rawSha256": "2828fc5f1268d99f793d5616c69ee0c9c06036fc4541ccd2a33caae0ccb07140"
+    },
+    {
+      "file": "sources/before/src/pdfExportClient.test.ts.gz",
+      "sha256": "8b38a9f9470b12f3b081747ef3b791ae9f9bbcc0558b73b53cf520799e28c2f0",
+      "bytes": 2442,
+      "rawSha256": "ccdb7ee99468240abcb0dce34f7c2154de2807ea2da3d740552f7ac40e212280"
+    },
+    {
+      "file": "sources/before/src/pdfExportClient.ts.gz",
+      "sha256": "239b8e06372cf843de6ecaceeb055ebfb55325d6fb0f52931630910b469debd1",
+      "bytes": 1496,
+      "rawSha256": "001d5ead60660911429b51bf3de22e88ed775990aba6dc6a940f4242b186f77b"
+    },
+    {
+      "file": "sources/before/src/pdfExportProtocol.ts.gz",
+      "sha256": "50eae61bb7fe11da194288fdebcbe84cbfeb6503d7dddbb4d07984c3aa8808e0",
+      "bytes": 625,
+      "rawSha256": "c5388cb79ba5bd78f1392fc81f084c49227334a553565790d849934a3b9e9e86"
+    },
+    {
+      "file": "sources/before/src/pdfExportSnapshot.ts.gz",
+      "sha256": "38c931244812bce3bdf174e06426d0a56ea03cda54f09afb3ec5f9cf34fa5089",
+      "bytes": 1426,
+      "rawSha256": "8c8dece223d3d7d372e4f44f965993f3ed7f212e7780a7923be62ec2bfe3ddc9"
+    },
+    {
+      "file": "sources/before/src/pdfInsertion.test.ts.gz",
+      "sha256": "124aabe21562715ccae36be6b21886863e52017a7fbe6a469b12e4570de74436",
+      "bytes": 1188,
+      "rawSha256": "e8d0865deedac692082302a9edb20b61d033a28c64ef7cea1c8e5aa8768f7191"
+    },
+    {
+      "file": "sources/before/src/pdfInsertion.ts.gz",
+      "sha256": "0747f4e8b29f464504947512a358c04fb5b9e08e47b0ee7236a0b03d0ad98421",
+      "bytes": 830,
+      "rawSha256": "ed1ff39f76070909875c6f7dc245482816ed4e88d7602ac871e8ef9be44d5d8f"
+    },
+    {
+      "file": "sources/before/src/pdfNight.ts.gz",
+      "sha256": "55a13df424c805399fd3f13acbcbbcb42fb22cb81fa156e98015b487ac8c691e",
+      "bytes": 1160,
+      "rawSha256": "c593d009ad7abbd6fe84da19a18f32dc1fb33cfa40a8b77ff103490d03cb5e4a"
+    },
+    {
+      "file": "sources/before/src/pdfNight.worker.ts.gz",
+      "sha256": "10a77123c7bde01aef0bf21b7d40e830894cc0347c7ddf443b3dcb780a7d761e",
+      "bytes": 657,
+      "rawSha256": "9e1446bc01a6a05ca92f38082421603cd0543e208a680b4cc5ac9bdd21f75f75"
+    },
+    {
+      "file": "sources/before/src/pdfNightColors.test.ts.gz",
+      "sha256": "107d28eed1bcafb23cc1cede3a55243ada4742e1cec3c57116c9e5f5224805e3",
+      "bytes": 603,
+      "rawSha256": "36553e2149eafda9dc6361328bf4d62f562a5bcfb737d169c600c32c00e9a0e6"
+    },
+    {
+      "file": "sources/before/src/pdfNightColors.ts.gz",
+      "sha256": "433ad0b377bec280edddc43eb6f1e2c08c07b80894be04010c6b55ddc95e3803",
+      "bytes": 662,
+      "rawSha256": "7269f490cce7413dc448a4a9845ccdf7ed213c11185f412868c6f365831f472a"
+    },
+    {
+      "file": "sources/before/src/pdfNightGeometry.test.ts.gz",
+      "sha256": "a2226258d9b92a2a4ea890a0b35907c01002aa6b8c1d775eaf796564fb656db0",
+      "bytes": 1005,
+      "rawSha256": "26fc946294d8b775b233b3127aab65ca7d21ffb4ca391f3765a4b700f9c805b1"
+    },
+    {
+      "file": "sources/before/src/pdfNightGeometry.ts.gz",
+      "sha256": "186650886a783bedb2469731e36e1180cf8e70a4a41c03ea762fa639f58dc3b7",
+      "bytes": 1142,
+      "rawSha256": "c02e27906ff685b6b2e5b6ea5b165ff26c59a0be38d30e7951bd7e78d53adc0f"
+    },
+    {
+      "file": "sources/before/src/PdfOriginalImages.tsx.gz",
+      "sha256": "1c13ac0f2d105f65045f0d58dc25e6f4232b2c79f37f82f38f003bbaefd76ed3",
+      "bytes": 1791,
+      "rawSha256": "a8d8020e20dc39a16da2975a65f0e561f1ee775a1bcb46625f0c8581ca59a2f9"
+    },
+    {
+      "file": "sources/before/src/pdfRenderCache.test.ts.gz",
+      "sha256": "aa4526f3b33223399fa0d4bbdf15513cf21a021caeefddf1d94f5adb267daf49",
+      "bytes": 1757,
+      "rawSha256": "2ee4d8c8ab0a566e68186ce22313b6618945131aec6c900029965660ea29a1e3"
+    },
+    {
+      "file": "sources/before/src/pdfRenderCache.ts.gz",
+      "sha256": "46ab06e8d7d30ec631c7e04c60c03dc5e9bc096c0a90e5eebf1d9c13c33a4b04",
+      "bytes": 4194,
+      "rawSha256": "9d87afb61172f4bdc895ed86710fb3c96d759bff74fdc57d4f7318835f32ab79"
+    },
+    {
+      "file": "sources/before/src/pdfScheduler.test.ts.gz",
+      "sha256": "2e92b827d1cadedac75509867a7aea241bf5f7c83e9378915236e3390018e627",
+      "bytes": 1350,
+      "rawSha256": "1cdc086bc004ccefcdc2f5709e34e9c4e5c3328de5ea9301113deda98cebd989"
+    },
+    {
+      "file": "sources/before/src/PdfSurface.tsx.gz",
+      "sha256": "6b9738ab742aa8c206d78899cb93da9a7332b9e533450b102aaefffb9dec1c63",
+      "bytes": 3006,
+      "rawSha256": "efb3a77db9586b6c3d83758bc302870cc54cf03dec44e1022bf09a5dc229c06a"
+    },
+    {
+      "file": "sources/before/src/PdfTextLayer.tsx.gz",
+      "sha256": "f1b79c54c1392701a6dbf8e1d804cd9510f6ee15a142515663cdd832d88cca09",
+      "bytes": 1940,
+      "rawSha256": "194b06d8e90312ce71f97c15f354465abc956fbab6fe9e585883075105a3530b"
+    },
+    {
+      "file": "sources/before/src/pdfTiles.test.ts.gz",
+      "sha256": "31998090c463606665be593bed603d0e9f9451fc6845271512f95dacc9fbca4c",
+      "bytes": 1210,
+      "rawSha256": "d0163c32f29645083a70f5f5f0f63d20769ff2afe666833d5dcab6f4fc71fa30"
+    },
+    {
+      "file": "sources/before/src/pdfTiles.ts.gz",
+      "sha256": "f509c85ccd3481ff6527c038437ceb47ce800b9d3004e58d2f5974f312b0055c",
+      "bytes": 1243,
+      "rawSha256": "6ce32939d561337eea228379f837ef75144cb11dbe6a787b07f8bf7da7c865e6"
+    },
+    {
+      "file": "sources/before/src/penToolWheel.css.gz",
+      "sha256": "9f84a361acc2a9988036e40ebb8df62399c8bae1ede269aedd68072368d344d5",
+      "bytes": 625,
+      "rawSha256": "55303d94a2f4c0faac75aea4b58b51583350b2c2bcb35adacd0deccbf5113edf"
+    },
+    {
+      "file": "sources/before/src/PenToolWheel.tsx.gz",
+      "sha256": "e6496173f6f1402604b82573c36ee0260c834c245674664fc78eb671af14bc70",
+      "bytes": 1494,
+      "rawSha256": "1dbb8a6b934bfa4aac37ee2e39fd7d281951cdb617300c1de1ebfa81ec88230a"
+    },
+    {
+      "file": "sources/before/src/performanceLedger.test.ts.gz",
+      "sha256": "ea6403d32c6bc4ab0c0c0a055488a88f31720e14c264aff58b9024e1f4215e71",
+      "bytes": 1308,
+      "rawSha256": "5ed49ca0012b3c52da5443d2aa144721fd2fae4d1c78d2ad38b4803642713e23"
+    },
+    {
+      "file": "sources/before/src/performanceLedger.ts.gz",
+      "sha256": "5863c6e4138d6b6a3091bc9288f31d8069d86bd2627704348f38d9c9de117101",
+      "bytes": 1791,
+      "rawSha256": "8731db899a208825f623c7eea3a0c5a131437b7128e8175722514a5e9e5a669b"
+    },
+    {
+      "file": "sources/before/src/phonemize.ts.gz",
+      "sha256": "a41fb4b26f254d03981edc18c8d22380ec0d54c361367b03f80e3a182cb66417",
+      "bytes": 795,
+      "rawSha256": "8815d911a55cc895a52e97adca500f72b233c778fa293b53b54132d44bf02350"
+    },
+    {
+      "file": "sources/before/src/phonemize.worker.ts.gz",
+      "sha256": "9e55bd4faf605de8b24ddb18a6635f95cfd210e40d2fbcaae95c2fe041371e69",
+      "bytes": 1535,
+      "rawSha256": "009ebd89a06567970b5c7a5d9bce0fc1cafc68bd531fc9e50b5b04f537dade5a"
+    },
+    {
+      "file": "sources/before/src/pinyin.test.ts.gz",
+      "sha256": "ce31ff25daa7b982a78800b21b4d97d560f2a15d705956b065cc2f64a089b5cd",
+      "bytes": 575,
+      "rawSha256": "5ebab11940a5239d9a19b4375abb9bd931d709063bd30003f6175d1ace38c15d"
+    },
+    {
+      "file": "sources/before/src/pinyin.worker.ts.gz",
+      "sha256": "03ca52ae3948723f46d37821f885d4f3b32b70d8d5baf35041fa0d7598079821",
+      "bytes": 762,
+      "rawSha256": "111d601c2b48105d4f1a5646930705d7f9300a50d9a5da74eb8d3fa06c284b69"
+    },
+    {
+      "file": "sources/before/src/ProviderAdvanced.tsx.gz",
+      "sha256": "c9122b2cbe80e9e909ef8e495d9a79a75296b0dd08be185ccc85e4af01e78771",
+      "bytes": 1886,
+      "rawSha256": "5a4cfc9b2e9327b51acde218e5fb5071846f6a874eca6db7b74f3396b5712a38"
+    },
+    {
+      "file": "sources/before/src/providerRelay.test.ts.gz",
+      "sha256": "4852175582234839dd559310a748a8914ea54537145ef9a7070428b7d1275e34",
+      "bytes": 2469,
+      "rawSha256": "d68f72996f8439107ebb098fbf854cf47c746a1d125827c2d69777acd35cd54c"
+    },
+    {
+      "file": "sources/before/src/providers.test.ts.gz",
+      "sha256": "5b733a47f4a8db45fca5bb5bcc0c335fd2231ed0aac92a0f685b3f2a63c33f11",
+      "bytes": 2358,
+      "rawSha256": "669c5683ae2f2d96405614ce07fe44cb62af4726616bd1810c3dbed966119eee"
+    },
+    {
+      "file": "sources/before/src/providers.ts.gz",
+      "sha256": "b20e79f045a38cddc8cb92d1edc2d41d756d9110911fc4542d77c23e4adedde1",
+      "bytes": 4566,
+      "rawSha256": "796134a81de6e99239e291a531bed969153fa20a02937e40fa4ca0026f705c14"
+    },
+    {
+      "file": "sources/before/src/providerSettings.ts.gz",
+      "sha256": "270b90ce5893a2c25a37893a5e15fbdd893a09e787369e6011d91868093891e1",
+      "bytes": 2649,
+      "rawSha256": "fe646c8f1dcf22217ce5980e147df87b315baa7532bf0e71d83ad01f8ecb2340"
+    },
+    {
+      "file": "sources/before/src/providerTasks.test.ts.gz",
+      "sha256": "9864e9e399a998a3341ee6ad2816e8c9e4feea6425b0f25aab345c82d004032d",
+      "bytes": 2166,
+      "rawSha256": "9c5dcfb43ce0d292eb75d5b1cc81f505af238887c63d8d7a2d8962d69a7e95ee"
+    },
+    {
+      "file": "sources/before/src/providerTasks.ts.gz",
+      "sha256": "3cde4b29770c833ad5bdc699d53c0432ca33d3d8ee7929716eae5b1dee5c8457",
+      "bytes": 2865,
+      "rawSha256": "baf943a3d53c69023135586c607bfc65cceee70e0ba0b2acbcbba957801e6e04"
+    },
+    {
+      "file": "sources/before/src/providerTransport.test.ts.gz",
+      "sha256": "8a52b85c86e91a1d63f009a2c62f8e91ce65b4c1c5f2172b497a669c9d52370c",
+      "bytes": 1146,
+      "rawSha256": "d09c8b7dad9437601ae0faf490a4b88a2c0f8e9f4982ca968e033e26e3919f40"
+    },
+    {
+      "file": "sources/before/src/providerTransport.ts.gz",
+      "sha256": "7499014aae82cb16b5b376b97076a9152c3c51e6dee9940b8870c5035f05d26e",
+      "bytes": 1438,
+      "rawSha256": "46666a41a72063d8bbb5ce3223b54e3e5a116d5f004f2f5be8dd21d9f1935c41"
+    },
+    {
+      "file": "sources/before/src/providerVault.test.ts.gz",
+      "sha256": "f7e7ddaf688eb3fdcbe28b91200e48c3f393d74b12ff32e1b4f10c0c741dcc31",
+      "bytes": 1986,
+      "rawSha256": "25d766452dd10f2662b44600c52febcd71714709b3119755b462683aec7b27fd"
+    },
+    {
+      "file": "sources/before/src/ReadingView.tsx.gz",
+      "sha256": "87fc346131fff600b58761c007a6f5bfb78c695335ca702a5bafc52a92adb129",
+      "bytes": 5127,
+      "rawSha256": "ce825f80bee57308df66f359afd8bcb11a6c964b20d5af40af161379dc6a30af"
+    },
+    {
+      "file": "sources/before/src/readingZoom.ts.gz",
+      "sha256": "b7bf0d35eddc79f994996f5b8ccbfee162d209ee205ec219379a653a095d7da7",
+      "bytes": 732,
+      "rawSha256": "8fd1e7d4142685a146a0726e14d76508c6675522ea90b958a9daba79b0986650"
+    },
+    {
+      "file": "sources/before/src/RegionCapture.tsx.gz",
+      "sha256": "d86fbf881f721c8238bbc88046541ee63d6c1d45306ee51a0059396936a160f6",
+      "bytes": 1139,
+      "rawSha256": "eb5e765cbbb1aa4fce6dca9d10f36029ff2e32227eec2d93bff700777bef7ed2"
+    },
+    {
+      "file": "sources/before/src/remoteProvider.test.ts.gz",
+      "sha256": "b94032c414948f51b50f72d40165fc0c164912b70134fa65abcd54ff30072003",
+      "bytes": 2838,
+      "rawSha256": "7afa91339a903353d34fffb4ee0449704471370d78a6425490ec9557c25c933d"
+    },
+    {
+      "file": "sources/before/src/remoteProvider.ts.gz",
+      "sha256": "e21cdece2d67cfec7afc49f994b0ce5c3f25f000c78b8b98c771007c74a16b69",
+      "bytes": 3601,
+      "rawSha256": "2d115fa26b8990edf286281a529d9153da514c41221fad7f357c9960ef781ba2"
+    },
+    {
+      "file": "sources/before/src/renderQuality.test.ts.gz",
+      "sha256": "26ad07dc4268d2b041ece6709cd25d08221e2180dd51ba133d4eba49015bb657",
+      "bytes": 845,
+      "rawSha256": "d7e39cec7960b8c41692b5a02ab5f67d2b7fe4c2a1f1c988c711a492390712a3"
+    },
+    {
+      "file": "sources/before/src/runtimeBridge.ts.gz",
+      "sha256": "99824f319c85b803dedbe3bf13ddcb6253896817602cd39545d4daa2a03371d2",
+      "bytes": 311,
+      "rawSha256": "e36d0bba177f53d51f34d8fb60aaa598afeb8688d8ea2be9e2788f06a4b01722"
+    },
+    {
+      "file": "sources/before/src/runtimeInstaller.test.ts.gz",
+      "sha256": "1436cba012bf891d95f3f61c55d78966ae9270812b60f94e3a41c23a3f71f4ab",
+      "bytes": 1284,
+      "rawSha256": "fa7decc803f39a28ccaf613acd5a747c6381f1c9c7f705fa2ccf0e20508900f1"
+    },
+    {
+      "file": "sources/before/src/RuntimeSetup.tsx.gz",
+      "sha256": "1f796116bd90fb32d85fbe9c6e612ab8662f1e9e4808b32c4f83d473300c0b25",
+      "bytes": 2114,
+      "rawSha256": "a152b80e777e4951d2abf94e205365fdd258e66c7869dec0105ca1fb1637d3b7"
+    },
+    {
+      "file": "sources/before/src/scrollInertia.test.ts.gz",
+      "sha256": "8d13a673be386cec323b736b7c62ed0484ccc582085362334f76e99c265d7438",
+      "bytes": 505,
+      "rawSha256": "75b4b3a639a4734ceb12bec14fdd239bb6c292bb2f4650135d4551f8cdd5fa44"
+    },
+    {
+      "file": "sources/before/src/scrollInertia.ts.gz",
+      "sha256": "28f6ac94e166aae737067678bb7144831c281c5098cbbcb2ad3ecb4c1fa289a8",
+      "bytes": 561,
+      "rawSha256": "64f8302134088b6f72e22e288eef06ad440c636475dc9784105456ee9e7e7e4c"
+    },
+    {
+      "file": "sources/before/src/selectionFlyout.css.gz",
+      "sha256": "385bfc01f9dbaab0202fd04112283c61fc88101c6bd1cd21767fce5077f72a81",
+      "bytes": 540,
+      "rawSha256": "aba79a1ec606a14136de36d237b5f70823f762e5379b2c52320bde0053fe8f79"
+    },
+    {
+      "file": "sources/before/src/SelectionFlyout.tsx.gz",
+      "sha256": "95456610f2b2bbe192a4f21b415d54bda194bcd839c80bb99be0b28187cd37de",
+      "bytes": 4969,
+      "rawSha256": "042fda0676885f860d1857a587affad932b2ddfe1caf238e42bbeb3205e6d1c1"
+    },
+    {
+      "file": "sources/before/src/selectionPlacement.test.ts.gz",
+      "sha256": "1b8899b7fce2287b4987c78cb1644a16ea44db338ccc1f683b3f4592e2450544",
+      "bytes": 1359,
+      "rawSha256": "63bd34508f32b18c549707669182fb5effcafdcb0630afe7dc863fe714d86012"
+    },
+    {
+      "file": "sources/before/src/selectionPlacement.ts.gz",
+      "sha256": "42a45c8ccf9b4e18eea6cc3d328e5e19c45585ee9c2a7539095ab3bc7d95b1ec",
+      "bytes": 1653,
+      "rawSha256": "d607579dbe85b446707bb3041d6acbf36c4b1505a488bb49fa4e2f919cac9416"
+    },
+    {
+      "file": "sources/before/src/settings.css.gz",
+      "sha256": "0530f473c7e77fe2c160ff9aa66fbe1175293810d1aea2825907b96f442f01ae",
+      "bytes": 1122,
+      "rawSha256": "b818f6fe2b09b1ef7502ce86503adeb69b05b11fcc5af2ae77cbd655dcf559ec"
+    },
+    {
+      "file": "sources/before/src/SketchDialog.tsx.gz",
+      "sha256": "5fd445a98fad64ea6ccb225d5063cb92ecddb8f709d60a404c3e59d727fbcf4d",
+      "bytes": 1853,
+      "rawSha256": "3cb6598112facfdcebfe883af0a1ba180cd2268d2538d2013ed47ee800d406f9"
+    },
+    {
+      "file": "sources/before/src/spatialIndex.test.ts.gz",
+      "sha256": "eb85924f85071a7581a587f48bf92b6f1777a9af21c955aaf982529bdbad0d25",
+      "bytes": 1873,
+      "rawSha256": "06beb5b0a2d08715371541b375cf2896c8090c9044a3039ab11675fd4069713d"
+    },
+    {
+      "file": "sources/before/src/spatialIndex.ts.gz",
+      "sha256": "92658c8f08311bf8d894c1f080cce64f51e8cc217a50ea8e08273bb836202b84",
+      "bytes": 1660,
+      "rawSha256": "4ea2edb243a9546afeee8cbce5c302a55591b7d555c4c02fdef54c3088a686ae"
+    },
+    {
+      "file": "sources/before/src/storage.ts.gz",
+      "sha256": "89e851660c4971ffe52d3b6bafa208029b854a60a0beddf011db0adce0fcab1b",
+      "bytes": 780,
+      "rawSha256": "666e0b0a15d9c98fe51c50a9e5ddff0076b6391674c814e370ccee78263cc4d3"
+    },
+    {
+      "file": "sources/before/src/styles.css.gz",
+      "sha256": "50cf47dac0a9f5b71f1ef0a99109baa3ae276193187fcac02620e7b5f40f7252",
+      "bytes": 4315,
+      "rawSha256": "8c7b943e398fda8cf265f5b111cf7ac9c02153b70bfe18cc7100defeea897109"
+    },
+    {
+      "file": "sources/before/src/svgImport.ts.gz",
+      "sha256": "93f3c3a2eeb7a889968663f6631ce65584c2eaa3e95f97324c02672c4d09ca0b",
+      "bytes": 2813,
+      "rawSha256": "68675bdccef6ce8fd9033926deffe6ca7d23a6103c426b1dc8edffde9b315666"
+    },
+    {
+      "file": "sources/before/src/taskCenter.css.gz",
+      "sha256": "a6dcbb2f1100ab546365051823881b0306bd29ff4ded0aad08e8bc78520875a6",
+      "bytes": 819,
+      "rawSha256": "3158ae81b02ec46d34e816015d515671446143a3658f48fbb8480d91735f0b43"
+    },
+    {
+      "file": "sources/before/src/TaskCenter.tsx.gz",
+      "sha256": "b2ea7a53b7c9b2981d2f601f790cd50df240ac39818a9de99f6fc5d5ec50e6cb",
+      "bytes": 3498,
+      "rawSha256": "e8bc1f7c5935eade195ad68673e362f235abe73b87b008d4eacf8d63d91716aa"
+    },
+    {
+      "file": "sources/before/src/TaskCenterButton.tsx.gz",
+      "sha256": "2efea48b1403f63ebb144ad0ec1ad6c7edadf9793b2b59c84a0524bead5bd869",
+      "bytes": 363,
+      "rawSha256": "300a656832b589c128fd4b13b064954ff5c83bc42cf246d44a3b0c8d1efca12d"
+    },
+    {
+      "file": "sources/before/src/texo.test.ts.gz",
+      "sha256": "fcd76b1602481caac63194ff7dfd43376a738654999b77f4585169beb781ef18",
+      "bytes": 891,
+      "rawSha256": "50499788d0618cf952c822c765d1b6015812b008ce9bfe3e38a09a418f3a5374"
+    },
+    {
+      "file": "sources/before/src/texo.ts.gz",
+      "sha256": "49ccbd224688eea8fbf9dfa2703bb6644c99fbffc9e6df77699680ffcd621734",
+      "bytes": 965,
+      "rawSha256": "cff4e57e856f6a136812eb81d4450e1bb26c014c58169332dc9752bfda6c9b9b"
+    },
+    {
+      "file": "sources/before/src/texo.worker.ts.gz",
+      "sha256": "da53f672b868a7f5965ebabe52318761053e0f22ccb63e3dca24a708366a9a18",
+      "bytes": 1684,
+      "rawSha256": "cd5ab5cab53395ebc451beceba7f7b78cc100598a62a5e0bd8efd437ee5c38fb"
+    },
+    {
+      "file": "sources/before/src/textBox.css.gz",
+      "sha256": "7daaa364e002d99e28276ca3e34b1502726b8db29fd139d611ae636cc81a6e02",
+      "bytes": 365,
+      "rawSha256": "7109a52e0997f283b6823dd240a0d8d41a2ceff6e4ec1ba53dacb4c658d7e212"
+    },
+    {
+      "file": "sources/before/src/textBox.ts.gz",
+      "sha256": "a50d4b5a059363628748d063e526a2296bee032bc2fd4c73c96f47af267fe7fc",
+      "bytes": 1116,
+      "rawSha256": "da5857cf90063f1127caa6b967f2548e7cf417a33fe427b3742aef94665d5b3d"
+    },
+    {
+      "file": "sources/before/src/TextBoxDialog.tsx.gz",
+      "sha256": "be64ca444d63ad73fc0a6f2199358e0dc3801fc6627a7407ef5e155657166eb8",
+      "bytes": 1795,
+      "rawSha256": "c735b92d0dc31e57ec2d2ddc5f244d966ed153d43d9f201a0e6ef518facf6b17"
+    },
+    {
+      "file": "sources/before/src/textSelection.ts.gz",
+      "sha256": "8728cb97ce644ff633f259d9dca09663e2ebba8d8cadea3d66b1ece5d2c240f1",
+      "bytes": 2701,
+      "rawSha256": "ae20fc7fdd97157df4b374ee6ab0c1671eb792a31074bd8d7eba8cd3fe150063"
+    },
+    {
+      "file": "sources/before/src/TouchKeyboard.tsx.gz",
+      "sha256": "9b76ee897a5bb00ee89c012241836b978db3b08a8322c233faa046f4168dc2d1",
+      "bytes": 8233,
+      "rawSha256": "48f964ab7c7cf87c71b351be3adc7dd6eb86807dc9b097323528c0474629c7da"
+    },
+    {
+      "file": "sources/before/src/translate.test.ts.gz",
+      "sha256": "cb5dc196801f9b2c0fd1482a77ff6184cf6ade981c940dde185b6ca2a7900cc9",
+      "bytes": 800,
+      "rawSha256": "732c614b1848f169337f8eec89a5e228956cfeaa4c44977b7b686e7380061705"
+    },
+    {
+      "file": "sources/before/src/translate.ts.gz",
+      "sha256": "2b38d654e27ba03a385cfb64201cff3063b2352fcd9e43ac88608ef54fdd2202",
+      "bytes": 1174,
+      "rawSha256": "c4082fc669e6b7819a3fd52f2b09cb1ce8d9f80be2cc349a32d97301e3c1f073"
+    },
+    {
+      "file": "sources/before/src/translate.worker.ts.gz",
+      "sha256": "e3c1c636b86e0c9832d57a4f72cb5984a48902508a860e44a8332738e07c4aab",
+      "bytes": 1066,
+      "rawSha256": "5df1b3593915c903fba19d665b3dfc9fb8fa8cb8592d5aec8c7fc73f0f648c34"
+    },
+    {
+      "file": "sources/before/src/translationText.ts.gz",
+      "sha256": "2ef334fabdc17f020fb680fed2efdfe21d686d2b181329f7a41590ce3bfed992",
+      "bytes": 514,
+      "rawSha256": "448ee4fb20d7ada9245fbe8abd2b0280b8b4a1506ba0d1cd955ac4f4c9d3d32d"
+    },
+    {
+      "file": "sources/before/src/tts.ts.gz",
+      "sha256": "e2d9eb2341a0c2f095ffa357524a15c1623d09e3ee427f1465a50f7c0995858e",
+      "bytes": 1143,
+      "rawSha256": "80d236daed9c1fff3985318725950c198386aabe01271ef8e7d4265970a04187"
+    },
+    {
+      "file": "sources/before/src/tts.worker.ts.gz",
+      "sha256": "8be78d4a136caa30d254962df8a0fcf6a44cf3e81b869052e18be3d2fe763c5f",
+      "bytes": 561,
+      "rawSha256": "6c89f4fd3b97215af27ed4356d3a5380985405599b812fc9b01f8b7edc89bb1b"
+    },
+    {
+      "file": "sources/before/src/useChatWindow.ts.gz",
+      "sha256": "36403ffab905680da42befc0caa67fae8caf951eaaaf56fee93e132ea5880287",
+      "bytes": 994,
+      "rawSha256": "55d5a52046c9689342f5390cee6de65c7e8be148c981808cd3da6240b4d7c8a6"
+    },
+    {
+      "file": "sources/before/src/useForegroundViewport.ts.gz",
+      "sha256": "b71914cfc4ac6adb52cbbaf50ea77c3f7ac3f443f5f7684146c645817dd263f8",
+      "bytes": 1279,
+      "rawSha256": "7b229c08eec33cb6fd5913535d92044c57be7cc293efda890d95f22d53cb451b"
+    },
+    {
+      "file": "sources/before/src/useScrollViewport.ts.gz",
+      "sha256": "4814d11e7bd8217dabd21d547d326b00edbaa2ebae8d1470e347be331f362b9a",
+      "bytes": 550,
+      "rawSha256": "da528c9ab827f8e219f887181a26f8dbb56d8266e0119addef9e5a52b8a0fad7"
+    },
+    {
+      "file": "sources/before/src/useSelectionPlacement.ts.gz",
+      "sha256": "618794a25ae01c1fa12510b81389cf5a614339aba1228383623131dcf0ce1da5",
+      "bytes": 1658,
+      "rawSha256": "8f9a5feed8aa11bf93ef94c00236b285d397fca331ffd6dedf21146f28e762c8"
+    },
+    {
+      "file": "sources/before/src/useSpeech.tsx.gz",
+      "sha256": "f47289a3d75b2a9dc972f81f8005fdcfece7d82f12847f82cae5c8ea5eeac8ca",
+      "bytes": 2399,
+      "rawSha256": "f54920897ca487a5c94bc730bb89ee5398a012090a5bc962e965e2f38e4770b7"
+    },
+    {
+      "file": "sources/before/src/vendor/pinyin-engine.ts.gz",
+      "sha256": "aa9d10adee31bb7ed5a84f3005f4a3fb8dc885593332d9ea3ad3e8c2387cedb1",
+      "bytes": 5062,
+      "rawSha256": "433aa822aa9451c2c6f9f54202c0d080a2a3aa77e2fbd97a0b150053230ae198"
+    },
+    {
+      "file": "sources/before/src/virtualLayout.test.ts.gz",
+      "sha256": "c02f99d00bd2d74c4ec62a6093c54a4591346856e4b9b827ffb9fcbc921432b9",
+      "bytes": 1193,
+      "rawSha256": "f45c6f1f80a80025551157fc9d8139a4b960441a4c04f7a1c63ecfdc8ad00da0"
+    },
+    {
+      "file": "sources/before/src/virtualLayout.ts.gz",
+      "sha256": "769ab504774ac6abd9b9d5119c6496826969dfa6a688114332523ca02fd71186",
+      "bytes": 627,
+      "rawSha256": "5dfb81edc88d407eaa398565671932b1977f1db7980cd1db4bcf12bafe2afaa9"
+    },
+    {
+      "file": "sources/before/src/workspace.css.gz",
+      "sha256": "14ce54355572edda1d670881ab7b8cdff03cadb4a5b44a6537a0780c4ae5c01d",
+      "bytes": 1516,
+      "rawSha256": "7c6d89e48dfd0646d9549568ec489f952cfcd9430ac798320321462c641a7dbc"
+    },
+    {
+      "file": "sources/before/src/WorkspaceManager.tsx.gz",
+      "sha256": "34974a98e2d7f784862ed833ed98a1a821615bc328c1f00ab6b8cf4965f859a9",
+      "bytes": 2966,
+      "rawSha256": "b90da7bf46f86a05e72dfc9afc3bbdb706ad0557c0c5b01f92e8a2501e65c524"
+    },
+    {
+      "file": "sources/before/src/workspaceStore.ts.gz",
+      "sha256": "bb1c2f3473be568f0ff512c0622f447009bc2ff992edea93ea62b1409e82f562",
+      "bytes": 2625,
+      "rawSha256": "b9999f5e4222c2719d195f1c59094eac00401af186dd3f98bf2354ce2af0980b"
+    },
+    {
+      "file": "sources/before/src/zotero.css.gz",
+      "sha256": "3d54061d7f78146cc465322cc8c96a165e99823858e4d6796422667e2cb8c46e",
+      "bytes": 2172,
+      "rawSha256": "dfe6b452e3064458842dd228632ff88d8580e9af3b95a738e055ae70b9d23089"
+    },
+    {
+      "file": "sources/before/src/zotero.test.ts.gz",
+      "sha256": "f1817ca1dcf7e69df4ae430a9b35def6dff44d6d27b8f27b3533763f672a0796",
+      "bytes": 2598,
+      "rawSha256": "5cb452a1c3c39d7dc4645892b6f8b6a897e8855055e8a9ccfe2666de652af39c"
+    },
+    {
+      "file": "sources/before/src/zotero.ts.gz",
+      "sha256": "b9157e03b18515bd9c9a587f5a666f2f285a94fc3d98df0d6d22fee74802d794",
+      "bytes": 1131,
+      "rawSha256": "807ece6548c89dab588225b6ecb4d075d7ff56d0e8bede1ff9af05c2d1a4e643"
+    },
+    {
+      "file": "sources/before/src/zoteroCollectionTree.test.ts.gz",
+      "sha256": "a394c4bf37d07bdc03e6c83133ccf8630c06c34ba8b4794a756e85cc86f2429f",
+      "bytes": 805,
+      "rawSha256": "35dd2e4b341bab86b263199b0f8dda71c548733dd6cc47d3e1d51cc119fdcc2b"
+    },
+    {
+      "file": "sources/before/src/zoteroCollectionTree.ts.gz",
+      "sha256": "0aecfe91f37c950ced8e2ab502af6bc9c510a1192dbc839ce9f769630768f16c",
+      "bytes": 965,
+      "rawSha256": "212f718908f0efa083dd96a77ea783ed6ea6834b568242b7cd14cbf0d8f8597c"
+    },
+    {
+      "file": "sources/before/src/ZoteroDialog.tsx.gz",
+      "sha256": "b1e1fcf4895cb55a2c42b5bfcea54aef4273ab5bcc03eb71f968e886877128b7",
+      "bytes": 4054,
+      "rawSha256": "0ade1d2804dde2a33414a6bd20428715f9002fd95c7a7e122aa99ffb9912aef2"
+    },
+    {
+      "file": "sources/before/src/zoteroSource.ts.gz",
+      "sha256": "b44e497a73e8becc545a010b8a60c57c2f14278cbc7c2c4533107e049324245e",
+      "bytes": 348,
+      "rawSha256": "f07b37bd87749d3f12d7f091957e55bbcc19628422c0cac1c0c5a61c47dd0129"
+    },
+    {
+      "file": "sources/before/src/ZoteroTree.tsx.gz",
+      "sha256": "f0bac19a9510d94abca53f2fb5ad500d7cfaefd90c2bc022f82aad0565ca6d36",
+      "bytes": 2595,
+      "rawSha256": "12bdef07ed4ebbd0100f84516d8053373b3d200abbb2b94d4cb26a69079379f9"
+    },
+    {
+      "file": "sources/before/tsconfig.json.gz",
+      "sha256": "2fa751569fd0d4575632f24375e45c238e0914ae621e5602a4348756a0645aa9",
+      "bytes": 248,
+      "rawSha256": "21ad4807702ff0c702e1282bae9504b5bf054ac947b7c17c3fa69d9c8602e00e"
+    },
+    {
+      "file": "sources/before/vite.config.ts.gz",
+      "sha256": "67634c075255079b40d44d88a7263fcdb5b269c9534ef413a23ce41330c9d8f9",
+      "bytes": 483,
+      "rawSha256": "2755f7b99fef06bdf9a8c66388ecd06545b18ededcd2d84f3468f0f5d3df4206"
+    },
+    {
+      "file": "before-runtime-manifest.json",
+      "sha256": "d3479af77c88738176061daa2407e0922bad76a7dffb4d35eadd39a51fcca42f",
+      "bytes": 39285
+    },
+    {
+      "file": "candidate-source-manifest.json",
+      "sha256": "c1bbe58d4f3fe88c55d470d9995d40084265d35a92a402f1953bb8fc775dff3d",
+      "bytes": 22712
+    },
+    {
+      "file": "sources/candidate/index.html.gz",
+      "sha256": "e7f7adc3b73c16bf5345e81aa0152be6a6714108d8bf83cb6f934e2d49076877",
+      "bytes": 429,
+      "rawSha256": "417fd8bec19ecc0d6e5a9c48ecf48b767955d59b5fd314a33864f3e7cf09ef94"
+    },
+    {
+      "file": "sources/candidate/package-lock.json.gz",
+      "sha256": "eda9081b76b46f88e1bc80dcc59fa5083e12de29f635bc93bba0d8c0308d153c",
+      "bytes": 96913,
+      "rawSha256": "559fced89db641aded27e40a017ec3626bc5d1eccc7abe62c93c78812763b860"
+    },
+    {
+      "file": "sources/candidate/package.json.gz",
+      "sha256": "caa2631f22c74d32ae0eff69c1468e56df473d449f4c18160e504049917d831f",
+      "bytes": 1792,
+      "rawSha256": "99ae61df209eac5f822be031f58fa9bc5622e67c579c5b482e32d62a58d2bb6d"
+    },
+    {
+      "file": "sources/candidate/src/App.tsx.gz",
+      "sha256": "cf11c4de58b8590913f0651996fd3226e65d94a6063823ede4f2361c2ce1a1ed",
+      "bytes": 21549,
+      "rawSha256": "4015c9dcaf6c026f438241d09d3448a292360793ce71e773035a96ab44ec7420"
+    },
+    {
+      "file": "sources/candidate/src/appearance.ts.gz",
+      "sha256": "e2937ff5f8f0293e2ccbbe22c642d2dd9c00b96d1968ea0659c276e7aef53e86",
+      "bytes": 1536,
+      "rawSha256": "8c130f7ae615616bb5ecc3effdb76d9f418eef61a76434dd11bc484c02f353fe"
+    },
+    {
+      "file": "sources/candidate/src/blankPaper.ts.gz",
+      "sha256": "7126338ec49c50ab2bb6a8191f21c7e515a0c6dc4051afbdede1231aadb8e570",
+      "bytes": 222,
+      "rawSha256": "d15b7669ded4d819aab251c90d03852484aa9c9ec9de21a6a59c95af7bef2f7e"
+    },
+    {
+      "file": "sources/candidate/src/browserCaches.ts.gz",
+      "sha256": "1a4f87227a2a93f3fda9b2f37822a50c7d20e750881c8de1a5545c5d9b26508f",
+      "bytes": 1693,
+      "rawSha256": "7f0fd850109fc3b6193819086b36a257bdb1b90a917993b567df5c150e4f3405"
+    },
+    {
+      "file": "sources/candidate/src/cacheAccess.ts.gz",
+      "sha256": "88d2aa9b417e0e2f84534f901f5c7b94b8631e03fdef360abee6be14d9ecef6c",
+      "bytes": 447,
+      "rawSha256": "302f604a3fbad3298bef5d4a0294786d024366520f56c520ac8de79db832b5a9"
+    },
+    {
+      "file": "sources/candidate/src/cacheLibrary.ts.gz",
+      "sha256": "841e09371d683db59e12dc5e8f1ca270d44d705e94154a1fa9b755c62b72557a",
+      "bytes": 226,
+      "rawSha256": "f9a5ca1bbf8067df385824d26e5e8936ae306e1191d0c466be5345a5238f2ac3"
+    },
+    {
+      "file": "sources/candidate/src/cacheManager.css.gz",
+      "sha256": "16a12cef606d86564d137b2ebc84d546c31731cf84daac7e763f4a7f9dfe738b",
+      "bytes": 594,
+      "rawSha256": "5192f53a2dca869d0ccc38df28e9d39df8f8ee62b0bec8239db1e566097badf3"
+    },
+    {
+      "file": "sources/candidate/src/cacheManager.test.ts.gz",
+      "sha256": "e3b034dd09edfea3110dee621e686607a153622c0995c0cb53c09a56540163ed",
+      "bytes": 1503,
+      "rawSha256": "02f03d0995714894666c13c0d2d4e5e12cb178a2071b9fc5f0896ada78d6a762"
+    },
+    {
+      "file": "sources/candidate/src/CacheManager.tsx.gz",
+      "sha256": "b332164b89237ebc35e1a90c2633395543a5b4696eb67f1f6ca7bd42a4228348",
+      "bytes": 3034,
+      "rawSha256": "9ac079334ec1127f22e654f0b0ea546596cecf7de950197816a7152710f23142"
+    },
+    {
+      "file": "sources/candidate/src/capturePage.ts.gz",
+      "sha256": "c8d15ead171724b320866e6362410a9e2a0d58de0357eb766fe36bed2bbfe49c",
+      "bytes": 643,
+      "rawSha256": "3431e07808cdcaa610b912d4dafd32db08a421e6d646ec4d55294c0fabb6a51c"
+    },
+    {
+      "file": "sources/candidate/src/CapturePreview.tsx.gz",
+      "sha256": "25afac7f84455554f83b5264c0b20ad8add40b3f6248cf91864ab37ee27ae011",
+      "bytes": 874,
+      "rawSha256": "7c7136793af162b39c0c0bcd68b7b74160d670ff06338cb47611605fb96feb66"
+    },
+    {
+      "file": "sources/candidate/src/chat.css.gz",
+      "sha256": "0d97428c48fe834b74ff84c4e62d1649ecc6e45212ed39271bc1a700d1cb0fa5",
+      "bytes": 3951,
+      "rawSha256": "6ec293168001bac01b0ddc4c24c287e851524b61d6c21cd99f0317078b28209e"
+    },
+    {
+      "file": "sources/candidate/src/chatApi.test.ts.gz",
+      "sha256": "0c0e8175b25958900c637e86b328fa492b5546f5fe31c30ba4afd964fd9c7135",
+      "bytes": 1851,
+      "rawSha256": "b1964e661a9ebe93a74a233e1bfa4f099c3d93f49042b1d749d800dfbd288b43"
+    },
+    {
+      "file": "sources/candidate/src/chatApi.ts.gz",
+      "sha256": "6f0cf314302dcbba115b9be66bab9566e007c113dcaba4f0fe396bdc77b5524e",
+      "bytes": 2152,
+      "rawSha256": "563d512c5edd5400adf89eaa019b78bdd758aa5f5f3f03191dc2907fb20bd6f2"
+    },
+    {
+      "file": "sources/candidate/src/ChatApiSettings.tsx.gz",
+      "sha256": "9f66ab6df4a2ea80c4c573f9c31fa59f3f31cfbab6c8f77b0ff9f79f202718f0",
+      "bytes": 1531,
+      "rawSha256": "895e38f28d60a114a36fbc77f2acc75f65d75f91037eb8be5aeb91b8b5492203"
+    },
+    {
+      "file": "sources/candidate/src/chatAttachments.test.ts.gz",
+      "sha256": "984552287392258a10e65a04d2334d938f967b1818231ef27394828f91e9c7e2",
+      "bytes": 1336,
+      "rawSha256": "afaf16a87bd4a4d281b5f9e7153b132dd29756e6872433bc12afffe16bb59c90"
+    },
+    {
+      "file": "sources/candidate/src/chatAttachments.ts.gz",
+      "sha256": "2d4b907e641057264dd1458d552d70d03cd6d768a1437076e402fc64630b6a56",
+      "bytes": 1362,
+      "rawSha256": "093e03f82d87d403ab964710f944452edecae9acac902bc912ae1ff72f043792"
+    },
+    {
+      "file": "sources/candidate/src/chatContext.ts.gz",
+      "sha256": "f55b02f998a2508efc93b639f56fa6c4deb9b8dcc3f20f2662477b139b3d4304",
+      "bytes": 1476,
+      "rawSha256": "ac8d7e0756f6b013fd04c2adf0ee86708ed3ebf188d63e4e728092a67e32369a"
+    },
+    {
+      "file": "sources/candidate/src/chatFile.test.ts.gz",
+      "sha256": "436148b6bef11934db21f34c910937ce1c16ab35ffc2187b92cb8f939f7b784f",
+      "bytes": 817,
+      "rawSha256": "1c66c46d30dccc981ee3a7c07e1e910da92fa8d672ba8a061b5d1c967c28a3f3"
+    },
+    {
+      "file": "sources/candidate/src/chatFile.ts.gz",
+      "sha256": "b924f64edb546a6a7ec8e5bcc6e5616082f70f27c5950b07e243ff10ccb61877",
+      "bytes": 1425,
+      "rawSha256": "4106e1a8846e1f6e911f6890e1c20fe5f879085f492bf5c2a15e6a17c4d2a7ca"
+    },
+    {
+      "file": "sources/candidate/src/chatgpt.test.ts.gz",
+      "sha256": "115622b04d89c88fbfea274d567137cff3a9293b92efecbbe904ef039ee1d2af",
+      "bytes": 5169,
+      "rawSha256": "b7bc0b4c8c4eed1a6e86bcecb12200e6a828095a9847fe1b2cfe8ccf948c3c8d"
+    },
+    {
+      "file": "sources/candidate/src/chatgpt.ts.gz",
+      "sha256": "19cf48ccdbdc41511020624e5da364e765b72cea8921cca98e4373b39b71b01a",
+      "bytes": 2258,
+      "rawSha256": "4f559052f183f143187ac25b210dc20f1afe5748be172fdec9a8f37d75d2f0b3"
+    },
+    {
+      "file": "sources/candidate/src/chatMarkdown.test.ts.gz",
+      "sha256": "83f5d90eea8d71f79da3e7a3b98540a113792dc5f7cbe8aa597af68b79ca4dfd",
+      "bytes": 1284,
+      "rawSha256": "0567e09ee08e1bb351b17100e6eb8c323bd9f8709dd28382357bc1dce03a5eb1"
+    },
+    {
+      "file": "sources/candidate/src/ChatMarkdown.tsx.gz",
+      "sha256": "42531d4bd1e92ba9a530be4f15d855ccde53a4e3209046adb8a5e7b15c7a81a2",
+      "bytes": 1502,
+      "rawSha256": "25f97294d4a967e79ef20e2dc54e42d6f9b2d98972cecd326aa5df5f1dcff9ac"
+    },
+    {
+      "file": "sources/candidate/src/chatMarkdownText.ts.gz",
+      "sha256": "b00e386c9bcbcc17e479a8963dc9fb8bca8d0f39f4b4c6d5b5fa4ef83afc3a7d",
+      "bytes": 772,
+      "rawSha256": "3709536ae9ef3a087eb010787a176669d53c1de8055a2c65df85f2f48891b6db"
+    },
+    {
+      "file": "sources/candidate/src/ChatPanel.tsx.gz",
+      "sha256": "585cae05f7189a189d56e00bcbf62462be9f0bbe894fd37c97e619c13edea28d",
+      "bytes": 10264,
+      "rawSha256": "56bdcb6108d724bea2c934ac51bbc04ca65da46c04ffd6ad64e567ff1d2e5759"
+    },
+    {
+      "file": "sources/candidate/src/chatPrompts.ts.gz",
+      "sha256": "b8827121c5f6f1ca390072c010a2f7b26228dba6aa139cb547a657a4168c97f9",
+      "bytes": 828,
+      "rawSha256": "73092b52c9d2f723ee836a3b8581754fe1641f8a361ba388cd8e63ee97e67384"
+    },
+    {
+      "file": "sources/candidate/src/ChatSvgPreview.tsx.gz",
+      "sha256": "4c58ebc809ba0327e92585cbc0bbe86f3eae03fc42e3fe6ba7d563b5ef622bf5",
+      "bytes": 678,
+      "rawSha256": "ae0ee05c92432d8729ad0f44fc62fbc36f517b0712e83113bb3e971785a130f3"
+    },
+    {
+      "file": "sources/candidate/src/chrome.css.gz",
+      "sha256": "753309eefd389c964a0190e0aeb2e26440d44e54858de81978d84002678e438d",
+      "bytes": 7443,
+      "rawSha256": "58d7cd1b1aa9be96ae6cbb89110ed06992c0afd6414916089f440d3a4faa9e52"
+    },
+    {
+      "file": "sources/candidate/src/clipboard.ts.gz",
+      "sha256": "52e2f7355dd173669a1c0ce34ac72300702a9408b06cc79a406788b869c73943",
+      "bytes": 664,
+      "rawSha256": "bab86adaf7cd89350167bc813d220ed118861b97a2373d5605d84479cc442464"
+    },
+    {
+      "file": "sources/candidate/src/committedInk.ts.gz",
+      "sha256": "df8073148835aa106fa32c52aa296d63cee62c653be3b89807484a9507123def",
+      "bytes": 2079,
+      "rawSha256": "b77447da52ea2b244afb756d1210656dd26ebe7425fde71667dbc8141b237415"
+    },
+    {
+      "file": "sources/candidate/src/compactTools.css.gz",
+      "sha256": "1af02a0a25da012f1f8777ea58421900595060bc28d7112f2893f9825a926767",
+      "bytes": 663,
+      "rawSha256": "9a355fefda38874772923c89b9feae00d8a3eceeceaeb5fa4eb1438e180ab3da"
+    },
+    {
+      "file": "sources/candidate/src/deferredSave.test.ts.gz",
+      "sha256": "7e8243f287f85834804b2d1611d4b7dce65ce9b98fd7a7701112ae6d65180822",
+      "bytes": 584,
+      "rawSha256": "25327c628edc54a109f15d8b8f30acf9c217445ab3b86d4711dc207713d4d77b"
+    },
+    {
+      "file": "sources/candidate/src/deferredSave.ts.gz",
+      "sha256": "15dbb675e28e3c100bffc782f823a6dc8a01783a3b7bbabf4c62435bc009fc72",
+      "bytes": 376,
+      "rawSha256": "c724cc36064f80c1200b20bb51c6c3d5bfd37201a087711b550d4e1580590b07"
+    },
+    {
+      "file": "sources/candidate/src/desktop.d.ts.gz",
+      "sha256": "63ae4fbbe91fb2d81fc0c366462d0f76e2704700ecca0bbfdf13558446784130",
+      "bytes": 551,
+      "rawSha256": "50f49f79a0fd6941605d60137a5643863f2dfbe8c21d3124e60b7b2bee5a705d"
+    },
+    {
+      "file": "sources/candidate/src/dictation.test.ts.gz",
+      "sha256": "3edd5bcd432997487847632b21e19424e2fc073133e9f644d929cd572b456354",
+      "bytes": 1451,
+      "rawSha256": "e99ff62d796d210a176d959a22ad694ed058e9c64b68662568637f10e8809282"
+    },
+    {
+      "file": "sources/candidate/src/DictationButton.tsx.gz",
+      "sha256": "b6695961ee766af172d8d60721c9d3e9dfa3614ae11953d406aa749ce469ef02",
+      "bytes": 5609,
+      "rawSha256": "db77dd8fcf23922b0ed54dc863ac1ba945049dd9efd048416f66974b0e51e2b3"
+    },
+    {
+      "file": "sources/candidate/src/documentChrome.css.gz",
+      "sha256": "3c3190758c69e80d9a664b6d8823de92dae76047e4c8455620b6be12131ef646",
+      "bytes": 1797,
+      "rawSha256": "3ddf905f8300bc104a8782ac4010ee2bb36f0edae6be183615f91218703b3feb"
+    },
+    {
+      "file": "sources/candidate/src/FieldEditMenu.tsx.gz",
+      "sha256": "732cadefb0f54b2681d56e8160963ee4e37aad7587a0c9ba589ffd1261c3fd90",
+      "bytes": 1736,
+      "rawSha256": "1592aa173d6d33d033a4faa5ef8901f90f5230783a2e0bf2644bda9f9fb96001"
+    },
+    {
+      "file": "sources/candidate/src/foregroundViewport.test.ts.gz",
+      "sha256": "dbf6136cba96ce5842fae824946c009762ed55ad2489d2bb5a395dfe9cfc5987",
+      "bytes": 1127,
+      "rawSha256": "1b01336c700d6b6f1953ad216c446ce882f492d9fc26cba1a542d589f451c678"
+    },
+    {
+      "file": "sources/candidate/src/foregroundViewport.ts.gz",
+      "sha256": "bd5d42e6be1fe7edac21ed5ea14d1e60c13acb4b54080d5230364e5c374163a9",
+      "bytes": 571,
+      "rawSha256": "6604216e1274c2d8e8a154a365e23009151bf69f8a2e8da8433782e884db794a"
+    },
+    {
+      "file": "sources/candidate/src/FormulaDialog.tsx.gz",
+      "sha256": "622b141dd752084ef90f3b6fe0af2328a9399804c9104537ab1aae99b90ef9c7",
+      "bytes": 7868,
+      "rawSha256": "4773a13fac165c6062b532483f56fb9e17f1b33c2bf15fd2a97599ca46e54416"
+    },
+    {
+      "file": "sources/candidate/src/formulaDraft.test.ts.gz",
+      "sha256": "ed25bb465447bb8ee26f114f246f34cdd76d3b2934655cfbc9c42454bccd4155",
+      "bytes": 1037,
+      "rawSha256": "594905aced5efadc137ebb58960f4053de49e207013cf49b882e4e395ffc0ee0"
+    },
+    {
+      "file": "sources/candidate/src/formulaDraft.ts.gz",
+      "sha256": "7e4d81c73612363994444e4b0fe7104a0513ccb2fbb23bd355aa2501016e9a18",
+      "bytes": 1028,
+      "rawSha256": "742dc79b0db190fd8632f35006791342ede75654d29256da4adadd84acc6b35b"
+    },
+    {
+      "file": "sources/candidate/src/formulaInk.ts.gz",
+      "sha256": "0ce8f38f5409c1d601001c6dd12a1feeec7bacf02e38c564ea324514e07536b0",
+      "bytes": 668,
+      "rawSha256": "c087e67221e10842cd22678e1b2d95b41a4312340eda3e74681b24c9a68a6306"
+    },
+    {
+      "file": "sources/candidate/src/formulaLines.test.ts.gz",
+      "sha256": "0125ce7b012e99dd5a357c7988305aa83a5b3c72b130af8f7a6e31abc458b1f1",
+      "bytes": 910,
+      "rawSha256": "e27b8156fff5b64971bcae935330427ce2e294864f26944a8b8aab8ffcf7ea44"
+    },
+    {
+      "file": "sources/candidate/src/formulaLines.ts.gz",
+      "sha256": "1fb99c9baf186badf629a112afebf6aa70aea288d0ae440d83540527d4d2ee7d",
+      "bytes": 1056,
+      "rawSha256": "13baed1687fbf6f475d5dc2a25e5f412605a2f5f5a2fa14f22722468affd158b"
+    },
+    {
+      "file": "sources/candidate/src/FullscreenButton.tsx.gz",
+      "sha256": "bb467c303e46710947d84f4b3651b2916c471ceb625a2e247d0ac7e4fb52869a",
+      "bytes": 740,
+      "rawSha256": "001f3f2b13be610fb046f38958fd7dac067f0c84b3def0a679ad1d26cb428382"
+    },
+    {
+      "file": "sources/candidate/src/gestures.ts.gz",
+      "sha256": "bd2bba5203b989a1903a78097f6ccb26cfe62a810a64bdbf44784228f9d96816",
+      "bytes": 522,
+      "rawSha256": "ab3d46ae4b055645c4ef8a898bc0e141a20ae726601de55995f01b43eb7e4e5c"
+    },
+    {
+      "file": "sources/candidate/src/GroupHierarchy.tsx.gz",
+      "sha256": "9a716f1a4e20e9c6912247b9e3060434dffe3aa18667fa584b745c158d637f83",
+      "bytes": 881,
+      "rawSha256": "8e7742d97911d4ca6197d2399a3b5a732894ec6bc9d7ea726bc324aa8d01b218"
+    },
+    {
+      "file": "sources/candidate/src/i18n.ts.gz",
+      "sha256": "f223fb5ea78c6cb6447b1c4ecaf553a9ca4a0b4979e1e102b1eec15989a26ed0",
+      "bytes": 1192,
+      "rawSha256": "f2d4b03f8155ffe82654b9add20ab1f720a6f9807a7f648b3e001c929981eb94"
+    },
+    {
+      "file": "sources/candidate/src/ink.ts.gz",
+      "sha256": "8e4186302f6e78829482e0e132d50617f3605dc7a56d29338693d08afc02cc55",
+      "bytes": 1700,
+      "rawSha256": "2e2729a2f1114fe8e966caa43390754568258a850f23f09ab994d3b5715a6116"
+    },
+    {
+      "file": "sources/candidate/src/InkColors.tsx.gz",
+      "sha256": "0e1cb2467f80c5e8f0ad1c78ec75bfd9e00b8e15f8922f602d8b4e1ee650c89a",
+      "bytes": 2031,
+      "rawSha256": "5b522d5d722496a0c9d9a21601d68daf14fdf6a244b92d67c11be54a9b188bf6"
+    },
+    {
+      "file": "sources/candidate/src/inkTools.ts.gz",
+      "sha256": "fc145ce1907075ffa3af150d943eb34c7a43ee6775cf5ca3dcabe81548151e3f",
+      "bytes": 344,
+      "rawSha256": "eb642f4df5f642ba0a696f383c7641059d694cb3fbbc23b1348024ffc53d1c0b"
+    },
+    {
+      "file": "sources/candidate/src/inputPreferences.ts.gz",
+      "sha256": "a3c8d966cf0e49905c4b87559b77409a986c0bb836b01bd0bd78765ffbd0a0e4",
+      "bytes": 394,
+      "rawSha256": "22caa32031c2703dd400535e5a8ccb0c957183e5cb517d12ba7d8404e5353810"
+    },
+    {
+      "file": "sources/candidate/src/interaction.test.ts.gz",
+      "sha256": "d422b08266a05a120b1767bb5a72e7a565538970fbf2455075d5d5dcb6aeb1b4",
+      "bytes": 916,
+      "rawSha256": "61abb1a97fa34036b820ba27b034ec434f4024539fb2edc60e8d04b36537234d"
+    },
+    {
+      "file": "sources/candidate/src/latexMacros.ts.gz",
+      "sha256": "b37e82a3489e764dc31a1ae231697138957202cdb7099ee3b42c276500ba5e27",
+      "bytes": 1288,
+      "rawSha256": "605151848fea0a55f3625018e8005f796bf5bcac371d985eaa5368845abfb612"
+    },
+    {
+      "file": "sources/candidate/src/LatexSource.tsx.gz",
+      "sha256": "399bb59c718094173f4ab3d964d14480895a3d0ec945eaa96fd9182b1d218b45",
+      "bytes": 1158,
+      "rawSha256": "dcdf17d2c2091ff31bd9a87105796c76ae681ad20024a537a6c8cd63361820b6"
+    },
+    {
+      "file": "sources/candidate/src/locales/en.json.gz",
+      "sha256": "ada1c4fd9b3037e04a9919300ff69ac5225e5659720a1dfd42f938ab83974221",
+      "bytes": 29137,
+      "rawSha256": "bbedf405c1701dd2502b0a68fc02e8c1dc100f03e8cdb04179cc978a5d599bde"
+    },
+    {
+      "file": "sources/candidate/src/main.tsx.gz",
+      "sha256": "ce16edce1cd09800a1b7bc886a471950faa2f93a0b22932b1e0e41eab9495260",
+      "bytes": 242,
+      "rawSha256": "cdb5ba98f350c8bf5a1039bf621d7a34a2eaa46656d28ac42ee17d1ea78ca14d"
+    },
+    {
+      "file": "sources/candidate/src/model.test.ts.gz",
+      "sha256": "6784b2b43d6894c1d2f2bb2b093bad568a835d7fe5269666ab24ff8accb5312b",
+      "bytes": 1430,
+      "rawSha256": "06847edbd538d7ebf016adb2fc5c2f6b60a1faf63399dc7e3c9d89f1e90e66b5"
+    },
+    {
+      "file": "sources/candidate/src/model.ts.gz",
+      "sha256": "fb5a32d93d1653e345870ebccdfdc1c256393581995dd97601a0c96f588f4d68",
+      "bytes": 2826,
+      "rawSha256": "ca316b1d1eb307799b512f2486f839772d3eff78cea3f3f90d22222632ed7a96"
+    },
+    {
+      "file": "sources/candidate/src/ModelConfirmation.tsx.gz",
+      "sha256": "9c7786af9eca6e4b0bab04256a638704ad291b500f215246a631f3c7fdfeed4e",
+      "bytes": 1554,
+      "rawSha256": "16dc1c61724fc6c6fac414352d11e4aa5d02e80e8d228a564ce90916edc0122f"
+    },
+    {
+      "file": "sources/candidate/src/modelIdle.test.ts.gz",
+      "sha256": "0f26cdd07ed8281720b304841072002eb7bfbdb56dc02ea4f938ec8e5fbcb548",
+      "bytes": 623,
+      "rawSha256": "afc4d76b44da3bb1dfad7d42ed48156529eb1d3a843eff2c96c1991e79168d1e"
+    },
+    {
+      "file": "sources/candidate/src/modelIdle.ts.gz",
+      "sha256": "433b2c2d3d7e8f8a736b321f03485dff8e120b889745aef151fca01b0748ded8",
+      "bytes": 964,
+      "rawSha256": "44a88d17d7f0e5ec2f530baab2891dbe628cb3ce967060a3092765a4cf4de2d6"
+    },
+    {
+      "file": "sources/candidate/src/modelLibrary.css.gz",
+      "sha256": "069db8737e842530b0c4dac6b005282d015d64840c1e30b0ae54fedff056d095",
+      "bytes": 1332,
+      "rawSha256": "7ccd42f110196d32d8029d0586197051c832cac2652b9c35df0fca336166f644"
+    },
+    {
+      "file": "sources/candidate/src/modelLibrary.test.ts.gz",
+      "sha256": "e25159957846c63fcad263736dec2c384c25d129f38f725dff0f118a64d1945d",
+      "bytes": 2243,
+      "rawSha256": "0a2edd661f5b6e85b63ec9cc8cacfdd1c962296e603eb0d7620275cec34e1297"
+    },
+    {
+      "file": "sources/candidate/src/modelLibrary.ts.gz",
+      "sha256": "311a00da7d1e817a15fb6703b4b8685d4acbc5ece97c96a2e38d30df92a26b10",
+      "bytes": 634,
+      "rawSha256": "ba2994d866b2fdb00a002e83fd5e333f8702ca79e013b53566f4c5220874670b"
+    },
+    {
+      "file": "sources/candidate/src/ModelManager.tsx.gz",
+      "sha256": "3251582a08c7a488adaf4462ff5fb151b5a6d7c529d442af22c7168679940276",
+      "bytes": 3324,
+      "rawSha256": "2e010752e544318894d3ffe5077dd413e7d6e0a3cd473cced90369d2362e86d5"
+    },
+    {
+      "file": "sources/candidate/src/nativeOcr.test.ts.gz",
+      "sha256": "d2c9b57191934425fee57cb919161936ff02603017717af26c4dfbac1b2a5fcd",
+      "bytes": 1158,
+      "rawSha256": "a422dde0e84af2692d4f0267e44b469455efa4b9022a36f842518772d2f93ccf"
+    },
+    {
+      "file": "sources/candidate/src/nativeOcr.ts.gz",
+      "sha256": "0c7dcc40eb021ce5d8cfc150b62e6847a536f3a5bd881cbcab9747de3317bb16",
+      "bytes": 1673,
+      "rawSha256": "47ae3a7d942ff883ca996f30a5f7952e7444b1cddedd21f5c2dac34b58e87402"
+    },
+    {
+      "file": "sources/candidate/src/nativeOpus.test.ts.gz",
+      "sha256": "c2590cb7c8b6947a4dcc349fc59ddd7ee6c63f2950de1696ff45274f1d7f0d2f",
+      "bytes": 1263,
+      "rawSha256": "dc8d6a901d392cada7ed0fd8f8c9e2fc26fa2382b837d10a0364e3ff99fae993"
+    },
+    {
+      "file": "sources/candidate/src/nativeOpus.ts.gz",
+      "sha256": "fd050a8baa3bd7afdc8c346dcc278cbe8c9404dbb8edb1ad9f349af817be514f",
+      "bytes": 1853,
+      "rawSha256": "ae6ac7394569dbbe42bec72dbb0c6d181d71903654c82b5942c3c91aac504457"
+    },
+    {
+      "file": "sources/candidate/src/nativeResources.test.ts.gz",
+      "sha256": "8bc5b4ddf2d624721656efeee62c855bca44b12476e2314b288fdd550b52fcce",
+      "bytes": 950,
+      "rawSha256": "dc3ae9f2f8fc9e5cfe7e59f69cad07dd9725a64884312a08092c9bccc69e2c47"
+    },
+    {
+      "file": "sources/candidate/src/nativeResources.ts.gz",
+      "sha256": "3564303a2b22bf9f5f20ee961199f631c104ae9480ee7625edf1afb87f4a91e9",
+      "bytes": 809,
+      "rawSha256": "3ee04f870f598647b85a5be69267cc8a573aef2ab1b227640c7415094f9c9672"
+    },
+    {
+      "file": "sources/candidate/src/nativeTexo.test.ts.gz",
+      "sha256": "9681ca4cf8e9d1419ae598b419a6d07a7d669d76bea2253bbdba6b7bfac033a1",
+      "bytes": 1295,
+      "rawSha256": "0150f4dc4847de1c314507c96d9252df0b338dba45c76c5bc1c07048d2b8a4c6"
+    },
+    {
+      "file": "sources/candidate/src/nativeTexo.ts.gz",
+      "sha256": "494fad0aec8c74b27e69419f59ab922fe83f06da3484e1837f5968b83f6bbaf7",
+      "bytes": 1962,
+      "rawSha256": "7b6f784a685291b0d2cb5e69e8c757784c699469998094c4153a08a4a76cfefa"
+    },
+    {
+      "file": "sources/candidate/src/nativeTts.test.ts.gz",
+      "sha256": "52d4a28e982cd2256438c6fc1f84de59a4e79c7855bbfb181c0deb88994deafb",
+      "bytes": 1372,
+      "rawSha256": "710bfd761812849890bb41b08372a03a7768aafaa928568bde24fe82c6a6f6b4"
+    },
+    {
+      "file": "sources/candidate/src/nativeTts.ts.gz",
+      "sha256": "8d7a7163ee894910be1c876baef608f77ad829f19de7c44abf1eeee81ad49bcc",
+      "bytes": 1825,
+      "rawSha256": "673506665ac0443fee5d8c67819ee668882377d6055438b4e859815594c53ac6"
+    },
+    {
+      "file": "sources/candidate/src/nativeUnimumer.test.ts.gz",
+      "sha256": "0bde49d0b6f2933a2a32a7cc83712b7d24fc47c756723a02ea2665ac679b8c79",
+      "bytes": 888,
+      "rawSha256": "3eb2fc91588207f513992a55f6031430416be93a1d9488fec20cc81a50b670b5"
+    },
+    {
+      "file": "sources/candidate/src/nativeUnimumer.ts.gz",
+      "sha256": "2def385d3bd3795c2bc544e545a950acefe629ab58d488ff4db78d7c96a2e45c",
+      "bytes": 1021,
+      "rawSha256": "47155888aac621197ab6b7c8f22a90c045399b28b44a50f3cb102b763aeeea1e"
+    },
+    {
+      "file": "sources/candidate/src/neuralDictation.test.ts.gz",
+      "sha256": "7b22d8f2eab91b8fc7a33e390c92b40f11c39b6ec316f7e5818e5d34204e1857",
+      "bytes": 2150,
+      "rawSha256": "7481144280c19048243908d3f158e299e2e2a2ed1e7be10f25d517b0d999b0c3"
+    },
+    {
+      "file": "sources/candidate/src/night.css.gz",
+      "sha256": "e3844770abc5dea46438f0518998c532bffb9695f68621141c9eba62b5dd93c1",
+      "bytes": 2710,
+      "rawSha256": "73e826c7a3db57e9b0b8bb6db5848cf9ef8d055a99e474838656f252063f0097"
+    },
+    {
+      "file": "sources/candidate/src/objectClipboard.test.ts.gz",
+      "sha256": "238b69eaff7649a71991a89b46efc14a94cacae101a5d8765eed823c6a3ef307",
+      "bytes": 1515,
+      "rawSha256": "eac57711ddb173f6eb2daaece505f0299d7d79848a83bf7e66242b3954d67f63"
+    },
+    {
+      "file": "sources/candidate/src/objectClipboard.ts.gz",
+      "sha256": "e99a63142342d947571ea9ea1773676957d4d6581f9652b0510d23dcd651c789",
+      "bytes": 2266,
+      "rawSha256": "3fd3e288690ddb8a1aa1cabc93ea1d4299a588da258a403f4abd342a7245a938"
+    },
+    {
+      "file": "sources/candidate/src/objectGroup.test.ts.gz",
+      "sha256": "7e8f83b722ca85daf1c3365d114ea3465011978f60e0166c88fb3ef46d69df3b",
+      "bytes": 1549,
+      "rawSha256": "4f547a248b4bb72ebeb23855806f191becacbc09c41267d923fb978dd86c77a1"
+    },
+    {
+      "file": "sources/candidate/src/objectGroup.ts.gz",
+      "sha256": "017511223d8e73ac661bf10133cdce1175465746bf99e488234fae248fb71e83",
+      "bytes": 1794,
+      "rawSha256": "92436d46779c13f232dab21036184a80f3c1c92250b986394ea4f88627947d20"
+    },
+    {
+      "file": "sources/candidate/src/ObjectLayer.tsx.gz",
+      "sha256": "23a9d325f0f829221959f89dfff54918fc2f36099105f43612a7fe8a59a9b937",
+      "bytes": 3175,
+      "rawSha256": "c0b47bffa580448252ad11dd0c31eb2a782a8657064e03d31b3a05cdeda4204d"
+    },
+    {
+      "file": "sources/candidate/src/objectSelection.test.ts.gz",
+      "sha256": "23a299f69f317b567e0224bca099a9849aed58588b17569e9d8fe0aaa3662c44",
+      "bytes": 665,
+      "rawSha256": "df4cdb60eb008a6a1c71b3f05cdd596604a6e50fe3c007433ccccdfcd3b6c3ec"
+    },
+    {
+      "file": "sources/candidate/src/objectSelection.ts.gz",
+      "sha256": "88606679a03aec370bfb996f70873de8947f07ff0d542e29bf9a9e67eb09b5d0",
+      "bytes": 977,
+      "rawSha256": "b42400abb6a3cd809968c12163780167d68b5afce5992a1eafa54331601c1a41"
+    },
+    {
+      "file": "sources/candidate/src/ocr.ts.gz",
+      "sha256": "91141e46e04d8c1e0a647179e414d935e74d748d64d2ba50a2f7593ff913cc92",
+      "bytes": 79,
+      "rawSha256": "a61c7abacd1e9d2c1951d74a873987347f1327ae171587f0de1bbe4f9ab5463e"
+    },
+    {
+      "file": "sources/candidate/src/OcrDialog.tsx.gz",
+      "sha256": "b2ffd2d8e3bc2fe7e66caa431896f92202882051c336627f34f3d21eb587e8d6",
+      "bytes": 2390,
+      "rawSha256": "e1f2b7529b9f443372bb96a5547fba30140488b53f8284b715df8085a0c4d75b"
+    },
+    {
+      "file": "sources/candidate/src/ocrWorkerSession.test.ts.gz",
+      "sha256": "723ae03bf1cdf21d0a65880289fd4d8ace98be033cbec3a139619f48ded4f561",
+      "bytes": 1226,
+      "rawSha256": "fc970a67022bee9cff1dfd413f34fcb85081904a85d1ed863ef3ab9ff89595b8"
+    },
+    {
+      "file": "sources/candidate/src/ocrWorkerSession.ts.gz",
+      "sha256": "d981a7993b285979fc428be8602d57eee6af79e5fc5c953099ceb3a24d5321b7",
+      "bytes": 2080,
+      "rawSha256": "427e14be04256a97bfd96e97bafe4c787051ee2aa3e4e0607f368e5f272d6259"
+    },
+    {
+      "file": "sources/candidate/src/PageEditor.tsx.gz",
+      "sha256": "4fab10c43689b8f88aa5832eff026ac971fe46e2be0d3c505faa79fc9f7a7f9f",
+      "bytes": 6634,
+      "rawSha256": "2b90bb34ab2e340991f58d11f0fe2bea917a0ff810e60c287ff01b623ea5410e"
+    },
+    {
+      "file": "sources/candidate/src/pageFit.css.gz",
+      "sha256": "090ed7e281b3c041396088059255fb96d6552c3a4be37c3903187f328eb76993",
+      "bytes": 236,
+      "rawSha256": "0301027f2f24aa9615cda55ae1b950f8b88b324051344ad67d4c1d90ced9fcc6"
+    },
+    {
+      "file": "sources/candidate/src/pageFit.test.ts.gz",
+      "sha256": "427ac990d60f350e4960af4949e413f9fab59f43261a62a2f3444b3a3797b43c",
+      "bytes": 778,
+      "rawSha256": "b1b92869757971a86533dfa1377b17f59bed522c328f4b4a1c86135cbeee6cd7"
+    },
+    {
+      "file": "sources/candidate/src/pageFit.ts.gz",
+      "sha256": "d53ec08a9bef398f538652a21fc52da2c48c21366ba6fd6123127fc8a26557d2",
+      "bytes": 908,
+      "rawSha256": "3ca5ef91639ce80fb95378b7dbe9efb7030f5d9556a1438ab4abda35937fc79a"
+    },
+    {
+      "file": "sources/candidate/src/pageLayers.test.ts.gz",
+      "sha256": "1b937bafc05706a97b0e74a4847f7a3782c00aebdc56cf1fc37353c15617cd59",
+      "bytes": 1261,
+      "rawSha256": "145855ce37109df8f7ef81c11c8d02d9d4a33e977c82ba4704c5ed2db5b69864"
+    },
+    {
+      "file": "sources/candidate/src/pageLayers.ts.gz",
+      "sha256": "1b904a36c972bf07eb7a152cba5afba75039c14614fd25826f1f361826f70e84",
+      "bytes": 582,
+      "rawSha256": "0039048c7459030b2ebd5bce9751e9940105fef9d136ac2aae083e58b92dd091"
+    },
+    {
+      "file": "sources/candidate/src/PageList.tsx.gz",
+      "sha256": "96af42b524048777625d0b820e3b220d3a1328fc8f5680da93c42d6d3650c04b",
+      "bytes": 2551,
+      "rawSha256": "93a222aaf685da7522a5ea286a563c628c9f0e26542512349f1d8f3bddf46a03"
+    },
+    {
+      "file": "sources/candidate/src/PageThumbnail.tsx.gz",
+      "sha256": "7d1e995953835723d0507cf3c0f75fa7650d60d8736e0ec20f9336a7f014606c",
+      "bytes": 1303,
+      "rawSha256": "5da1307d25a9aec7b46ab134d046f86ff56be6b8d93c67509e687f9d532c8ba9"
+    },
+    {
+      "file": "sources/candidate/src/pdf.ts.gz",
+      "sha256": "e3344d993fcfb30778e6508d9258ed5378fa14a44b44c2aa9284692245c0410a",
+      "bytes": 619,
+      "rawSha256": "165a68d64af22354b8747d4e36e3496820d635a8688e96ec03e1e010b95e3945"
+    },
+    {
+      "file": "sources/candidate/src/pdfCompletion.test.ts.gz",
+      "sha256": "d2ffd36cf3c84a4dd0d310f1c8e82b87951fabb7abb7ce44a8688517ad777e0e",
+      "bytes": 1479,
+      "rawSha256": "62d912fa277b671be925c963a671920f3c8ab5f232a1843ce8bb477cd6693951"
+    },
+    {
+      "file": "sources/candidate/src/PdfDetailLayer.tsx.gz",
+      "sha256": "b324fbe645a9ea11346bf91b45f094187086a2a2a986c5a3cc8920264f19bf74",
+      "bytes": 2153,
+      "rawSha256": "b1598f9dfdcf69cff4d25641ac735df816da172f6dc51985b3d2325cb3b5adb3"
+    },
+    {
+      "file": "sources/candidate/src/PdfDropDialog.tsx.gz",
+      "sha256": "2fa1eb4bb6232004ca43e80ba2fbcfecd69f031221bde0a0ee06e8fdf618a325",
+      "bytes": 2052,
+      "rawSha256": "b0bc8f19457085c219711030ea9bdfc53af690a1be2acba6fe14f6ed25aaf6d5"
+    },
+    {
+      "file": "sources/candidate/src/pdfExport.test.ts.gz",
+      "sha256": "10a15aa138d9b031b9b891fa5c4cdc5d64dd5740282a6e2a65c03c148b2f489f",
+      "bytes": 2488,
+      "rawSha256": "aca91d73aa3e64a0d930d7ef02019c2e26c68240908d96d9147d3c597ecac074"
+    },
+    {
+      "file": "sources/candidate/src/pdfExport.ts.gz",
+      "sha256": "3e984b407503aae7bc7a0fc5c3bba3b6fcfeb2c7dff14cf6c42cff29d4b8d3ec",
+      "bytes": 5628,
+      "rawSha256": "1238f7d9c78da16d8bda53c27d14a80820de7bda5dbb34429306cada6c5087b3"
+    },
+    {
+      "file": "sources/candidate/src/pdfExport.worker.ts.gz",
+      "sha256": "b89022c8662d50325235390789e43e357c9aa3c5b309b6e74cd1383b03d82450",
+      "bytes": 675,
+      "rawSha256": "2828fc5f1268d99f793d5616c69ee0c9c06036fc4541ccd2a33caae0ccb07140"
+    },
+    {
+      "file": "sources/candidate/src/pdfExportClient.test.ts.gz",
+      "sha256": "8b38a9f9470b12f3b081747ef3b791ae9f9bbcc0558b73b53cf520799e28c2f0",
+      "bytes": 2442,
+      "rawSha256": "ccdb7ee99468240abcb0dce34f7c2154de2807ea2da3d740552f7ac40e212280"
+    },
+    {
+      "file": "sources/candidate/src/pdfExportClient.ts.gz",
+      "sha256": "239b8e06372cf843de6ecaceeb055ebfb55325d6fb0f52931630910b469debd1",
+      "bytes": 1496,
+      "rawSha256": "001d5ead60660911429b51bf3de22e88ed775990aba6dc6a940f4242b186f77b"
+    },
+    {
+      "file": "sources/candidate/src/pdfExportProtocol.ts.gz",
+      "sha256": "50eae61bb7fe11da194288fdebcbe84cbfeb6503d7dddbb4d07984c3aa8808e0",
+      "bytes": 625,
+      "rawSha256": "c5388cb79ba5bd78f1392fc81f084c49227334a553565790d849934a3b9e9e86"
+    },
+    {
+      "file": "sources/candidate/src/pdfExportSnapshot.ts.gz",
+      "sha256": "38c931244812bce3bdf174e06426d0a56ea03cda54f09afb3ec5f9cf34fa5089",
+      "bytes": 1426,
+      "rawSha256": "8c8dece223d3d7d372e4f44f965993f3ed7f212e7780a7923be62ec2bfe3ddc9"
+    },
+    {
+      "file": "sources/candidate/src/pdfInsertion.test.ts.gz",
+      "sha256": "124aabe21562715ccae36be6b21886863e52017a7fbe6a469b12e4570de74436",
+      "bytes": 1188,
+      "rawSha256": "e8d0865deedac692082302a9edb20b61d033a28c64ef7cea1c8e5aa8768f7191"
+    },
+    {
+      "file": "sources/candidate/src/pdfInsertion.ts.gz",
+      "sha256": "0747f4e8b29f464504947512a358c04fb5b9e08e47b0ee7236a0b03d0ad98421",
+      "bytes": 830,
+      "rawSha256": "ed1ff39f76070909875c6f7dc245482816ed4e88d7602ac871e8ef9be44d5d8f"
+    },
+    {
+      "file": "sources/candidate/src/pdfNight.ts.gz",
+      "sha256": "55a13df424c805399fd3f13acbcbbcb42fb22cb81fa156e98015b487ac8c691e",
+      "bytes": 1160,
+      "rawSha256": "c593d009ad7abbd6fe84da19a18f32dc1fb33cfa40a8b77ff103490d03cb5e4a"
+    },
+    {
+      "file": "sources/candidate/src/pdfNight.worker.ts.gz",
+      "sha256": "10a77123c7bde01aef0bf21b7d40e830894cc0347c7ddf443b3dcb780a7d761e",
+      "bytes": 657,
+      "rawSha256": "9e1446bc01a6a05ca92f38082421603cd0543e208a680b4cc5ac9bdd21f75f75"
+    },
+    {
+      "file": "sources/candidate/src/pdfNightColors.test.ts.gz",
+      "sha256": "107d28eed1bcafb23cc1cede3a55243ada4742e1cec3c57116c9e5f5224805e3",
+      "bytes": 603,
+      "rawSha256": "36553e2149eafda9dc6361328bf4d62f562a5bcfb737d169c600c32c00e9a0e6"
+    },
+    {
+      "file": "sources/candidate/src/pdfNightColors.ts.gz",
+      "sha256": "433ad0b377bec280edddc43eb6f1e2c08c07b80894be04010c6b55ddc95e3803",
+      "bytes": 662,
+      "rawSha256": "7269f490cce7413dc448a4a9845ccdf7ed213c11185f412868c6f365831f472a"
+    },
+    {
+      "file": "sources/candidate/src/pdfNightGeometry.test.ts.gz",
+      "sha256": "a2226258d9b92a2a4ea890a0b35907c01002aa6b8c1d775eaf796564fb656db0",
+      "bytes": 1005,
+      "rawSha256": "26fc946294d8b775b233b3127aab65ca7d21ffb4ca391f3765a4b700f9c805b1"
+    },
+    {
+      "file": "sources/candidate/src/pdfNightGeometry.ts.gz",
+      "sha256": "186650886a783bedb2469731e36e1180cf8e70a4a41c03ea762fa639f58dc3b7",
+      "bytes": 1142,
+      "rawSha256": "c02e27906ff685b6b2e5b6ea5b165ff26c59a0be38d30e7951bd7e78d53adc0f"
+    },
+    {
+      "file": "sources/candidate/src/PdfOriginalImages.tsx.gz",
+      "sha256": "1c13ac0f2d105f65045f0d58dc25e6f4232b2c79f37f82f38f003bbaefd76ed3",
+      "bytes": 1791,
+      "rawSha256": "a8d8020e20dc39a16da2975a65f0e561f1ee775a1bcb46625f0c8581ca59a2f9"
+    },
+    {
+      "file": "sources/candidate/src/pdfRenderCache.test.ts.gz",
+      "sha256": "aa4526f3b33223399fa0d4bbdf15513cf21a021caeefddf1d94f5adb267daf49",
+      "bytes": 1757,
+      "rawSha256": "2ee4d8c8ab0a566e68186ce22313b6618945131aec6c900029965660ea29a1e3"
+    },
+    {
+      "file": "sources/candidate/src/pdfRenderCache.ts.gz",
+      "sha256": "46ab06e8d7d30ec631c7e04c60c03dc5e9bc096c0a90e5eebf1d9c13c33a4b04",
+      "bytes": 4194,
+      "rawSha256": "9d87afb61172f4bdc895ed86710fb3c96d759bff74fdc57d4f7318835f32ab79"
+    },
+    {
+      "file": "sources/candidate/src/pdfScheduler.test.ts.gz",
+      "sha256": "2e92b827d1cadedac75509867a7aea241bf5f7c83e9378915236e3390018e627",
+      "bytes": 1350,
+      "rawSha256": "1cdc086bc004ccefcdc2f5709e34e9c4e5c3328de5ea9301113deda98cebd989"
+    },
+    {
+      "file": "sources/candidate/src/PdfSurface.tsx.gz",
+      "sha256": "6b9738ab742aa8c206d78899cb93da9a7332b9e533450b102aaefffb9dec1c63",
+      "bytes": 3006,
+      "rawSha256": "efb3a77db9586b6c3d83758bc302870cc54cf03dec44e1022bf09a5dc229c06a"
+    },
+    {
+      "file": "sources/candidate/src/PdfTextLayer.tsx.gz",
+      "sha256": "f1b79c54c1392701a6dbf8e1d804cd9510f6ee15a142515663cdd832d88cca09",
+      "bytes": 1940,
+      "rawSha256": "194b06d8e90312ce71f97c15f354465abc956fbab6fe9e585883075105a3530b"
+    },
+    {
+      "file": "sources/candidate/src/pdfTiles.test.ts.gz",
+      "sha256": "31998090c463606665be593bed603d0e9f9451fc6845271512f95dacc9fbca4c",
+      "bytes": 1210,
+      "rawSha256": "d0163c32f29645083a70f5f5f0f63d20769ff2afe666833d5dcab6f4fc71fa30"
+    },
+    {
+      "file": "sources/candidate/src/pdfTiles.ts.gz",
+      "sha256": "f509c85ccd3481ff6527c038437ceb47ce800b9d3004e58d2f5974f312b0055c",
+      "bytes": 1243,
+      "rawSha256": "6ce32939d561337eea228379f837ef75144cb11dbe6a787b07f8bf7da7c865e6"
+    },
+    {
+      "file": "sources/candidate/src/penToolWheel.css.gz",
+      "sha256": "9f84a361acc2a9988036e40ebb8df62399c8bae1ede269aedd68072368d344d5",
+      "bytes": 625,
+      "rawSha256": "55303d94a2f4c0faac75aea4b58b51583350b2c2bcb35adacd0deccbf5113edf"
+    },
+    {
+      "file": "sources/candidate/src/PenToolWheel.tsx.gz",
+      "sha256": "e6496173f6f1402604b82573c36ee0260c834c245674664fc78eb671af14bc70",
+      "bytes": 1494,
+      "rawSha256": "1dbb8a6b934bfa4aac37ee2e39fd7d281951cdb617300c1de1ebfa81ec88230a"
+    },
+    {
+      "file": "sources/candidate/src/performanceLedger.test.ts.gz",
+      "sha256": "ea6403d32c6bc4ab0c0c0a055488a88f31720e14c264aff58b9024e1f4215e71",
+      "bytes": 1308,
+      "rawSha256": "5ed49ca0012b3c52da5443d2aa144721fd2fae4d1c78d2ad38b4803642713e23"
+    },
+    {
+      "file": "sources/candidate/src/performanceLedger.ts.gz",
+      "sha256": "5863c6e4138d6b6a3091bc9288f31d8069d86bd2627704348f38d9c9de117101",
+      "bytes": 1791,
+      "rawSha256": "8731db899a208825f623c7eea3a0c5a131437b7128e8175722514a5e9e5a669b"
+    },
+    {
+      "file": "sources/candidate/src/phonemize.ts.gz",
+      "sha256": "a41fb4b26f254d03981edc18c8d22380ec0d54c361367b03f80e3a182cb66417",
+      "bytes": 795,
+      "rawSha256": "8815d911a55cc895a52e97adca500f72b233c778fa293b53b54132d44bf02350"
+    },
+    {
+      "file": "sources/candidate/src/phonemize.worker.ts.gz",
+      "sha256": "9e55bd4faf605de8b24ddb18a6635f95cfd210e40d2fbcaae95c2fe041371e69",
+      "bytes": 1535,
+      "rawSha256": "009ebd89a06567970b5c7a5d9bce0fc1cafc68bd531fc9e50b5b04f537dade5a"
+    },
+    {
+      "file": "sources/candidate/src/pinyin.test.ts.gz",
+      "sha256": "ce31ff25daa7b982a78800b21b4d97d560f2a15d705956b065cc2f64a089b5cd",
+      "bytes": 575,
+      "rawSha256": "5ebab11940a5239d9a19b4375abb9bd931d709063bd30003f6175d1ace38c15d"
+    },
+    {
+      "file": "sources/candidate/src/pinyin.worker.ts.gz",
+      "sha256": "03ca52ae3948723f46d37821f885d4f3b32b70d8d5baf35041fa0d7598079821",
+      "bytes": 762,
+      "rawSha256": "111d601c2b48105d4f1a5646930705d7f9300a50d9a5da74eb8d3fa06c284b69"
+    },
+    {
+      "file": "sources/candidate/src/ProviderAdvanced.tsx.gz",
+      "sha256": "c9122b2cbe80e9e909ef8e495d9a79a75296b0dd08be185ccc85e4af01e78771",
+      "bytes": 1886,
+      "rawSha256": "5a4cfc9b2e9327b51acde218e5fb5071846f6a874eca6db7b74f3396b5712a38"
+    },
+    {
+      "file": "sources/candidate/src/providerRelay.test.ts.gz",
+      "sha256": "4852175582234839dd559310a748a8914ea54537145ef9a7070428b7d1275e34",
+      "bytes": 2469,
+      "rawSha256": "d68f72996f8439107ebb098fbf854cf47c746a1d125827c2d69777acd35cd54c"
+    },
+    {
+      "file": "sources/candidate/src/providers.test.ts.gz",
+      "sha256": "5b733a47f4a8db45fca5bb5bcc0c335fd2231ed0aac92a0f685b3f2a63c33f11",
+      "bytes": 2358,
+      "rawSha256": "669c5683ae2f2d96405614ce07fe44cb62af4726616bd1810c3dbed966119eee"
+    },
+    {
+      "file": "sources/candidate/src/providers.ts.gz",
+      "sha256": "b20e79f045a38cddc8cb92d1edc2d41d756d9110911fc4542d77c23e4adedde1",
+      "bytes": 4566,
+      "rawSha256": "796134a81de6e99239e291a531bed969153fa20a02937e40fa4ca0026f705c14"
+    },
+    {
+      "file": "sources/candidate/src/providerSettings.ts.gz",
+      "sha256": "270b90ce5893a2c25a37893a5e15fbdd893a09e787369e6011d91868093891e1",
+      "bytes": 2649,
+      "rawSha256": "fe646c8f1dcf22217ce5980e147df87b315baa7532bf0e71d83ad01f8ecb2340"
+    },
+    {
+      "file": "sources/candidate/src/providerTasks.test.ts.gz",
+      "sha256": "9864e9e399a998a3341ee6ad2816e8c9e4feea6425b0f25aab345c82d004032d",
+      "bytes": 2166,
+      "rawSha256": "9c5dcfb43ce0d292eb75d5b1cc81f505af238887c63d8d7a2d8962d69a7e95ee"
+    },
+    {
+      "file": "sources/candidate/src/providerTasks.ts.gz",
+      "sha256": "3cde4b29770c833ad5bdc699d53c0432ca33d3d8ee7929716eae5b1dee5c8457",
+      "bytes": 2865,
+      "rawSha256": "baf943a3d53c69023135586c607bfc65cceee70e0ba0b2acbcbba957801e6e04"
+    },
+    {
+      "file": "sources/candidate/src/providerTransport.test.ts.gz",
+      "sha256": "8a52b85c86e91a1d63f009a2c62f8e91ce65b4c1c5f2172b497a669c9d52370c",
+      "bytes": 1146,
+      "rawSha256": "d09c8b7dad9437601ae0faf490a4b88a2c0f8e9f4982ca968e033e26e3919f40"
+    },
+    {
+      "file": "sources/candidate/src/providerTransport.ts.gz",
+      "sha256": "7499014aae82cb16b5b376b97076a9152c3c51e6dee9940b8870c5035f05d26e",
+      "bytes": 1438,
+      "rawSha256": "46666a41a72063d8bbb5ce3223b54e3e5a116d5f004f2f5be8dd21d9f1935c41"
+    },
+    {
+      "file": "sources/candidate/src/providerVault.test.ts.gz",
+      "sha256": "f7e7ddaf688eb3fdcbe28b91200e48c3f393d74b12ff32e1b4f10c0c741dcc31",
+      "bytes": 1986,
+      "rawSha256": "25d766452dd10f2662b44600c52febcd71714709b3119755b462683aec7b27fd"
+    },
+    {
+      "file": "sources/candidate/src/ReadingView.tsx.gz",
+      "sha256": "87fc346131fff600b58761c007a6f5bfb78c695335ca702a5bafc52a92adb129",
+      "bytes": 5127,
+      "rawSha256": "ce825f80bee57308df66f359afd8bcb11a6c964b20d5af40af161379dc6a30af"
+    },
+    {
+      "file": "sources/candidate/src/readingZoom.ts.gz",
+      "sha256": "b7bf0d35eddc79f994996f5b8ccbfee162d209ee205ec219379a653a095d7da7",
+      "bytes": 732,
+      "rawSha256": "8fd1e7d4142685a146a0726e14d76508c6675522ea90b958a9daba79b0986650"
+    },
+    {
+      "file": "sources/candidate/src/RegionCapture.tsx.gz",
+      "sha256": "d86fbf881f721c8238bbc88046541ee63d6c1d45306ee51a0059396936a160f6",
+      "bytes": 1139,
+      "rawSha256": "eb5e765cbbb1aa4fce6dca9d10f36029ff2e32227eec2d93bff700777bef7ed2"
+    },
+    {
+      "file": "sources/candidate/src/remoteProvider.test.ts.gz",
+      "sha256": "b94032c414948f51b50f72d40165fc0c164912b70134fa65abcd54ff30072003",
+      "bytes": 2838,
+      "rawSha256": "7afa91339a903353d34fffb4ee0449704471370d78a6425490ec9557c25c933d"
+    },
+    {
+      "file": "sources/candidate/src/remoteProvider.ts.gz",
+      "sha256": "e21cdece2d67cfec7afc49f994b0ce5c3f25f000c78b8b98c771007c74a16b69",
+      "bytes": 3601,
+      "rawSha256": "2d115fa26b8990edf286281a529d9153da514c41221fad7f357c9960ef781ba2"
+    },
+    {
+      "file": "sources/candidate/src/renderQuality.test.ts.gz",
+      "sha256": "26ad07dc4268d2b041ece6709cd25d08221e2180dd51ba133d4eba49015bb657",
+      "bytes": 845,
+      "rawSha256": "d7e39cec7960b8c41692b5a02ab5f67d2b7fe4c2a1f1c988c711a492390712a3"
+    },
+    {
+      "file": "sources/candidate/src/runtimeBridge.ts.gz",
+      "sha256": "99824f319c85b803dedbe3bf13ddcb6253896817602cd39545d4daa2a03371d2",
+      "bytes": 311,
+      "rawSha256": "e36d0bba177f53d51f34d8fb60aaa598afeb8688d8ea2be9e2788f06a4b01722"
+    },
+    {
+      "file": "sources/candidate/src/runtimeInstaller.test.ts.gz",
+      "sha256": "1436cba012bf891d95f3f61c55d78966ae9270812b60f94e3a41c23a3f71f4ab",
+      "bytes": 1284,
+      "rawSha256": "fa7decc803f39a28ccaf613acd5a747c6381f1c9c7f705fa2ccf0e20508900f1"
+    },
+    {
+      "file": "sources/candidate/src/RuntimeSetup.tsx.gz",
+      "sha256": "1f796116bd90fb32d85fbe9c6e612ab8662f1e9e4808b32c4f83d473300c0b25",
+      "bytes": 2114,
+      "rawSha256": "a152b80e777e4951d2abf94e205365fdd258e66c7869dec0105ca1fb1637d3b7"
+    },
+    {
+      "file": "sources/candidate/src/scrollInertia.test.ts.gz",
+      "sha256": "8d13a673be386cec323b736b7c62ed0484ccc582085362334f76e99c265d7438",
+      "bytes": 505,
+      "rawSha256": "75b4b3a639a4734ceb12bec14fdd239bb6c292bb2f4650135d4551f8cdd5fa44"
+    },
+    {
+      "file": "sources/candidate/src/scrollInertia.ts.gz",
+      "sha256": "28f6ac94e166aae737067678bb7144831c281c5098cbbcb2ad3ecb4c1fa289a8",
+      "bytes": 561,
+      "rawSha256": "64f8302134088b6f72e22e288eef06ad440c636475dc9784105456ee9e7e7e4c"
+    },
+    {
+      "file": "sources/candidate/src/selectionFlyout.css.gz",
+      "sha256": "385bfc01f9dbaab0202fd04112283c61fc88101c6bd1cd21767fce5077f72a81",
+      "bytes": 540,
+      "rawSha256": "aba79a1ec606a14136de36d237b5f70823f762e5379b2c52320bde0053fe8f79"
+    },
+    {
+      "file": "sources/candidate/src/SelectionFlyout.tsx.gz",
+      "sha256": "95456610f2b2bbe192a4f21b415d54bda194bcd839c80bb99be0b28187cd37de",
+      "bytes": 4969,
+      "rawSha256": "042fda0676885f860d1857a587affad932b2ddfe1caf238e42bbeb3205e6d1c1"
+    },
+    {
+      "file": "sources/candidate/src/selectionPlacement.test.ts.gz",
+      "sha256": "1b8899b7fce2287b4987c78cb1644a16ea44db338ccc1f683b3f4592e2450544",
+      "bytes": 1359,
+      "rawSha256": "63bd34508f32b18c549707669182fb5effcafdcb0630afe7dc863fe714d86012"
+    },
+    {
+      "file": "sources/candidate/src/selectionPlacement.ts.gz",
+      "sha256": "42a45c8ccf9b4e18eea6cc3d328e5e19c45585ee9c2a7539095ab3bc7d95b1ec",
+      "bytes": 1653,
+      "rawSha256": "d607579dbe85b446707bb3041d6acbf36c4b1505a488bb49fa4e2f919cac9416"
+    },
+    {
+      "file": "sources/candidate/src/settings.css.gz",
+      "sha256": "0530f473c7e77fe2c160ff9aa66fbe1175293810d1aea2825907b96f442f01ae",
+      "bytes": 1122,
+      "rawSha256": "b818f6fe2b09b1ef7502ce86503adeb69b05b11fcc5af2ae77cbd655dcf559ec"
+    },
+    {
+      "file": "sources/candidate/src/SketchDialog.tsx.gz",
+      "sha256": "5fd445a98fad64ea6ccb225d5063cb92ecddb8f709d60a404c3e59d727fbcf4d",
+      "bytes": 1853,
+      "rawSha256": "3cb6598112facfdcebfe883af0a1ba180cd2268d2538d2013ed47ee800d406f9"
+    },
+    {
+      "file": "sources/candidate/src/spatialIndex.test.ts.gz",
+      "sha256": "eb85924f85071a7581a587f48bf92b6f1777a9af21c955aaf982529bdbad0d25",
+      "bytes": 1873,
+      "rawSha256": "06beb5b0a2d08715371541b375cf2896c8090c9044a3039ab11675fd4069713d"
+    },
+    {
+      "file": "sources/candidate/src/spatialIndex.ts.gz",
+      "sha256": "92658c8f08311bf8d894c1f080cce64f51e8cc217a50ea8e08273bb836202b84",
+      "bytes": 1660,
+      "rawSha256": "4ea2edb243a9546afeee8cbce5c302a55591b7d555c4c02fdef54c3088a686ae"
+    },
+    {
+      "file": "sources/candidate/src/storage.ts.gz",
+      "sha256": "89e851660c4971ffe52d3b6bafa208029b854a60a0beddf011db0adce0fcab1b",
+      "bytes": 780,
+      "rawSha256": "666e0b0a15d9c98fe51c50a9e5ddff0076b6391674c814e370ccee78263cc4d3"
+    },
+    {
+      "file": "sources/candidate/src/styles.css.gz",
+      "sha256": "50cf47dac0a9f5b71f1ef0a99109baa3ae276193187fcac02620e7b5f40f7252",
+      "bytes": 4315,
+      "rawSha256": "8c7b943e398fda8cf265f5b111cf7ac9c02153b70bfe18cc7100defeea897109"
+    },
+    {
+      "file": "sources/candidate/src/svgImport.ts.gz",
+      "sha256": "93f3c3a2eeb7a889968663f6631ce65584c2eaa3e95f97324c02672c4d09ca0b",
+      "bytes": 2813,
+      "rawSha256": "68675bdccef6ce8fd9033926deffe6ca7d23a6103c426b1dc8edffde9b315666"
+    },
+    {
+      "file": "sources/candidate/src/taskCenter.css.gz",
+      "sha256": "a6dcbb2f1100ab546365051823881b0306bd29ff4ded0aad08e8bc78520875a6",
+      "bytes": 819,
+      "rawSha256": "3158ae81b02ec46d34e816015d515671446143a3658f48fbb8480d91735f0b43"
+    },
+    {
+      "file": "sources/candidate/src/TaskCenter.tsx.gz",
+      "sha256": "b2ea7a53b7c9b2981d2f601f790cd50df240ac39818a9de99f6fc5d5ec50e6cb",
+      "bytes": 3498,
+      "rawSha256": "e8bc1f7c5935eade195ad68673e362f235abe73b87b008d4eacf8d63d91716aa"
+    },
+    {
+      "file": "sources/candidate/src/TaskCenterButton.tsx.gz",
+      "sha256": "2efea48b1403f63ebb144ad0ec1ad6c7edadf9793b2b59c84a0524bead5bd869",
+      "bytes": 363,
+      "rawSha256": "300a656832b589c128fd4b13b064954ff5c83bc42cf246d44a3b0c8d1efca12d"
+    },
+    {
+      "file": "sources/candidate/src/texo.test.ts.gz",
+      "sha256": "fcd76b1602481caac63194ff7dfd43376a738654999b77f4585169beb781ef18",
+      "bytes": 891,
+      "rawSha256": "50499788d0618cf952c822c765d1b6015812b008ce9bfe3e38a09a418f3a5374"
+    },
+    {
+      "file": "sources/candidate/src/texo.ts.gz",
+      "sha256": "49ccbd224688eea8fbf9dfa2703bb6644c99fbffc9e6df77699680ffcd621734",
+      "bytes": 965,
+      "rawSha256": "cff4e57e856f6a136812eb81d4450e1bb26c014c58169332dc9752bfda6c9b9b"
+    },
+    {
+      "file": "sources/candidate/src/texo.worker.ts.gz",
+      "sha256": "da53f672b868a7f5965ebabe52318761053e0f22ccb63e3dca24a708366a9a18",
+      "bytes": 1684,
+      "rawSha256": "cd5ab5cab53395ebc451beceba7f7b78cc100598a62a5e0bd8efd437ee5c38fb"
+    },
+    {
+      "file": "sources/candidate/src/textBox.css.gz",
+      "sha256": "7daaa364e002d99e28276ca3e34b1502726b8db29fd139d611ae636cc81a6e02",
+      "bytes": 365,
+      "rawSha256": "7109a52e0997f283b6823dd240a0d8d41a2ceff6e4ec1ba53dacb4c658d7e212"
+    },
+    {
+      "file": "sources/candidate/src/textBox.ts.gz",
+      "sha256": "a50d4b5a059363628748d063e526a2296bee032bc2fd4c73c96f47af267fe7fc",
+      "bytes": 1116,
+      "rawSha256": "da5857cf90063f1127caa6b967f2548e7cf417a33fe427b3742aef94665d5b3d"
+    },
+    {
+      "file": "sources/candidate/src/TextBoxDialog.tsx.gz",
+      "sha256": "be64ca444d63ad73fc0a6f2199358e0dc3801fc6627a7407ef5e155657166eb8",
+      "bytes": 1795,
+      "rawSha256": "c735b92d0dc31e57ec2d2ddc5f244d966ed153d43d9f201a0e6ef518facf6b17"
+    },
+    {
+      "file": "sources/candidate/src/textSelection.ts.gz",
+      "sha256": "8728cb97ce644ff633f259d9dca09663e2ebba8d8cadea3d66b1ece5d2c240f1",
+      "bytes": 2701,
+      "rawSha256": "ae20fc7fdd97157df4b374ee6ab0c1671eb792a31074bd8d7eba8cd3fe150063"
+    },
+    {
+      "file": "sources/candidate/src/TouchKeyboard.tsx.gz",
+      "sha256": "9b76ee897a5bb00ee89c012241836b978db3b08a8322c233faa046f4168dc2d1",
+      "bytes": 8233,
+      "rawSha256": "48f964ab7c7cf87c71b351be3adc7dd6eb86807dc9b097323528c0474629c7da"
+    },
+    {
+      "file": "sources/candidate/src/translate.test.ts.gz",
+      "sha256": "cb5dc196801f9b2c0fd1482a77ff6184cf6ade981c940dde185b6ca2a7900cc9",
+      "bytes": 800,
+      "rawSha256": "732c614b1848f169337f8eec89a5e228956cfeaa4c44977b7b686e7380061705"
+    },
+    {
+      "file": "sources/candidate/src/translate.ts.gz",
+      "sha256": "2b38d654e27ba03a385cfb64201cff3063b2352fcd9e43ac88608ef54fdd2202",
+      "bytes": 1174,
+      "rawSha256": "c4082fc669e6b7819a3fd52f2b09cb1ce8d9f80be2cc349a32d97301e3c1f073"
+    },
+    {
+      "file": "sources/candidate/src/translate.worker.ts.gz",
+      "sha256": "e3c1c636b86e0c9832d57a4f72cb5984a48902508a860e44a8332738e07c4aab",
+      "bytes": 1066,
+      "rawSha256": "5df1b3593915c903fba19d665b3dfc9fb8fa8cb8592d5aec8c7fc73f0f648c34"
+    },
+    {
+      "file": "sources/candidate/src/translationText.ts.gz",
+      "sha256": "2ef334fabdc17f020fb680fed2efdfe21d686d2b181329f7a41590ce3bfed992",
+      "bytes": 514,
+      "rawSha256": "448ee4fb20d7ada9245fbe8abd2b0280b8b4a1506ba0d1cd955ac4f4c9d3d32d"
+    },
+    {
+      "file": "sources/candidate/src/tts.ts.gz",
+      "sha256": "e2d9eb2341a0c2f095ffa357524a15c1623d09e3ee427f1465a50f7c0995858e",
+      "bytes": 1143,
+      "rawSha256": "80d236daed9c1fff3985318725950c198386aabe01271ef8e7d4265970a04187"
+    },
+    {
+      "file": "sources/candidate/src/tts.worker.ts.gz",
+      "sha256": "8be78d4a136caa30d254962df8a0fcf6a44cf3e81b869052e18be3d2fe763c5f",
+      "bytes": 561,
+      "rawSha256": "6c89f4fd3b97215af27ed4356d3a5380985405599b812fc9b01f8b7edc89bb1b"
+    },
+    {
+      "file": "sources/candidate/src/useChatWindow.ts.gz",
+      "sha256": "36403ffab905680da42befc0caa67fae8caf951eaaaf56fee93e132ea5880287",
+      "bytes": 994,
+      "rawSha256": "55d5a52046c9689342f5390cee6de65c7e8be148c981808cd3da6240b4d7c8a6"
+    },
+    {
+      "file": "sources/candidate/src/useForegroundViewport.ts.gz",
+      "sha256": "b71914cfc4ac6adb52cbbaf50ea77c3f7ac3f443f5f7684146c645817dd263f8",
+      "bytes": 1279,
+      "rawSha256": "7b229c08eec33cb6fd5913535d92044c57be7cc293efda890d95f22d53cb451b"
+    },
+    {
+      "file": "sources/candidate/src/useScrollViewport.ts.gz",
+      "sha256": "4814d11e7bd8217dabd21d547d326b00edbaa2ebae8d1470e347be331f362b9a",
+      "bytes": 550,
+      "rawSha256": "da528c9ab827f8e219f887181a26f8dbb56d8266e0119addef9e5a52b8a0fad7"
+    },
+    {
+      "file": "sources/candidate/src/useSelectionPlacement.ts.gz",
+      "sha256": "618794a25ae01c1fa12510b81389cf5a614339aba1228383623131dcf0ce1da5",
+      "bytes": 1658,
+      "rawSha256": "8f9a5feed8aa11bf93ef94c00236b285d397fca331ffd6dedf21146f28e762c8"
+    },
+    {
+      "file": "sources/candidate/src/useSpeech.tsx.gz",
+      "sha256": "f47289a3d75b2a9dc972f81f8005fdcfece7d82f12847f82cae5c8ea5eeac8ca",
+      "bytes": 2399,
+      "rawSha256": "f54920897ca487a5c94bc730bb89ee5398a012090a5bc962e965e2f38e4770b7"
+    },
+    {
+      "file": "sources/candidate/src/vendor/pinyin-engine.ts.gz",
+      "sha256": "aa9d10adee31bb7ed5a84f3005f4a3fb8dc885593332d9ea3ad3e8c2387cedb1",
+      "bytes": 5062,
+      "rawSha256": "433aa822aa9451c2c6f9f54202c0d080a2a3aa77e2fbd97a0b150053230ae198"
+    },
+    {
+      "file": "sources/candidate/src/virtualLayout.test.ts.gz",
+      "sha256": "c02f99d00bd2d74c4ec62a6093c54a4591346856e4b9b827ffb9fcbc921432b9",
+      "bytes": 1193,
+      "rawSha256": "f45c6f1f80a80025551157fc9d8139a4b960441a4c04f7a1c63ecfdc8ad00da0"
+    },
+    {
+      "file": "sources/candidate/src/virtualLayout.ts.gz",
+      "sha256": "769ab504774ac6abd9b9d5119c6496826969dfa6a688114332523ca02fd71186",
+      "bytes": 627,
+      "rawSha256": "5dfb81edc88d407eaa398565671932b1977f1db7980cd1db4bcf12bafe2afaa9"
+    },
+    {
+      "file": "sources/candidate/src/workspace.css.gz",
+      "sha256": "14ce54355572edda1d670881ab7b8cdff03cadb4a5b44a6537a0780c4ae5c01d",
+      "bytes": 1516,
+      "rawSha256": "7c6d89e48dfd0646d9549568ec489f952cfcd9430ac798320321462c641a7dbc"
+    },
+    {
+      "file": "sources/candidate/src/WorkspaceManager.tsx.gz",
+      "sha256": "34974a98e2d7f784862ed833ed98a1a821615bc328c1f00ab6b8cf4965f859a9",
+      "bytes": 2966,
+      "rawSha256": "b90da7bf46f86a05e72dfc9afc3bbdb706ad0557c0c5b01f92e8a2501e65c524"
+    },
+    {
+      "file": "sources/candidate/src/workspaceStore.ts.gz",
+      "sha256": "bb1c2f3473be568f0ff512c0622f447009bc2ff992edea93ea62b1409e82f562",
+      "bytes": 2625,
+      "rawSha256": "b9999f5e4222c2719d195f1c59094eac00401af186dd3f98bf2354ce2af0980b"
+    },
+    {
+      "file": "sources/candidate/src/zotero.css.gz",
+      "sha256": "3d54061d7f78146cc465322cc8c96a165e99823858e4d6796422667e2cb8c46e",
+      "bytes": 2172,
+      "rawSha256": "dfe6b452e3064458842dd228632ff88d8580e9af3b95a738e055ae70b9d23089"
+    },
+    {
+      "file": "sources/candidate/src/zotero.test.ts.gz",
+      "sha256": "f1817ca1dcf7e69df4ae430a9b35def6dff44d6d27b8f27b3533763f672a0796",
+      "bytes": 2598,
+      "rawSha256": "5cb452a1c3c39d7dc4645892b6f8b6a897e8855055e8a9ccfe2666de652af39c"
+    },
+    {
+      "file": "sources/candidate/src/zotero.ts.gz",
+      "sha256": "b9157e03b18515bd9c9a587f5a666f2f285a94fc3d98df0d6d22fee74802d794",
+      "bytes": 1131,
+      "rawSha256": "807ece6548c89dab588225b6ecb4d075d7ff56d0e8bede1ff9af05c2d1a4e643"
+    },
+    {
+      "file": "sources/candidate/src/zoteroCollectionTree.test.ts.gz",
+      "sha256": "a394c4bf37d07bdc03e6c83133ccf8630c06c34ba8b4794a756e85cc86f2429f",
+      "bytes": 805,
+      "rawSha256": "35dd2e4b341bab86b263199b0f8dda71c548733dd6cc47d3e1d51cc119fdcc2b"
+    },
+    {
+      "file": "sources/candidate/src/zoteroCollectionTree.ts.gz",
+      "sha256": "0aecfe91f37c950ced8e2ab502af6bc9c510a1192dbc839ce9f769630768f16c",
+      "bytes": 965,
+      "rawSha256": "212f718908f0efa083dd96a77ea783ed6ea6834b568242b7cd14cbf0d8f8597c"
+    },
+    {
+      "file": "sources/candidate/src/ZoteroDialog.tsx.gz",
+      "sha256": "b1e1fcf4895cb55a2c42b5bfcea54aef4273ab5bcc03eb71f968e886877128b7",
+      "bytes": 4054,
+      "rawSha256": "0ade1d2804dde2a33414a6bd20428715f9002fd95c7a7e122aa99ffb9912aef2"
+    },
+    {
+      "file": "sources/candidate/src/zoteroSource.ts.gz",
+      "sha256": "b44e497a73e8becc545a010b8a60c57c2f14278cbc7c2c4533107e049324245e",
+      "bytes": 348,
+      "rawSha256": "f07b37bd87749d3f12d7f091957e55bbcc19628422c0cac1c0c5a61c47dd0129"
+    },
+    {
+      "file": "sources/candidate/src/ZoteroTree.tsx.gz",
+      "sha256": "f0bac19a9510d94abca53f2fb5ad500d7cfaefd90c2bc022f82aad0565ca6d36",
+      "bytes": 2595,
+      "rawSha256": "12bdef07ed4ebbd0100f84516d8053373b3d200abbb2b94d4cb26a69079379f9"
+    },
+    {
+      "file": "sources/candidate/tsconfig.json.gz",
+      "sha256": "2fa751569fd0d4575632f24375e45c238e0914ae621e5602a4348756a0645aa9",
+      "bytes": 248,
+      "rawSha256": "21ad4807702ff0c702e1282bae9504b5bf054ac947b7c17c3fa69d9c8602e00e"
+    },
+    {
+      "file": "sources/candidate/vite.config.ts.gz",
+      "sha256": "67634c075255079b40d44d88a7263fcdb5b269c9534ef413a23ce41330c9d8f9",
+      "bytes": 483,
+      "rawSha256": "2755f7b99fef06bdf9a8c66388ecd06545b18ededcd2d84f3468f0f5d3df4206"
+    },
+    {
+      "file": "candidate-runtime-manifest.json",
+      "sha256": "e4ac7f31e1a8c82ed246e21f1ac0ed20878f6c989f11cec8604715ca184f4a0e",
+      "bytes": 39285
+    },
+    {
+      "file": "native.json.gz",
+      "sha256": "e824cb82f7c1814450a4e414bef80d0c549449de1ac2ef80ac2187e9a4f5e641",
+      "bytes": 660,
+      "rawSha256": "ccef5292d6ddd8f8520f80ecde2562dd2d019e17c3921ae8aecfd06fe41c9569"
+    },
+    {
+      "file": "native.log.gz",
+      "sha256": "196e922b3eb82e32ac3e8de89681f25a89213ab5d8314a85a195b934d657914a",
+      "bytes": 125,
+      "rawSha256": "7f6644adcc00b3f6b2413a52b22cd338c99334ac6dc5944952304628b7bec2cf"
+    },
+    {
+      "file": "browser.log.gz",
+      "sha256": "ed7a11db2332689fa7d2e1a0668f6fcc4099e2b9fb59dd66fa51bfe7cbf0826c",
+      "bytes": 857,
+      "rawSha256": "e2f5a9a72549478c82d0bd7ba989818ff390b3e0cb6dd2cbb77ebc3d23b79046"
+    },
+    {
+      "file": "height-diagnostic.log.gz",
+      "sha256": "896dbaa4587a9f7c9d1a550f9291d926ccfd0d7f49a72cbcb141b68a7f10e500",
+      "bytes": 481,
+      "rawSha256": "159ff194fcef98936cc5ee58aaaed0b7b9ff8d66a765baaa07424d33203b04e6"
+    },
+    {
+      "file": "height-fixture-diagnostic.log.gz",
+      "sha256": "37a5fad0505e990a0ab17a4e5ebc09a3588e66d2b967046608078c625e144022",
+      "bytes": 305,
+      "rawSha256": "9f1455387db7bcb2fc4a3274805e92fa33e869eea1b0103c4f6e71c31c14ae89"
+    },
+    {
+      "file": "fixture-diagnostic.log.gz",
+      "sha256": "37a5fad0505e990a0ab17a4e5ebc09a3588e66d2b967046608078c625e144022",
+      "bytes": 305,
+      "rawSha256": "9f1455387db7bcb2fc4a3274805e92fa33e869eea1b0103c4f6e71c31c14ae89"
+    },
+    {
+      "file": "early-limited-native.json.gz",
+      "sha256": "31fd740f4dbb47e3bad8b41f43ae8deda78d092481f7d5e3a9b462ade665e166",
+      "bytes": 644,
+      "rawSha256": "f69c987d35287e76825e9a1b94f52b9346c856a47225b99654014773e2c8530c"
+    },
+    {
+      "file": "early-limited-native.log.gz",
+      "sha256": "c22677e71a20a1f045657baceaaeba8ad286e87f28acbbd00ae797bc1711df21",
+      "bytes": 124,
+      "rawSha256": "b2d07b7890b7bac62336a24ce858a48f9197c3c43caa2d92ece410cba72edda7"
+    },
+    {
+      "file": "build-before.log.gz",
+      "sha256": "fd8ed8af2088084663e73c7b8e7620c29749aefe16d23b7f30d3b189c77b35b5",
+      "bytes": 6258,
+      "rawSha256": "04c0aa8ddebd0df6b0e4cef01b569deb5cda156406130bd97c14e51027797675"
+    },
+    {
+      "file": "build-candidate.log.gz",
+      "sha256": "8b5b35e073234fd6ede806bc9f6999e13f40f1f6fc0edc5688e1e6bdb44aff58",
+      "bytes": 6301,
+      "rawSha256": "d57b30b4e24275d3061182696e90e3d45d132fb18ec016fd98ee269c7a035e3e"
+    },
+    {
+      "file": "integration.json.gz",
+      "sha256": "8a2ab51c9b17b07f763f5e176748cc7b63051fae0f73624f2bb7cef58c54e886",
+      "bytes": 41511,
+      "rawSha256": "86902e50c2c9ee007eee0d2054290ae2cee11b61eb9437b65b8d05dfe462f9d1"
+    },
+    {
+      "file": "integration.log.gz",
+      "sha256": "bb83babb335c1523659a841a50936d968361ab9161bd8fe91c316246720fc449",
+      "bytes": 4921,
+      "rawSha256": "0aaf3b54291141dbae984419fada8acdecb36dd8bfbd2674093840544233f896"
+    },
+    {
+      "file": "archive.mjs.gz",
+      "sha256": "69033f717f41b9bd23101814ca3557ce58c07eae115c88ed3429c5d38dd59dbb",
+      "bytes": 1569,
+      "rawSha256": "9c7d0e82ce6de757c33aa3f890ddcf5eba77ffaaebc92f113748d3c1588068ce"
+    },
+    {
+      "file": "tools/scripts/verify-formula-ink-native.mjs.gz",
+      "sha256": "3c4d48ee784ea34fe64a149c7f027bbdfe58d32edfff2c55865ba57d22312772",
+      "bytes": 3077,
+      "rawSha256": "bef480229b7729b6898eba3719ada4ac6d463e0515c8d0ce66bba79fee9b64b2"
+    },
+    {
+      "file": "tools/scripts/verify-formula-recovery.mjs.gz",
+      "sha256": "5ba12fd0ffe3c9c8fac4f3cb935883f82a0794ac61953fea33cb61d6186d7fdd",
+      "bytes": 1424,
+      "rawSha256": "4c2dd91b85fb98f1d8a053df8ad42c24e89f4b3c6b7169026b82142417ecd93c"
+    },
+    {
+      "file": "tools/scripts/build-formula-ink-control.mjs.gz",
+      "sha256": "3a4614781af26b95815aa1b8f50429cd56495ba1ce9d3c2db2551ee581af54ea",
+      "bytes": 1492,
+      "rawSha256": "d743c8852c6fbd478e8db261de4d904bd3f599a5576d4707e6308b968d3ade52"
+    },
+    {
+      "file": "tools/scripts/benchmark-workflow.mjs.gz",
+      "sha256": "906895c5cb477372df8908fe26a8565c46d2d6cd5c445882cefb5cee18b8a5c3",
+      "bytes": 5794,
+      "rawSha256": "7c1a1fe5e6b0371dff575ab114010f6f91c314d383241b06913eeff2d229158f"
+    },
+    {
+      "file": "tools/scripts/performance-demand.mjs.gz",
+      "sha256": "5f0cb9ea2d05f984ccd6cdbd1d0ba8169c3476cb82cb44c3ee03eae70c3c4a34",
+      "bytes": 2666,
+      "rawSha256": "448c48028987cb54bedfb11bea02e3899766981f6693d522d92db600c52a402d"
+    },
+    {
+      "file": "tools/scripts/performance-settle.mjs.gz",
+      "sha256": "e76fcd22972458753effa670ef12041312ae72dfaa88ff19c8994b5c7989480b",
+      "bytes": 1453,
+      "rawSha256": "6c8d09119b01e63ccb24b23ca1903f7d1248714875a6542e1f3913d54c90fb22"
+    },
+    {
+      "file": "tools/scripts/performance-fixture.mjs.gz",
+      "sha256": "16a1911624d37411b03edf7c1c9218d014a634f803fd04fa4bea275612c9c306",
+      "bytes": 1475,
+      "rawSha256": "c8cd20418d2e18b3333bde78e7a396c5f87790798671c79c57cb9109a60c3a59"
+    },
+    {
+      "file": "tools/tests/formula-draft.spec.ts.gz",
+      "sha256": "8f67622a24f28056468a722649d6a808c10c4ee31c6eb8f2986dfbae23745144",
+      "bytes": 1823,
+      "rawSha256": "ff2d209a635f7e16deb54eec5f63313d413327ed0918c1840c46d0dc227e43a0"
+    },
+    {
+      "file": "tools/tests/formula-ink.spec.ts.gz",
+      "sha256": "5dc0fc58d81be9ceadebf04075d5ff6822e9911c6526e8524bbd682723f365ce",
+      "bytes": 1504,
+      "rawSha256": "78e4b524bfe18f5b3fc8989b8583c1cd5b5620e46adcae56b1ef4bd5b7cdeb31"
+    },
+    {
+      "file": "tools/tests/formula-multiline.spec.ts.gz",
+      "sha256": "4aa23ea56695a08484e291a9dfa579959fb0f498cc5c83ea03725c2d2068d3ee",
+      "bytes": 2892,
+      "rawSha256": "4b4971c6285714f35c8cdc0145d2e421358251aeda22ad1ad1884b6d62c20509"
+    }
+  ],
+  "limitation": "Lifecycle notifications and lost pixels simulated; no physical GPU reset. Integration workflow is a single completion sanity run, not an A/B resource claim. Earlier 11-check helper missed multiline; incomplete helper diagnostics preserved."
+}

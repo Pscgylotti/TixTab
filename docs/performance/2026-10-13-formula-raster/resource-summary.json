@@ -1,0 +1,50 @@
+[
+  {
+    "label": "formula-ink-stable-before-1",
+    "cpu": 14.100248,
+    "peakWorkingSetMiB": 2004.58984375,
+    "peakRendererPrivateMiB": 345.59765625,
+    "demand200P99": 2.236818542215754,
+    "demand200Peak": 2.2517189128316017
+  },
+  {
+    "label": "formula-ink-stable-before-2",
+    "cpu": 14.239225999999999,
+    "peakWorkingSetMiB": 2023.72265625,
+    "peakRendererPrivateMiB": 345.01953125,
+    "demand200P99": 2.270564811395298,
+    "demand200Peak": 2.5472370233590302
+  },
+  {
+    "label": "formula-ink-stable-before-3",
+    "cpu": 13.814960000000005,
+    "peakWorkingSetMiB": 2022.671875,
+    "peakRendererPrivateMiB": 340.8828125,
+    "demand200P99": 2.0732448450433494,
+    "demand200Peak": 2.455658523855975
+  },
+  {
+    "label": "formula-ink-stable-candidate-1",
+    "cpu": 14.797220000000003,
+    "peakWorkingSetMiB": 1991.41015625,
+    "peakRendererPrivateMiB": 332.79296875,
+    "demand200P99": 2.3404928330776418,
+    "demand200Peak": 2.4517270825087674
+  },
+  {
+    "label": "formula-ink-stable-candidate-2",
+    "cpu": 13.571757000000007,
+    "peakWorkingSetMiB": 1975.5859375,
+    "peakRendererPrivateMiB": 320.8984375,
+    "demand200P99": 2.062535269539032,
+    "demand200Peak": 2.6877096789795627
+  },
+  {
+    "label": "formula-ink-stable-candidate-3",
+    "cpu": 14.308162999999995,
+    "peakWorkingSetMiB": 2009.21484375,
+    "peakRendererPrivateMiB": 351.7734375,
+    "demand200P99": 2.2456823498195937,
+    "demand200Peak": 2.299874791727349
+  }
+]

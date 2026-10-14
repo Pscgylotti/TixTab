@@ -133,6 +133,108 @@ test('矩形多选整体移动缩放和 Del 删除均一次撤销，原始场景
   expect(saved.pages[0].images).toHaveLength(3);
   await expect(page.locator('.placed-object img')).toHaveCount(3);
 });
+test('grouped originals survive movement, resizing, project roundtrip and ungrouping', async ({
+  page,
+}) => {
+  await load(page);
+  await drag(page, 70, 70, 310, 250);
+  // Drag the empty space between objects, rather than requiring contact with an image.
+  await drag(page, 190, 150, 210, 170);
+  let saved = await project(page);
+  expect(saved.pages[0].images[0].x).toBeCloseTo(120);
+  expect(saved.pages[0].images[1].x).toBeCloseTo(240);
+  await page.getByRole('button', { name: '组合选中对象', exact: true }).click();
+  await expect(page.locator('.placed-object')).toHaveCount(2);
+  await expect(page.locator('.object-selection')).toHaveAttribute('data-selected-count', '1');
+  saved = await project(page);
+  const group = saved.pages[0].images.find((i: any) => i.group);
+  expect(group.group.objects).toHaveLength(2);
+  expect(group.group.objects[0].scene).toEqual({ elements: [] });
+  expect(group.group.objects[1].latex).toBe('x');
+  expect(group.displayData).toMatch(/^data:image\/svg\+xml;base64,/);
+  await drag(page, 210, 170, 240, 190);
+  const handle = (await page.locator('.object-handle.se').boundingBox())!;
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(handle.x + handle.width / 2 + 30, handle.y + handle.height / 2 + 20, {
+    steps: 4,
+  });
+  await page.mouse.up();
+  saved = await project(page);
+  const transformed = saved.pages[0].images.find((i: any) => i.group);
+  expect(transformed.width).toBeGreaterThan(group.width);
+  await page.locator('input[accept=".pdf,.tixtab"]').setInputFiles({
+    name: 'group.tixtab',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(saved)),
+  });
+  await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  await page.getByRole('button', { name: '对象', exact: true }).click();
+  await page.locator(`[data-object-id="${transformed.id}"]`).click();
+  await page.getByRole('button', { name: '取消对象组合', exact: true }).click();
+  await expect(page.locator('.placed-object')).toHaveCount(3);
+  saved = await project(page);
+  const children = saved.pages[0].images.filter((i: any) => i.id !== 'c');
+  expect(children[0].scene).toEqual({ elements: [] });
+  expect(children[1].latex).toBe('x');
+  expect(children[0].width / 60).toBeCloseTo(transformed.width / group.width);
+  await page.keyboard.press('Control+z');
+  await expect(page.locator('.placed-object')).toHaveCount(2);
+  await page.screenshot({ path: 'test-results/object-group.png' });
+});
+
+test('nested grouping preserves a visible hierarchy and ungroups one level after scaling and reload', async ({
+  page,
+}) => {
+  await load(page);
+  await drag(page, 70, 70, 310, 250);
+  await page.getByRole('button', { name: '组合选中对象', exact: true }).click();
+  await expect(page.locator('.placed-object')).toHaveCount(2);
+  await page.keyboard.down('Shift');
+  await page.locator('[data-object-id="c"]').click();
+  await page.keyboard.up('Shift');
+  await page.getByRole('button', { name: '组合选中对象', exact: true }).click();
+  await expect(page.locator('.placed-object')).toHaveCount(1);
+  let saved = await project(page);
+  const outer = saved.pages[0].images[0];
+  expect(outer.group.objects).toHaveLength(2);
+  expect(outer.group.objects[0].group.objects.map((i: any) => i.id)).toEqual(['a', 'b']);
+  await page.locator('.group-hierarchy > summary').click();
+  await expect(page.locator('.group-hierarchy-menu')).toContainText('内部组合会保留');
+  await page.locator('.group-hierarchy-menu details > summary').click();
+  await expect(page.locator('.group-hierarchy-leaf')).toHaveCount(3);
+  await page.locator('.group-hierarchy > summary').click();
+  const handle = (await page.locator('.object-handle.se').boundingBox())!;
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(handle.x + 35, handle.y + 25, { steps: 4 });
+  await page.mouse.up();
+  saved = await project(page);
+  expect(saved.pages[0].images[0].width).toBeGreaterThan(outer.width);
+  const transformed = saved.pages[0].images[0];
+  await expect(page.locator('.save-state')).toContainText('已自动保存');
+  await page.reload();
+  await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  await page.getByRole('button', { name: '对象', exact: true }).click();
+  await page.locator(`[data-object-id="${transformed.id}"]`).click();
+  await page.getByRole('button', { name: '取消对象组合', exact: true }).click();
+  await expect(page.locator('.placed-object')).toHaveCount(2);
+  saved = await project(page);
+  const inner = saved.pages[0].images.find((i: any) => i.group);
+  expect(inner.group.objects.map((i: any) => i.id)).toEqual(['a', 'b']);
+  await page.keyboard.press('Escape');
+  await page.locator(`[data-object-id="${inner.id}"]`).click();
+  await page.getByRole('button', { name: '取消对象组合', exact: true }).click();
+  await expect(page.locator('.placed-object')).toHaveCount(3);
+  saved = await project(page);
+  expect(saved.pages[0].images.map((i: any) => i.kind)).toEqual(['sketch', 'formula', 'sketch']);
+  expect(saved.pages[0].images[1].latex).toBe('x');
+  await page.keyboard.press('Control+z');
+  await expect(page.locator('.placed-object')).toHaveCount(2);
+  await page.keyboard.press('Control+z');
+  await expect(page.locator('.placed-object')).toHaveCount(1);
+});
+
 test('Shift 加选与移除、笔框选、取消手势、Escape 不提交移动或删除', async ({ page }) => {
   await load(page);
   await drag(page, 70, 70, 310, 250);

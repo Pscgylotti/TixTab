@@ -1,0 +1,114 @@
+{
+  "schema": 1,
+  "host": {
+    "cpu": "Intel(R) Core(TM) Ultra 5 238V",
+    "logicalProcessors": 8,
+    "platform": "win32",
+    "release": "10.0.26120",
+    "node": "v22.17.0"
+  },
+  "createdAt": "2026-10-12T16:59:19.019Z",
+  "fixture": {
+    "pages": 40,
+    "strokes": 3000,
+    "objects": 80,
+    "seed": 813,
+    "sha256": "f7fa3019efcb4041297494274665505cdc69e5fc953f5e7df1ae5ce83649d146",
+    "bytes": 4127539
+  },
+  "harnessSha256": "bda953eac3316913a418c7b1dba14fe9cf5aaf1cbbab38e04c5444096bb96dfd",
+  "kernelSha256": "4d3f92966182ad3245c4c4413864b0266958da0f7dfc2eb90412025c6e67a27e",
+  "coldBuildMs": 141.11669999999992,
+  "queriesPerRound": 240,
+  "rows": [
+    [
+      {
+        "mode": "scan",
+        "ms": 559.3390999999999
+      },
+      {
+        "mode": "index",
+        "ms": 2.4519000000000233
+      }
+    ],
+    [
+      {
+        "mode": "index",
+        "ms": 1.8614000000000033
+      },
+      {
+        "mode": "scan",
+        "ms": 547.8231000000001
+      }
+    ],
+    [
+      {
+        "mode": "scan",
+        "ms": 552.1527000000001
+      },
+      {
+        "mode": "index",
+        "ms": 2.515100000000075
+      }
+    ],
+    [
+      {
+        "mode": "index",
+        "ms": 1.8762000000001535
+      },
+      {
+        "mode": "scan",
+        "ms": 562.3881000000001
+      }
+    ],
+    [
+      {
+        "mode": "scan",
+        "ms": 542.7792000000004
+      },
+      {
+        "mode": "index",
+        "ms": 3.6654000000007727
+      }
+    ],
+    [
+      {
+        "mode": "index",
+        "ms": 1.8195999999998094
+      },
+      {
+        "mode": "scan",
+        "ms": 540.1162999999997
+      }
+    ]
+  ],
+  "narrowPhaseCandidatesPerRound": {
+    "strokes": 3098,
+    "images": 224
+  },
+  "bruteCandidatesPerRound": {
+    "strokes": 720000,
+    "images": 19200
+  },
+  "append30Remove30": {
+    "ms": 24.2483000000002,
+    "before": {
+      "bounds": 3000,
+      "builds": 1,
+      "inserts": 0,
+      "removes": 0,
+      "searches": 1680,
+      "candidates": 21686
+    },
+    "after": {
+      "bounds": 3030,
+      "builds": 1,
+      "inserts": 30,
+      "removes": 30,
+      "searches": 1680,
+      "candidates": 21686
+    }
+  },
+  "exactResultsMatch": true,
+  "limitations": "Node synchronous kernel only. Cold bounds include outline preparation that real paint also uses. Cold cost is separate, not amortized out. No Canvas, PDF rendering, IPC, UI scheduling, GPU/NPU activity or actual energy measured. Includes all six alternating rounds after one warmup; no outlier exclusion."
+}

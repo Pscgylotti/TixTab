@@ -37,6 +37,8 @@ test('neural voice preparation, device selection, final phrase drain and compact
         dictation: {
           run: async (r: any) => {
             calls.push(r);
+            if (r.action === 'microphones')
+              return { ok: true, data: { microphones: [], defaultId: '' } };
             if (r.action === 'status')
               return {
                 ok: true,

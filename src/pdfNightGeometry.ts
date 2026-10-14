@@ -18,14 +18,18 @@ export function transformPolygon(p: ImagePolygon, m: Matrix) {
 export function imagePolygons(
   ops: { fnArray: number[]; argsArray: unknown[][] },
   names: Record<string, number>,
+  onImage?: (polygon: ImagePolygon, operatorIndex: number, groupIndex?: number) => void,
 ): ImagePolygon[] {
   let matrix: Matrix = [1, 0, 0, 1, 0, 0];
   const stack: Matrix[] = [],
     result: ImagePolygon[] = [];
   const annotations: { matrix: Matrix; depth: number }[] = [];
-  const add = (m = matrix) => {
-    if (m.every(Number.isFinite) && result.length < 4096)
-      result.push(transformPolygon([0, 0, 1, 0, 1, 1, 0, 1], m));
+  const add = (m: Matrix, operatorIndex: number, groupIndex?: number) => {
+    if (m.every(Number.isFinite) && result.length < 4096) {
+      const polygon = transformPolygon([0, 0, 1, 0, 1, 1, 0, 1], m);
+      result.push(polygon);
+      onImage?.(polygon, operatorIndex, groupIndex);
+    }
   };
   for (let i = 0; i < ops.fnArray.length; i++) {
     const fn = ops.fnArray[i],
@@ -50,13 +54,18 @@ export function imagePolygons(
       if (m) matrix = multiply(matrix, m as number[]);
     } else if (fn === names.paintFormXObjectEnd || fn === names.endGroup)
       matrix = stack.pop() ?? matrix;
-    else if (fn === names.paintImageXObject || fn === names.paintInlineImageXObject) add();
+    else if (fn === names.paintImageXObject || fn === names.paintInlineImageXObject) add(matrix, i);
     else if (fn === names.paintImageXObjectRepeat) {
       const positions = a[3] as number[];
       for (let j = 0; j < positions.length; j += 2)
-        add(multiply(matrix, [Number(a[1]), 0, 0, Number(a[2]), positions[j], positions[j + 1]]));
+        add(
+          multiply(matrix, [Number(a[1]), 0, 0, Number(a[2]), positions[j], positions[j + 1]]),
+          i,
+          j / 2,
+        );
     } else if (fn === names.paintInlineImageXObjectGroup)
-      for (const entry of a[1] as { transform: number[] }[]) add(multiply(matrix, entry.transform));
+      for (const [j, entry] of (a[1] as { transform: number[] }[]).entries())
+        add(multiply(matrix, entry.transform), i, j);
   }
   return result;
 }

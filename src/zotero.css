@@ -1,16 +1,16 @@
 .zotero-dialog {
-  --z-panel: #f8faff;
-  --z-card: #fff;
-  --z-nav: #f0f2f5;
-  --z-input: #fff;
-  --z-muted: #69758a;
-  --z-selected: #dce8ff;
-  --z-stripe: #f5f6f8;
-  --z-folder: #447be0;
+  --z-panel: var(--surface);
+  --z-card: var(--surface);
+  --z-nav: var(--surface-sunken);
+  --z-input: var(--surface);
+  --z-muted: var(--text-muted);
+  --z-selected: var(--accent-soft);
+  --z-stripe: var(--surface-sunken);
+  --z-folder: var(--accent);
   width: min(1280px, 96vw);
   height: min(820px, 94dvh);
   background: var(--z-panel);
-  color: #354259;
+  color: var(--text);
   color-scheme: light;
 }
 .zotero-dialog header {
@@ -21,13 +21,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 17px;
+  font-size: var(--fs-2xl);
 }
 .zotero-dialog button {
   min-height: 36px;
 }
 .zotero-hint {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--z-muted);
   line-height: 1.6;
 }
@@ -40,7 +40,7 @@
   flex-wrap: wrap;
   gap: 5px;
   align-items: center;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   border-bottom: 1px solid var(--line);
   padding: 4px 16px;
 }
@@ -52,7 +52,7 @@
   white-space: nowrap;
 }
 .zotero-current button {
-  font-size: 11px;
+  font-size: var(--fs-sm);
 }
 .zotero-toolbar {
   display: flex;
@@ -68,7 +68,7 @@
   align-items: center;
   min-width: 0;
   flex: 1;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--z-muted);
 }
 .zotero-location > span,
@@ -94,9 +94,9 @@
 .zotero-toolbar input {
   color: inherit;
   background: var(--z-input);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  min-height: 34px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  min-height: 36px;
   padding: 5px 10px;
   flex: 1;
   min-width: 0;
@@ -130,11 +130,11 @@
   gap: 8px;
   align-items: center;
   color: var(--z-muted);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   padding: 12px 12px 8px;
 }
 .zotero-tree-heading {
-  font-size: 11px;
+  font-size: var(--fs-sm);
   border-bottom: 1px solid var(--line);
   min-height: 36px;
   padding: 7px 12px;
@@ -157,10 +157,10 @@
   gap: 7px;
   min-height: 36px;
   padding: 2px 8px;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   margin: 1px 0;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-md);
   user-select: none;
   outline-offset: -2px;
 }
@@ -180,7 +180,7 @@
   color: var(--z-folder);
 }
 .zotero-tree-row:hover {
-  background: var(--z-stripe);
+  background: var(--surface-hover);
 }
 .zotero-tree-row.selected {
   background: var(--z-selected);
@@ -215,8 +215,8 @@
   gap: 6px;
   margin: 8px;
   padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
   background: var(--z-input);
   color: var(--z-muted);
 }
@@ -227,12 +227,12 @@
   outline: 0;
   width: 100%;
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   min-height: 25px;
 }
 .zotero-more-folders {
   margin: 3px 8px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .zotero-results {
   display: flex;
@@ -253,7 +253,7 @@
   padding: 8px 12px;
   min-height: 36px;
   border-bottom: 1px solid var(--line);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--z-muted);
   flex-shrink: 0;
 }
@@ -273,8 +273,8 @@
   min-height: 38px !important;
   padding: 5px 6px;
   margin: 1px 0;
-  border-radius: 5px;
-  font-size: 12px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
   color: inherit;
   background: transparent;
   border: 0;
@@ -283,7 +283,7 @@
   background: var(--z-stripe);
 }
 .zotero-item:hover {
-  background: var(--z-selected);
+  background: var(--surface-hover);
 }
 .zotero-item.active {
   background: var(--z-selected);
@@ -302,7 +302,7 @@
   color: #9b7a62;
 }
 .zotero-item-title strong {
-  font-size: 13px;
+  font-size: var(--fs-md);
   font-weight: 400;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -321,12 +321,12 @@
 }
 .zotero-empty {
   color: var(--z-muted);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   padding: 14px;
 }
 .zotero-load-more {
   margin: 8px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .zotero-detail {
   padding: 12px;
@@ -335,20 +335,20 @@
   min-height: 0;
 }
 .zotero-detail h3 {
-  font-size: 14px;
+  font-size: var(--fs-lg);
   overflow-wrap: anywhere;
   font-weight: 500;
   line-height: 1.5;
   margin: 2px 0 8px;
 }
 .zotero-detail h4 {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   margin: 18px 0 8px;
 }
 .zotero-detail p {
   color: var(--z-muted);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
@@ -357,7 +357,7 @@
   gap: 3px;
 }
 .zotero-detail .row button {
-  font-size: 11px;
+  font-size: var(--fs-sm);
   padding: 6px;
 }
 .zotero-attachment {
@@ -365,7 +365,7 @@
   text-align: left;
   justify-content: flex-start;
   gap: 9px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   margin: 6px 0;
 }
 .zotero-attachment span {
@@ -375,7 +375,7 @@
 }
 .zotero-attachment small {
   display: block;
-  font-size: 11px;
+  font-size: var(--fs-sm);
   color: var(--z-muted);
   margin-top: 5px;
 }
@@ -389,28 +389,18 @@
   flex-wrap: wrap;
 }
 .zotero-footer > span {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--z-muted);
   margin-left: auto;
 }
 .zotero-message {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--z-muted);
   line-height: 1.6;
   overflow-wrap: anywhere;
   min-height: 19px;
 }
 html[data-night='true'] .zotero-dialog {
-  --z-panel: #242424;
-  --z-card: #202020;
-  --z-nav: #2c2c2c;
-  --z-input: #202020;
-  --z-muted: #adadb3;
-  --z-selected: #3b465d;
-  --z-stripe: #292929;
-  --z-folder: #528aff;
-  background: var(--z-panel);
-  color: #e4e4e8;
   color-scheme: dark;
 }
 html[data-night='true'] .zotero-dialog .zotero-folder-filter input {
@@ -481,7 +471,7 @@ html[data-night='true'] .zotero-item.active:nth-child(even) {
     padding: 4px 2px;
   }
   .zotero-tree-row {
-    font-size: 12px;
+    font-size: var(--fs-sm);
     gap: 4px;
   }
   .zotero-tree-row.library-row {
@@ -515,11 +505,11 @@ html[data-night='true'] .zotero-item.active:nth-child(even) {
     display: none;
   }
   .zotero-tree-heading {
-    font-size: 10px;
+    font-size: var(--fs-xs);
     padding-left: 8px;
   }
   .zotero-group-heading {
-    font-size: 11px;
+    font-size: var(--fs-sm);
     gap: 5px;
     padding-left: 5px;
   }

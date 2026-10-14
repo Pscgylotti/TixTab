@@ -1,0 +1,6 @@
+{
+  "referenceSource": ".cache/reading-scale-original.tsx",
+  "originalSha256": "8d03437a9da007d1c4237604f3a9bd26f0a313b6d2fe87d1f38263cb8afcc45d",
+  "compiledSha256": "ce825f80bee57308df66f359afd8bcb11a6c964b20d5af40af161379dc6a30af",
+  "mechanism": "Only ReadingView.tsx differs: key background bitmap effects by actual quantized render scale instead of settled CSS width. Preserve visibility, page, appearance, density policy, final pixels and width/zoom settling."
+}

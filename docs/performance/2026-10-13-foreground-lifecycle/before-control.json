@@ -1,0 +1,6 @@
+{
+  "referenceSource": ".cache/foreground-lifecycle-original.ts",
+  "originalSha256": "9e612c0bc2e622fe6fedb3ef59c940ec3f6fe45e43f83c73bfa9aca4c174859f",
+  "compiledSha256": "7b229c08eec33cb6fd5913535d92044c57be7cc293efda890d95f22d53cb451b",
+  "mechanism": "Only useForegroundViewport.ts differs: reconcile actual paper/viewport DOM identities in layout and passive setup, bind after late parent ref attachment and dispose replaced connections. Preserve first-paint full visibility, geometry, scheduling and quality."
+}

@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from 'react';
 export type PowerMode = 'auto' | 'eco' | 'quality';
 export type RenderQuality = 'standard' | 'high' | 'ultra';
+export const preRenderChoices = [0, 0.5, 1, 2, 3, 4] as const;
+export type PreRenderRange = (typeof preRenderChoices)[number];
 function saved(key: string, fallback: string) {
   try {
     return localStorage.getItem(key) ?? fallback;
@@ -13,6 +15,8 @@ let mode = saved('surfacetab.powerMode', 'auto') as PowerMode;
 if (!['auto', 'eco', 'quality'].includes(mode)) mode = 'auto';
 let quality = saved('surfacetab.renderQuality', 'high') as RenderQuality;
 if (!['standard', 'high', 'ultra'].includes(quality)) quality = 'high';
+let preRender = Number(saved('tixtab.preRenderRange', '1')) as PreRenderRange;
+if (!preRenderChoices.includes(preRender)) preRender = 1;
 let battery = false,
   original = false,
   revision = 0;
@@ -33,7 +37,7 @@ export function subscribeAppearance(fn: () => void) {
 }
 export function useAppearance() {
   useSyncExternalStore(subscribeAppearance, () => revision);
-  return { night, mode, quality, battery, original, pdfNight: night && !original };
+  return { night, mode, quality, battery, original, preRender, pdfNight: night && !original };
 }
 export function setNight(value: boolean) {
   night = value;
@@ -82,7 +86,16 @@ export function renderPolicy() {
     settleMs: eco ? 320 : 200,
     detailMs: eco ? 280 : 160,
     cacheBytes: (eco ? 32 : 48) * 1024 * 1024,
+    extraPageBytes: (eco ? 120 : 200) * 1024 * 1024,
   };
+}
+export function setPreRenderRange(value: PreRenderRange) {
+  if (!preRenderChoices.includes(value)) return;
+  preRender = value;
+  try {
+    localStorage.setItem('tixtab.preRenderRange', String(value));
+  } catch {}
+  changed();
 }
 export function quantizeRenderScale(scale: number) {
   return Math.max(0.125, Math.floor(scale * 8) / 8);

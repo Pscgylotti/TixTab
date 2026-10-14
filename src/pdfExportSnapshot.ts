@@ -1,5 +1,7 @@
 import type { Notebook, Point } from './model';
 import { cancelledPdfExport, type PackedNotebook, type PackedStroke } from './pdfExportProtocol';
+import { pageLayers } from './pageLayers';
+import { groupLeaves } from './objectGroup';
 import { cachedInkPath, rememberInkPath } from './ink';
 
 /** Export only the needed drawing data: do not clone SVG previews, scenes,
@@ -65,29 +67,38 @@ export async function packPdfExport(notebook: Notebook, signal: AbortSignal) {
       });
       transfers.push(points.buffer as ArrayBuffer);
     }
+    const layers = pageLayers(page).flatMap((i) => (i ? groupLeaves(i) : [i]));
     pages.push({
       id: page.id,
       sourceIndex: page.sourceIndex,
       width: page.width,
       height: page.height,
       paper: page.paper,
-      inkLayer: page.inkLayer,
+      inkLayer: layers.indexOf(null),
       strokes,
-      images: page.images.map((image) => ({
-        id: image.id,
-        kind: image.kind,
-        data: image.data,
-        x: image.x,
-        y: image.y,
-        width: image.width,
-        height: image.height,
-      })),
+      images: layers
+        .filter((image) => image !== null)
+        .map((image) => ({
+          id: image.id,
+          kind: image.kind,
+          data: image.data,
+          x: image.x,
+          y: image.y,
+          width: image.width,
+          height: image.height,
+        })),
     });
     await yieldIfNeeded();
   }
   check();
   return {
-    notebook: { version: notebook.version, name: notebook.name, source, pages } as PackedNotebook,
+    notebook: {
+      version: notebook.version,
+      name: notebook.name,
+      source,
+      pages,
+      bookmarks: notebook.bookmarks?.map((b) => ({ ...b })),
+    } as PackedNotebook,
     transfers,
   };
 }

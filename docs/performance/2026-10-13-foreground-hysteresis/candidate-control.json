@@ -1,0 +1,6 @@
+{
+  "hysteresis": true,
+  "originalSha256": "fb4ae7a706ace3e7952558b7a156926b15bab86039de32967f9ccc7f5b0dbf40",
+  "compiledSha256": "fb4ae7a706ace3e7952558b7a156926b15bab86039de32967f9ccc7f5b0dbf40",
+  "mechanism": "Only disable clip retention for A. Both sides retain the same 160 CSS px overscan, synchronous shared RAF commit, raster policy, formula increment, and other UI."
+}

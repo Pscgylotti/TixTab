@@ -9,8 +9,10 @@ from typing import Annotated, Literal
 import openvino as ov
 try:
     from .cache_lease import CacheBusyError
+    from .request_lifecycle import wait_native_request
 except ImportError:
     from cache_lease import CacheBusyError
+    from request_lifecycle import wait_native_request
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -256,12 +258,11 @@ async def run_native(request, kind, factory, invoke):
             _model_kind = kind
         return invoke(_model, cancelled)
     task = asyncio.create_task(asyncio.to_thread(run))
+    reset_model = False
     try:
-        while not task.done():
-            await asyncio.wait([task], timeout=.1)
-            if await request.is_disconnected():
-                cancelled.set()
-        return await task
+        # request.json() above has fully consumed the HTTP body. Listen once
+        # for disconnect instead of waking every 100 ms during native work.
+        return await wait_native_request(task, request.receive, cancelled)
     except CacheBusyError as error:
         raise HTTPException(429, 'Native cache maintenance is running') from error
     except InterruptedError as error:
@@ -272,7 +273,9 @@ async def run_native(request, kind, factory, invoke):
         raise HTTPException(400, str(error)) from error
     except Exception as error:
         # A failed driver/model session should not poison the next request.
-        drop_model()
+        # A receive-channel error can happen while native work is still using
+        # the model. Dispose only after the worker finishes, with the lock held.
+        reset_model = True
         raise HTTPException(503, 'OpenVINO unavailable: ' + str(error)[:1500]) from error
     finally:
         # Keep the lock until native work finishes, including on HTTP cancellation.
@@ -282,6 +285,10 @@ async def run_native(request, kind, factory, invoke):
                 await asyncio.shield(task)
             except Exception:
                 pass
-        _last_used = time.monotonic()
-        _lock.release()
-        schedule_idle_release()
+        try:
+            if reset_model:
+                drop_model()
+        finally:
+            _last_used = time.monotonic()
+            _lock.release()
+            schedule_idle_release()

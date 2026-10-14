@@ -17,6 +17,16 @@ test('voice keyboard inserts at caret, switches language, shows levels and cance
         dictation: {
           run: async (r: any) => {
             calls.push(r);
+            if (r.action === 'microphones')
+              return {
+                ok: true,
+                data: {
+                  microphones: [
+                    { id: 'winmm:U3VyZmFjZQ==', name: 'Surface microphone', isDefault: true },
+                  ],
+                  defaultId: 'winmm:U3VyZmFjZQ==',
+                },
+              };
             if (r.action === 'start') {
               active = crypto.randomUUID();
               jobs.set(active, { language: r.language, stopped: false, n: 0 });
@@ -89,6 +99,7 @@ test('voice keyboard inserts at caret, switches language, shows levels and cance
   );
   await page.setViewportSize({ width: 360, height: 640 });
   await keyboard.getByRole('button', { name: '语音设置', exact: true }).click();
+  await keyboard.getByLabel('语音输入麦克风').selectOption('winmm:U3VyZmFjZQ==');
   await keyboard.getByLabel('识别引擎').selectOption('whisper-small');
   await keyboard.getByLabel('语音推理设备').selectOption('NPU');
   await expect(keyboard).toBeInViewport();
@@ -101,6 +112,11 @@ test('voice keyboard inserts at caret, switches language, shows levels and cance
   const chat = page.locator('.chat-panel');
   await chat.getByLabel('向 ChatGPT 提问').focus();
   await chat.getByRole('button', { name: '语音输入', exact: true }).click();
+  expect(
+    await page.evaluate(
+      () => (window as any).voiceCalls.filter((r: any) => r.action === 'start').at(-1).microphone,
+    ),
+  ).toBe('winmm:U3VyZmFjZQ==');
   await expect(chat.getByLabel('向 ChatGPT 提问')).toHaveValue('hello');
   await page.getByRole('button', { name: '屏幕键盘', exact: true }).click();
   await keyboard.getByRole('button', { name: '语音输入', exact: true }).click();

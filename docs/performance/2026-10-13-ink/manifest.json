@@ -1,0 +1,70 @@
+{
+  "reports": [
+    {
+      "name": "control-1",
+      "file": "control-1.json.gz",
+      "reportSha256": "e6a44f1935f1b795aad3b03d31696685abf7719c2f089ca3fee6407940e98b0b",
+      "compressedSha256": "af57c87a66ef94b02b866504de92ea04a2edbfee969033474bd1242945e941eb",
+      "buildSha256": "aa923cab1ae2dd12feeeb986e1ee9ff7f0418e9694a274e1efb2cbacf92a0b22",
+      "harnessSha256": "089b22efb7c261df7eb1599352cd507ea557f5012a62e485c8cac11989428b92",
+      "createdAt": "2026-10-12T16:23:25.761Z"
+    },
+    {
+      "name": "ink-3",
+      "file": "ink-3.json.gz",
+      "reportSha256": "fa50f6ad4969d9ad5ddaa52422ac59203e52fa331f78631209e37ac80beb820b",
+      "compressedSha256": "3e5b9d387d40d0ffc766d550ebc91d797f29a17302c5641eec3cfbd714ab6d34",
+      "buildSha256": "1d535b56a6f62dc5252826587779b28ba52d0e56f0e91ddc6cd2b3fbeafe7c72",
+      "harnessSha256": "089b22efb7c261df7eb1599352cd507ea557f5012a62e485c8cac11989428b92",
+      "createdAt": "2026-10-12T16:24:47.559Z"
+    },
+    {
+      "name": "control-2",
+      "file": "control-2.json.gz",
+      "reportSha256": "e60031f33c680107f12b541f8c1ac65b29c6cc5f16c56732cc2f620ac1c10362",
+      "compressedSha256": "817508c759233a17c852a327cde1876761af0d0ad04cb864cc8479a0f5a8db83",
+      "buildSha256": "aa923cab1ae2dd12feeeb986e1ee9ff7f0418e9694a274e1efb2cbacf92a0b22",
+      "harnessSha256": "089b22efb7c261df7eb1599352cd507ea557f5012a62e485c8cac11989428b92",
+      "createdAt": "2026-10-12T16:25:32.581Z"
+    },
+    {
+      "name": "ink-4",
+      "file": "ink-4.json.gz",
+      "reportSha256": "b7ca6f9fde47ce16ab73b24fd62bb1f3802f0af54cf52822d23b332163a0306f",
+      "compressedSha256": "97b7c38aa5d4afc0a7cdf2437f67c71855c920932fd5b2f3b53e1c46286776f7",
+      "buildSha256": "1d535b56a6f62dc5252826587779b28ba52d0e56f0e91ddc6cd2b3fbeafe7c72",
+      "harnessSha256": "089b22efb7c261df7eb1599352cd507ea557f5012a62e485c8cac11989428b92",
+      "createdAt": "2026-10-12T16:26:25.356Z"
+    },
+    {
+      "name": "control-3",
+      "file": "control-3.json.gz",
+      "reportSha256": "2b704556a8b2a38228505ea039b6cf40eeded2c51b9a41ed8836ab73418b5675",
+      "compressedSha256": "fc91c690479c886a64548fd17cacf467414cbeb9f91689b2346b0f50ef648173",
+      "buildSha256": "aa923cab1ae2dd12feeeb986e1ee9ff7f0418e9694a274e1efb2cbacf92a0b22",
+      "harnessSha256": "089b22efb7c261df7eb1599352cd507ea557f5012a62e485c8cac11989428b92",
+      "createdAt": "2026-10-12T16:27:24.065Z"
+    },
+    {
+      "name": "ink-5",
+      "file": "ink-5.json.gz",
+      "reportSha256": "eec0daa112cbd2fce2f286417c0f9ce8494e01542b786ff0c08a78a9539a6d9c",
+      "compressedSha256": "d1a6e67cd71e2d79a594b9dbfc4f177c6b98825bad32ddfd32db8969bb0b844b",
+      "buildSha256": "1d535b56a6f62dc5252826587779b28ba52d0e56f0e91ddc6cd2b3fbeafe7c72",
+      "harnessSha256": "089b22efb7c261df7eb1599352cd507ea557f5012a62e485c8cac11989428b92",
+      "createdAt": "2026-10-12T16:28:01.164Z"
+    },
+    {
+      "name": "ink-final-check",
+      "file": "ink-final-check.json.gz",
+      "reportSha256": "3e247b7f9272c61efcdfc702275fa97c4e6d725536ace984eb90a2e67a828508",
+      "compressedSha256": "0f5ed957276ee7ff7edebd81d4728b01366efa76dea956dd7af798797c003fb0",
+      "buildSha256": "68b133d65265869f2d6d463d468afc56d4ece8ab6971d962ac2909cb467a84b6",
+      "harnessSha256": "089b22efb7c261df7eb1599352cd507ea557f5012a62e485c8cac11989428b92",
+      "createdAt": "2026-10-12T16:35:50.107Z"
+    }
+  ],
+  "controlReproducedExactly": true,
+  "finalConfirmationSeparate": true,
+  "notes": "Three A/B pairs use one build per group. Final confirmation includes an additional context-restoration event guard and is not pooled. Original reports retain all measurements. Raw CPU is a partial demand proxy, not energy."
+}

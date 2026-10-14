@@ -4,6 +4,61 @@ import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 const { createDictation } = createRequire(import.meta.url)('../electron/dictation.cjs');
 describe('owned offline dictation', () => {
+  it('lists input identities without recording, passes explicit selection, and reports a missing device', async () => {
+    const children: any[] = [];
+    const service = createDictation({
+      helper: 'test',
+      platform: 'win32',
+      spawnProcess: (_exe: string, args: string[]) => {
+        const child: any = new EventEmitter();
+        child.stdout = new PassThrough();
+        child.stdin = new PassThrough();
+        child.kill = () => {};
+        child.args = args;
+        children.push(child);
+        return child;
+      },
+    });
+    const owner = {};
+    try {
+      const listing = service.run(owner, { action: 'microphones' });
+      expect(children[0].args).toContain('-Microphones');
+      const pending = service.run(owner, { action: 'microphones' });
+      children[0].stdout.end(
+        JSON.stringify({
+          microphones: [{ id: 'winmm:YWJj', name: 'Surface 麦克风', isDefault: true }],
+          defaultId: 'winmm:YWJj',
+        }),
+      );
+      children[0].emit('close', 0);
+      expect((await listing).data.microphones[0].name).toBe('Surface 麦克风');
+      expect((await pending).data.defaultId).toBe('winmm:YWJj');
+      expect(children).toHaveLength(1);
+      expect(
+        (await service.run(owner, { action: 'start', language: 'en-US', microphone: ';bad' }))
+          .error,
+      ).toBe('invalid');
+      const start = await service.run(owner, {
+        action: 'start',
+        language: 'en-US',
+        microphone: 'winmm:YWJj',
+      });
+      expect(children[1].args.slice(-2)).toEqual(['-Microphone', 'winmm:YWJj']);
+      children[1].stdout.write(
+        'INPUT ' +
+          Buffer.from('Surface 麦克风').toString('base64') +
+          '\nERROR microphone-missing\n',
+      );
+      children[1].emit('close', 0);
+      expect((await service.run(owner, { action: 'read', id: start.data.id })).data).toMatchObject({
+        microphoneName: 'Surface 麦克风',
+        error: 'microphone-missing',
+        done: true,
+      });
+    } finally {
+      service.dispose();
+    }
+  });
   it('starts only on demand, restricts language, decodes chunked Unicode and stops the owned helper', async () => {
     let spawned = 0,
       killed = 0,

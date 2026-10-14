@@ -82,7 +82,7 @@ test('多行手写逐行串行识别、合并预览和插入，Uni-MuMER 显示 
     await page.locator('.formula-canvas').evaluate((el) => (el as HTMLCanvasElement).toDataURL()),
   ).toBe(ink);
   await draw(page, 350);
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await expect(page.getByLabel('LaTeX · 可直接修改')).toHaveValue(
     '\\begin{aligned}\nx=1 \\\\\ny=2\n\\end{aligned}',
   );
@@ -115,7 +115,7 @@ test('多行批处理取消不会覆盖既有公式，也不会继续发送后�
   await page.getByLabel('LaTeX · 可直接修改').fill('z=3');
   await page.getByLabel('多行手写公式', { exact: true }).check();
   for (const y of [70, 240, 440]) await draw(page, y);
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await expect.poll(() => calls).toBe(2);
   await expect(page.getByLabel('LaTeX · 可直接修改')).toBeDisabled();
   await page.getByRole('button', { name: '取消识别', exact: true }).click();
@@ -127,9 +127,72 @@ test('多行批处理取消不会覆盖既有公式，也不会继续发送后�
   await page.getByLabel('多行手写公式', { exact: true }).uncheck();
   await expect(page.locator('.formula-canvas')).toHaveAttribute('height', '320');
 });
+test('recognition inserts at the persistent caret, advances it and preserves source on cancel', async ({
+  page,
+}) => {
+  await page.route('https://formula.test/recognize', (route) =>
+    route.fulfill({ json: { latex: 'x^2' } }),
+  );
+  await page.goto('/');
+  await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  await page.getByRole('button', { name: '实验性夜间模式', exact: true }).click();
+  await page.getByRole('button', { name: '公式', exact: true }).click();
+  await page.getByRole('button', { name: '公式设置', exact: true }).click();
+  await page.getByLabel('公式识别后端').selectOption('web');
+  await page.getByLabel('公式接口地址').fill('https://formula.test/recognize');
+  await page.getByRole('button', { name: '公式设置', exact: true }).click();
+  const source = page.getByLabel('LaTeX · 可直接修改');
+  await source.fill('a++b');
+  await source.evaluate((el: HTMLTextAreaElement) => {
+    el.setSelectionRange(2, 2);
+    el.dispatchEvent(new Event('select', { bubbles: true }));
+    el.blur();
+  });
+  await draw(page, 100);
+  await expect(page.locator('.latex-persistent-caret')).toHaveAttribute('data-position', '2');
+  await expect(page.locator('.latex-persistent-caret')).toHaveCSS('visibility', 'visible');
+  await page.getByRole('button', { name: '识别并插入', exact: true }).click();
+  await expect(source).toHaveValue('a+x^2+b');
+  await expect(page.locator('.latex-persistent-caret')).toHaveAttribute('data-position', '5');
+  await page.getByRole('button', { name: '识别并插入', exact: true }).click();
+  await expect(source).toHaveValue('a+x^2x^2+b');
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
+  await expect(source).toHaveValue('x^2');
+  await source.focus();
+  await source.press('Control+a');
+  expect(
+    await source.evaluate((el: HTMLTextAreaElement) => el.selectionEnd - el.selectionStart),
+  ).toBe(3);
+  await source.fill('abc\ndef');
+  await source.evaluate((el: HTMLTextAreaElement) => {
+    el.setSelectionRange(5, 5);
+    el.dispatchEvent(new Event('select', { bubbles: true }));
+    el.blur();
+  });
+  await expect(page.locator('.latex-source-header')).toContainText('第 2 行，第 2 列');
+  await page.screenshot({ path: 'test-results/formula-persistent-caret.png' });
+});
+
 test('完全收起合并顶部区域，紧凑栏提供更多页面空间并保留恢复入口', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  await page.getByRole('button', { name: '收起顶部区域', exact: true }).click();
+  await page.getByRole('button', { name: '收起工具栏', exact: true }).click();
+  await page.getByRole('button', { name: '收起底部工具', exact: true }).click();
+  await expect(page.locator('.app-shell')).not.toHaveClass(/chrome-minimal/);
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  const compact = page.getByRole('checkbox', { name: '工具栏全部收起时使用紧凑布局', exact: true });
+  await expect(compact).not.toBeChecked();
+  await compact.check();
+  await page.getByRole('button', { name: '关闭', exact: true }).click();
+  await expect(page.locator('.app-shell')).toHaveClass(/chrome-minimal/);
+  await page.reload();
+  await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  await expect(page.locator('.app-shell')).toHaveClass(/chrome-minimal/);
+  await page.getByRole('button', { name: '展开顶部区域', exact: true }).click();
+  await expect(page.locator('.app-shell')).not.toHaveClass(/chrome-minimal/);
+  await page.getByRole('button', { name: '展开工具栏', exact: true }).click();
+  await page.getByRole('button', { name: '展开底部工具', exact: true }).click();
   for (const width of [560, 960, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.getByRole('button', { name: '收起顶部区域', exact: true }).click();
@@ -150,4 +213,12 @@ test('完全收起合并顶部区域，紧凑栏提供更多页面空间并保�
     await page.getByRole('button', { name: '展开工具栏', exact: true }).click();
     await page.getByRole('button', { name: '展开底部工具', exact: true }).click();
   }
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await compact.uncheck();
+  await page.getByRole('button', { name: '关闭', exact: true }).click();
+  await page.reload();
+  await page.getByRole('button', { name: '收起顶部区域', exact: true }).click();
+  await page.getByRole('button', { name: '收起工具栏', exact: true }).click();
+  await page.getByRole('button', { name: '收起底部工具', exact: true }).click();
+  await expect(page.locator('.app-shell')).not.toHaveClass(/chrome-minimal/);
 });

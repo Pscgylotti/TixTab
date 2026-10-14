@@ -8,7 +8,7 @@
 
 ## 本机结果
 
-Surface Pro / Core Ultra 5 238V / Intel Arc 130V / 32 GiB。GPU 日志确认 29/29 层卸载及视觉编码器使用 Vulkan0。Texo 使用 NPU 编码器和 CPU 解码器，Uni-MuMER 没有 NPU 支持。
+Core Ultra 5 238V / Intel Arc 130V / 32 GiB。GPU 日志确认 29/29 层卸载及视觉编码器使用 Vulkan0。Texo 使用 NPU 编码器和 CPU 解码器，Uni-MuMER 没有 NPU 支持。
 
 输入为 [UniMER-Test](https://huggingface.co/datasets/alephpi/UniMER-Test) 的 HWE 前六张手写样本。比较仅去除 LaTeX 空白，不计算视觉等价、CDM 或全数据集准确率。测试时另有浏览器回归运行，时间只作为本次观测。
 

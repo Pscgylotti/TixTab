@@ -41,6 +41,6 @@
 }
 .text-box-dialog footer span {
   flex: 1 1 200px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }

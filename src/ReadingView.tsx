@@ -1,4 +1,5 @@
 import { MIN_ZOOM, MAX_ZOOM } from './pageFit';
+import { performanceDelay, trackPerformance } from './performanceLedger';
 import { useAppearance, renderPolicy, pageRenderScale } from './appearance';
 import PdfOriginalImages from './PdfOriginalImages';
 import { t as tr, useLocale } from './i18n';
@@ -15,10 +16,12 @@ import {
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { PenLine } from 'lucide-react';
 import { PanZoomPointers } from './gestures';
+import { useDeferredZoom } from './useDeferredZoom';
 import PageEditor from './PageEditor';
 import type { PenDiagnostic } from './PdfSurface';
 import PdfDetailLayer from './PdfDetailLayer';
 import { requestPdfBitmap, renderingCancelled } from './pdfRenderCache';
+import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
 import type { Page, Tool } from './model';
 import { makeLayout, visibleRange, itemAt } from './virtualLayout';
 import { useScrollViewport } from './useScrollViewport';
@@ -69,14 +72,13 @@ const ReadingPage = memo(function ReadingPage({
   const { pdfNight } = useAppearance(),
     policy = renderPolicy();
   const root = useRef<HTMLDivElement>(null),
-    canvas = useRef<HTMLCanvasElement>(null),
     [visible, setVisible] = useState(false),
     [status, setStatus] = useState(tr('等待预览'));
+  const { host, display, recovery } = usePdfBitmapDisplay('reading-pdf');
   const scale = width / page.width;
   const [settledWidth, setSettledWidth] = useState(width);
   useEffect(() => {
-    const timer = setTimeout(() => setSettledWidth(width), policy.settleMs);
-    return () => clearTimeout(timer);
+    return performanceDelay('view-settle', () => setSettledWidth(width), policy.settleMs);
   }, [width, policy.settleMs]);
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
@@ -86,12 +88,10 @@ const ReadingPage = memo(function ReadingPage({
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    const c = canvas.current!;
     let dead = false,
       cancel: (() => void) | undefined;
     if (!visible || !pdf || page.sourceIndex === null) {
-      c.width = 1;
-      c.height = 1;
+      display.current!.clear();
       return;
     }
     setStatus(tr('加载预览…'));
@@ -106,25 +106,23 @@ const ReadingPage = memo(function ReadingPage({
     );
     const lease = requestPdfBitmap(pdf, page.sourceIndex, renderScale, 1, pdfNight);
     cancel = lease.cancel;
-    void lease.promise
-      .then((bitmap) => {
+    void trackPerformance('pdf-display', () =>
+      lease.promise.then((bitmap) => {
         if (!dead) {
-          c.width = bitmap.width;
-          c.height = bitmap.height;
-          c.getContext('2d')!.drawImage(bitmap, 0, 0);
-          c.dataset.renderedNight = String(pdfNight);
+          display.current!.show(bitmap, pdfNight);
           setStatus(tr('就绪'));
         }
-      })
-      .catch((e) => {
-        if (!dead && !renderingCancelled(e)) setStatus(tr('预览失败'));
-      });
+      }),
+    ).catch((e) => {
+      if (!dead && !renderingCancelled(e)) setStatus(tr('预览失败'));
+    });
     return () => {
       dead = true;
       cancel?.();
     };
   }, [
     pdf,
+    recovery,
     page.id,
     visible,
     settledWidth,
@@ -160,6 +158,7 @@ const ReadingPage = memo(function ReadingPage({
       </div>
       <div
         className={`reading-paper paper-${page.sourceIndex === null ? page.paper : 'plain'}`}
+        data-pdf-source={page.sourceIndex ?? ''}
         style={{ width, height: page.height * scale }}
       >
         <div
@@ -167,7 +166,7 @@ const ReadingPage = memo(function ReadingPage({
           data-pdf-night={pdfNight}
           style={{ width: page.width, height: page.height, transform: `scale(${scale})` }}
         >
-          <canvas className="reading-pdf" ref={canvas} />
+          <div ref={host} style={{ display: 'contents' }} />
           <PdfDetailLayer
             pdf={visible ? pdf : null}
             sourceIndex={page.sourceIndex}
@@ -189,7 +188,12 @@ const ReadingPage = memo(function ReadingPage({
           />
           {visible && (
             <>
-              <PdfOriginalImages pdf={pdf} sourceIndex={page.sourceIndex} enabled={hand} />
+              <PdfOriginalImages
+                pdf={pdf}
+                sourceIndex={page.sourceIndex}
+                enabled={hand}
+                pageId={page.id}
+              />
               <PageEditor
                 page={page}
                 pdf={pdf}
@@ -206,6 +210,7 @@ const ReadingPage = memo(function ReadingPage({
                 active={active}
                 onActivate={() => onActivate(page.id)}
                 reading
+                viewKey={`${top}:${scale}`}
               />
             </>
           )}
@@ -228,8 +233,8 @@ export default function ReadingView({
   onEditObject,
   focusObjectId,
 
-  zoom,
-  setZoom,
+  zoom: committedZoom,
+  setZoom: commitZoom,
   resetView,
   onEdit,
   onPageChange,
@@ -254,6 +259,7 @@ export default function ReadingView({
   onPageChange: (i: number) => void;
 }) {
   useLocale();
+  const [zoom, setZoom] = useDeferredZoom(committedZoom, commitZoom, resetView);
   const root = useRef<HTMLDivElement>(null),
     content = useRef<HTMLDivElement>(null),
     pointers = useRef(new PanZoomPointers()),

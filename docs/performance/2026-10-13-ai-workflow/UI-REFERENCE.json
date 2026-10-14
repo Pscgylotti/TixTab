@@ -1,0 +1,8 @@
+{
+  "archive": "../2026-10-13-round2/path-elements",
+  "group": "candidate",
+  "manifestSha256": "8b7b16f521e9adb698fa722daac6a865f13a336f6dd071db7df570a82340df19",
+  "sourceManifestSha256": "12d70d5ae243b8d09411f157ab693a97f68fd378c95e1cca01b1ad9dc6d05c34",
+  "buildSha256": "cd0bcaf8fbd85eff7acee32218aee0041117735f5e8fee2faa9b1a122636f9ed",
+  "note": "Exact frozen UI sources and native quality/export evidence are retained in the referenced archive. Both policies run this same UI."
+}

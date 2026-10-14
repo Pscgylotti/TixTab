@@ -7,6 +7,7 @@ import threading
 import time
 from pathlib import Path
 from native_asr import SpeechModel, model_directory, read_wav
+from asr_lifecycle import Session, SessionLifecycle
 
 
 def main():
@@ -57,13 +58,10 @@ def main():
         commands.put({'action': 'quit'})
 
     threading.Thread(target=reader, daemon=True).start()
-    current = None
-    last_used = time.monotonic()
-
     def start_session(command):
         from native_asr import record
         import numpy as np
-        session = {'id': command['id'], 'device': model.device}
+        session = {'id': command['id'], 'device': model.device, 'microphone': command.get('microphone', '')}
         stop = threading.Event()
         done = threading.Event()
         segments = queue.Queue(maxsize=3)
@@ -117,38 +115,17 @@ def main():
                         pass
                 done.set()
                 emit('done', session)
+                commands.put({'action': 'session-finished'})
         threading.Thread(target=infer, daemon=True).start()
-        return stop, done, time.monotonic()
+        return Session(stop, done, time.monotonic())
 
+    lifecycle = SessionLifecycle(commands, start_session, idle_seconds)
     try:
-        while True:
-            if current and current[1].is_set():
-                current = None
-                last_used = time.monotonic()
-            if current and time.monotonic() - current[2] > 120:
-                current[0].set()
-            if not current and time.monotonic() - last_used >= idle_seconds:
-                break
-            try:
-                command = commands.get(timeout=.25 if current else max(.1, idle_seconds - (time.monotonic() - last_used)))
-            except queue.Empty:
-                continue
-            if command.get('action') == 'idle-policy':
-                value = command.get('idleReleaseSeconds')
-                if type(value) is int and 30 <= value <= 86400:
-                    idle_seconds = value
-            if command.get('action') == 'quit':
-                break
-            if command.get('action') == 'stop' and current:
-                current[0].set()
-            if current and current[1].is_set():
-                current = None
-            if command.get('action') == 'start' and not current and command.get('language') in ['zh-CN', 'en-US']:
-                current = start_session(command)
+        lifecycle.run()
     finally:
-        if current:
-            current[0].set()
-            current[1].wait(timeout=3)
+        if lifecycle.current:
+            lifecycle.current.stop.set()
+            lifecycle.current.done.wait(timeout=3)
         model.close()
 
 

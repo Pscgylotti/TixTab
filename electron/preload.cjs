@@ -1,5 +1,12 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('surfaceDesktop', {
+  onNativePen: (callback) => {
+    const listener = (_event, sample) => callback(sample);
+    ipcRenderer.on('pen:native', listener);
+    return () => ipcRenderer.removeListener('pen:native', listener);
+  },
+  createDesktopShortcut: () => ipcRenderer.invoke('app:desktop-shortcut'),
+  openDocumentUrl: (url) => ipcRenderer.invoke('document:open-url', url),
   editCommand: (command) => ipcRenderer.invoke('edit:command', command),
   runtimes: {
     run: (request) => ipcRenderer.invoke('runtimes:run', request),

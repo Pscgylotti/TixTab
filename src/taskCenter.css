@@ -22,7 +22,7 @@
   white-space: normal;
 }
 .task-center .muted {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.7;
   color: var(--muted);
 }
@@ -32,24 +32,24 @@
   justify-content: space-between;
   gap: 12px;
   margin: 12px 0;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .task-list {
   display: grid;
   gap: 10px;
 }
 .task-card {
-  background: #f2f6fd;
+  background: var(--surface-sunken);
   border: 1px solid var(--line);
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--r-lg);
 }
 .task-card-heading {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 13px;
+  font-size: var(--fs-md);
 }
 .task-card-heading > span {
   margin-left: auto;
@@ -62,7 +62,7 @@
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
   gap: 7px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.6;
   margin-bottom: 0;
 }
@@ -75,21 +75,22 @@
   user-select: text;
 }
 .task-fallback {
-  color: #765815;
+  color: var(--warning);
   margin-left: 8px;
 }
 .task-error {
-  color: #b94c4c;
+  color: var(--danger);
 }
 .task-empty {
   padding: 26px 12px;
-  background: #f2f6fd;
-  border-radius: 10px;
-  font-size: 13px;
+  background: var(--surface-sunken);
+  border-radius: var(--r-lg);
+  font-size: var(--fs-md);
   line-height: 1.8;
+  color: var(--text-muted);
 }
 .task-capabilities {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.7;
   margin-top: 16px;
 }
@@ -99,7 +100,7 @@
   padding: 10px 0;
 }
 .task-capabilities h3 {
-  font-size: 14px;
+  font-size: var(--fs-lg);
   margin: 12px 0 6px;
 }
 .task-capabilities ul {
@@ -114,17 +115,7 @@
 .task-capabilities li > :is(span, small) {
   display: block;
   color: var(--muted);
-  font-size: 12px;
-}
-[data-night='true'] :is(.task-card, .task-empty) {
-  background: #232b38;
-  border-color: #3a4353;
-}
-[data-night='true'] .task-fallback {
-  color: #e8c682;
-}
-[data-night='true'] .task-error {
-  color: #f2a6a6;
+  font-size: var(--fs-sm);
 }
 @media (max-width: 600px) {
   .task-center > header {

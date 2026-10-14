@@ -113,7 +113,7 @@ export async function verifyNightUi(page) {
   await page.getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '草图', exact: true }).click();
   await page.locator('.excalidraw.theme--dark').waitFor();
-  await page.getByRole('button', { name: '保存草图并关闭', exact: true }).click();
+  await page.locator('.sketch-modal').getByRole('button', { name: '关闭', exact: true }).click();
   await page.mouse.move(0, 0);
   await page.getByRole('button', { name: '管理工作空间' }).click();
   await page.locator('.workspace-manager').waitFor();
@@ -184,6 +184,7 @@ export async function verifyNightUi(page) {
   await page.mouse.down();
   await page.mouse.move(right, bottom, { steps: 5 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   await page.getByRole('img', { name: '选中区域', exact: true }).waitFor();
   const original = await page
     .getByRole('img', { name: '选中区域', exact: true })
@@ -281,11 +282,15 @@ export async function verifyNightUi(page) {
   );
   assert.equal(typeof (await page.evaluate(() => window.surfaceDesktop.getOnBattery())), 'boolean');
   await page.getByRole('button', { name: '移动', exact: true }).click();
-  await page.getByRole('button', { name: '查看原图 1', exact: true }).click();
+  const imagePoint = await page.locator('.pdf-layer').evaluate((canvas) => {
+    const box = canvas.getBoundingClientRect();
+    return { x: box.left + (box.width * 250) / 600, y: box.top + (box.height * 330) / 800 };
+  });
+  await page.mouse.dblclick(imagePoint.x, imagePoint.y);
   await page.waitForFunction(() => {
     const c = document.querySelector('.original-image-content canvas');
     return (
-      c?.width > 100 &&
+      c?.width === 60 &&
       c.getContext('2d').getImageData(c.width / 2, c.height / 2, 1, 1).data[0] === 255
     );
   });

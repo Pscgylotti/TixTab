@@ -1,0 +1,6 @@
+{
+  "scripts/benchmark-workflow.mjs": "428ad815346670bc1d99133efe9d8bd9f514dfea45cad5fdb44462af010f8235",
+  "scripts/performance-fixture.mjs": "c8cd20418d2e18b3333bde78e7a396c5f87790798671c79c57cb9109a60c3a59",
+  "scripts/performance-settle.mjs": "6c8d09119b01e63ccb24b23ca1903f7d1248714875a6542e1f3913d54c90fb22",
+  "scripts/performance-demand.mjs": "696c28893366c6b54e7e20de9c97d5642ce0bf8b9a1ff4230436168c4d71dec0"
+}

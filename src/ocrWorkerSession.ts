@@ -1,6 +1,7 @@
 import { scheduleModelIdle } from './modelIdle';
 import { requireLocalModels } from './modelLibrary';
 import { ProviderTaskError } from './providerTasks';
+import { tesseractLines } from './ocrLayout';
 
 type Session = {
   worker: Worker;
@@ -86,6 +87,7 @@ export async function localOcr(
   image: string,
   progress: (text: string) => void,
   signal?: AbortSignal,
+  layout = false,
 ) {
   signal?.throwIfAborted();
   await requireLocalModels(['tesseract']);
@@ -145,7 +147,7 @@ export async function localOcr(
     const result = await command(
       owned,
       'recognize',
-      { image: bytes, options: {}, output: { text: true } },
+      { image: bytes, options: {}, output: { text: true, blocks: layout } },
       progress,
     );
     signal?.throwIfAborted();
@@ -154,6 +156,7 @@ export async function localOcr(
     idle = scheduleModelIdle(releaseOcr);
     return {
       text: result.text.trim(),
+      ...(layout ? { lines: tesseractLines(result.blocks) } : {}),
       confidence: result.confidence,
       elapsed: performance.now() - start,
     };

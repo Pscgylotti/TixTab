@@ -5,6 +5,7 @@
   flex-wrap: nowrap;
   gap: 6px;
   padding: 0 8px;
+  --compact-button: min(32px, var(--compact-row, 36px));
 }
 .tools-inline .workspace-path {
   flex: 0 0 auto;
@@ -32,8 +33,8 @@
   position: relative;
   width: 30px;
   min-width: 30px;
-  height: 28px;
-  min-height: 28px;
+  height: var(--compact-button);
+  min-height: var(--compact-button);
   padding: 5px;
 }
 .tools-inline .compact-tools .tool-button svg {
@@ -52,12 +53,14 @@
 .tools-inline .workspace-controls {
   gap: 2px;
 }
-.tools-inline .workspace-controls button {
-  min-height: 28px;
-  height: 28px;
+.tools-inline .workspace-controls button,
+.tools-inline .workspace-path button {
+  min-height: var(--compact-button);
+  height: var(--compact-button);
   padding: 4px;
 }
 .tools-inline .workspace-controls > .icon-button,
+.tools-inline .workspace-path > .icon-button,
 .tools-inline .view-switch button {
   min-width: 28px;
 }
@@ -80,11 +83,14 @@
   .tools-inline .workspace-controls {
     gap: 1px;
   }
+  .tools-inline .view-switch {
+    gap: 0;
+  }
   .tools-inline .workspace-controls button,
   .tools-inline .workspace-controls > .icon-button,
+  .tools-inline .workspace-path > .icon-button,
   .tools-inline .view-switch button {
     min-width: 24px;
-    height: 28px;
     padding: 3px;
   }
   .tools-inline .night-original-toggle {

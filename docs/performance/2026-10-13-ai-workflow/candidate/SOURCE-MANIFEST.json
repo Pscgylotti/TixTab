@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "group": "candidate",
+  "mechanism": "Only intra/inter-op allow_spinning policy differs; same model, decoding and two threads.",
+  "files": {
+    "backend/native_asr.py": "f5d1e23debc822e27fefe90aabe1078fe27ec3eee252b8dfe8bf942258c928ab",
+    "backend/asr_worker.py": "3e2aec17bac07fc2155672da514d384e4f6586715916752373c9a9e91221dd19",
+    "backend/asr_lifecycle.py": "b737c6f33469b6b57258687ddd3a44a6a20e0d49640f605caabd321376f02f6d",
+    "backend/cache_lease.py": "95095b3dd1fe593d21451537f7fc06c14f822d99e2de7253d23d7459f5f12588",
+    "backend/opus_cache.py": "2c976ffbb488e1a0e7f98d99f9216618a58b1906e19626753a0e94bfa28f1e72",
+    "backend/microphones.py": "dcf906cd3c57db74ed7ef9ca97305b66f86a02ca06be0b81912c81c342d1c2f7",
+    "backend/asr-manifest.json": "eb16819dddedd2304e81d7a452cb292dd208d93f30d389b4e2ce0c1c2e949dc3",
+    "backend/asr-ort.config": "b1096790d38062c6f2a161085fb960579966dffc76679c0b9da36416d6193d9f",
+    "backend/requirements-asr.txt": "486d10ebf33a7cad54488af9e747163b29055096c20f0c93e40047c0447db2c9"
+  }
+}

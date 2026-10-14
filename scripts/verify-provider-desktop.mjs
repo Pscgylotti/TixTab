@@ -243,6 +243,7 @@ async function region(page) {
   await page.mouse.down();
   await page.mouse.move(r.x + r.width * 0.9, r.y + r.height * 0.25, { steps: 5 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   await page.getByRole('dialog', { name: '区域识别' }).waitFor();
 }
 async function draw(page) {
@@ -414,7 +415,7 @@ try {
   await page.getByRole('button', { name: '公式设置', exact: true }).click();
   await expect(page.getByLabel('公式 API Key')).toHaveValue('fixture-formula-key');
   await draw(page);
-  await page.getByRole('button', { name: '识别手写公式', exact: true }).click();
+  await page.getByRole('button', { name: '识别并覆盖', exact: true }).click();
   await expect(page.getByLabel('LaTeX · 可直接修改')).toHaveValue('\\frac{1}{2}');
   await page
     .getByRole('dialog', { name: '手写公式' })

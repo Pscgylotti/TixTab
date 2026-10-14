@@ -42,6 +42,7 @@ export async function verifyNativeOcr(page) {
   await page.mouse.down();
   await page.mouse.move(r.x + (r.width * 555) / 595, r.y + (r.height * 310) / 842, { steps: 6 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   await page.getByRole('dialog', { name: '区域识别' }).waitFor();
   await page.getByLabel('OCR 后端').selectOption('native');
   await page.locator('.native-settings summary').click();

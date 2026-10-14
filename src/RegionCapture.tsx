@@ -4,9 +4,11 @@ import type { PageRegion } from './capturePage';
 export default function RegionCapture({
   onCapture,
   onClose,
+  onBitmapOcr,
 }: {
   onCapture: (pageId: string | null, region: PageRegion) => void;
   onClose: () => void;
+  onBitmapOcr: () => void;
 }) {
   useLocale();
   const contact = useRef<{
@@ -83,7 +85,8 @@ export default function RegionCapture({
       }}
     >
       <div className="capture-hint">
-        {tr('拖动框选文字或公式')}
+        {tr('拖动框选截图区域')}
+        <button onClick={onBitmapOcr}>{tr('解析位图')}</button>
         <button onClick={onClose}>{tr('取消')}</button>
       </div>
       {box && (

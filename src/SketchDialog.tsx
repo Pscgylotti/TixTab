@@ -1,6 +1,8 @@
+import { canvasPngDataUrl } from './canvasPng';
 import { t as tr, useLocale } from './i18n';
 import { useAppearance } from './appearance';
 import { useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import {
   Excalidraw,
   exportToCanvas,
@@ -72,18 +74,11 @@ export default function SketchDialog({ scene, bitmap, editing, onClose, onInsert
       >
         <header>
           <div>
-            <h2>{tr('自由构想')}</h2>
-            <p>
-              {bitmap
-                ? tr('旧工程仅有图片：可移动图片、添加新图形；原矢量元素无法还原。')
-                : tr('Excalidraw · 保留矢量显示与可编辑场景')}
-            </p>
+            <h2>{tr('Excalidraw 草图')}</h2>
+            {bitmap && <p>{tr('旧工程仅有图片：可移动图片、添加新图形；原矢量元素无法还原。')}</p>}
           </div>
           <div className="row">
             <span className="error">{tr(error)}</span>
-            <button onClick={() => onClose(editing ? undefined : snapshot())}>
-              {editing ? tr('取消') : tr('保存草图并关闭')}
-            </button>
             <button
               className="primary"
               onClick={async () => {
@@ -119,7 +114,7 @@ export default function SketchDialog({ scene, bitmap, editing, onClose, onInsert
                   const svg = await exportToSvg({ elements, files, appState });
                   const displayData = `data:image/svg+xml;base64,${btoa(Array.from(new TextEncoder().encode(svg.outerHTML), (b) => String.fromCharCode(b)).join(''))}`;
                   onInsert(
-                    canvas.toDataURL('image/png'),
+                    await canvasPngDataUrl(canvas),
                     logicalWidth * 2,
                     logicalHeight * 2,
                     snapshot()!,
@@ -131,6 +126,13 @@ export default function SketchDialog({ scene, bitmap, editing, onClose, onInsert
               }}
             >
               {editing ? tr('更新草图') : tr('插入当前页')}
+            </button>
+            <button
+              className="icon-button"
+              aria-label={tr('关闭')}
+              onClick={() => onClose(editing ? undefined : snapshot())}
+            >
+              <X size={20} aria-hidden="true" />
             </button>
           </div>
         </header>

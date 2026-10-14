@@ -1,5 +1,10 @@
 interface Window {
   surfaceDesktop?: {
+    onNativePen?: (
+      callback: (sample: import('./penInteraction').NativePenSample) => void,
+    ) => () => void;
+    createDesktopShortcut?: () => Promise<{ ok: boolean; error?: string; path?: string }>;
+    openDocumentUrl?: (url: string) => Promise<boolean>;
     editCommand?: (
       command: 'selectAll' | 'cut' | 'copy' | 'paste' | 'undo' | 'redo',
     ) => Promise<boolean>;

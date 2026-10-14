@@ -37,6 +37,12 @@ import {
   type ChatModel,
 } from './chatgpt';
 import { pageChatContext, clearChatImages, type ChatContext } from './chatContext';
+import {
+  attachmentPages,
+  chatImage,
+  checkChatImages,
+  type ChatImageAttachment,
+} from './chatAttachments';
 import { originalPdfFile, originalPdfText } from './chatFile';
 import ChatApiSettings from './ChatApiSettings';
 import { useProviderConfig } from './providerSettings';
@@ -44,6 +50,7 @@ import { apiChat, chatApiError, chatApiIdentity } from './chatApi';
 import { endpoint, ProviderInputError } from './remoteProvider';
 import DictationButton from './DictationButton';
 import ChatMarkdown from './ChatMarkdown';
+import { compactChatMessage, summaryPrompt, svgPrompt } from './chatPrompts';
 import './chat.css';
 export default function ChatPanel({
   documentId,
@@ -53,6 +60,7 @@ export default function ChatPanel({
   page,
   pdf,
   index,
+  viewMode,
   selection,
   onClose,
   onNavigate,
@@ -66,6 +74,7 @@ export default function ChatPanel({
   page: Page;
   pdf: PDFDocumentProxy | null;
   index: number;
+  viewMode: 'single' | 'continuous' | 'dual';
   selection: { id: number; text: string; pageId: string; pageNumber: number } | null;
   onClose: () => void;
   onNavigate: (id: string) => void;
@@ -110,7 +119,8 @@ export default function ChatPanel({
     [model, setModel] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]),
     [prompt, setPrompt] = useState(''),
-    [context, setContext] = useState<ChatContext | null>(null),
+    [contexts, setContexts] = useState<ChatContext[]>([]),
+    [images, setImages] = useState<ChatImageAttachment[]>([]),
     [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false),
     [loginBusy, setLoginBusy] = useState(false),
@@ -125,6 +135,7 @@ export default function ChatPanel({
     stickToBottom = useRef(true),
     queue = useRef(Promise.resolve()),
     loadGeneration = useRef(0);
+  const imageInput = useRef<HTMLInputElement>(null);
   history.current = messages;
   const active = account?.accounts.find((a) => a.id === account.active);
   const selectedModel = apiMode ? api.provider.model.trim() : model;
@@ -149,7 +160,7 @@ export default function ChatPanel({
   };
   const persist = (value: ChatMessage[]) => {
     // Binary attachments stay in memory. Persist only bounded document-specific text history.
-    const safe = value.slice(-32).map(({ image, file, ...m }) => m);
+    const safe = value.slice(-32).map(({ image, images, file, ...m }) => m);
     queue.current = queue.current
       .then(() => set(key, safe))
       .catch(() => {
@@ -196,7 +207,8 @@ export default function ChatPanel({
     setModel('');
     update([]);
     setLoading(true);
-    setContext(null);
+    setContexts([]);
+    setImages([]);
     setStatus('');
     if (!apiMode && !account?.active) {
       setLoading(false);
@@ -216,7 +228,8 @@ export default function ChatPanel({
                   typeof m.id === 'string' &&
                   ['user', 'assistant'].includes(m.role),
               )
-              .slice(-32),
+              .slice(-32)
+              .map(compactChatMessage),
           );
       })
       .catch(() => {
@@ -230,12 +243,19 @@ export default function ChatPanel({
   }, [key, active?.signedIn]);
   useEffect(() => {
     if (selection) {
-      setContext({
-        label: t('选中文字 · 第 {0} 页', selection.pageNumber),
-        text: `[Selected text, PDF page ${selection.pageNumber}]\n${selection.text.slice(0, 16000)}`,
-        pageId: selection.pageId,
-        pageNumber: selection.pageNumber,
-      });
+      setContexts((current) =>
+        current.length >= 3 && !current.some((c) => c.pageId === selection.pageId)
+          ? current
+          : [
+              ...current.filter((c) => c.pageId !== selection.pageId),
+              {
+                label: t('选中文字 · 第 {0} 页', selection.pageNumber),
+                text: `[Selected text, PDF page ${selection.pageNumber}]\n${selection.text.slice(0, 16000)}`,
+                pageId: selection.pageId,
+                pageNumber: selection.pageNumber,
+              },
+            ],
+      );
     }
   }, [selection?.id, key]);
   useEffect(() => {
@@ -285,48 +305,88 @@ export default function ChatPanel({
     abort.current?.abort();
     if (!apiMode) void chatRequest({ action: 'cancel' }).catch(showError);
   };
-  useEffect(() => {
-    setContext((c) =>
-      c?.kind && c.pageId !== page.id
-        ? {
-            kind: c.kind,
-            label: t('第 {0} 页', index + 1),
-            pageId: page.id,
-            pageNumber: index + 1,
-            text: `[PDF page ${index + 1}]`,
-          }
-        : c,
-    );
-  }, [page.id, index]);
   const choosePage = () => {
     const next = Number(pageNumber);
     if (Number.isInteger(next) && next >= 1 && next <= pages.length) onNavigate(pages[next - 1].id);
-    else setPageNumber(String(index + 1));
   };
   const attach = async (kind: 'text' | 'image') => {
     if (job.current) return;
     job.current = true;
     const controller = new AbortController();
+    const generation = loadGeneration.current;
     abort.current = controller;
     setBusy(true);
     setStatus(t('正在准备页面…'));
     try {
-      const next = await pageChatContext(page, pdf, index, kind, controller.signal);
-      if (mounted.current && !controller.signal.aborted) {
-        setContext({ ...next, kind });
+      const selected = attachmentPages(pageNumber, pages.length);
+      const ids = new Set(selected.map((n) => pages[n].id));
+      const kept = contexts.filter((c) => !ids.has(c.pageId));
+      if (kept.length + selected.length > 3)
+        throw new ProviderInputError(t('每次最多附加三页，请先移除其它页面。'));
+      // Render sequentially to bound memory and avoid competing with the reading surface.
+      const next: ChatContext[] = [...kept];
+      for (const n of selected)
+        next.push({ ...(await pageChatContext(pages[n], pdf, n, kind, controller.signal)), kind });
+      checkChatImages([
+        ...next.flatMap((c) => (c.image ? [c.image] : [])),
+        ...images.map((i) => i.image),
+      ]);
+      if (mounted.current && !controller.signal.aborted && generation === loadGeneration.current) {
+        setContexts(next);
         setStatus('');
       }
     } catch (e) {
       if (e instanceof Error && e.message === 'page-no-text')
         setStatus(t('当前页没有可提取的文字，请使用“附加页面图片”。'));
-      else showError(e);
+      else setStatus(e instanceof Error ? e.message : t('准备附件失败，请重试。'));
+    } finally {
+      job.current = false;
+      if (mounted.current) setBusy(false);
+    }
+  };
+  const attachImages = async (files: File[]) => {
+    if (job.current || !files.length) return;
+    job.current = true;
+    setBusy(true);
+    const generation = loadGeneration.current;
+    try {
+      checkChatImages([
+        ...contexts.flatMap((c) => (c.image ? [c.image] : [])),
+        ...images.map((i) => i.image),
+        ...files.map(() => ''),
+      ]);
+      const next = [...images];
+      for (const file of files) {
+        next.push(await chatImage(file));
+        checkChatImages([
+          ...contexts.flatMap((c) => (c.image ? [c.image] : [])),
+          ...next.map((i) => i.image),
+        ]);
+      }
+      if (mounted.current && generation === loadGeneration.current) {
+        setImages(next);
+        setStatus('');
+      }
+    } catch (e) {
+      if (mounted.current && generation === loadGeneration.current)
+        setStatus(
+          e instanceof Error && e.message !== 'image-invalid'
+            ? e.message
+            : t('无法读取图片，请选择 PNG、JPEG、WebP 或 SVG 图片。'),
+        );
     } finally {
       job.current = false;
       if (mounted.current) setBusy(false);
     }
   };
   const send = async (original = false, generateSvg = false) => {
-    if (job.current || (!original && !prompt.trim()) || !canChat || loading) return;
+    if (
+      job.current ||
+      (!original && !prompt.trim() && !contexts.length && !images.length) ||
+      !canChat ||
+      loading
+    )
+      return;
     setDiagnostic('');
     job.current = true;
     const controller = new AbortController();
@@ -339,18 +399,29 @@ export default function ChatPanel({
       assistant: ChatMessage | undefined,
       flush: ReturnType<typeof setTimeout> | undefined;
     try {
-      let attached = original
-        ? null
-        : context?.kind
-          ? await pageChatContext(page, pdf, index, context.kind, controller.signal)
-          : context;
+      let attached: ChatContext[] = [];
+      if (!original)
+        for (const c of contexts) {
+          const n = pages.findIndex((p) => p.id === c.pageId);
+          if (n < 0) throw new ProviderInputError(t('附加页面已删除，请重新选择。'));
+          attached.push(
+            c.kind
+              ? {
+                  ...(await pageChatContext(pages[n], pdf, n, c.kind, controller.signal)),
+                  kind: c.kind,
+                }
+              : c,
+          );
+        }
       if (original && apiMode && api.provider.pdfInput !== 'file') {
-        attached = {
-          label: t('原 PDF 文字'),
-          text: await originalPdfText(source, controller.signal),
-          pageId: page.id,
-          pageNumber: index + 1,
-        };
+        attached = [
+          {
+            label: t('原 PDF 文字'),
+            text: await originalPdfText(source, controller.signal),
+            pageId: page.id,
+            pageNumber: index + 1,
+          },
+        ];
       }
       if (
         original &&
@@ -365,32 +436,73 @@ export default function ChatPanel({
           ? await originalPdfFile(source, name, controller.signal)
           : undefined;
       if (!mounted.current || controller.signal.aborted) throw new Error('cancelled');
+      const allImages = original
+        ? []
+        : [...attached.flatMap((c) => (c.image ? [c.image] : [])), ...images.map((i) => i.image)];
+      checkChatImages(allImages);
+      const imageNames = original ? [] : images.map((i) => i.name);
       const user: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'user',
-        text: original
-          ? t(
-              '请先总结这份 PDF 的主题、主要结论、方法和关键公式，并注明对应页码。随后列出值得进一步讨论的问题。',
-            )
+        text: original ? '' : prompt.trim().slice(0, generateSvg ? 7000 : 8000),
+        ...(original || generateSvg
+          ? { action: original ? ('summary' as const) : ('svg' as const) }
+          : {}),
+        instruction: original
+          ? t(summaryPrompt)
           : generateSvg
-            ? t(
-                '请根据以下描述生成一个可直接插入 PDF 的 SVG 矢量图。返回完整的 svg 代码块，使用 viewBox、透明背景和清晰可读的文字。仅使用 SVG 基础形状与 presentation attributes；不使用脚本、foreignObject、外部链接、图片、CSS 样式表或动画。描述：',
-              ) +
-              '\n' +
-              prompt.trim().slice(0, 7000)
-            : prompt.trim().slice(0, 8000),
+            ? t(svgPrompt)
+            : prompt.trim()
+              ? undefined
+              : t('请分析附加的内容。'),
+        reading:
+          'Reading UI metadata (not page content): ' +
+          JSON.stringify({
+            document: name.slice(0, 300),
+            currentPage: index + 1,
+            totalPages: pages.length,
+            view: viewMode,
+            originalPdfPages: pdf?.numPages ?? 0,
+            supplied: original
+              ? file
+                ? 'original PDF file; excludes edits and inserted blank pages'
+                : 'original PDF text; excludes edits and inserted blank pages'
+              : {
+                  pages: attached.map((c) => ({
+                    page: c.pageNumber,
+                    kind: c.kind ?? 'selected text',
+                  })),
+                  independentImages: imageNames.length,
+                },
+          }) +
+          '\nDo not infer page content from this metadata. Use only supplied content and prior conversation. If the requested page, figure or passage is unavailable, ask the user to attach it; do not invent its contents.',
         ...(file ? { file, fileName: file.name } : {}),
-        ...(attached
+        ...(attached.length || imageNames.length
           ? {
-              context: attached.text,
-              pageId: attached.pageId,
-              pageNumber: attached.pageNumber,
-              image: attached.image,
+              context: [
+                ...attached.map((c) =>
+                  original
+                    ? c.text
+                    : c.text.length > 16000
+                      ? c.text.slice(0, 16000) + '\n[Page excerpt truncated]'
+                      : c.text,
+                ),
+                ...imageNames.map((n) => `[Attached image: ${n}]`),
+              ].join('\n\n'),
+              pageId: attached[0]?.pageId,
+              pageNumber: attached[0]?.pageNumber,
+              pages: attached.map((c) => ({
+                id: c.pageId,
+                number: pages.findIndex((p) => p.id === c.pageId) + 1,
+              })),
+              image: allImages[0],
+              images: allImages.slice(1),
+              imageNames,
             }
           : {}),
       };
       // Original PDFs are attached explicitly once; subsequent turns retain the summary.
-      const prior = history.current.slice(-24).map(({ image, file, ...m }) => m);
+      const prior = history.current.slice(-24).map(({ image, images, file, ...m }) => m);
       turns = [...prior, user];
       assistant = { id: crypto.randomUUID(), role: 'assistant', text: '' };
       output = [...turns, assistant];
@@ -399,7 +511,8 @@ export default function ChatPanel({
       persist(turns);
       if (!original) {
         setPrompt('');
-        setContext(null);
+        setContexts([]);
+        setImages([]);
       }
       setStatus(t('正在回答…'));
       if (apiMode) {
@@ -455,7 +568,7 @@ export default function ChatPanel({
       clearTimeout(flush);
       job.current = false;
       if (mounted.current) {
-        output = output.map(({ file, ...m }) => m);
+        output = output.map(({ file, image, images, ...m }) => m);
         update([...output]);
         persist(output);
         setBusy(false);
@@ -474,6 +587,15 @@ export default function ChatPanel({
       className="chat-panel"
       role="complementary"
       aria-label={t(apiMode ? 'AI 阅读助手' : 'ChatGPT 阅读助手')}
+      onPaste={(e) => {
+        const files = Array.from(e.clipboardData.files).filter((file) =>
+          file.type.startsWith('image/'),
+        );
+        if (!files.length) return;
+        e.preventDefault();
+        e.stopPropagation();
+        void attachImages(files);
+      }}
     >
       <header className="chat-heading">
         <span className="chat-heading-mark">
@@ -712,10 +834,12 @@ export default function ChatPanel({
                 <b>
                   {m.role === 'user' ? t('你') : apiMode ? api.provider.model || 'LLM' : 'ChatGPT'}
                 </b>
-                {m.pageId && (
-                  <button onClick={() => onNavigate(m.pageId!)}>
-                    {t('第 {0} 页', m.pageNumber)}
-                  </button>
+                {(m.pages || (m.pageId ? [{ id: m.pageId, number: m.pageNumber }] : [])).map(
+                  (p) => (
+                    <button key={p.id} onClick={() => onNavigate(p.id)}>
+                      {t('第 {0} 页', p.number)}
+                    </button>
+                  ),
                 )}
                 {m.text && (
                   <button
@@ -732,11 +856,18 @@ export default function ChatPanel({
                 )}
               </div>
               {m.fileName && <small className="chat-file-name">PDF · {m.fileName}</small>}
-              {m.context && (
-                <details>
-                  <summary>{t('附加的页面内容')}</summary>
-                  <p>{m.context}</p>
-                </details>
+              {!!m.imageNames?.length && (
+                <small className="chat-file-name">{m.imageNames.join(' · ')}</small>
+              )}
+              {m.action === 'summary' && (
+                <span
+                  className="chat-action-label"
+                  aria-label={t('总结全文')}
+                  title={t('总结全文')}
+                >
+                  <BookOpen size={16} aria-hidden="true" />
+                  {t('总结全文')}
+                </span>
               )}
               <>
                 {m.role === 'assistant' ? (
@@ -750,9 +881,9 @@ export default function ChatPanel({
                       <span>{t('正在回答…')}</span>
                     </div>
                   )
-                ) : (
+                ) : m.text ? (
                   <p className="chat-user-text">{m.text}</p>
-                )}
+                ) : null}
               </>
               {m.role === 'assistant' && m.text && !busy && !m.failed && (
                 <ChatSvgPreview text={m.text} onInsert={onSvgInsert} onStatus={setStatus} />
@@ -766,11 +897,10 @@ export default function ChatPanel({
         <div className="chat-context-actions">
           <input
             className="chat-page-number"
-            type="number"
-            min={1}
-            max={pages.length}
+            type="text"
+            inputMode="text"
             aria-label={t('聊天附件页码')}
-            title={t('附件页码随阅读位置更新；发送时准备内容。')}
+            title={t('输入页码或范围，例如 1, 3-4；最多附加三页。')}
             value={pageNumber}
             disabled={busy}
             onChange={(e) => setPageNumber(e.target.value)}
@@ -796,6 +926,27 @@ export default function ChatPanel({
           >
             <Image size={15} />
             {t('图片')}
+          </button>
+          <input
+            ref={imageInput}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif,image/svg+xml"
+            multiple
+            hidden
+            aria-label={t('聊天独立图片附件')}
+            onChange={(e) => {
+              void attachImages(Array.from(e.target.files || []));
+              e.target.value = '';
+            }}
+          />
+          <button
+            className="icon-button"
+            aria-label={t('附加独立图片')}
+            title={t('附加独立图片（也可粘贴图片）')}
+            disabled={busy || loginBusy}
+            onClick={() => imageInput.current?.click()}
+          >
+            <Plus size={15} />
           </button>
           <button
             aria-label={t('根据描述生成 SVG')}
@@ -834,20 +985,40 @@ export default function ChatPanel({
             <button onClick={() => setConfirmClear(false)}>{t('取消')}</button>
           </div>
         )}
-        {context && (
-          <div className="chat-context">
-            <span>
-              {context.label}
-              {context.kind === 'image' || context.image ? ` · ${t('图片')}` : ''}
-            </span>
-            <button
-              className="icon-button"
-              disabled={busy}
-              aria-label={t('移除附加内容')}
-              onClick={() => setContext(null)}
-            >
-              <X size={14} />
-            </button>
+        {(contexts.length > 0 || images.length > 0) && (
+          <div className="chat-attachments" aria-label={t('待发送附件')}>
+            {contexts.map((context) => (
+              <div className="chat-context" key={context.pageId}>
+                <span>
+                  {context.label}
+                  {context.kind === 'image' || context.image ? ` · ${t('图片')}` : ''}
+                </span>
+                <button
+                  className="icon-button"
+                  disabled={busy}
+                  aria-label={t('移除附加内容')}
+                  onClick={() =>
+                    setContexts((current) => current.filter((c) => c.pageId !== context.pageId))
+                  }
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            {images.map((image) => (
+              <div className="chat-context chat-image-attachment" key={image.id}>
+                <img src={image.image} alt={image.name} />
+                <span title={image.name}>{image.name}</span>
+                <button
+                  className="icon-button"
+                  disabled={busy}
+                  aria-label={t('移除图片 {0}', image.name)}
+                  onClick={() => setImages((current) => current.filter((i) => i.id !== image.id))}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
           </div>
         )}
         <div className="chat-input">
@@ -893,7 +1064,12 @@ export default function ChatPanel({
             ) : (
               <button
                 className="primary"
-                disabled={!prompt.trim() || !canChat || loading || loginBusy}
+                disabled={
+                  (!prompt.trim() && !contexts.length && !images.length) ||
+                  !canChat ||
+                  loading ||
+                  loginBusy
+                }
                 onClick={() => void send()}
               >
                 <Send size={15} />

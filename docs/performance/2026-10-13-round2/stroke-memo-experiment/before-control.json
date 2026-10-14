@@ -1,0 +1,9 @@
+{
+  "culling": true,
+  "memoizedStrokes": false,
+  "mechanism": "Controls may only force enabled=false in useForegroundViewport and/or replace memoized StaticStroke with the original inline path. Other code and quality settings remain identical. Source snapshots contain the actual transformed inputs.",
+  "sourceHookSha256": "7b229c08eec33cb6fd5913535d92044c57be7cc293efda890d95f22d53cb451b",
+  "compiledHookSha256": "7b229c08eec33cb6fd5913535d92044c57be7cc293efda890d95f22d53cb451b",
+  "sourceEditorSha256": "bd7fe3f6192c653d4a4851e0cd4ae4e3d7f579212386c132b3854952d87dab72",
+  "compiledEditorSha256": "aa48f577ad1525b0295a354fbac3f6455191dd1f9cdabff912b2f7c9b8b53244"
+}

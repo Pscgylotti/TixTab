@@ -46,6 +46,10 @@ test('API chat streams markdown, retains history, and sends text/image/original 
   expect(requests[0].headers.authorization).toBe('Bearer test-secret');
   expect(requests[0].body.model).toBe('local-small');
   expect(requests[0].body.messages[0].content).toContain('First PDF page about diffusion.');
+  expect(requests[0].body.messages[0].content).toContain('"currentPage":1');
+  expect(requests[0].body.messages[0].content).toContain('Do not infer page content');
+  await expect(panel.locator('.chat-message.user .chat-user-text')).toHaveText('Explain this');
+  await expect(panel.locator('.chat-message.user')).not.toContainText('Reading UI metadata');
   await panel.getByRole('button', { name: '附加页面图片', exact: true }).click();
   await panel.getByLabel('向 LLM 提问').fill('This image');
   await panel.getByRole('button', { name: '发送', exact: true }).click();
@@ -57,6 +61,8 @@ test('API chat streams markdown, retains history, and sends text/image/original 
   await expect(panel.locator('.chat-message.assistant')).toHaveCount(3);
   expect(requests[2].body.messages.at(-1).content).toContain('Second PDF page with experiments.');
   expect(requests[2].body.messages.at(-1).content).toContain('2 of 2 pages');
+  await expect(panel.locator('.chat-action-label')).toHaveText('总结全文');
+  await expect(panel.locator('.chat-message.user').last()).not.toContainText('请先总结');
   await panel.getByText('API 高级设置', { exact: true }).click();
   await panel.getByLabel('PDF 发送方式', { exact: true }).selectOption('file');
   await panel.getByRole('button', { name: '发送原 PDF 并总结', exact: true }).click();

@@ -1,0 +1,173 @@
+{
+  "timestamp": "2026-10-12T20:04:39.633Z",
+  "sources": {
+    "backend/asr_worker.py": "3e2aec17bac07fc2155672da514d384e4f6586715916752373c9a9e91221dd19",
+    "backend/asr_lifecycle.py": "b737c6f33469b6b57258687ddd3a44a6a20e0d49640f605caabd321376f02f6d",
+    "backend/native_asr.py": "0f28f198d0241c150f704382e6e36daf2ab2e11a9bc1eebebcde05c445c3ddb6",
+    "electron/neural-dictation.cjs": "0e12b7e9bc1c50e8d9f34298db3fc30791a29a2a9ca967c3b1cb8ca38ca2302f",
+    "scripts/verify-asr-lifecycle.mjs": "5216dbdca15abeeba7c8f3e97bfa541dcfcb63778e1d9d7343aa81905734107c",
+    "package.json": "2c2ea0180256d7be0c715b95906a7be13651bb008caef43259019c55577de691"
+  },
+  "fixtureManifest": {
+    "samples": [
+      {
+        "voice": "Microsoft David Desktop",
+        "text": "The library opens at nine in the morning and closes at five in the afternoon.",
+        "sha256": "87f81ef7f0eb99fad6a3a8f5bbdccc9a4e5b5abeb7977de664a67927e90ff15a",
+        "bytes": 158926,
+        "language": "en-US",
+        "file": "en.wav"
+      },
+      {
+        "voice": "Microsoft Huihui Desktop",
+        "text": "图书馆上午九点开放，下午五点关闭。",
+        "sha256": "6eb5f0f6f53d60d8e14f33d773de3cd3f81a464c87be0b8096e2f937f26f0d47",
+        "bytes": 151566,
+        "language": "zh-CN",
+        "file": "zh.wav"
+      }
+    ],
+    "schema": 1,
+    "source": "Local Windows desktop TTS, fixed project-authored test sentences; no microphone recording."
+  },
+  "cacheRoot": "C:\\UserData\\Projects\\surfacetab\\.cache\\asr-round3-npu-external-cache",
+  "idleAfterDoneMs": 30273,
+  "policyRestoredToSeconds": 1800,
+  "sessions": [
+    {
+      "id": "3fe28eff-6903-48f6-8d06-a25001811f60",
+      "language": "en-US",
+      "began": 1791835426826,
+      "text": "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+      "levels": 135,
+      "stopRequested": false,
+      "ready": 1791835429488,
+      "done": 1791835435218
+    },
+    {
+      "id": "51d037ef-9dc6-4f5d-a924-0c02dd1fe364",
+      "language": "zh-CN",
+      "began": 1791835436228,
+      "text": "圖書館上午9點開放,下午5點",
+      "levels": 97,
+      "stopRequested": true,
+      "ready": 1791835436231,
+      "stopped": 1791835439831,
+      "done": 1791835440108
+    },
+    {
+      "id": "a926b620-39d9-4f23-9b0d-3decb9d00cca",
+      "language": "en-US",
+      "began": 1791835470481,
+      "text": "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+      "levels": 135,
+      "stopRequested": false,
+      "ready": 1791835473721,
+      "done": 1791835479629
+    }
+  ],
+  "workers": [
+    {
+      "launcherPid": 26884,
+      "started": 1791835426847,
+      "events": [
+        {
+          "event": "loaded",
+          "id": "",
+          "device": "NPU",
+          "fallback": "",
+          "seconds": 2.407,
+          "at": 1791835429474
+        },
+        {
+          "event": "ready",
+          "id": "3fe28eff-6903-48f6-8d06-a25001811f60",
+          "device": "NPU",
+          "at": 1791835429488
+        },
+        {
+          "event": "processing",
+          "id": "3fe28eff-6903-48f6-8d06-a25001811f60",
+          "at": 1791835434892
+        },
+        {
+          "event": "text",
+          "id": "3fe28eff-6903-48f6-8d06-a25001811f60",
+          "text": "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+          "at": 1791835435218
+        },
+        {
+          "event": "done",
+          "id": "3fe28eff-6903-48f6-8d06-a25001811f60",
+          "at": 1791835435218
+        },
+        {
+          "event": "ready",
+          "id": "51d037ef-9dc6-4f5d-a924-0c02dd1fe364",
+          "device": "NPU",
+          "at": 1791835436231
+        },
+        {
+          "event": "processing",
+          "id": "51d037ef-9dc6-4f5d-a924-0c02dd1fe364",
+          "at": 1791835439862
+        },
+        {
+          "event": "text",
+          "id": "51d037ef-9dc6-4f5d-a924-0c02dd1fe364",
+          "text": "圖書館上午9點開放,下午5點",
+          "at": 1791835440108
+        },
+        {
+          "event": "done",
+          "id": "51d037ef-9dc6-4f5d-a924-0c02dd1fe364",
+          "at": 1791835440108
+        }
+      ],
+      "exited": 1791835470381,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "launcherPid": 11932,
+      "started": 1791835470508,
+      "events": [
+        {
+          "event": "loaded",
+          "id": "",
+          "device": "NPU",
+          "fallback": "",
+          "seconds": 2.921,
+          "at": 1791835473691
+        },
+        {
+          "event": "ready",
+          "id": "a926b620-39d9-4f23-9b0d-3decb9d00cca",
+          "device": "NPU",
+          "at": 1791835473721
+        },
+        {
+          "event": "processing",
+          "id": "a926b620-39d9-4f23-9b0d-3decb9d00cca",
+          "at": 1791835479264
+        },
+        {
+          "event": "text",
+          "id": "a926b620-39d9-4f23-9b0d-3decb9d00cca",
+          "text": "The library opens at 9 in the morning and closes at 5 in the afternoon.",
+          "at": 1791835479629
+        },
+        {
+          "event": "done",
+          "id": "a926b620-39d9-4f23-9b0d-3decb9d00cca",
+          "at": 1791835479629
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Authored TTS fixtures, not real microphone accuracy validation",
+    "No CPU, energy, or whole-process-tree claim from protocol timing",
+    "30-second test policy; production default remains 1800 seconds"
+  ]
+}

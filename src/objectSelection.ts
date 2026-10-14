@@ -1,4 +1,5 @@
 import type { PlacedImage } from './model';
+import { imageBounds, type SpatialIndex } from './spatialIndex';
 export interface ObjectBox {
   x: number;
   y: number;
@@ -18,9 +19,14 @@ export function objectBox(images: PlacedImage[], ids: readonly string[]): Object
     height: Math.max(...objects.map((i) => i.y + i.height)) - y,
   };
 }
-export function objectsInBox(images: PlacedImage[], box: ObjectBox) {
+export function objectsInBox(
+  images: PlacedImage[],
+  box: ObjectBox,
+  index?: SpatialIndex<PlacedImage>,
+) {
   if (box.width <= 0 || box.height <= 0) return [];
-  return images
+  index?.update(images);
+  return (index ? index.search(imageBounds(box)) : images)
     .filter(
       (i) =>
         i.x < box.x + box.width &&

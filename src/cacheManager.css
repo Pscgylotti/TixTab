@@ -10,7 +10,7 @@
   padding: 12px 20px;
   overflow: auto;
   min-height: 0;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.7;
 }
 .cache-manager-body > p {
@@ -39,8 +39,8 @@
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #f3f6fc;
+  border-radius: var(--r-lg);
+  background: var(--surface-sunken);
 }
 .cache-card > div {
   min-width: 0;
@@ -51,14 +51,14 @@
   align-items: center;
   gap: 8px;
   margin: 0;
-  font-size: 14px;
+  font-size: var(--fs-lg);
 }
 .cache-card h3 svg {
   flex-shrink: 0;
 }
 .cache-card p {
   margin: 7px 0 0;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 .cache-card small {
@@ -66,23 +66,14 @@
   color: var(--muted);
 }
 .cache-confirm {
-  background: #fff0ee;
+  background: var(--danger-soft);
   padding: 12px;
-  border: 1px solid #e5c7c7;
-  border-radius: 10px;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-md);
   margin: 12px 0;
 }
 .cache-confirm .row {
   flex-wrap: wrap;
-}
-[data-night='true'] .cache-card {
-  background: #232b38;
-  border-color: #3a4353;
-}
-[data-night='true'] .cache-confirm {
-  background: #3c282d;
-  border-color: #75505a;
-  color: #f0bec4;
 }
 @media (max-width: 600px) {
   .cache-manager > header {

@@ -1,36 +1,44 @@
 # TixTab
 
-**Thinking over Screen** — 面向 Windows 和 Surface 手写笔的 PDF 阅读与标注工作空间。
+**Thinking over Screen** — 面向触屏与手写笔的 Windows PDF 阅读与标注工作空间，支持 Surface Pen。
 
 [English](README.md) · [下载](https://github.com/Pscgylotti/TixTab/releases) · [许可证](LICENSE)
 
 ## 快速开始
 
-1. 从 Releases 下载 `TixTab-0.2.38-lite-x64.exe`，直接运行。基础 PDF 功能不需要预装 Node.js 或 Python。
+1. 运行安装包 `TixTab-0.3.0-lite-setup-x64.exe`，安装后从桌面或开始菜单启动。基础 PDF 功能不需要预装 Node.js 或 Python。安装器支持升级已有安装，完成页可选择创建桌面快捷方式。
 2. 打开 PDF，或拖入后选择新标签页打开、插入全部/指定页；拖入图片/SVG 可插为对象。
 3. 需要本地 AI 时，进入 **设置 → 本地模型管理**，下载所需模型；点击 **自动安装**，准备独立 Python 和加速/语音运行时。
 4. 设置中可切换中英文界面；悬浮键盘包含英文、离线中文拼音、LaTeX 与语音四种模式。紧凑布局内置 Ctrl、Tab 和 Esc，先点 Ctrl 再点 A/X/C/V/Z/Y 即可编辑；语音支持中英文、实时波形和本地引擎，识别文字插入当前光标处。
 
 ## 主要功能
 
+- 位图文字索引：“框选 OCR → 解析位图”，默认全文，可指定页码范围。识别 PDF 内嵌位图及插入图片，文字和行位置随 `.tixtab` 工程保存，可全文检索并按实际行框高亮。优先本地 OCR，也可配置远程服务。[细节与限制](docs/BITMAP-OCR.md)。
+- 使用笔工具时，按住笔侧键拖动可框选笔迹；键鼠使用 Alt+拖动。透明外框支持整体移动、剪切复制粘贴与撤销。侧键轻点仍可打开高亮图片/链接，空白处打开工具环，悬浮目标单独变色。
+- 点击底部页码直接跳转：键鼠使用输入框，笔/触屏使用数字面板。切换文档时主动释放 PDF/缩略图栅格缓存，正在显示的页面在卸载前保持完整。
+
+- 全文搜索、PDF 目录、跟随页面排序的书签、引用/网址跳转与返回、复制当前页；侧栏可拖动调宽，缩略图独立缓存最多 150 张。搜索结果悬浮可查看上下文并高亮关键词。书签随工程和 PDF 保存；LaTeX 编辑支持独立撤销/重做。[范围与限制](docs/DOCUMENT-NAVIGATION.md)。
+
 - 支持可编辑文本框及智能剪贴板粘贴。在“设置 → 任务与后端”配置模型闲置卸载时间，默认 1800 秒，保留模型文件与编译缓存。文本框在工程内保持可编辑，PDF 导出暂以图片嵌入，不能作为可搜索文字。
 
 - 压感笔迹、尾部橡皮、自定义笔色、对象移动/缩放、框选多个对象，以及可再次编辑的 Excalidraw 草图。
 - 使用对象工具选中一个或多个对象，Ctrl+X/C/V 剪切、复制、粘贴，可跨页面/文档，保留草图、公式/宏和文本框的可编辑数据。“排列顺序”支持置顶、置底、上移/下移一层；Ctrl+[/] 调整一层，Ctrl+Shift+[/] 置底/置顶。剪贴板编辑和排序均可撤销/重做。
 - 同一页全部笔迹属于一个可排序的手写层。使用对象工具点击“手写层”调整顺序，其它对象可高于或低于笔迹；工程、缩略图、PDF 导出、截图及聊天图片附件使用相同层次。
-- 在 PDF 上使用笔侧键打开环形工具菜单，切换笔触、移动、选文与对象；选中文字时，中心按钮打开划词操作。侧键需要 Windows 笔驱动提供右键指针事件，通常可按住侧键轻点页面。
+- 长按笔侧键高亮当前页的图片、链接与引用，点中即可交互，不受当前工具限制；普通区域轻点打开工具环。需要设备在感应范围内上报侧键事件。移动工具下双击图片打开原图，日夜模式均支持；优先使用内嵌图片像素，预览可缩放与拖动。
 - 单页、连续与双页均可直接书写和编辑对象，触屏惯性滚动、页面缩略图与排序、插入空白页、全屏和可收起工具栏。
 - 可调渲染清晰度、自动高清补绘与局部高清、实验性 PDF 夜间配色、有上限的缓存。
-- Texo 手写公式转 LaTeX、多行公式与常用宏，可选 Uni-MuMER Qwen3-VL-2B。
+- Texo 手写公式转 LaTeX、多行公式与常用宏，可选 Uni-MuMER Qwen3-VL-2B。支持识别覆盖或在常驻光标处增量插入。手写画板、LaTeX 源码、光标与多行模式按文档/公式对象自动保存为本机草稿，关闭面板或重启后恢复；草稿不随工程文件导出。
+- 多选对象可整体移动/缩放并组合，支持嵌套层级及层级预览；解除组合只展开一层，内层组合仍保留。SVG 显示与 PDF 导出保留原始子对象的细节。最多 8 层、每个组合共 1000 个子对象。
+- 聊天一次附加最多三页，支持独立图片与图片粘贴；OCR 先截图，再选择复制图片或识别文字。
 - 选文复制、翻译、OCR 和朗读，支持本地模型、网页服务和 LLM API。
-- 中英文语音输入及录音波形，可选 SenseVoiceSmall、Whisper small 或 Windows 系统识别。
+- 中英文语音输入及录音波形，可选 SenseVoiceSmall、Whisper small 或 Windows 系统识别；语音设置中可选择麦克风并记住选择，三个引擎共用。
 - Zotero 本机资料库联动，以及支持附加页面/原文件的实验性阅读助手，可选 ChatGPT 账号或 OpenAI 兼容 LLM API。API 入口在“账号与模型”，使用对应服务的独立 API 额度。
 
 ## 注意事项
 
-TixTab 为独立项目，与微软没有官方关联，也未获微软背书；Microsoft Surface 和 Windows 为微软商标。可编辑工程统一使用 `.tixtab` 扩展名。已有工程内容不变，文件名后缀改为 `.tixtab` 后即可打开；原应用数据目录与模型缓存保持兼容。
+可编辑工程统一使用 `.tixtab` 扩展名。已有工程内容不变，文件名后缀改为 `.tixtab` 后即可打开；原应用数据目录与模型缓存保持兼容。
 
-- **Windows 11 x64 公开预览版。** 已在 Intel Surface Pro 11 商用版、Core Ultra 5 238V 上验证；其它型号、ARM64/高通 NPU 和各种笔硬件组合仍待实测。支持的本地后端可回退 CPU，加速需要兼容驱动。
+- **Windows 11 x64 公开预览版。** 已在 Core Ultra 5 238V 设备上验证；其它设备、ARM64/高通 NPU 和各种笔硬件组合仍待实测。支持的本地后端可回退 CPU，加速需要兼容驱动。
 - **轻量包不含神经模型权重。** 安装需访问 GitHub/PyPI，模型需访问上游站点，请预留数 GB 空间。受限网络下可能下载失败。驱动、Zotero、账号/API Key 和 Windows 语音语言包需另行准备。
 - 独立 Python 固定版本并校验 SHA256；环境位于 `%USERPROFILE%\.surfacetab`，不修改 PATH。安装时可取消，关闭安装面板也会取消，重新打开后可重试。
 - 本地识别在设备上运行；在线翻译、外部 API 和 ChatGPT 会接收提交内容，发送敏感 PDF 前请确认后端。账号聊天为实验功能，可用模型和额度由服务端决定。
@@ -46,7 +54,7 @@ npm ci
 npm start
 ```
 
-`npm run dev` 启动浏览器开发；桌面调试另设 `SURFACETAB_DEV=1` 后运行 `npm run desktop`。检查命令：`npm test`、`npm run test:e2e`、`npm run format:check`、`npm run build`。`npm run pack:release` 在 `release/<版本>/lite/` 生成公开轻量便携包。
+`npm run dev` 启动浏览器开发；桌面调试另设 `SURFACETAB_DEV=1` 后运行 `npm run desktop`。检查命令：`npm test`、`npm run test:e2e`、`npm run format:check`、`npm run build`。`npm run pack:release` 在 `release/<版本>/lite/` 生成轻量安装包；`npm run pack:portable` 可构建便携版。[安装与数据说明](docs/INSTALLATION.md)。
 
 目录：`src/` 界面、PDF 与 Worker；`electron/` 桌面桥接、下载与安装；`backend/` 可选 Python 后端；`scripts/` 准备/验证；`tests/` 浏览器回归；`docs/` 功能和许可。[自动安装](docs/RUNTIME-SETUP.md) · [历史记录](docs/CHANGELOG.zh-CN.md)。
 

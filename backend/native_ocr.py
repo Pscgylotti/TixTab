@@ -276,7 +276,15 @@ class NativeOcr:
         text = '\n'.join(value.strip() for value in (result.txts or []) if value.strip())
         scores = result.scores or []
         actual = {stage: sorted(devices) for stage, devices in self.used.items()}
+        lines = []
+        if result.boxes is not None:
+            for i, (value, box) in enumerate(zip(result.txts or [], result.boxes)):
+                polygon = np.asarray(box, dtype=float).reshape(-1)
+                if value.strip() and polygon.size == 8 and np.isfinite(polygon).all():
+                    lines.append({'text': value.strip(), 'polygon': polygon.tolist(),
+                                  'confidence': float(scores[i] * 100) if i < len(scores) else 0})
         return {'text': text, 'confidence': float(np.mean(scores) * 100) if scores else 0,
+                'lines': lines,
                 'engine': 'PP-OCRv4 OpenVINO', 'devices': actual, 'projectionDevice': 'CPU',
                 'fallback': device != 'CPU' and any('CPU' in self.used[s] for s in ('det', 'rec')),
                 'timing': {'totalMs': (time.perf_counter() - start) * 1000, 'compileMs': self.compile_ms,

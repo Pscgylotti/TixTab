@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TixTab 图标设计预览</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 44px 48px 36px;
+        width: 1280px;
+        background: #f4f7fb;
+        color: #28354b;
+        font-family: 'Segoe UI Variable', 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 28px;
+      }
+      .eyebrow {
+        margin: 0 0 9px;
+        color: #4775db;
+        font-size: 12px;
+        letter-spacing: 2px;
+        font-weight: 650;
+      }
+      h1 {
+        margin: 0;
+        font-weight: 650;
+        font-size: 30px;
+        letter-spacing: -0.7px;
+      }
+      .status {
+        padding: 9px 14px;
+        border: 1px solid #d9e3f4;
+        background: #edf2fc;
+        color: #5e78aa;
+        border-radius: 20px;
+        font-size: 12px;
+      }
+      .intro {
+        color: #7d8ba0;
+        font-size: 14px;
+        margin: 12px 0 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      .card {
+        background: #ffffff;
+        border: 1px solid #e3e9f2;
+        border-radius: 24px;
+        padding: 26px;
+        overflow: hidden;
+      }
+      .card-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .index {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border: 1px solid #dce5f7;
+        color: #4775db;
+        background: #f4f7ff;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 650;
+      }
+      h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.4px;
+      }
+      .description {
+        margin: 10px 0 4px;
+        color: #8491a5;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .hero {
+        display: grid;
+        place-items: center;
+        height: 306px;
+      }
+      .hero img {
+        width: 256px;
+        height: 256px;
+      }
+      .size-row {
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 36px;
+        padding: 6px 0 22px;
+      }
+      .size {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .size span {
+        color: #98a3b4;
+        font-size: 11px;
+      }
+      .section-label {
+        margin: 8px 0 13px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #8190a5;
+        font-size: 11px;
+      }
+      .line {
+        border-top: 1px solid #edf0f6;
+      }
+      .contexts {
+        display: grid;
+        gap: 12px;
+      }
+      .context {
+        border: 1px solid #e8ecf3;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fbfdff;
+      }
+      .context.dark {
+        border-color: #2e3849;
+        background: #1e242f;
+      }
+      .context img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .legend {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 18px;
+        font-size: 11px;
+        color: #8b98aa;
+      }
+      .dot {
+        height: 9px;
+        width: 9px;
+        background: #4775db;
+        border-radius: 3px;
+      }
+      .exploration {
+        margin-top: 26px;
+        padding: 24px 26px;
+        background: #fff;
+        border: 1px solid #e3e9f2;
+        border-radius: 24px;
+      }
+      .exploration h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .exploration > p {
+        font-size: 12px;
+        color: #8b98aa;
+        margin: 7px 0 18px;
+      }
+      .rounds {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+      }
+      .round {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+      .round img {
+        width: 76px;
+        height: 76px;
+        flex-shrink: 0;
+      }
+      .round strong {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .round p {
+        font-size: 11px;
+        line-height: 1.65;
+        color: #93a0b1;
+        margin: 5px 0 0;
+      }
+      footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 22px;
+        font-size: 11px;
+        color: #96a2b2;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <p class="eyebrow">TIXTAB / ICON STUDY</p>
+        <h1>把阅读与书写，收进一个 T。</h1>
+        <p class="intro">沿用界面蓝色与柔和圆角，兼顾文档含义和小尺寸辨识度。</p>
+      </div>
+      <span class="status">设计预览 · 尚未接入</span>
+    </header>
+    <main class="grid">
+      <article class="card">
+        <div class="card-heading">
+          <span class="index">A</span>
+          <h2>叠页 T</h2>
+        </div>
+        <p class="description">纸张、标签页与笔迹结合，突出 PDF 阅读与手写批注。</p>
+        <div class="hero"><img src="tixtab-paper.svg" alt="居中后的叠页 T 图标" /></div>
+        <div class="size-row">
+          <div class="size">
+            <img src="tixtab-paper.svg" width="48" height="48" /><span>48 px</span>
+          </div>
+          <div class="size">
+            <img src="tixtab-paper.svg" width="32" height="32" /><span>32 px</span>
+          </div>
+          <div class="size">
+            <img src="tixtab-paper.svg" width="24" height="24" /><span>24 px</span>
+          </div>
+          <div class="size">
+            <img src="tixtab-paper.svg" width="16" height="16" /><span>16 px</span>
+          </div>
+        </div>
+        <div class="section-label line" style="padding-top: 18px">
+          <span>实际 GUI 中的效果示意</span><span>浅色 / 深色</span>
+        </div>
+        <div class="contexts">
+          <div class="context">
+            <img src="previews/paper-header-light.png" alt="浅色界面效果示意" />
+          </div>
+          <div class="context dark">
+            <img src="previews/paper-header-dark.png" alt="深色界面效果示意" />
+          </div>
+        </div>
+        <div class="legend"><span class="dot"></span>叠页已整体右移、略微上调，平衡四周留白。</div>
+      </article>
+      <article class="card">
+        <div class="card-heading">
+          <span class="index">B</span>
+          <h2>墨迹 T</h2>
+        </div>
+        <p class="description">把笔画和页签压缩为一个符号，偏向简洁的品牌标识。</p>
+        <div class="hero"><img src="tixtab-ink.svg" alt="墨迹 T 图标" /></div>
+        <div class="size-row">
+          <div class="size">
+            <img src="tixtab-ink.svg" width="48" height="48" /><span>48 px</span>
+          </div>
+          <div class="size">
+            <img src="tixtab-ink.svg" width="32" height="32" /><span>32 px</span>
+          </div>
+          <div class="size">
+            <img src="tixtab-ink.svg" width="24" height="24" /><span>24 px</span>
+          </div>
+          <div class="size">
+            <img src="tixtab-ink.svg" width="16" height="16" /><span>16 px</span>
+          </div>
+        </div>
+        <div class="section-label line" style="padding-top: 18px">
+          <span>实际 GUI 中的效果示意</span><span>浅色 / 深色</span>
+        </div>
+        <div class="contexts">
+          <div class="context">
+            <img src="previews/ink-header-light.png" alt="浅色界面效果示意" />
+          </div>
+          <div class="context dark">
+            <img src="previews/ink-header-dark.png" alt="深色界面效果示意" />
+          </div>
+        </div>
+        <div class="legend">
+          <span class="dot"></span>弧形横笔呼应手写，斜向收笔保留笔尖的含义。
+        </div>
+      </article>
+    </main>
+    <section class="exploration">
+      <h3>探索与校正</h3>
+      <p>从具体的纸笔形象，逐步统一配色、精简细节，并校正图形重心。</p>
+      <div class="rounds">
+        <div class="round">
+          <img src="iterations/round-01.svg" />
+          <div>
+            <strong>01 / 初稿</strong>
+            <p>叠纸与钢笔<br />偏具象的表达</p>
+          </div>
+        </div>
+        <div class="round">
+          <img src="iterations/round-02.svg" />
+          <div>
+            <strong>02 / 统一配色</strong>
+            <p>回到界面蓝色<br />减少笔尖细节</p>
+          </div>
+        </div>
+        <div class="round">
+          <img src="iterations/round-03.svg" />
+          <div>
+            <strong>03 / 精简符号</strong>
+            <p>抽象 T 与页签<br />强化小尺寸辨识</p>
+          </div>
+        </div>
+        <div class="round">
+          <img src="tixtab-paper.svg" />
+          <div>
+            <strong>04 / 视觉校正</strong>
+            <p>整体重心居中<br />平衡叠页留白</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <footer>
+      <span>512 × 512 · 纯矢量 · 透明外角 · 无字体依赖</span
+      ><span>GUI 场景仅为效果示意，应用源文件未接入图标。</span>
+    </footer>
+  </body>
+</html>

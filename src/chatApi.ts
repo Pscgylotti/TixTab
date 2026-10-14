@@ -9,6 +9,7 @@ import {
 } from './remoteProvider';
 import { providerFetch } from './providerTransport';
 import { t } from './i18n';
+import { MAX_CHAT_IMAGES, MAX_CHAT_IMAGE_BYTES } from './chatAttachments';
 
 type Turn = ReturnType<typeof conversationInput>[number];
 export function chatApiIdentity(config: ProviderConfig) {
@@ -21,13 +22,21 @@ export function chatApiIdentity(config: ProviderConfig) {
 }
 export function chatApiBody(config: ProviderConfig, turns: Turn[]) {
   if (!config.model.trim()) throw new ProviderInputError(t('请填写 API 模型'));
+  const images = turns.flatMap((m) => [...(m.image ? [m.image] : []), ...(m.images || [])]);
+  if (
+    images.length > MAX_CHAT_IMAGES ||
+    images.some((i) => i.length > 3_000_000) ||
+    images.reduce((n, i) => n + i.length, 0) > MAX_CHAT_IMAGE_BYTES
+  )
+    throw new ProviderInputError(t('最多附加六张图片，总大小需小于 12 MB。'));
   const messages = turns.map((m) => {
-    if (m.role === 'assistant' || (!m.image && !m.file)) return { role: m.role, content: m.text };
+    if (m.role === 'assistant' || (!m.image && !m.images?.length && !m.file))
+      return { role: m.role, content: m.text };
     const content: Record<string, unknown>[] = [{ type: 'text', text: m.text }];
-    if (m.image) {
-      if (!/^data:image\/(png|jpeg|webp);base64,/.test(m.image))
+    for (const image of [...(m.image ? [m.image] : []), ...(m.images || [])]) {
+      if (!/^data:image\/(png|jpeg|webp);base64,/.test(image))
         throw new ProviderInputError(t('聊天图片格式无效'));
-      content.push({ type: 'image_url', image_url: { url: m.image } });
+      content.push({ type: 'image_url', image_url: { url: image } });
     }
     if (m.file) {
       if (config.pdfInput !== 'file' || !m.file.data.startsWith('data:application/pdf;base64,'))

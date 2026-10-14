@@ -212,6 +212,8 @@ class NativeTexo:
                  for layer in range(2) for kind in ('decoder', 'encoder') for value in ('key', 'value')}
         t = time.perf_counter()
         deadline = time.monotonic() + 120
+        # Input names are fixed per decoder graph; resolve them once, not per token.
+        needed = {flag: {p.get_any_name() for p in self.decoder[flag].inputs} for flag in (False, True)}
         for step in range(max_tokens):
             if cancelled and cancelled.is_set():
                 raise InterruptedError('Formula recognition cancelled')
@@ -220,10 +222,15 @@ class NativeTexo:
             feeds = {'input_ids': np.array([[tokens[-1]]], dtype=np.int64), 'encoder_hidden_states': states,
                      'use_cache_branch': np.array([step > 0], dtype=np.bool_), **cache}
             decoder = self.decoder[step > 0]
-            needed = {p.get_any_name() for p in decoder.inputs}
-            result = decoder({k: v for k, v in feeds.items() if k in needed})
-            output = {port.get_any_name(): np.array(value, copy=True) for port, value in result.items()}
-            token = int(output['logits'][0, -1].argmax())
+            result = decoder({k: v for k, v in feeds.items() if k in needed[step > 0]})
+            # Only the cache tensors outlive this step; logits are read in place.
+            output = {}
+            for port, value in result.items():
+                name = port.get_any_name()
+                if name == 'logits':
+                    token = int(value[0, -1].argmax())
+                else:
+                    output[name] = np.array(value, copy=True)
             tokens.append(token)
             if token == 2:
                 break

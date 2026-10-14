@@ -1,0 +1,245 @@
+{
+  "schema": 1,
+  "created": "2026-10-12T20:07:16.102Z",
+  "files": [
+    {
+      "file": "raw/asr-round3-npu-external-cold.json.gz",
+      "sha256": "27186a582ca6c9d8d2dc3841a9e30d78762a8707dd6a0bfafe9ff257e3d14278",
+      "bytes": 17131,
+      "originalSha256": "30911899a68b2b74f82fd3fe0ef7944bcf3d8bbe8ace82c2611bf5c304b1742b",
+      "originalBytes": 221068
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-en-US-1.json.gz",
+      "sha256": "3086087fafdb4fbb5623c14e91763ca0dcc3fd790b73a595b931bd11b2589a72",
+      "bytes": 6789,
+      "originalSha256": "396ef5e38b15687ccd362cba82bdbe0b5c1d0f2a03bb0529e1a03ad97ea80e78",
+      "originalBytes": 67817
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-en-US-2.json.gz",
+      "sha256": "b519c0700c58272b31daf856924a6ddab5d03d546697361af93c3e969e001559",
+      "bytes": 6756,
+      "originalSha256": "15587a54f61ca904f3c412d07d9cf8a904524a641d5c6295d405333c56f184fd",
+      "originalBytes": 67202
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-en-US-3.json.gz",
+      "sha256": "eda3fb4b24c7909a2d899a97cbea4fd05ff4fe0cee1d431c3754ffc5bb3cfe22",
+      "bytes": 6669,
+      "originalSha256": "aa25a178ca8b535cd341bf80f3a7e3da4da5c3a043b5f94b28771588f6daef86",
+      "originalBytes": 67253
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-zh-CN-1.json.gz",
+      "sha256": "e175603a302bd22d3f7b501efd8b5013f6fd9a5491a56fa020693cdcb136ab15",
+      "bytes": 6764,
+      "originalSha256": "577452cb48aea6793aeb18998446765936df2357c7f88e67d88275de60e6dfeb",
+      "originalBytes": 67092
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-zh-CN-2.json.gz",
+      "sha256": "fbe455cf1728e3ac4f1176ecf58734c3ad3f8f6d5dcae8789672303f94eecc2a",
+      "bytes": 6707,
+      "originalSha256": "1f51712a65c16d7ad67c7340309c156485fb3216f294267cef4904caf156afa1",
+      "originalBytes": 67065
+    },
+    {
+      "file": "raw/asr-round3-external-sensevoice-small-CPU-cold-zh-CN-3.json.gz",
+      "sha256": "77651b4abc7b02f1810a8e4e386b5e79e5485704e3b138b6faa750641575b03b",
+      "bytes": 6639,
+      "originalSha256": "168a067eb42c033df26d97d447117f7bae8a9e5593c602f585df79ea4c31d581",
+      "originalBytes": 67120
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-CPU-cold-bilingual-1.json.gz",
+      "sha256": "b60ecba5e2bf07b6eead8963ec6cca2e9540a85b03f23e2574e3598ed248a0a4",
+      "bytes": 10039,
+      "originalSha256": "7fb50f00703669f1d2ccae10a8ea5ec36ec42712fa554fe9087466a6c66c4aae",
+      "originalBytes": 107679
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-CPU-cold-bilingual-2.json.gz",
+      "sha256": "a80bff576c15cff6136b6f66be16a723c6b6e1d9e931b733b2fe7bce32ec188a",
+      "bytes": 9963,
+      "originalSha256": "fe0dce6abbdc892de3f19c712b4403f3615f57b987ab59e783b4cf3472d61817",
+      "originalBytes": 106987
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-CPU-cold-bilingual-3.json.gz",
+      "sha256": "1318e89663b8482c0a84c42be5ca29214af311282c5e3e21dea54b13cd5c5dd5",
+      "bytes": 9932,
+      "originalSha256": "85eb1aafea4057ed52176d348e2e8818d9b61bdc9119c4722eb0ad966cb9dc62",
+      "originalBytes": 106172
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-GPU-cached-bilingual-1.json.gz",
+      "sha256": "8b13818164ffb37bde3ec5144147ff1901c36b3c226adfd86b0f087dc5e12f80",
+      "bytes": 10568,
+      "originalSha256": "96af136e9ad7ce21e2fa22bcc0df3b6bb7de934568f29c8623588d278bbde787",
+      "originalBytes": 121002
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-GPU-cached-bilingual-2.json.gz",
+      "sha256": "0adf4c1f3289087e223a0588b22d93e4eb961303c3c3da75acc57fab7c863bd4",
+      "bytes": 10524,
+      "originalSha256": "1aab49f417613ca4719439d7d4c2aa4a3fbdac3876da2bba1e75ddc424d2104a",
+      "originalBytes": 120420
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-GPU-cached-bilingual-3.json.gz",
+      "sha256": "2c563ba5f932f76a3c3f9dbe77db299fdd5527dddd55d23a0bfb3040c51664af",
+      "bytes": 10572,
+      "originalSha256": "56b7aa855df11b4f64d0e21186f8759e1aa38a827c6f57adb8e1d56e645b900d",
+      "originalBytes": 120591
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-GPU-cold-bilingual-0.json.gz",
+      "sha256": "72bd4f3c23411d05d667aaf19bfacce2143f346d54202939ce6f9a1676b143d3",
+      "bytes": 11218,
+      "originalSha256": "12f05a1958d58f2d9012f4f74b940d9146eb8fe1675992915b32d80232845254",
+      "originalBytes": 118589
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-NPU-cached-bilingual-1.json.gz",
+      "sha256": "c0c38a5ea288f10fc10cea636ef331fe2577af869c997de2593a2a24d12dbb6a",
+      "bytes": 9123,
+      "originalSha256": "36fe7f7b392da420f23eb471d07de74e3dfeeb88602b167d764dd198600f5961",
+      "originalBytes": 87393
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-NPU-cached-bilingual-2.json.gz",
+      "sha256": "7071c0dbba8a7862a23aa460580963995444b2da2ceb0bc5bf6226b1d1446aa1",
+      "bytes": 9092,
+      "originalSha256": "187d1f875878bb89452a7358e7422260ffa3bd094b63664b164e4382b0c335ef",
+      "originalBytes": 87252
+    },
+    {
+      "file": "raw/asr-round3-external-whisper-small-NPU-cached-bilingual-3.json.gz",
+      "sha256": "db423aecfe908fbbd72be1a96b64a9ff731c9c74ef282fc83ab71df4668d52a2",
+      "bytes": 9067,
+      "originalSha256": "e312f88eb75a0cc20e61aefe799d97affc39a686d32649932290cf52dcaf86dd",
+      "originalBytes": 87403
+    },
+    {
+      "file": "evidence/asr-lifecycle-native-round3.json",
+      "sha256": "fb2f68382dbc8e5ca756c11e566989874b41d85c728ab6ca9530581b402f81f7",
+      "bytes": 5425
+    },
+    {
+      "file": "evidence/asr-lifecycle-native-round3.log",
+      "sha256": "bcf18af5c8e0fa2c624584d77410aab72833c81abf99b055909e910dbab5ea5c",
+      "bytes": 679
+    },
+    {
+      "file": "evidence/asr-lifecycle-unit.log",
+      "sha256": "b9fe52732f7da816eb0b8b26cc04ab88dad81468a506fe5d77249fafa4c09fa7",
+      "bytes": 107
+    },
+    {
+      "file": "evidence/asr-native-unit-round3.log",
+      "sha256": "ac3851b9eca4fddb2633b2804599c5b6a941fe9b233a4148755dc23a9bf55e48",
+      "bytes": 110
+    },
+    {
+      "file": "evidence/asr-collector-test.log",
+      "sha256": "b535fce3f88394c54120c00e958553f95ddf04d56dc23de2557288b40e07df9b",
+      "bytes": 103
+    },
+    {
+      "file": "evidence/asr-round3-matrix.log",
+      "sha256": "0272c7b5652c2f1537f16c054e076800f6e59dc9081811b65140b3c745c39c48",
+      "bytes": 9979
+    },
+    {
+      "file": "evidence/samples.json",
+      "sha256": "6b46606a18093075cc1eac8309fc440403ebfae5891b9530440aec5ed6003cec",
+      "bytes": 1067
+    },
+    {
+      "file": "sources/scripts/benchmark-asr.py",
+      "sha256": "419837d23d5e5d1f2b959cbb3ee91f71ebde07ae7ff3dd5771bd01214f6cfe94",
+      "bytes": 16936
+    },
+    {
+      "file": "sources/backend/native_asr.py",
+      "sha256": "0f28f198d0241c150f704382e6e36daf2ab2e11a9bc1eebebcde05c445c3ddb6",
+      "bytes": 10957
+    },
+    {
+      "file": "sources/backend/opus_cache.py",
+      "sha256": "2c976ffbb488e1a0e7f98d99f9216618a58b1906e19626753a0e94bfa28f1e72",
+      "bytes": 1590
+    },
+    {
+      "file": "sources/backend/cache_lease.py",
+      "sha256": "95095b3dd1fe593d21451537f7fc06c14f822d99e2de7253d23d7459f5f12588",
+      "bytes": 1812
+    },
+    {
+      "file": "sources/backend/asr-manifest.json",
+      "sha256": "eb16819dddedd2304e81d7a452cb292dd208d93f30d389b4e2ce0c1c2e949dc3",
+      "bytes": 9198
+    },
+    {
+      "file": "sources/backend/asr_worker.py",
+      "sha256": "3e2aec17bac07fc2155672da514d384e4f6586715916752373c9a9e91221dd19",
+      "bytes": 5872
+    },
+    {
+      "file": "sources/backend/asr_lifecycle.py",
+      "sha256": "b737c6f33469b6b57258687ddd3a44a6a20e0d49640f605caabd321376f02f6d",
+      "bytes": 2445
+    },
+    {
+      "file": "sources/electron/neural-dictation.cjs",
+      "sha256": "0e12b7e9bc1c50e8d9f34298db3fc30791a29a2a9ca967c3b1cb8ca38ca2302f",
+      "bytes": 16080
+    },
+    {
+      "file": "sources/scripts/verify-asr-lifecycle.mjs",
+      "sha256": "5216dbdca15abeeba7c8f3e97bfa541dcfcb63778e1d9d7343aa81905734107c",
+      "bytes": 7239
+    },
+    {
+      "file": "sources/package.json",
+      "sha256": "2c2ea0180256d7be0c715b95906a7be13651bb008caef43259019c55577de691",
+      "bytes": 5250
+    },
+    {
+      "file": "sources/scripts/summarize-asr.mjs",
+      "sha256": "189a120d21c4f9257014ef09b7914324f229784a4305e5164b6be089ce2cc61a",
+      "bytes": 10311
+    },
+    {
+      "file": "sources/scripts/performance-demand.mjs",
+      "sha256": "696c28893366c6b54e7e20de9c97d5642ce0bf8b9a1ff4230436168c4d71dec0",
+      "bytes": 6463
+    },
+    {
+      "file": "sources/backend/test_asr_lifecycle.py",
+      "sha256": "d917b321c6a977b504a57582e089e3b21e56112d9c6bbc307b839aab8343d995",
+      "bytes": 3852
+    },
+    {
+      "file": "sources/backend/test_native_asr.py",
+      "sha256": "12278b436d5c1f7435626da476de10155c9789651945c3f9550e6cb91af9d251",
+      "bytes": 7157
+    },
+    {
+      "file": "sources/scripts/test_asr_benchmark.py",
+      "sha256": "0aded361da0d9d2bde2ffea40790645cbe9534530e57120096e683d93348cf6c",
+      "bytes": 2305
+    },
+    {
+      "file": "sources/scripts/prepare-asr-samples.ps1",
+      "sha256": "6c62396b8a0f5581c20081111081658e73466cdf0f6b5609ad8370a11a84acdd",
+      "bytes": 2038
+    },
+    {
+      "file": "summary.json",
+      "sha256": "cb3a63a58e6648a3df6c903cdb134cfd8a6855c33f8602362a2db0de44108ff1",
+      "bytes": 110998
+    }
+  ]
+}

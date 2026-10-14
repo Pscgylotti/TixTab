@@ -1,0 +1,106 @@
+{
+  "checks": [
+    {
+      "name": "loaded",
+      "strokes": 500,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "append-钢笔",
+      "strokes": 501,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "append-圆珠笔",
+      "strokes": 502,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "append-铅笔",
+      "strokes": 503,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "append-荧光笔",
+      "strokes": 504,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "undo",
+      "strokes": 503,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "redo",
+      "strokes": 504,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "erase",
+      "strokes": 451,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "night-raster",
+      "strokes": 451,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "view-remount",
+      "strokes": 451,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "write-after-remount",
+      "strokes": 452,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    },
+    {
+      "name": "context-restoration-event",
+      "strokes": 452,
+      "different": 0,
+      "width": 1191,
+      "height": 1684
+    }
+  ],
+  "errors": [],
+  "graphics": {
+    "2d_canvas": "enabled",
+    "direct_rendering_display_compositor": "disabled_off_ok",
+    "gpu_compositing": "enabled",
+    "multiple_raster_threads": "enabled_on",
+    "opengl": "enabled_on",
+    "rasterization": "enabled",
+    "raw_draw": "disabled_off_ok",
+    "skia_graphite": "disabled_off",
+    "trees_in_viz": "disabled_off",
+    "video_decode": "enabled",
+    "video_encode": "enabled",
+    "webgl": "enabled",
+    "webgpu": "enabled",
+    "webnn": "disabled_off"
+  },
+  "profile": "C:\\Users\\lylal\\AppData\\Local\\Temp\\tixtab-ink-native-aazkBc"
+}

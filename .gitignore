@@ -32,3 +32,17 @@ docs/releases/*
 !docs/releases/0.2.36.md
 !docs/releases/0.2.37.md
 !docs/releases/0.2.38.md
+!docs/releases/0.3.0.md
+# Keep reproducible source, reports and manifests in Git. Multi-GB raw experiment
+# payloads remain in the local validation archive; they are not application data.
+docs/performance/**/*
+!docs/performance/**/
+!docs/performance/**/*.md
+!docs/performance/**/*.json
+!docs/performance/**/*.mjs
+!docs/performance/**/*.cjs
+!docs/performance/**/*.py
+!docs/performance/**/*.ps1
+docs/maintenance/**/*
+!docs/maintenance/**/
+!docs/maintenance/**/*.md

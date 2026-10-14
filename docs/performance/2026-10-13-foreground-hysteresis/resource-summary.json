@@ -1,0 +1,50 @@
+[
+  {
+    "label": "foreground-hysteresis-fixed-before-1",
+    "cpu": 13.984904000000014,
+    "demand200P99": 2.2572728727010163,
+    "demand200Peak": 2.3224743932126635,
+    "peakWorkingSetMiB": 1998.3984375,
+    "peakRendererPrivateMiB": 335.859375
+  },
+  {
+    "label": "foreground-hysteresis-fixed-before-2",
+    "cpu": 13.716909,
+    "demand200P99": 2.358775610732715,
+    "demand200Peak": 2.370047453529571,
+    "peakWorkingSetMiB": 1977.1171875,
+    "peakRendererPrivateMiB": 353.37890625
+  },
+  {
+    "label": "foreground-hysteresis-fixed-before-3",
+    "cpu": 13.866512000000007,
+    "demand200P99": 2.1925619464553554,
+    "demand200Peak": 2.324984001241061,
+    "peakWorkingSetMiB": 1952.22265625,
+    "peakRendererPrivateMiB": 335.1953125
+  },
+  {
+    "label": "foreground-hysteresis-fixed-candidate-1",
+    "cpu": 13.620507000000002,
+    "demand200P99": 2.1766859083354486,
+    "demand200Peak": 2.4789703567392736,
+    "peakWorkingSetMiB": 2020.9765625,
+    "peakRendererPrivateMiB": 349.10546875
+  },
+  {
+    "label": "foreground-hysteresis-fixed-candidate-2",
+    "cpu": 13.68651599999999,
+    "demand200P99": 2.0897858627884713,
+    "demand200Peak": 2.204569561835419,
+    "peakWorkingSetMiB": 2127.94140625,
+    "peakRendererPrivateMiB": 387.9765625
+  },
+  {
+    "label": "foreground-hysteresis-fixed-candidate-3",
+    "cpu": 13.631286,
+    "demand200P99": 2.3000382214833293,
+    "demand200Peak": 2.4277227242353394,
+    "peakWorkingSetMiB": 2004.89453125,
+    "peakRendererPrivateMiB": 334.1875
+  }
+]

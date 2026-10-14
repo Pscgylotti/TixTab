@@ -103,7 +103,7 @@ export async function verifyPdfWorkerUi(page) {
     await page.waitForFunction(() => window.__pdfWorkerQa.workers.length === 1);
     assert.equal(
       await modal.evaluate((el) => getComputedStyle(el).backgroundColor),
-      'rgba(30, 36, 47, 0.96)',
+      'rgb(30, 36, 47)',
     );
     const cancel = modal.getByRole('button', { name: '取消导出', exact: true }),
       box = await cancel.boundingBox();

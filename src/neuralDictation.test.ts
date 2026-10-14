@@ -42,6 +42,43 @@ function fixture(source = 'downloaded') {
   return { service, children, models, owner: {} };
 }
 describe('local neural dictation controller', () => {
+  it('switches microphone identity without reloading a warm model, and exposes capture errors', async () => {
+    const f = fixture();
+    try {
+      const request = {
+        action: 'start',
+        engine: 'whisper-small',
+        language: 'en-US',
+        microphone: 'winmm:YWJj',
+      };
+      expect((await f.service.run(f.owner, { ...request, microphone: { id: 3 } })).error).toBe(
+        'invalid',
+      );
+      const first = await f.service.run(f.owner, request),
+        child = f.children[0];
+      expect(JSON.parse(child.stdin.read().toString()).microphone).toBe('winmm:YWJj');
+      child.stdout.write(
+        JSON.stringify({ event: 'loaded', device: 'NPU' }) +
+          '\n' +
+          JSON.stringify({ event: 'done', id: first.data.id }) +
+          '\n',
+      );
+      const second = await f.service.run(f.owner, { ...request, microphone: 'winmm:ZGVm' });
+      expect(f.children).toHaveLength(1);
+      expect(JSON.parse(child.stdin.read().toString()).microphone).toBe('winmm:ZGVm');
+      child.stdout.write(
+        JSON.stringify({ event: 'ready', id: second.data.id, microphoneName: 'USB mic' }) +
+          '\n' +
+          JSON.stringify({ event: 'error', id: second.data.id, error: 'microphone-missing' }) +
+          '\n',
+      );
+      expect(
+        (await f.service.run(f.owner, { action: 'read', id: second.data.id })).data,
+      ).toMatchObject({ microphoneName: 'USB mic', error: 'microphone-missing' });
+    } finally {
+      f.service.dispose();
+    }
+  });
   it('requires a completed model and rejects untrusted engines/languages before spawning', async () => {
     const f = fixture('missing');
     try {

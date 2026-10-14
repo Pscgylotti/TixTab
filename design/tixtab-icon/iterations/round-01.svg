@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">TixTab</title>
+  <desc id="description">Layered document tabs with a handwritten T whose stem is a fountain pen nib.</desc>
+  <defs>
+    <linearGradient id="tile" x1="64" y1="32" x2="440" y2="496" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2468A0"/>
+      <stop offset="1" stop-color="#102F52"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="156" y1="104" x2="348" y2="408" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E9F3FC"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="276" y1="204" x2="218" y2="352" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#249FC4"/>
+      <stop offset="1" stop-color="#12618F"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#tile)"/>
+  <path d="M114 138 268 116a28 28 0 0 1 32 24l30 230a28 28 0 0 1-24 32l-154 22a28 28 0 0 1-32-24L90 170a28 28 0 0 1 24-32Z" fill="#55CED7"/>
+  <path d="M164 110h112l88 88v190a32 32 0 0 1-32 32H164a32 32 0 0 1-32-32V142a32 32 0 0 1 32-32Z" fill="#0C2646" opacity=".18"/>
+  <path d="M160 98h116l88 88v192a32 32 0 0 1-32 32H160a32 32 0 0 1-32-32V130a32 32 0 0 1 32-32Z" fill="url(#paper)"/>
+  <path d="m276 98 88 88h-62a26 26 0 0 1-26-26V98Z" fill="#C7DFEF"/>
+  <path d="m244 205 35 16-31 103-36 34-10-48 42-105Z" fill="url(#ink)"/>
+  <path d="M176 215c37-12 79-14 123-7" stroke="#173F65" stroke-width="28" stroke-linecap="round"/>
+  <path d="m202 310 46 14-36 34-10-48Z" fill="#173F65"/>
+  <path d="m224 318-12 40" stroke="#F4FAFF" stroke-width="5"/>
+  <circle cx="224" cy="318" r="6" fill="#F4FAFF"/>
+</svg>

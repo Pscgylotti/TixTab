@@ -1,0 +1,22 @@
+{
+    "samples":  [
+                    {
+                        "voice":  "Microsoft David Desktop",
+                        "text":  "The library opens at nine in the morning and closes at five in the afternoon.",
+                        "sha256":  "87f81ef7f0eb99fad6a3a8f5bbdccc9a4e5b5abeb7977de664a67927e90ff15a",
+                        "bytes":  158926,
+                        "language":  "en-US",
+                        "file":  "en.wav"
+                    },
+                    {
+                        "voice":  "Microsoft Huihui Desktop",
+                        "text":  "图书馆上午九点开放，下午五点关闭。",
+                        "sha256":  "6eb5f0f6f53d60d8e14f33d773de3cd3f81a464c87be0b8096e2f937f26f0d47",
+                        "bytes":  151566,
+                        "language":  "zh-CN",
+                        "file":  "zh.wav"
+                    }
+                ],
+    "schema":  1,
+    "source":  "Local Windows desktop TTS, fixed project-authored test sentences; no microphone recording."
+}

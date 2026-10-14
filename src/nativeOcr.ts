@@ -45,6 +45,7 @@ export async function recognizePowerOcr(
   device: NativeDevice,
   progress: (text: string) => void,
   signal: AbortSignal,
+  layout = false,
 ) {
   signal.throwIfAborted();
   try {
@@ -90,6 +91,7 @@ export async function recognizePowerOcr(
     const used = [...new Set([...data.devices.det, ...data.devices.rec, 'CPU'])];
     return {
       text: data.text,
+      ...(layout && Array.isArray(data.lines) ? { lines: data.lines } : {}),
       confidence: data.confidence,
       elapsed: data.timing.totalMs,
       device: used.join(' + '),
@@ -106,7 +108,7 @@ export async function recognizePowerOcr(
       throw error;
     progress(t('本地加速不可用，已回退内置 CPU…'));
     await releaseNativeModel(signal);
-    const result = await localOcr(image, progress, signal);
+    const result = await localOcr(image, progress, signal, layout);
     signal.throwIfAborted();
     return { ...result, device: 'CPU (WASM)', engine: 'Tesseract', fallback: true };
   }

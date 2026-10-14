@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">TixTab — Ink T</title>
+  <desc id="desc">A layered document tab and a pen stroke form a single T, using TixTab's interface blue.</desc>
+  <defs>
+    <linearGradient id="tile" x1="80" y1="24" x2="416" y2="488" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#628CE9"/>
+      <stop offset=".5" stop-color="#4775DB"/>
+      <stop offset="1" stop-color="#365FBC"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="120" fill="url(#tile)"/>
+  <g transform="translate(6 -3)">
+  <path d="M277 138h38a30 30 0 0 1 30 30v36h-98v-36a30 30 0 0 1 30-30Z" fill="#BDD0FA"/>
+  <path d="m234 204 51 12-33 124a29 29 0 0 1-7 12l-25 26a5 5 0 0 1-8-2l-11-34a29 29 0 0 1 0-17l33-121Z" fill="#F9FBFF"/>
+  <path d="M151 210c63-19 130-22 198-10" stroke="#F9FBFF" stroke-width="52" stroke-linecap="round"/>
+  </g>
+</svg>

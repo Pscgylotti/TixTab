@@ -1,0 +1,7 @@
+{
+  "accepted": false,
+  "reason": "Thread collector blocked during GIL-holding native compilation; invalid spike resolution.",
+  "maximumSamplingGapMs": 42264.05579999846,
+  "phaseCumulativeCpuStillObserved": true,
+  "supersededBy": "../2026-10-13-asr-baseline/README.md"
+}

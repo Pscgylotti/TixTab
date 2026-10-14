@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "created": "2026-10-12T20:11:35.379Z",
+  "accepted": false,
+  "files": [
+    {
+      "file": "asr-round3-npu-cold.json.gz",
+      "bytes": 8310,
+      "sha256": "da98bd2c87c949c4c1583ce34ce2b775752fdc7ba3c6fa51d870143a18876c3a",
+      "originalSha256": "bf58777351f614a2bfc525c7fce99dc4dfe2d96e81e83c883a1612f5fe3a649b",
+      "originalBytes": 84362
+    },
+    {
+      "file": "sources/scripts/benchmark-asr.py",
+      "bytes": 13799,
+      "sha256": "4842b604f22bacd7e95d00e67a94a049403a4942aef33e11f77fa3a4fea79051"
+    },
+    {
+      "file": "sources/backend/native_asr.py",
+      "bytes": 10957,
+      "sha256": "0f28f198d0241c150f704382e6e36daf2ab2e11a9bc1eebebcde05c445c3ddb6"
+    },
+    {
+      "file": "sources/backend/opus_cache.py",
+      "bytes": 1590,
+      "sha256": "2c976ffbb488e1a0e7f98d99f9216618a58b1906e19626753a0e94bfa28f1e72"
+    },
+    {
+      "file": "sources/backend/cache_lease.py",
+      "bytes": 1812,
+      "sha256": "95095b3dd1fe593d21451537f7fc06c14f822d99e2de7253d23d7459f5f12588"
+    },
+    {
+      "file": "sources/backend/asr-manifest.json",
+      "bytes": 9198,
+      "sha256": "eb16819dddedd2304e81d7a452cb292dd208d93f30d389b4e2ce0c1c2e949dc3"
+    },
+    {
+      "file": "run.log",
+      "bytes": 6649,
+      "sha256": "da044c033d12e28e2f89f29a43219ddb3924c2ace86befa344ddf4ded7eb1e4d"
+    },
+    {
+      "file": "diagnosis.json",
+      "bytes": 274,
+      "sha256": "1c8aaa7026269847f225c4b5e84d72bda2fdca431373f682e1fb628e806a292e"
+    }
+  ]
+}

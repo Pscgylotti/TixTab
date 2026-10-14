@@ -1,4 +1,6 @@
+/* A touch-first popover: every field inside is a full finger target. */
 .selection-flyout {
+  --ctl: var(--hit);
   overscroll-behavior: contain;
   scrollbar-gutter: auto;
   scrollbar-width: thin;
@@ -7,8 +9,8 @@
   scrollbar-gutter: stable;
 }
 .selection-flyout[role='dialog'] :is(button, a, select) {
-  min-width: 44px;
-  min-height: 44px;
+  min-width: var(--hit);
+  min-height: var(--hit);
 }
 .selection-flyout .selection-actions {
   gap: 2px;
@@ -66,10 +68,8 @@
   display: grid;
   gap: 8px;
   margin: 16px 0;
-  font-size: 13px;
+  font-size: var(--fs-md);
 }
 .writing-hand-setting select {
-  min-height: 44px;
-  padding: 8px;
-  border-radius: 8px;
+  min-height: var(--hit);
 }

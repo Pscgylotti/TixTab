@@ -1,0 +1,6 @@
+{
+  "culling": false,
+  "mechanism": "Only force enabled=false in useForegroundViewport for A; B uses the unchanged hook. Both retain identical fixed quality, viewport scheduling code, application icons and other edits.",
+  "sourceHookSha256": "7b229c08eec33cb6fd5913535d92044c57be7cc293efda890d95f22d53cb451b",
+  "compiledHookSha256": "dc2242f36315a408a02f1a3fb7582497562ae594f52cdb9f5ab919342d952781"
+}

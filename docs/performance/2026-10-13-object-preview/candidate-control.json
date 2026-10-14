@@ -1,0 +1,6 @@
+{
+  "referenceSource": null,
+  "originalSha256": "8abdee71078bca5fd9303bf9aa74db040fb396ab5cecad42b63346f7c19ef447",
+  "compiledSha256": "8abdee71078bca5fd9303bf9aa74db040fb396ab5cecad42b63346f7c19ef447",
+  "mechanism": "Only ObjectLayer.tsx differs: apply the same exact CSS preview geometry to selected DOM nodes per animation frame, instead of cloning/reconciling all page objects. Same rasterization, stacking, final transform/commit and cancellation semantics."
+}

@@ -140,6 +140,7 @@ try {
     await page.mouse.down();
     await page.mouse.move(r.x + r.width * 0.9, r.y + r.height * 0.27, { steps: 5 });
     await page.mouse.up();
+    await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
     await page.getByLabel('OCR 后端').selectOption('local');
     await page.getByRole('button', { name: '开始识别', exact: true }).click();
     await expect(page.getByLabel('识别结果 · 可修改')).toHaveValue(/TixTab\s+12345/, {
@@ -169,6 +170,7 @@ try {
     await page.mouse.down();
     await page.mouse.move(area.x + area.width * 0.9, area.y + area.height * 0.27, { steps: 5 });
     await page.mouse.up();
+    await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
     await page.getByRole('button', { name: '开始识别', exact: true }).click();
     await expect(page.locator('.ocr-task-status')).toContainText('本地模型尚未安装');
     report.removalPreventsCachedOcr = true;

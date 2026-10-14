@@ -1,0 +1,6 @@
+{
+  "referenceSource": null,
+  "originalSha256": "143ac0da541b7293607205c198d998b81d5998ca0e6f891033532e3cd5d42d9a",
+  "compiledSha256": "143ac0da541b7293607205c198d998b81d5998ca0e6f891033532e3cd5d42d9a",
+  "mechanism": "Only ink.ts differs: round the four outline extrema for exact bounds, instead of rounding every point again. Path strings, negative-zero bounds, geometry, pressure, pixels, caches, layer order and scheduling stay fixed."
+}

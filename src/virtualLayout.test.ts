@@ -1,8 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { itemAt, makeLayout, visibleRange } from './virtualLayout';
+import {
+  itemAt,
+  insertionAt,
+  insertionDestination,
+  makeLayout,
+  visibleRange,
+} from './virtualLayout';
 import { zoomReadingPoint } from './readingZoom';
 
 describe('长文档视区与缩放锚点', () => {
+  it('页间插入支持首尾、混合页高以及移除源页后的索引修正', () => {
+    const layout = makeLayout([100, 200, 150]);
+    expect([-20, 10, 80, 150, 230, 340, 440, 999].map((y) => insertionAt(layout, y))).toEqual([
+      0, 0, 1, 1, 2, 2, 3, 3,
+    ]);
+    expect([0, 1, 2, 3].map((gap) => insertionDestination(1, gap))).toEqual([0, 1, 1, 2]);
+    expect(insertionAt(makeLayout([]), 10)).toBe(0);
+  });
   it('不同页高的前缀位置与滚动末端准确，空文档安全', () => {
     const layout = makeLayout([100, 200, 150], 8);
     expect(layout).toEqual({ offsets: [0, 108, 316, 474], total: 466 });

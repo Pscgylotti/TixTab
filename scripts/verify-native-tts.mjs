@@ -163,6 +163,7 @@ export async function verifyNativeTts(page) {
   await page.mouse.down();
   await page.mouse.move(box.x + 150, box.y + 150, { steps: 4 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   await page
     .getByLabel('识别结果 · 可修改')
     .fill('这是本地中文语音测试。我们可以在阅读时暂停和继续朗读，并且使用低功耗设备。');
@@ -178,6 +179,7 @@ export async function verifyNativeTts(page) {
   await page.mouse.down();
   await page.mouse.move(longBox.x + 150, longBox.y + 150, { steps: 4 });
   await page.mouse.up();
+  await page.getByRole('button', { name: '识别文字（OCR）', exact: true }).click();
   await page
     .getByLabel('识别结果 · 可修改')
     .fill('这是本地中文语音测试。我们可以在阅读时暂停和继续朗读，并且使用低功耗设备。'.repeat(3));

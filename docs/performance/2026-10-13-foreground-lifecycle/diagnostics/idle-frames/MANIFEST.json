@@ -1,0 +1,2096 @@
+{
+  "schema": 1,
+  "parent": "../..",
+  "parentManifestSha256": "f11f4d99962cb379f9764170eac70bd904b8e8f33ce4d8f8f3ea11fc4910b8d4",
+  "parentSourceManifestSha256": "8cc1e3d391e5101554f9bf90ab9241ce24ea32954e142fe239493d78e8e7e8a7",
+  "records": [
+    {
+      "group": "before",
+      "buildSha256": "b448cec8cce01d7a306b01ec5a8270c51e0d6b0052aac35bdffad3dfc7841b4d",
+      "harnessSha256": "32372c82a9101759df0bd7ffee7be448c62170220431d4cf52b9b536ae843e5e",
+      "sourceManifest": [
+        [
+          "index.html",
+          "417fd8bec19ecc0d6e5a9c48ecf48b767955d59b5fd314a33864f3e7cf09ef94"
+        ],
+        [
+          "package-lock.json",
+          "559fced89db641aded27e40a017ec3626bc5d1eccc7abe62c93c78812763b860"
+        ],
+        [
+          "package.json",
+          "99ae61df209eac5f822be031f58fa9bc5622e67c579c5b482e32d62a58d2bb6d"
+        ],
+        [
+          "src/App.tsx",
+          "4015c9dcaf6c026f438241d09d3448a292360793ce71e773035a96ab44ec7420"
+        ],
+        [
+          "src/appearance.ts",
+          "8c130f7ae615616bb5ecc3effdb76d9f418eef61a76434dd11bc484c02f353fe"
+        ],
+        [
+          "src/blankPaper.ts",
+          "d15b7669ded4d819aab251c90d03852484aa9c9ec9de21a6a59c95af7bef2f7e"
+        ],
+        [
+          "src/browserCaches.ts",
+          "7f0fd850109fc3b6193819086b36a257bdb1b90a917993b567df5c150e4f3405"
+        ],
+        [
+          "src/cacheAccess.ts",
+          "302f604a3fbad3298bef5d4a0294786d024366520f56c520ac8de79db832b5a9"
+        ],
+        [
+          "src/cacheLibrary.ts",
+          "f9a5ca1bbf8067df385824d26e5e8936ae306e1191d0c466be5345a5238f2ac3"
+        ],
+        [
+          "src/cacheManager.css",
+          "5192f53a2dca869d0ccc38df28e9d39df8f8ee62b0bec8239db1e566097badf3"
+        ],
+        [
+          "src/cacheManager.test.ts",
+          "02f03d0995714894666c13c0d2d4e5e12cb178a2071b9fc5f0896ada78d6a762"
+        ],
+        [
+          "src/CacheManager.tsx",
+          "9ac079334ec1127f22e654f0b0ea546596cecf7de950197816a7152710f23142"
+        ],
+        [
+          "src/capturePage.ts",
+          "3431e07808cdcaa610b912d4dafd32db08a421e6d646ec4d55294c0fabb6a51c"
+        ],
+        [
+          "src/CapturePreview.tsx",
+          "7c7136793af162b39c0c0bcd68b7b74160d670ff06338cb47611605fb96feb66"
+        ],
+        [
+          "src/chat.css",
+          "6ec293168001bac01b0ddc4c24c287e851524b61d6c21cd99f0317078b28209e"
+        ],
+        [
+          "src/chatApi.test.ts",
+          "b1964e661a9ebe93a74a233e1bfa4f099c3d93f49042b1d749d800dfbd288b43"
+        ],
+        [
+          "src/chatApi.ts",
+          "563d512c5edd5400adf89eaa019b78bdd758aa5f5f3f03191dc2907fb20bd6f2"
+        ],
+        [
+          "src/ChatApiSettings.tsx",
+          "895e38f28d60a114a36fbc77f2acc75f65d75f91037eb8be5aeb91b8b5492203"
+        ],
+        [
+          "src/chatAttachments.test.ts",
+          "afaf16a87bd4a4d281b5f9e7153b132dd29756e6872433bc12afffe16bb59c90"
+        ],
+        [
+          "src/chatAttachments.ts",
+          "093e03f82d87d403ab964710f944452edecae9acac902bc912ae1ff72f043792"
+        ],
+        [
+          "src/chatContext.ts",
+          "ac8d7e0756f6b013fd04c2adf0ee86708ed3ebf188d63e4e728092a67e32369a"
+        ],
+        [
+          "src/chatFile.test.ts",
+          "1c66c46d30dccc981ee3a7c07e1e910da92fa8d672ba8a061b5d1c967c28a3f3"
+        ],
+        [
+          "src/chatFile.ts",
+          "4106e1a8846e1f6e911f6890e1c20fe5f879085f492bf5c2a15e6a17c4d2a7ca"
+        ],
+        [
+          "src/chatgpt.test.ts",
+          "b7bc0b4c8c4eed1a6e86bcecb12200e6a828095a9847fe1b2cfe8ccf948c3c8d"
+        ],
+        [
+          "src/chatgpt.ts",
+          "4f559052f183f143187ac25b210dc20f1afe5748be172fdec9a8f37d75d2f0b3"
+        ],
+        [
+          "src/chatMarkdown.test.ts",
+          "0567e09ee08e1bb351b17100e6eb8c323bd9f8709dd28382357bc1dce03a5eb1"
+        ],
+        [
+          "src/ChatMarkdown.tsx",
+          "25f97294d4a967e79ef20e2dc54e42d6f9b2d98972cecd326aa5df5f1dcff9ac"
+        ],
+        [
+          "src/chatMarkdownText.ts",
+          "3709536ae9ef3a087eb010787a176669d53c1de8055a2c65df85f2f48891b6db"
+        ],
+        [
+          "src/ChatPanel.tsx",
+          "56bdcb6108d724bea2c934ac51bbc04ca65da46c04ffd6ad64e567ff1d2e5759"
+        ],
+        [
+          "src/chatPrompts.ts",
+          "73092b52c9d2f723ee836a3b8581754fe1641f8a361ba388cd8e63ee97e67384"
+        ],
+        [
+          "src/ChatSvgPreview.tsx",
+          "ae0ee05c92432d8729ad0f44fc62fbc36f517b0712e83113bb3e971785a130f3"
+        ],
+        [
+          "src/chrome.css",
+          "58d7cd1b1aa9be96ae6cbb89110ed06992c0afd6414916089f440d3a4faa9e52"
+        ],
+        [
+          "src/clipboard.ts",
+          "bab86adaf7cd89350167bc813d220ed118861b97a2373d5605d84479cc442464"
+        ],
+        [
+          "src/committedInk.ts",
+          "b77447da52ea2b244afb756d1210656dd26ebe7425fde71667dbc8141b237415"
+        ],
+        [
+          "src/compactTools.css",
+          "9a355fefda38874772923c89b9feae00d8a3eceeceaeb5fa4eb1438e180ab3da"
+        ],
+        [
+          "src/deferredSave.test.ts",
+          "25327c628edc54a109f15d8b8f30acf9c217445ab3b86d4711dc207713d4d77b"
+        ],
+        [
+          "src/deferredSave.ts",
+          "c724cc36064f80c1200b20bb51c6c3d5bfd37201a087711b550d4e1580590b07"
+        ],
+        [
+          "src/desktop.d.ts",
+          "50f49f79a0fd6941605d60137a5643863f2dfbe8c21d3124e60b7b2bee5a705d"
+        ],
+        [
+          "src/dictation.test.ts",
+          "e99ff62d796d210a176d959a22ad694ed058e9c64b68662568637f10e8809282"
+        ],
+        [
+          "src/DictationButton.tsx",
+          "db77dd8fcf23922b0ed54dc863ac1ba945049dd9efd048416f66974b0e51e2b3"
+        ],
+        [
+          "src/documentChrome.css",
+          "3ddf905f8300bc104a8782ac4010ee2bb36f0edae6be183615f91218703b3feb"
+        ],
+        [
+          "src/FieldEditMenu.tsx",
+          "1592aa173d6d33d033a4faa5ef8901f90f5230783a2e0bf2644bda9f9fb96001"
+        ],
+        [
+          "src/foregroundViewport.test.ts",
+          "1b01336c700d6b6f1953ad216c446ce882f492d9fc26cba1a542d589f451c678"
+        ],
+        [
+          "src/foregroundViewport.ts",
+          "6604216e1274c2d8e8a154a365e23009151bf69f8a2e8da8433782e884db794a"
+        ],
+        [
+          "src/FormulaDialog.tsx",
+          "4773a13fac165c6062b532483f56fb9e17f1b33c2bf15fd2a97599ca46e54416"
+        ],
+        [
+          "src/formulaDraft.test.ts",
+          "594905aced5efadc137ebb58960f4053de49e207013cf49b882e4e395ffc0ee0"
+        ],
+        [
+          "src/formulaDraft.ts",
+          "742dc79b0db190fd8632f35006791342ede75654d29256da4adadd84acc6b35b"
+        ],
+        [
+          "src/formulaInk.ts",
+          "c087e67221e10842cd22678e1b2d95b41a4312340eda3e74681b24c9a68a6306"
+        ],
+        [
+          "src/formulaLines.test.ts",
+          "e27b8156fff5b64971bcae935330427ce2e294864f26944a8b8aab8ffcf7ea44"
+        ],
+        [
+          "src/formulaLines.ts",
+          "13baed1687fbf6f475d5dc2a25e5f412605a2f5f5a2fa14f22722468affd158b"
+        ],
+        [
+          "src/FullscreenButton.tsx",
+          "001f3f2b13be610fb046f38958fd7dac067f0c84b3def0a679ad1d26cb428382"
+        ],
+        [
+          "src/gestures.ts",
+          "ab3d46ae4b055645c4ef8a898bc0e141a20ae726601de55995f01b43eb7e4e5c"
+        ],
+        [
+          "src/GroupHierarchy.tsx",
+          "8e7742d97911d4ca6197d2399a3b5a732894ec6bc9d7ea726bc324aa8d01b218"
+        ],
+        [
+          "src/i18n.ts",
+          "f2d4b03f8155ffe82654b9add20ab1f720a6f9807a7f648b3e001c929981eb94"
+        ],
+        [
+          "src/ink.ts",
+          "2e2729a2f1114fe8e966caa43390754568258a850f23f09ab994d3b5715a6116"
+        ],
+        [
+          "src/InkColors.tsx",
+          "5b522d5d722496a0c9d9a21601d68daf14fdf6a244b92d67c11be54a9b188bf6"
+        ],
+        [
+          "src/inkGeometry.test.ts",
+          "cc7b4c9b724a16da41dac9544b84b619519bc2e50f7623ea1af87e45331b1e5b"
+        ],
+        [
+          "src/inkTools.ts",
+          "eb642f4df5f642ba0a696f383c7641059d694cb3fbbc23b1348024ffc53d1c0b"
+        ],
+        [
+          "src/inputPreferences.ts",
+          "22caa32031c2703dd400535e5a8ccb0c957183e5cb517d12ba7d8404e5353810"
+        ],
+        [
+          "src/interaction.test.ts",
+          "61abb1a97fa34036b820ba27b034ec434f4024539fb2edc60e8d04b36537234d"
+        ],
+        [
+          "src/latexMacros.ts",
+          "605151848fea0a55f3625018e8005f796bf5bcac371d985eaa5368845abfb612"
+        ],
+        [
+          "src/LatexSource.tsx",
+          "dcdf17d2c2091ff31bd9a87105796c76ae681ad20024a537a6c8cd63361820b6"
+        ],
+        [
+          "src/locales/en.json",
+          "bbedf405c1701dd2502b0a68fc02e8c1dc100f03e8cdb04179cc978a5d599bde"
+        ],
+        [
+          "src/main.tsx",
+          "cdb5ba98f350c8bf5a1039bf621d7a34a2eaa46656d28ac42ee17d1ea78ca14d"
+        ],
+        [
+          "src/model.test.ts",
+          "06847edbd538d7ebf016adb2fc5c2f6b60a1faf63399dc7e3c9d89f1e90e66b5"
+        ],
+        [
+          "src/model.ts",
+          "ca316b1d1eb307799b512f2486f839772d3eff78cea3f3f90d22222632ed7a96"
+        ],
+        [
+          "src/ModelConfirmation.tsx",
+          "16dc1c61724fc6c6fac414352d11e4aa5d02e80e8d228a564ce90916edc0122f"
+        ],
+        [
+          "src/modelIdle.test.ts",
+          "afc4d76b44da3bb1dfad7d42ed48156529eb1d3a843eff2c96c1991e79168d1e"
+        ],
+        [
+          "src/modelIdle.ts",
+          "44a88d17d7f0e5ec2f530baab2891dbe628cb3ce967060a3092765a4cf4de2d6"
+        ],
+        [
+          "src/modelLibrary.css",
+          "7ccd42f110196d32d8029d0586197051c832cac2652b9c35df0fca336166f644"
+        ],
+        [
+          "src/modelLibrary.test.ts",
+          "0a2edd661f5b6e85b63ec9cc8cacfdd1c962296e603eb0d7620275cec34e1297"
+        ],
+        [
+          "src/modelLibrary.ts",
+          "ba2994d866b2fdb00a002e83fd5e333f8702ca79e013b53566f4c5220874670b"
+        ],
+        [
+          "src/ModelManager.tsx",
+          "2e010752e544318894d3ffe5077dd413e7d6e0a3cd473cced90369d2362e86d5"
+        ],
+        [
+          "src/nativeOcr.test.ts",
+          "a422dde0e84af2692d4f0267e44b469455efa4b9022a36f842518772d2f93ccf"
+        ],
+        [
+          "src/nativeOcr.ts",
+          "47ae3a7d942ff883ca996f30a5f7952e7444b1cddedd21f5c2dac34b58e87402"
+        ],
+        [
+          "src/nativeOpus.test.ts",
+          "dc8d6a901d392cada7ed0fd8f8c9e2fc26fa2382b837d10a0364e3ff99fae993"
+        ],
+        [
+          "src/nativeOpus.ts",
+          "ae6ac7394569dbbe42bec72dbb0c6d181d71903654c82b5942c3c91aac504457"
+        ],
+        [
+          "src/nativeResources.test.ts",
+          "dc3ae9f2f8fc9e5cfe7e59f69cad07dd9725a64884312a08092c9bccc69e2c47"
+        ],
+        [
+          "src/nativeResources.ts",
+          "3ee04f870f598647b85a5be69267cc8a573aef2ab1b227640c7415094f9c9672"
+        ],
+        [
+          "src/nativeTexo.test.ts",
+          "0150f4dc4847de1c314507c96d9252df0b338dba45c76c5bc1c07048d2b8a4c6"
+        ],
+        [
+          "src/nativeTexo.ts",
+          "7b6f784a685291b0d2cb5e69e8c757784c699469998094c4153a08a4a76cfefa"
+        ],
+        [
+          "src/nativeTts.test.ts",
+          "710bfd761812849890bb41b08372a03a7768aafaa928568bde24fe82c6a6f6b4"
+        ],
+        [
+          "src/nativeTts.ts",
+          "673506665ac0443fee5d8c67819ee668882377d6055438b4e859815594c53ac6"
+        ],
+        [
+          "src/nativeUnimumer.test.ts",
+          "3eb2fc91588207f513992a55f6031430416be93a1d9488fec20cc81a50b670b5"
+        ],
+        [
+          "src/nativeUnimumer.ts",
+          "47155888aac621197ab6b7c8f22a90c045399b28b44a50f3cb102b763aeeea1e"
+        ],
+        [
+          "src/neuralDictation.test.ts",
+          "7481144280c19048243908d3f158e299e2e2a2ed1e7be10f25d517b0d999b0c3"
+        ],
+        [
+          "src/night.css",
+          "73e826c7a3db57e9b0b8bb6db5848cf9ef8d055a99e474838656f252063f0097"
+        ],
+        [
+          "src/objectClipboard.test.ts",
+          "eac57711ddb173f6eb2daaece505f0299d7d79848a83bf7e66242b3954d67f63"
+        ],
+        [
+          "src/objectClipboard.ts",
+          "3fd3e288690ddb8a1aa1cabc93ea1d4299a588da258a403f4abd342a7245a938"
+        ],
+        [
+          "src/objectGroup.test.ts",
+          "4f547a248b4bb72ebeb23855806f191becacbc09c41267d923fb978dd86c77a1"
+        ],
+        [
+          "src/objectGroup.ts",
+          "ba6f8075435be8f22947ac2f2522af1371afa162b9f0fa02ab133d84a0d7cdce"
+        ],
+        [
+          "src/ObjectLayer.tsx",
+          "c0b47bffa580448252ad11dd0c31eb2a782a8657064e03d31b3a05cdeda4204d"
+        ],
+        [
+          "src/objectSelection.test.ts",
+          "df4cdb60eb008a6a1c71b3f05cdd596604a6e50fe3c007433ccccdfcd3b6c3ec"
+        ],
+        [
+          "src/objectSelection.ts",
+          "b42400abb6a3cd809968c12163780167d68b5afce5992a1eafa54331601c1a41"
+        ],
+        [
+          "src/ocr.ts",
+          "a61c7abacd1e9d2c1951d74a873987347f1327ae171587f0de1bbe4f9ab5463e"
+        ],
+        [
+          "src/OcrDialog.tsx",
+          "e1f2b7529b9f443372bb96a5547fba30140488b53f8284b715df8085a0c4d75b"
+        ],
+        [
+          "src/ocrWorkerSession.test.ts",
+          "fc970a67022bee9cff1dfd413f34fcb85081904a85d1ed863ef3ab9ff89595b8"
+        ],
+        [
+          "src/ocrWorkerSession.ts",
+          "427e14be04256a97bfd96e97bafe4c787051ee2aa3e4e0607f368e5f272d6259"
+        ],
+        [
+          "src/PageEditor.tsx",
+          "2b90bb34ab2e340991f58d11f0fe2bea917a0ff810e60c287ff01b623ea5410e"
+        ],
+        [
+          "src/pageFit.css",
+          "0301027f2f24aa9615cda55ae1b950f8b88b324051344ad67d4c1d90ced9fcc6"
+        ],
+        [
+          "src/pageFit.test.ts",
+          "b1b92869757971a86533dfa1377b17f59bed522c328f4b4a1c86135cbeee6cd7"
+        ],
+        [
+          "src/pageFit.ts",
+          "3ca5ef91639ce80fb95378b7dbe9efb7030f5d9556a1438ab4abda35937fc79a"
+        ],
+        [
+          "src/pageLayers.test.ts",
+          "145855ce37109df8f7ef81c11c8d02d9d4a33e977c82ba4704c5ed2db5b69864"
+        ],
+        [
+          "src/pageLayers.ts",
+          "0039048c7459030b2ebd5bce9751e9940105fef9d136ac2aae083e58b92dd091"
+        ],
+        [
+          "src/PageList.tsx",
+          "93a222aaf685da7522a5ea286a563c628c9f0e26542512349f1d8f3bddf46a03"
+        ],
+        [
+          "src/PageThumbnail.tsx",
+          "5da1307d25a9aec7b46ab134d046f86ff56be6b8d93c67509e687f9d532c8ba9"
+        ],
+        [
+          "src/pdf.ts",
+          "165a68d64af22354b8747d4e36e3496820d635a8688e96ec03e1e010b95e3945"
+        ],
+        [
+          "src/pdfCompletion.test.ts",
+          "62d912fa277b671be925c963a671920f3c8ab5f232a1843ce8bb477cd6693951"
+        ],
+        [
+          "src/PdfDetailLayer.tsx",
+          "b1598f9dfdcf69cff4d25641ac735df816da172f6dc51985b3d2325cb3b5adb3"
+        ],
+        [
+          "src/PdfDropDialog.tsx",
+          "b0bc8f19457085c219711030ea9bdfc53af690a1be2acba6fe14f6ed25aaf6d5"
+        ],
+        [
+          "src/pdfExport.test.ts",
+          "aca91d73aa3e64a0d930d7ef02019c2e26c68240908d96d9147d3c597ecac074"
+        ],
+        [
+          "src/pdfExport.ts",
+          "1238f7d9c78da16d8bda53c27d14a80820de7bda5dbb34429306cada6c5087b3"
+        ],
+        [
+          "src/pdfExport.worker.ts",
+          "2828fc5f1268d99f793d5616c69ee0c9c06036fc4541ccd2a33caae0ccb07140"
+        ],
+        [
+          "src/pdfExportClient.test.ts",
+          "ccdb7ee99468240abcb0dce34f7c2154de2807ea2da3d740552f7ac40e212280"
+        ],
+        [
+          "src/pdfExportClient.ts",
+          "001d5ead60660911429b51bf3de22e88ed775990aba6dc6a940f4242b186f77b"
+        ],
+        [
+          "src/pdfExportProtocol.ts",
+          "c5388cb79ba5bd78f1392fc81f084c49227334a553565790d849934a3b9e9e86"
+        ],
+        [
+          "src/pdfExportSnapshot.ts",
+          "8c8dece223d3d7d372e4f44f965993f3ed7f212e7780a7923be62ec2bfe3ddc9"
+        ],
+        [
+          "src/pdfInsertion.test.ts",
+          "e8d0865deedac692082302a9edb20b61d033a28c64ef7cea1c8e5aa8768f7191"
+        ],
+        [
+          "src/pdfInsertion.ts",
+          "ed1ff39f76070909875c6f7dc245482816ed4e88d7602ac871e8ef9be44d5d8f"
+        ],
+        [
+          "src/pdfNight.ts",
+          "c593d009ad7abbd6fe84da19a18f32dc1fb33cfa40a8b77ff103490d03cb5e4a"
+        ],
+        [
+          "src/pdfNight.worker.ts",
+          "9e1446bc01a6a05ca92f38082421603cd0543e208a680b4cc5ac9bdd21f75f75"
+        ],
+        [
+          "src/pdfNightColors.test.ts",
+          "1495856ea305a406683dd851b2f48644f2a9c773e63bb24643ad281a8c5b4731"
+        ],
+        [
+          "src/pdfNightColors.ts",
+          "47ffa5a9cdea7f1be07b82fe15a882f9fe4e25dc14ef0eda4da9eee8c69a3818"
+        ],
+        [
+          "src/pdfNightGeometry.test.ts",
+          "26fc946294d8b775b233b3127aab65ca7d21ffb4ca391f3765a4b700f9c805b1"
+        ],
+        [
+          "src/pdfNightGeometry.ts",
+          "c02e27906ff685b6b2e5b6ea5b165ff26c59a0be38d30e7951bd7e78d53adc0f"
+        ],
+        [
+          "src/PdfOriginalImages.tsx",
+          "a8d8020e20dc39a16da2975a65f0e561f1ee775a1bcb46625f0c8581ca59a2f9"
+        ],
+        [
+          "src/pdfRenderCache.test.ts",
+          "2ee4d8c8ab0a566e68186ce22313b6618945131aec6c900029965660ea29a1e3"
+        ],
+        [
+          "src/pdfRenderCache.ts",
+          "9d87afb61172f4bdc895ed86710fb3c96d759bff74fdc57d4f7318835f32ab79"
+        ],
+        [
+          "src/pdfScheduler.test.ts",
+          "2d779d43e79c16391411c9c2a1f8a24165002258a3b0b6ca7b6b011cd572b33b"
+        ],
+        [
+          "src/PdfSurface.tsx",
+          "efb3a77db9586b6c3d83758bc302870cc54cf03dec44e1022bf09a5dc229c06a"
+        ],
+        [
+          "src/PdfTextLayer.tsx",
+          "194b06d8e90312ce71f97c15f354465abc956fbab6fe9e585883075105a3530b"
+        ],
+        [
+          "src/pdfTiles.test.ts",
+          "d0163c32f29645083a70f5f5f0f63d20769ff2afe666833d5dcab6f4fc71fa30"
+        ],
+        [
+          "src/pdfTiles.ts",
+          "6ce32939d561337eea228379f837ef75144cb11dbe6a787b07f8bf7da7c865e6"
+        ],
+        [
+          "src/penToolWheel.css",
+          "55303d94a2f4c0faac75aea4b58b51583350b2c2bcb35adacd0deccbf5113edf"
+        ],
+        [
+          "src/PenToolWheel.tsx",
+          "1dbb8a6b934bfa4aac37ee2e39fd7d281951cdb617300c1de1ebfa81ec88230a"
+        ],
+        [
+          "src/performanceLedger.test.ts",
+          "5ed49ca0012b3c52da5443d2aa144721fd2fae4d1c78d2ad38b4803642713e23"
+        ],
+        [
+          "src/performanceLedger.ts",
+          "8731db899a208825f623c7eea3a0c5a131437b7128e8175722514a5e9e5a669b"
+        ],
+        [
+          "src/phonemize.ts",
+          "8815d911a55cc895a52e97adca500f72b233c778fa293b53b54132d44bf02350"
+        ],
+        [
+          "src/phonemize.worker.ts",
+          "009ebd89a06567970b5c7a5d9bce0fc1cafc68bd531fc9e50b5b04f537dade5a"
+        ],
+        [
+          "src/pinyin.test.ts",
+          "5ebab11940a5239d9a19b4375abb9bd931d709063bd30003f6175d1ace38c15d"
+        ],
+        [
+          "src/pinyin.worker.ts",
+          "111d601c2b48105d4f1a5646930705d7f9300a50d9a5da74eb8d3fa06c284b69"
+        ],
+        [
+          "src/ProviderAdvanced.tsx",
+          "5a4cfc9b2e9327b51acde218e5fb5071846f6a874eca6db7b74f3396b5712a38"
+        ],
+        [
+          "src/providerRelay.test.ts",
+          "d68f72996f8439107ebb098fbf854cf47c746a1d125827c2d69777acd35cd54c"
+        ],
+        [
+          "src/providers.test.ts",
+          "669c5683ae2f2d96405614ce07fe44cb62af4726616bd1810c3dbed966119eee"
+        ],
+        [
+          "src/providers.ts",
+          "796134a81de6e99239e291a531bed969153fa20a02937e40fa4ca0026f705c14"
+        ],
+        [
+          "src/providerSettings.ts",
+          "fe646c8f1dcf22217ce5980e147df87b315baa7532bf0e71d83ad01f8ecb2340"
+        ],
+        [
+          "src/providerTasks.test.ts",
+          "9c5dcfb43ce0d292eb75d5b1cc81f505af238887c63d8d7a2d8962d69a7e95ee"
+        ],
+        [
+          "src/providerTasks.ts",
+          "baf943a3d53c69023135586c607bfc65cceee70e0ba0b2acbcbba957801e6e04"
+        ],
+        [
+          "src/providerTransport.test.ts",
+          "d09c8b7dad9437601ae0faf490a4b88a2c0f8e9f4982ca968e033e26e3919f40"
+        ],
+        [
+          "src/providerTransport.ts",
+          "46666a41a72063d8bbb5ce3223b54e3e5a116d5f004f2f5be8dd21d9f1935c41"
+        ],
+        [
+          "src/providerVault.test.ts",
+          "25d766452dd10f2662b44600c52febcd71714709b3119755b462683aec7b27fd"
+        ],
+        [
+          "src/ReadingView.tsx",
+          "ce825f80bee57308df66f359afd8bcb11a6c964b20d5af40af161379dc6a30af"
+        ],
+        [
+          "src/readingZoom.ts",
+          "8fd1e7d4142685a146a0726e14d76508c6675522ea90b958a9daba79b0986650"
+        ],
+        [
+          "src/RegionCapture.tsx",
+          "eb5e765cbbb1aa4fce6dca9d10f36029ff2e32227eec2d93bff700777bef7ed2"
+        ],
+        [
+          "src/remoteProvider.test.ts",
+          "7afa91339a903353d34fffb4ee0449704471370d78a6425490ec9557c25c933d"
+        ],
+        [
+          "src/remoteProvider.ts",
+          "2d115fa26b8990edf286281a529d9153da514c41221fad7f357c9960ef781ba2"
+        ],
+        [
+          "src/renderQuality.test.ts",
+          "d7e39cec7960b8c41692b5a02ab5f67d2b7fe4c2a1f1c988c711a492390712a3"
+        ],
+        [
+          "src/runtimeBridge.ts",
+          "e36d0bba177f53d51f34d8fb60aaa598afeb8688d8ea2be9e2788f06a4b01722"
+        ],
+        [
+          "src/runtimeInstaller.test.ts",
+          "fa7decc803f39a28ccaf613acd5a747c6381f1c9c7f705fa2ccf0e20508900f1"
+        ],
+        [
+          "src/RuntimeSetup.tsx",
+          "a152b80e777e4951d2abf94e205365fdd258e66c7869dec0105ca1fb1637d3b7"
+        ],
+        [
+          "src/scrollInertia.test.ts",
+          "75b4b3a639a4734ceb12bec14fdd239bb6c292bb2f4650135d4551f8cdd5fa44"
+        ],
+        [
+          "src/scrollInertia.ts",
+          "64f8302134088b6f72e22e288eef06ad440c636475dc9784105456ee9e7e7e4c"
+        ],
+        [
+          "src/selectionFlyout.css",
+          "aba79a1ec606a14136de36d237b5f70823f762e5379b2c52320bde0053fe8f79"
+        ],
+        [
+          "src/SelectionFlyout.tsx",
+          "042fda0676885f860d1857a587affad932b2ddfe1caf238e42bbeb3205e6d1c1"
+        ],
+        [
+          "src/selectionPlacement.test.ts",
+          "63bd34508f32b18c549707669182fb5effcafdcb0630afe7dc863fe714d86012"
+        ],
+        [
+          "src/selectionPlacement.ts",
+          "d607579dbe85b446707bb3041d6acbf36c4b1505a488bb49fa4e2f919cac9416"
+        ],
+        [
+          "src/settings.css",
+          "b818f6fe2b09b1ef7502ce86503adeb69b05b11fcc5af2ae77cbd655dcf559ec"
+        ],
+        [
+          "src/SketchDialog.tsx",
+          "3cb6598112facfdcebfe883af0a1ba180cd2268d2538d2013ed47ee800d406f9"
+        ],
+        [
+          "src/spatialIndex.test.ts",
+          "06beb5b0a2d08715371541b375cf2896c8090c9044a3039ab11675fd4069713d"
+        ],
+        [
+          "src/spatialIndex.ts",
+          "4ea2edb243a9546afeee8cbce5c302a55591b7d555c4c02fdef54c3088a686ae"
+        ],
+        [
+          "src/storage.ts",
+          "666e0b0a15d9c98fe51c50a9e5ddff0076b6391674c814e370ccee78263cc4d3"
+        ],
+        [
+          "src/styles.css",
+          "8c7b943e398fda8cf265f5b111cf7ac9c02153b70bfe18cc7100defeea897109"
+        ],
+        [
+          "src/svgImport.ts",
+          "68675bdccef6ce8fd9033926deffe6ca7d23a6103c426b1dc8edffde9b315666"
+        ],
+        [
+          "src/taskCenter.css",
+          "3158ae81b02ec46d34e816015d515671446143a3658f48fbb8480d91735f0b43"
+        ],
+        [
+          "src/TaskCenter.tsx",
+          "e8bc1f7c5935eade195ad68673e362f235abe73b87b008d4eacf8d63d91716aa"
+        ],
+        [
+          "src/TaskCenterButton.tsx",
+          "300a656832b589c128fd4b13b064954ff5c83bc42cf246d44a3b0c8d1efca12d"
+        ],
+        [
+          "src/texo.test.ts",
+          "50499788d0618cf952c822c765d1b6015812b008ce9bfe3e38a09a418f3a5374"
+        ],
+        [
+          "src/texo.ts",
+          "cff4e57e856f6a136812eb81d4450e1bb26c014c58169332dc9752bfda6c9b9b"
+        ],
+        [
+          "src/texo.worker.ts",
+          "cd5ab5cab53395ebc451beceba7f7b78cc100598a62a5e0bd8efd437ee5c38fb"
+        ],
+        [
+          "src/textBox.css",
+          "7109a52e0997f283b6823dd240a0d8d41a2ceff6e4ec1ba53dacb4c658d7e212"
+        ],
+        [
+          "src/textBox.ts",
+          "da5857cf90063f1127caa6b967f2548e7cf417a33fe427b3742aef94665d5b3d"
+        ],
+        [
+          "src/TextBoxDialog.tsx",
+          "c735b92d0dc31e57ec2d2ddc5f244d966ed153d43d9f201a0e6ef518facf6b17"
+        ],
+        [
+          "src/textSelection.ts",
+          "ae20fc7fdd97157df4b374ee6ab0c1671eb792a31074bd8d7eba8cd3fe150063"
+        ],
+        [
+          "src/TouchKeyboard.tsx",
+          "48f964ab7c7cf87c71b351be3adc7dd6eb86807dc9b097323528c0474629c7da"
+        ],
+        [
+          "src/translate.test.ts",
+          "732c614b1848f169337f8eec89a5e228956cfeaa4c44977b7b686e7380061705"
+        ],
+        [
+          "src/translate.ts",
+          "c4082fc669e6b7819a3fd52f2b09cb1ce8d9f80be2cc349a32d97301e3c1f073"
+        ],
+        [
+          "src/translate.worker.ts",
+          "5df1b3593915c903fba19d665b3dfc9fb8fa8cb8592d5aec8c7fc73f0f648c34"
+        ],
+        [
+          "src/translationText.ts",
+          "448ee4fb20d7ada9245fbe8abd2b0280b8b4a1506ba0d1cd955ac4f4c9d3d32d"
+        ],
+        [
+          "src/tts.ts",
+          "80d236daed9c1fff3985318725950c198386aabe01271ef8e7d4265970a04187"
+        ],
+        [
+          "src/tts.worker.ts",
+          "6c89f4fd3b97215af27ed4356d3a5380985405599b812fc9b01f8b7edc89bb1b"
+        ],
+        [
+          "src/useChatWindow.ts",
+          "55d5a52046c9689342f5390cee6de65c7e8be148c981808cd3da6240b4d7c8a6"
+        ],
+        [
+          "src/useForegroundViewport.ts",
+          "7b229c08eec33cb6fd5913535d92044c57be7cc293efda890d95f22d53cb451b"
+        ],
+        [
+          "src/useScrollViewport.ts",
+          "da528c9ab827f8e219f887181a26f8dbb56d8266e0119addef9e5a52b8a0fad7"
+        ],
+        [
+          "src/useSelectionPlacement.ts",
+          "8f9a5feed8aa11bf93ef94c00236b285d397fca331ffd6dedf21146f28e762c8"
+        ],
+        [
+          "src/useSpeech.tsx",
+          "f54920897ca487a5c94bc730bb89ee5398a012090a5bc962e965e2f38e4770b7"
+        ],
+        [
+          "src/vendor/pinyin-engine.ts",
+          "433aa822aa9451c2c6f9f54202c0d080a2a3aa77e2fbd97a0b150053230ae198"
+        ],
+        [
+          "src/virtualLayout.test.ts",
+          "f45c6f1f80a80025551157fc9d8139a4b960441a4c04f7a1c63ecfdc8ad00da0"
+        ],
+        [
+          "src/virtualLayout.ts",
+          "5dfb81edc88d407eaa398565671932b1977f1db7980cd1db4bcf12bafe2afaa9"
+        ],
+        [
+          "src/workspace.css",
+          "7c6d89e48dfd0646d9549568ec489f952cfcd9430ac798320321462c641a7dbc"
+        ],
+        [
+          "src/WorkspaceManager.tsx",
+          "b90da7bf46f86a05e72dfc9afc3bbdb706ad0557c0c5b01f92e8a2501e65c524"
+        ],
+        [
+          "src/workspaceStore.ts",
+          "b9999f5e4222c2719d195f1c59094eac00401af186dd3f98bf2354ce2af0980b"
+        ],
+        [
+          "src/zotero.css",
+          "dfe6b452e3064458842dd228632ff88d8580e9af3b95a738e055ae70b9d23089"
+        ],
+        [
+          "src/zotero.test.ts",
+          "5cb452a1c3c39d7dc4645892b6f8b6a897e8855055e8a9ccfe2666de652af39c"
+        ],
+        [
+          "src/zotero.ts",
+          "807ece6548c89dab588225b6ecb4d075d7ff56d0e8bede1ff9af05c2d1a4e643"
+        ],
+        [
+          "src/zoteroCollectionTree.test.ts",
+          "35dd2e4b341bab86b263199b0f8dda71c548733dd6cc47d3e1d51cc119fdcc2b"
+        ],
+        [
+          "src/zoteroCollectionTree.ts",
+          "212f718908f0efa083dd96a77ea783ed6ea6834b568242b7cd14cbf0d8f8597c"
+        ],
+        [
+          "src/ZoteroDialog.tsx",
+          "0ade1d2804dde2a33414a6bd20428715f9002fd95c7a7e122aa99ffb9912aef2"
+        ],
+        [
+          "src/zoteroSource.ts",
+          "f07b37bd87749d3f12d7f091957e55bbcc19628422c0cac1c0c5a61c47dd0129"
+        ],
+        [
+          "src/ZoteroTree.tsx",
+          "12bdef07ed4ebbd0100f84516d8053373b3d200abbb2b94d4cb26a69079379f9"
+        ],
+        [
+          "tsconfig.json",
+          "21ad4807702ff0c702e1282bae9504b5bf054ac947b7c17c3fa69d9c8602e00e"
+        ],
+        [
+          "vite.config.ts",
+          "2755f7b99fef06bdf9a8c66388ecd06545b18ededcd2d84f3468f0f5d3df4206"
+        ]
+      ]
+    },
+    {
+      "group": "candidate",
+      "buildSha256": "e8d1b28487b6a479121cc3c46be96e36fc9be1c5f1d0d2a6b273842c8fe60831",
+      "harnessSha256": "32372c82a9101759df0bd7ffee7be448c62170220431d4cf52b9b536ae843e5e",
+      "sourceManifest": [
+        [
+          "index.html",
+          "417fd8bec19ecc0d6e5a9c48ecf48b767955d59b5fd314a33864f3e7cf09ef94"
+        ],
+        [
+          "package-lock.json",
+          "559fced89db641aded27e40a017ec3626bc5d1eccc7abe62c93c78812763b860"
+        ],
+        [
+          "package.json",
+          "99ae61df209eac5f822be031f58fa9bc5622e67c579c5b482e32d62a58d2bb6d"
+        ],
+        [
+          "src/App.tsx",
+          "4015c9dcaf6c026f438241d09d3448a292360793ce71e773035a96ab44ec7420"
+        ],
+        [
+          "src/appearance.ts",
+          "8c130f7ae615616bb5ecc3effdb76d9f418eef61a76434dd11bc484c02f353fe"
+        ],
+        [
+          "src/blankPaper.ts",
+          "d15b7669ded4d819aab251c90d03852484aa9c9ec9de21a6a59c95af7bef2f7e"
+        ],
+        [
+          "src/browserCaches.ts",
+          "7f0fd850109fc3b6193819086b36a257bdb1b90a917993b567df5c150e4f3405"
+        ],
+        [
+          "src/cacheAccess.ts",
+          "302f604a3fbad3298bef5d4a0294786d024366520f56c520ac8de79db832b5a9"
+        ],
+        [
+          "src/cacheLibrary.ts",
+          "f9a5ca1bbf8067df385824d26e5e8936ae306e1191d0c466be5345a5238f2ac3"
+        ],
+        [
+          "src/cacheManager.css",
+          "5192f53a2dca869d0ccc38df28e9d39df8f8ee62b0bec8239db1e566097badf3"
+        ],
+        [
+          "src/cacheManager.test.ts",
+          "02f03d0995714894666c13c0d2d4e5e12cb178a2071b9fc5f0896ada78d6a762"
+        ],
+        [
+          "src/CacheManager.tsx",
+          "9ac079334ec1127f22e654f0b0ea546596cecf7de950197816a7152710f23142"
+        ],
+        [
+          "src/capturePage.ts",
+          "3431e07808cdcaa610b912d4dafd32db08a421e6d646ec4d55294c0fabb6a51c"
+        ],
+        [
+          "src/CapturePreview.tsx",
+          "7c7136793af162b39c0c0bcd68b7b74160d670ff06338cb47611605fb96feb66"
+        ],
+        [
+          "src/chat.css",
+          "6ec293168001bac01b0ddc4c24c287e851524b61d6c21cd99f0317078b28209e"
+        ],
+        [
+          "src/chatApi.test.ts",
+          "b1964e661a9ebe93a74a233e1bfa4f099c3d93f49042b1d749d800dfbd288b43"
+        ],
+        [
+          "src/chatApi.ts",
+          "563d512c5edd5400adf89eaa019b78bdd758aa5f5f3f03191dc2907fb20bd6f2"
+        ],
+        [
+          "src/ChatApiSettings.tsx",
+          "895e38f28d60a114a36fbc77f2acc75f65d75f91037eb8be5aeb91b8b5492203"
+        ],
+        [
+          "src/chatAttachments.test.ts",
+          "afaf16a87bd4a4d281b5f9e7153b132dd29756e6872433bc12afffe16bb59c90"
+        ],
+        [
+          "src/chatAttachments.ts",
+          "093e03f82d87d403ab964710f944452edecae9acac902bc912ae1ff72f043792"
+        ],
+        [
+          "src/chatContext.ts",
+          "ac8d7e0756f6b013fd04c2adf0ee86708ed3ebf188d63e4e728092a67e32369a"
+        ],
+        [
+          "src/chatFile.test.ts",
+          "1c66c46d30dccc981ee3a7c07e1e910da92fa8d672ba8a061b5d1c967c28a3f3"
+        ],
+        [
+          "src/chatFile.ts",
+          "4106e1a8846e1f6e911f6890e1c20fe5f879085f492bf5c2a15e6a17c4d2a7ca"
+        ],
+        [
+          "src/chatgpt.test.ts",
+          "b7bc0b4c8c4eed1a6e86bcecb12200e6a828095a9847fe1b2cfe8ccf948c3c8d"
+        ],
+        [
+          "src/chatgpt.ts",
+          "4f559052f183f143187ac25b210dc20f1afe5748be172fdec9a8f37d75d2f0b3"
+        ],
+        [
+          "src/chatMarkdown.test.ts",
+          "0567e09ee08e1bb351b17100e6eb8c323bd9f8709dd28382357bc1dce03a5eb1"
+        ],
+        [
+          "src/ChatMarkdown.tsx",
+          "25f97294d4a967e79ef20e2dc54e42d6f9b2d98972cecd326aa5df5f1dcff9ac"
+        ],
+        [
+          "src/chatMarkdownText.ts",
+          "3709536ae9ef3a087eb010787a176669d53c1de8055a2c65df85f2f48891b6db"
+        ],
+        [
+          "src/ChatPanel.tsx",
+          "56bdcb6108d724bea2c934ac51bbc04ca65da46c04ffd6ad64e567ff1d2e5759"
+        ],
+        [
+          "src/chatPrompts.ts",
+          "73092b52c9d2f723ee836a3b8581754fe1641f8a361ba388cd8e63ee97e67384"
+        ],
+        [
+          "src/ChatSvgPreview.tsx",
+          "ae0ee05c92432d8729ad0f44fc62fbc36f517b0712e83113bb3e971785a130f3"
+        ],
+        [
+          "src/chrome.css",
+          "58d7cd1b1aa9be96ae6cbb89110ed06992c0afd6414916089f440d3a4faa9e52"
+        ],
+        [
+          "src/clipboard.ts",
+          "bab86adaf7cd89350167bc813d220ed118861b97a2373d5605d84479cc442464"
+        ],
+        [
+          "src/committedInk.ts",
+          "b77447da52ea2b244afb756d1210656dd26ebe7425fde71667dbc8141b237415"
+        ],
+        [
+          "src/compactTools.css",
+          "9a355fefda38874772923c89b9feae00d8a3eceeceaeb5fa4eb1438e180ab3da"
+        ],
+        [
+          "src/deferredSave.test.ts",
+          "25327c628edc54a109f15d8b8f30acf9c217445ab3b86d4711dc207713d4d77b"
+        ],
+        [
+          "src/deferredSave.ts",
+          "c724cc36064f80c1200b20bb51c6c3d5bfd37201a087711b550d4e1580590b07"
+        ],
+        [
+          "src/desktop.d.ts",
+          "50f49f79a0fd6941605d60137a5643863f2dfbe8c21d3124e60b7b2bee5a705d"
+        ],
+        [
+          "src/dictation.test.ts",
+          "e99ff62d796d210a176d959a22ad694ed058e9c64b68662568637f10e8809282"
+        ],
+        [
+          "src/DictationButton.tsx",
+          "db77dd8fcf23922b0ed54dc863ac1ba945049dd9efd048416f66974b0e51e2b3"
+        ],
+        [
+          "src/documentChrome.css",
+          "3ddf905f8300bc104a8782ac4010ee2bb36f0edae6be183615f91218703b3feb"
+        ],
+        [
+          "src/FieldEditMenu.tsx",
+          "1592aa173d6d33d033a4faa5ef8901f90f5230783a2e0bf2644bda9f9fb96001"
+        ],
+        [
+          "src/foregroundViewport.test.ts",
+          "1b01336c700d6b6f1953ad216c446ce882f492d9fc26cba1a542d589f451c678"
+        ],
+        [
+          "src/foregroundViewport.ts",
+          "6604216e1274c2d8e8a154a365e23009151bf69f8a2e8da8433782e884db794a"
+        ],
+        [
+          "src/FormulaDialog.tsx",
+          "4773a13fac165c6062b532483f56fb9e17f1b33c2bf15fd2a97599ca46e54416"
+        ],
+        [
+          "src/formulaDraft.test.ts",
+          "594905aced5efadc137ebb58960f4053de49e207013cf49b882e4e395ffc0ee0"
+        ],
+        [
+          "src/formulaDraft.ts",
+          "742dc79b0db190fd8632f35006791342ede75654d29256da4adadd84acc6b35b"
+        ],
+        [
+          "src/formulaInk.ts",
+          "c087e67221e10842cd22678e1b2d95b41a4312340eda3e74681b24c9a68a6306"
+        ],
+        [
+          "src/formulaLines.test.ts",
+          "e27b8156fff5b64971bcae935330427ce2e294864f26944a8b8aab8ffcf7ea44"
+        ],
+        [
+          "src/formulaLines.ts",
+          "13baed1687fbf6f475d5dc2a25e5f412605a2f5f5a2fa14f22722468affd158b"
+        ],
+        [
+          "src/FullscreenButton.tsx",
+          "001f3f2b13be610fb046f38958fd7dac067f0c84b3def0a679ad1d26cb428382"
+        ],
+        [
+          "src/gestures.ts",
+          "ab3d46ae4b055645c4ef8a898bc0e141a20ae726601de55995f01b43eb7e4e5c"
+        ],
+        [
+          "src/GroupHierarchy.tsx",
+          "8e7742d97911d4ca6197d2399a3b5a732894ec6bc9d7ea726bc324aa8d01b218"
+        ],
+        [
+          "src/i18n.ts",
+          "f2d4b03f8155ffe82654b9add20ab1f720a6f9807a7f648b3e001c929981eb94"
+        ],
+        [
+          "src/ink.ts",
+          "2e2729a2f1114fe8e966caa43390754568258a850f23f09ab994d3b5715a6116"
+        ],
+        [
+          "src/InkColors.tsx",
+          "5b522d5d722496a0c9d9a21601d68daf14fdf6a244b92d67c11be54a9b188bf6"
+        ],
+        [
+          "src/inkGeometry.test.ts",
+          "cc7b4c9b724a16da41dac9544b84b619519bc2e50f7623ea1af87e45331b1e5b"
+        ],
+        [
+          "src/inkTools.ts",
+          "eb642f4df5f642ba0a696f383c7641059d694cb3fbbc23b1348024ffc53d1c0b"
+        ],
+        [
+          "src/inputPreferences.ts",
+          "22caa32031c2703dd400535e5a8ccb0c957183e5cb517d12ba7d8404e5353810"
+        ],
+        [
+          "src/interaction.test.ts",
+          "61abb1a97fa34036b820ba27b034ec434f4024539fb2edc60e8d04b36537234d"
+        ],
+        [
+          "src/latexMacros.ts",
+          "605151848fea0a55f3625018e8005f796bf5bcac371d985eaa5368845abfb612"
+        ],
+        [
+          "src/LatexSource.tsx",
+          "dcdf17d2c2091ff31bd9a87105796c76ae681ad20024a537a6c8cd63361820b6"
+        ],
+        [
+          "src/locales/en.json",
+          "bbedf405c1701dd2502b0a68fc02e8c1dc100f03e8cdb04179cc978a5d599bde"
+        ],
+        [
+          "src/main.tsx",
+          "cdb5ba98f350c8bf5a1039bf621d7a34a2eaa46656d28ac42ee17d1ea78ca14d"
+        ],
+        [
+          "src/model.test.ts",
+          "06847edbd538d7ebf016adb2fc5c2f6b60a1faf63399dc7e3c9d89f1e90e66b5"
+        ],
+        [
+          "src/model.ts",
+          "ca316b1d1eb307799b512f2486f839772d3eff78cea3f3f90d22222632ed7a96"
+        ],
+        [
+          "src/ModelConfirmation.tsx",
+          "16dc1c61724fc6c6fac414352d11e4aa5d02e80e8d228a564ce90916edc0122f"
+        ],
+        [
+          "src/modelIdle.test.ts",
+          "afc4d76b44da3bb1dfad7d42ed48156529eb1d3a843eff2c96c1991e79168d1e"
+        ],
+        [
+          "src/modelIdle.ts",
+          "44a88d17d7f0e5ec2f530baab2891dbe628cb3ce967060a3092765a4cf4de2d6"
+        ],
+        [
+          "src/modelLibrary.css",
+          "7ccd42f110196d32d8029d0586197051c832cac2652b9c35df0fca336166f644"
+        ],
+        [
+          "src/modelLibrary.test.ts",
+          "0a2edd661f5b6e85b63ec9cc8cacfdd1c962296e603eb0d7620275cec34e1297"
+        ],
+        [
+          "src/modelLibrary.ts",
+          "ba2994d866b2fdb00a002e83fd5e333f8702ca79e013b53566f4c5220874670b"
+        ],
+        [
+          "src/ModelManager.tsx",
+          "2e010752e544318894d3ffe5077dd413e7d6e0a3cd473cced90369d2362e86d5"
+        ],
+        [
+          "src/nativeOcr.test.ts",
+          "a422dde0e84af2692d4f0267e44b469455efa4b9022a36f842518772d2f93ccf"
+        ],
+        [
+          "src/nativeOcr.ts",
+          "47ae3a7d942ff883ca996f30a5f7952e7444b1cddedd21f5c2dac34b58e87402"
+        ],
+        [
+          "src/nativeOpus.test.ts",
+          "dc8d6a901d392cada7ed0fd8f8c9e2fc26fa2382b837d10a0364e3ff99fae993"
+        ],
+        [
+          "src/nativeOpus.ts",
+          "ae6ac7394569dbbe42bec72dbb0c6d181d71903654c82b5942c3c91aac504457"
+        ],
+        [
+          "src/nativeResources.test.ts",
+          "dc3ae9f2f8fc9e5cfe7e59f69cad07dd9725a64884312a08092c9bccc69e2c47"
+        ],
+        [
+          "src/nativeResources.ts",
+          "3ee04f870f598647b85a5be69267cc8a573aef2ab1b227640c7415094f9c9672"
+        ],
+        [
+          "src/nativeTexo.test.ts",
+          "0150f4dc4847de1c314507c96d9252df0b338dba45c76c5bc1c07048d2b8a4c6"
+        ],
+        [
+          "src/nativeTexo.ts",
+          "7b6f784a685291b0d2cb5e69e8c757784c699469998094c4153a08a4a76cfefa"
+        ],
+        [
+          "src/nativeTts.test.ts",
+          "710bfd761812849890bb41b08372a03a7768aafaa928568bde24fe82c6a6f6b4"
+        ],
+        [
+          "src/nativeTts.ts",
+          "673506665ac0443fee5d8c67819ee668882377d6055438b4e859815594c53ac6"
+        ],
+        [
+          "src/nativeUnimumer.test.ts",
+          "3eb2fc91588207f513992a55f6031430416be93a1d9488fec20cc81a50b670b5"
+        ],
+        [
+          "src/nativeUnimumer.ts",
+          "47155888aac621197ab6b7c8f22a90c045399b28b44a50f3cb102b763aeeea1e"
+        ],
+        [
+          "src/neuralDictation.test.ts",
+          "7481144280c19048243908d3f158e299e2e2a2ed1e7be10f25d517b0d999b0c3"
+        ],
+        [
+          "src/night.css",
+          "73e826c7a3db57e9b0b8bb6db5848cf9ef8d055a99e474838656f252063f0097"
+        ],
+        [
+          "src/objectClipboard.test.ts",
+          "eac57711ddb173f6eb2daaece505f0299d7d79848a83bf7e66242b3954d67f63"
+        ],
+        [
+          "src/objectClipboard.ts",
+          "3fd3e288690ddb8a1aa1cabc93ea1d4299a588da258a403f4abd342a7245a938"
+        ],
+        [
+          "src/objectGroup.test.ts",
+          "4f547a248b4bb72ebeb23855806f191becacbc09c41267d923fb978dd86c77a1"
+        ],
+        [
+          "src/objectGroup.ts",
+          "ba6f8075435be8f22947ac2f2522af1371afa162b9f0fa02ab133d84a0d7cdce"
+        ],
+        [
+          "src/ObjectLayer.tsx",
+          "c0b47bffa580448252ad11dd0c31eb2a782a8657064e03d31b3a05cdeda4204d"
+        ],
+        [
+          "src/objectSelection.test.ts",
+          "df4cdb60eb008a6a1c71b3f05cdd596604a6e50fe3c007433ccccdfcd3b6c3ec"
+        ],
+        [
+          "src/objectSelection.ts",
+          "b42400abb6a3cd809968c12163780167d68b5afce5992a1eafa54331601c1a41"
+        ],
+        [
+          "src/ocr.ts",
+          "a61c7abacd1e9d2c1951d74a873987347f1327ae171587f0de1bbe4f9ab5463e"
+        ],
+        [
+          "src/OcrDialog.tsx",
+          "e1f2b7529b9f443372bb96a5547fba30140488b53f8284b715df8085a0c4d75b"
+        ],
+        [
+          "src/ocrWorkerSession.test.ts",
+          "fc970a67022bee9cff1dfd413f34fcb85081904a85d1ed863ef3ab9ff89595b8"
+        ],
+        [
+          "src/ocrWorkerSession.ts",
+          "427e14be04256a97bfd96e97bafe4c787051ee2aa3e4e0607f368e5f272d6259"
+        ],
+        [
+          "src/PageEditor.tsx",
+          "2b90bb34ab2e340991f58d11f0fe2bea917a0ff810e60c287ff01b623ea5410e"
+        ],
+        [
+          "src/pageFit.css",
+          "0301027f2f24aa9615cda55ae1b950f8b88b324051344ad67d4c1d90ced9fcc6"
+        ],
+        [
+          "src/pageFit.test.ts",
+          "b1b92869757971a86533dfa1377b17f59bed522c328f4b4a1c86135cbeee6cd7"
+        ],
+        [
+          "src/pageFit.ts",
+          "3ca5ef91639ce80fb95378b7dbe9efb7030f5d9556a1438ab4abda35937fc79a"
+        ],
+        [
+          "src/pageLayers.test.ts",
+          "145855ce37109df8f7ef81c11c8d02d9d4a33e977c82ba4704c5ed2db5b69864"
+        ],
+        [
+          "src/pageLayers.ts",
+          "0039048c7459030b2ebd5bce9751e9940105fef9d136ac2aae083e58b92dd091"
+        ],
+        [
+          "src/PageList.tsx",
+          "93a222aaf685da7522a5ea286a563c628c9f0e26542512349f1d8f3bddf46a03"
+        ],
+        [
+          "src/PageThumbnail.tsx",
+          "5da1307d25a9aec7b46ab134d046f86ff56be6b8d93c67509e687f9d532c8ba9"
+        ],
+        [
+          "src/pdf.ts",
+          "165a68d64af22354b8747d4e36e3496820d635a8688e96ec03e1e010b95e3945"
+        ],
+        [
+          "src/pdfCompletion.test.ts",
+          "62d912fa277b671be925c963a671920f3c8ab5f232a1843ce8bb477cd6693951"
+        ],
+        [
+          "src/PdfDetailLayer.tsx",
+          "b1598f9dfdcf69cff4d25641ac735df816da172f6dc51985b3d2325cb3b5adb3"
+        ],
+        [
+          "src/PdfDropDialog.tsx",
+          "b0bc8f19457085c219711030ea9bdfc53af690a1be2acba6fe14f6ed25aaf6d5"
+        ],
+        [
+          "src/pdfExport.test.ts",
+          "aca91d73aa3e64a0d930d7ef02019c2e26c68240908d96d9147d3c597ecac074"
+        ],
+        [
+          "src/pdfExport.ts",
+          "1238f7d9c78da16d8bda53c27d14a80820de7bda5dbb34429306cada6c5087b3"
+        ],
+        [
+          "src/pdfExport.worker.ts",
+          "2828fc5f1268d99f793d5616c69ee0c9c06036fc4541ccd2a33caae0ccb07140"
+        ],
+        [
+          "src/pdfExportClient.test.ts",
+          "ccdb7ee99468240abcb0dce34f7c2154de2807ea2da3d740552f7ac40e212280"
+        ],
+        [
+          "src/pdfExportClient.ts",
+          "001d5ead60660911429b51bf3de22e88ed775990aba6dc6a940f4242b186f77b"
+        ],
+        [
+          "src/pdfExportProtocol.ts",
+          "c5388cb79ba5bd78f1392fc81f084c49227334a553565790d849934a3b9e9e86"
+        ],
+        [
+          "src/pdfExportSnapshot.ts",
+          "8c8dece223d3d7d372e4f44f965993f3ed7f212e7780a7923be62ec2bfe3ddc9"
+        ],
+        [
+          "src/pdfInsertion.test.ts",
+          "e8d0865deedac692082302a9edb20b61d033a28c64ef7cea1c8e5aa8768f7191"
+        ],
+        [
+          "src/pdfInsertion.ts",
+          "ed1ff39f76070909875c6f7dc245482816ed4e88d7602ac871e8ef9be44d5d8f"
+        ],
+        [
+          "src/pdfNight.ts",
+          "c593d009ad7abbd6fe84da19a18f32dc1fb33cfa40a8b77ff103490d03cb5e4a"
+        ],
+        [
+          "src/pdfNight.worker.ts",
+          "9e1446bc01a6a05ca92f38082421603cd0543e208a680b4cc5ac9bdd21f75f75"
+        ],
+        [
+          "src/pdfNightColors.test.ts",
+          "1495856ea305a406683dd851b2f48644f2a9c773e63bb24643ad281a8c5b4731"
+        ],
+        [
+          "src/pdfNightColors.ts",
+          "47ffa5a9cdea7f1be07b82fe15a882f9fe4e25dc14ef0eda4da9eee8c69a3818"
+        ],
+        [
+          "src/pdfNightGeometry.test.ts",
+          "26fc946294d8b775b233b3127aab65ca7d21ffb4ca391f3765a4b700f9c805b1"
+        ],
+        [
+          "src/pdfNightGeometry.ts",
+          "c02e27906ff685b6b2e5b6ea5b165ff26c59a0be38d30e7951bd7e78d53adc0f"
+        ],
+        [
+          "src/PdfOriginalImages.tsx",
+          "a8d8020e20dc39a16da2975a65f0e561f1ee775a1bcb46625f0c8581ca59a2f9"
+        ],
+        [
+          "src/pdfRenderCache.test.ts",
+          "2ee4d8c8ab0a566e68186ce22313b6618945131aec6c900029965660ea29a1e3"
+        ],
+        [
+          "src/pdfRenderCache.ts",
+          "9d87afb61172f4bdc895ed86710fb3c96d759bff74fdc57d4f7318835f32ab79"
+        ],
+        [
+          "src/pdfScheduler.test.ts",
+          "2d779d43e79c16391411c9c2a1f8a24165002258a3b0b6ca7b6b011cd572b33b"
+        ],
+        [
+          "src/PdfSurface.tsx",
+          "efb3a77db9586b6c3d83758bc302870cc54cf03dec44e1022bf09a5dc229c06a"
+        ],
+        [
+          "src/PdfTextLayer.tsx",
+          "194b06d8e90312ce71f97c15f354465abc956fbab6fe9e585883075105a3530b"
+        ],
+        [
+          "src/pdfTiles.test.ts",
+          "d0163c32f29645083a70f5f5f0f63d20769ff2afe666833d5dcab6f4fc71fa30"
+        ],
+        [
+          "src/pdfTiles.ts",
+          "6ce32939d561337eea228379f837ef75144cb11dbe6a787b07f8bf7da7c865e6"
+        ],
+        [
+          "src/penToolWheel.css",
+          "55303d94a2f4c0faac75aea4b58b51583350b2c2bcb35adacd0deccbf5113edf"
+        ],
+        [
+          "src/PenToolWheel.tsx",
+          "1dbb8a6b934bfa4aac37ee2e39fd7d281951cdb617300c1de1ebfa81ec88230a"
+        ],
+        [
+          "src/performanceLedger.test.ts",
+          "5ed49ca0012b3c52da5443d2aa144721fd2fae4d1c78d2ad38b4803642713e23"
+        ],
+        [
+          "src/performanceLedger.ts",
+          "8731db899a208825f623c7eea3a0c5a131437b7128e8175722514a5e9e5a669b"
+        ],
+        [
+          "src/phonemize.ts",
+          "8815d911a55cc895a52e97adca500f72b233c778fa293b53b54132d44bf02350"
+        ],
+        [
+          "src/phonemize.worker.ts",
+          "009ebd89a06567970b5c7a5d9bce0fc1cafc68bd531fc9e50b5b04f537dade5a"
+        ],
+        [
+          "src/pinyin.test.ts",
+          "5ebab11940a5239d9a19b4375abb9bd931d709063bd30003f6175d1ace38c15d"
+        ],
+        [
+          "src/pinyin.worker.ts",
+          "111d601c2b48105d4f1a5646930705d7f9300a50d9a5da74eb8d3fa06c284b69"
+        ],
+        [
+          "src/ProviderAdvanced.tsx",
+          "5a4cfc9b2e9327b51acde218e5fb5071846f6a874eca6db7b74f3396b5712a38"
+        ],
+        [
+          "src/providerRelay.test.ts",
+          "d68f72996f8439107ebb098fbf854cf47c746a1d125827c2d69777acd35cd54c"
+        ],
+        [
+          "src/providers.test.ts",
+          "669c5683ae2f2d96405614ce07fe44cb62af4726616bd1810c3dbed966119eee"
+        ],
+        [
+          "src/providers.ts",
+          "796134a81de6e99239e291a531bed969153fa20a02937e40fa4ca0026f705c14"
+        ],
+        [
+          "src/providerSettings.ts",
+          "fe646c8f1dcf22217ce5980e147df87b315baa7532bf0e71d83ad01f8ecb2340"
+        ],
+        [
+          "src/providerTasks.test.ts",
+          "9c5dcfb43ce0d292eb75d5b1cc81f505af238887c63d8d7a2d8962d69a7e95ee"
+        ],
+        [
+          "src/providerTasks.ts",
+          "baf943a3d53c69023135586c607bfc65cceee70e0ba0b2acbcbba957801e6e04"
+        ],
+        [
+          "src/providerTransport.test.ts",
+          "d09c8b7dad9437601ae0faf490a4b88a2c0f8e9f4982ca968e033e26e3919f40"
+        ],
+        [
+          "src/providerTransport.ts",
+          "46666a41a72063d8bbb5ce3223b54e3e5a116d5f004f2f5be8dd21d9f1935c41"
+        ],
+        [
+          "src/providerVault.test.ts",
+          "25d766452dd10f2662b44600c52febcd71714709b3119755b462683aec7b27fd"
+        ],
+        [
+          "src/ReadingView.tsx",
+          "ce825f80bee57308df66f359afd8bcb11a6c964b20d5af40af161379dc6a30af"
+        ],
+        [
+          "src/readingZoom.ts",
+          "8fd1e7d4142685a146a0726e14d76508c6675522ea90b958a9daba79b0986650"
+        ],
+        [
+          "src/RegionCapture.tsx",
+          "eb5e765cbbb1aa4fce6dca9d10f36029ff2e32227eec2d93bff700777bef7ed2"
+        ],
+        [
+          "src/remoteProvider.test.ts",
+          "7afa91339a903353d34fffb4ee0449704471370d78a6425490ec9557c25c933d"
+        ],
+        [
+          "src/remoteProvider.ts",
+          "2d115fa26b8990edf286281a529d9153da514c41221fad7f357c9960ef781ba2"
+        ],
+        [
+          "src/renderQuality.test.ts",
+          "d7e39cec7960b8c41692b5a02ab5f67d2b7fe4c2a1f1c988c711a492390712a3"
+        ],
+        [
+          "src/runtimeBridge.ts",
+          "e36d0bba177f53d51f34d8fb60aaa598afeb8688d8ea2be9e2788f06a4b01722"
+        ],
+        [
+          "src/runtimeInstaller.test.ts",
+          "fa7decc803f39a28ccaf613acd5a747c6381f1c9c7f705fa2ccf0e20508900f1"
+        ],
+        [
+          "src/RuntimeSetup.tsx",
+          "a152b80e777e4951d2abf94e205365fdd258e66c7869dec0105ca1fb1637d3b7"
+        ],
+        [
+          "src/scrollInertia.test.ts",
+          "75b4b3a639a4734ceb12bec14fdd239bb6c292bb2f4650135d4551f8cdd5fa44"
+        ],
+        [
+          "src/scrollInertia.ts",
+          "64f8302134088b6f72e22e288eef06ad440c636475dc9784105456ee9e7e7e4c"
+        ],
+        [
+          "src/selectionFlyout.css",
+          "aba79a1ec606a14136de36d237b5f70823f762e5379b2c52320bde0053fe8f79"
+        ],
+        [
+          "src/SelectionFlyout.tsx",
+          "042fda0676885f860d1857a587affad932b2ddfe1caf238e42bbeb3205e6d1c1"
+        ],
+        [
+          "src/selectionPlacement.test.ts",
+          "63bd34508f32b18c549707669182fb5effcafdcb0630afe7dc863fe714d86012"
+        ],
+        [
+          "src/selectionPlacement.ts",
+          "d607579dbe85b446707bb3041d6acbf36c4b1505a488bb49fa4e2f919cac9416"
+        ],
+        [
+          "src/settings.css",
+          "b818f6fe2b09b1ef7502ce86503adeb69b05b11fcc5af2ae77cbd655dcf559ec"
+        ],
+        [
+          "src/SketchDialog.tsx",
+          "3cb6598112facfdcebfe883af0a1ba180cd2268d2538d2013ed47ee800d406f9"
+        ],
+        [
+          "src/spatialIndex.test.ts",
+          "06beb5b0a2d08715371541b375cf2896c8090c9044a3039ab11675fd4069713d"
+        ],
+        [
+          "src/spatialIndex.ts",
+          "4ea2edb243a9546afeee8cbce5c302a55591b7d555c4c02fdef54c3088a686ae"
+        ],
+        [
+          "src/storage.ts",
+          "666e0b0a15d9c98fe51c50a9e5ddff0076b6391674c814e370ccee78263cc4d3"
+        ],
+        [
+          "src/styles.css",
+          "8c7b943e398fda8cf265f5b111cf7ac9c02153b70bfe18cc7100defeea897109"
+        ],
+        [
+          "src/svgImport.ts",
+          "68675bdccef6ce8fd9033926deffe6ca7d23a6103c426b1dc8edffde9b315666"
+        ],
+        [
+          "src/taskCenter.css",
+          "3158ae81b02ec46d34e816015d515671446143a3658f48fbb8480d91735f0b43"
+        ],
+        [
+          "src/TaskCenter.tsx",
+          "e8bc1f7c5935eade195ad68673e362f235abe73b87b008d4eacf8d63d91716aa"
+        ],
+        [
+          "src/TaskCenterButton.tsx",
+          "300a656832b589c128fd4b13b064954ff5c83bc42cf246d44a3b0c8d1efca12d"
+        ],
+        [
+          "src/texo.test.ts",
+          "50499788d0618cf952c822c765d1b6015812b008ce9bfe3e38a09a418f3a5374"
+        ],
+        [
+          "src/texo.ts",
+          "cff4e57e856f6a136812eb81d4450e1bb26c014c58169332dc9752bfda6c9b9b"
+        ],
+        [
+          "src/texo.worker.ts",
+          "cd5ab5cab53395ebc451beceba7f7b78cc100598a62a5e0bd8efd437ee5c38fb"
+        ],
+        [
+          "src/textBox.css",
+          "7109a52e0997f283b6823dd240a0d8d41a2ceff6e4ec1ba53dacb4c658d7e212"
+        ],
+        [
+          "src/textBox.ts",
+          "da5857cf90063f1127caa6b967f2548e7cf417a33fe427b3742aef94665d5b3d"
+        ],
+        [
+          "src/TextBoxDialog.tsx",
+          "c735b92d0dc31e57ec2d2ddc5f244d966ed153d43d9f201a0e6ef518facf6b17"
+        ],
+        [
+          "src/textSelection.ts",
+          "ae20fc7fdd97157df4b374ee6ab0c1671eb792a31074bd8d7eba8cd3fe150063"
+        ],
+        [
+          "src/TouchKeyboard.tsx",
+          "48f964ab7c7cf87c71b351be3adc7dd6eb86807dc9b097323528c0474629c7da"
+        ],
+        [
+          "src/translate.test.ts",
+          "732c614b1848f169337f8eec89a5e228956cfeaa4c44977b7b686e7380061705"
+        ],
+        [
+          "src/translate.ts",
+          "c4082fc669e6b7819a3fd52f2b09cb1ce8d9f80be2cc349a32d97301e3c1f073"
+        ],
+        [
+          "src/translate.worker.ts",
+          "5df1b3593915c903fba19d665b3dfc9fb8fa8cb8592d5aec8c7fc73f0f648c34"
+        ],
+        [
+          "src/translationText.ts",
+          "448ee4fb20d7ada9245fbe8abd2b0280b8b4a1506ba0d1cd955ac4f4c9d3d32d"
+        ],
+        [
+          "src/tts.ts",
+          "80d236daed9c1fff3985318725950c198386aabe01271ef8e7d4265970a04187"
+        ],
+        [
+          "src/tts.worker.ts",
+          "6c89f4fd3b97215af27ed4356d3a5380985405599b812fc9b01f8b7edc89bb1b"
+        ],
+        [
+          "src/useChatWindow.ts",
+          "55d5a52046c9689342f5390cee6de65c7e8be148c981808cd3da6240b4d7c8a6"
+        ],
+        [
+          "src/useForegroundViewport.ts",
+          "9e612c0bc2e622fe6fedb3ef59c940ec3f6fe45e43f83c73bfa9aca4c174859f"
+        ],
+        [
+          "src/useScrollViewport.ts",
+          "da528c9ab827f8e219f887181a26f8dbb56d8266e0119addef9e5a52b8a0fad7"
+        ],
+        [
+          "src/useSelectionPlacement.ts",
+          "8f9a5feed8aa11bf93ef94c00236b285d397fca331ffd6dedf21146f28e762c8"
+        ],
+        [
+          "src/useSpeech.tsx",
+          "f54920897ca487a5c94bc730bb89ee5398a012090a5bc962e965e2f38e4770b7"
+        ],
+        [
+          "src/vendor/pinyin-engine.ts",
+          "433aa822aa9451c2c6f9f54202c0d080a2a3aa77e2fbd97a0b150053230ae198"
+        ],
+        [
+          "src/virtualLayout.test.ts",
+          "f45c6f1f80a80025551157fc9d8139a4b960441a4c04f7a1c63ecfdc8ad00da0"
+        ],
+        [
+          "src/virtualLayout.ts",
+          "5dfb81edc88d407eaa398565671932b1977f1db7980cd1db4bcf12bafe2afaa9"
+        ],
+        [
+          "src/workspace.css",
+          "7c6d89e48dfd0646d9549568ec489f952cfcd9430ac798320321462c641a7dbc"
+        ],
+        [
+          "src/WorkspaceManager.tsx",
+          "b90da7bf46f86a05e72dfc9afc3bbdb706ad0557c0c5b01f92e8a2501e65c524"
+        ],
+        [
+          "src/workspaceStore.ts",
+          "b9999f5e4222c2719d195f1c59094eac00401af186dd3f98bf2354ce2af0980b"
+        ],
+        [
+          "src/zotero.css",
+          "dfe6b452e3064458842dd228632ff88d8580e9af3b95a738e055ae70b9d23089"
+        ],
+        [
+          "src/zotero.test.ts",
+          "5cb452a1c3c39d7dc4645892b6f8b6a897e8855055e8a9ccfe2666de652af39c"
+        ],
+        [
+          "src/zotero.ts",
+          "807ece6548c89dab588225b6ecb4d075d7ff56d0e8bede1ff9af05c2d1a4e643"
+        ],
+        [
+          "src/zoteroCollectionTree.test.ts",
+          "35dd2e4b341bab86b263199b0f8dda71c548733dd6cc47d3e1d51cc119fdcc2b"
+        ],
+        [
+          "src/zoteroCollectionTree.ts",
+          "212f718908f0efa083dd96a77ea783ed6ea6834b568242b7cd14cbf0d8f8597c"
+        ],
+        [
+          "src/ZoteroDialog.tsx",
+          "0ade1d2804dde2a33414a6bd20428715f9002fd95c7a7e122aa99ffb9912aef2"
+        ],
+        [
+          "src/zoteroSource.ts",
+          "f07b37bd87749d3f12d7f091957e55bbcc19628422c0cac1c0c5a61c47dd0129"
+        ],
+        [
+          "src/ZoteroTree.tsx",
+          "12bdef07ed4ebbd0100f84516d8053373b3d200abbb2b94d4cb26a69079379f9"
+        ],
+        [
+          "tsconfig.json",
+          "21ad4807702ff0c702e1282bae9504b5bf054ac947b7c17c3fa69d9c8602e00e"
+        ],
+        [
+          "vite.config.ts",
+          "2755f7b99fef06bdf9a8c66388ecd06545b18ededcd2d84f3468f0f5d3df4206"
+        ]
+      ]
+    }
+  ],
+  "files": [
+    {
+      "file": "before/report.json.gz",
+      "sha256": "320375f906e64cfcada7f373c0afc067574ec2c0e287df44eddf35d7573eaab5",
+      "bytes": 69133,
+      "rawSha256": "b022e18b47e779d26feb76351829108622946bcdb2268ac665a91db0f2b5aa5c"
+    },
+    {
+      "file": "before/trace.json.gz",
+      "sha256": "09d5eae95a5655b094f09aa52de5a287e24549fd0d2226f799a4da2c2708af4d",
+      "bytes": 19961426,
+      "rawSha256": "16e44f9e87616b4e7dc35a612476f3f6a46737d3a58465d23e485d6f373ffacf"
+    },
+    {
+      "file": "before/run.log.gz",
+      "sha256": "82c0d92fcfc57f074505f331047daeb16af8124a94e9d4408b40d67ba24cb492",
+      "bytes": 7642,
+      "rawSha256": "aec51671a7bf81ff8a2f25218acf7aa729d9fcf761694961ce84d9031bd2d4b5"
+    },
+    {
+      "file": "before/idle-tail-gc.json.gz",
+      "sha256": "dead216bb22dd4eac15a7a88ef0f0e734e0627042567b6a7a8875e0e762edd3c",
+      "bytes": 3556,
+      "rawSha256": "5203641b5becc706363f7828cbba1a927eaa1899b4a877b7a7898b40cb7cc8bb"
+    },
+    {
+      "file": "before/idle-tail-gc.log.gz",
+      "sha256": "12e06f2cdbc534ca4259e5e722eb0475ef81ad2138933bd608167a9357009d18",
+      "bytes": 567,
+      "rawSha256": "1f1d3c92a0560ac4442d0059753ef1caa718179b15a71129bc197af7e5734b74"
+    },
+    {
+      "file": "before/idle-tail-analysis.json.gz",
+      "sha256": "8916eb4b75bf080960233da33a9934cdc945723082da1d08616d77be7e7d0782",
+      "bytes": 3092,
+      "rawSha256": "7b81a7566edcada2d03de55bdd3b78501f57694015c7e03a678ed5df794204fd"
+    },
+    {
+      "file": "before/idle-tail-analysis.log.gz",
+      "sha256": "f9e178a60bbce7b05288bc973c76fb163501b7bb04a5287a206b8295167f9f56",
+      "bytes": 490,
+      "rawSha256": "505b47ec8a6e87b71a7613b04d48564b0bc8c6a274900054d7b775e2ae9b1448"
+    },
+    {
+      "file": "before/facing-zoom-gc.json.gz",
+      "sha256": "1b073c396b74c542f1469d62edd118ec5f26ff309306238bc035d1966797b13f",
+      "bytes": 1446,
+      "rawSha256": "c73c1839bdcf38c76beb2bedd109ab83661f23e90b1a49c61332eee122767893"
+    },
+    {
+      "file": "before/facing-zoom-gc.log.gz",
+      "sha256": "29e117454e9409fa75443697781b7c157c9de59b8be5061570c048b581dd2e0d",
+      "bytes": 447,
+      "rawSha256": "3f0c91b6694825a9e4ee4f5723f45c0c10a92223ea25843cacaf53852bdca53a"
+    },
+    {
+      "file": "before/facing-zoom-analysis.json.gz",
+      "sha256": "d1b44afa08b69f0c69fa0f82748a1326d3038ed66d4288e087188bf7f59da871",
+      "bytes": 7256,
+      "rawSha256": "ecb371b04f41fba7049b287962510e415e5de2450d98fae5f942eb6b699e4f8e"
+    },
+    {
+      "file": "before/facing-zoom-analysis.log.gz",
+      "sha256": "8d7d1211d6cf81ddbf71cce9302e7c4c2366ec93c5a5a522ef464e52da7b1ab9",
+      "bytes": 574,
+      "rawSha256": "2d98f89a72c25b3a04781f73654930af2e7ebf2a5c406d7655495738e2ceaea3"
+    },
+    {
+      "file": "outputs/lifecycle-idle-before-trace.objects.tixtab.gz",
+      "sha256": "21418f2b0dea5993a310d8382db99d71fed1c5385ad26ef7458078da13f87a68",
+      "bytes": 7263575,
+      "rawSha256": "54de2570adaeb947832dc240b6d0b6dbf972993e4f53e2e98403695ac508e4b2"
+    },
+    {
+      "file": "outputs/lifecycle-idle-before-trace.objects.pdf.gz",
+      "sha256": "80d84c2867fcc1d5243d6ffff75a22a64efc03d71b676127c141b1b9dbaeb483",
+      "bytes": 1456044,
+      "rawSha256": "ec2dd448af857d6bae7ba186646aa44278532c920b2451eeb96916ccc324ce0e"
+    },
+    {
+      "file": "initial-gc/before-idle-tail.json.gz",
+      "sha256": "201a9a99db03f961a6a12e3c5697134de02463599624568b856b789b8561c968",
+      "bytes": 3475,
+      "rawSha256": "f0ff1ba50118b24b720bd5c5e29602ea442b9044f4860770386ec0f0ff168d08"
+    },
+    {
+      "file": "initial-gc/before-idle-tail.log.gz",
+      "sha256": "03bf631df8f781782eb70bbde44dcd4873335800f540e1aaad2f59f6bbc82381",
+      "bytes": 568,
+      "rawSha256": "0fe70cca2705949de4c97ce391d006f627dd76849678c64fc5ef87f6f04d90bf"
+    },
+    {
+      "file": "initial-gc/before-facing-zoom.json.gz",
+      "sha256": "5173836537a821a127e369fe59bcfeee49be862d80334cc27d999c2c9a2048da",
+      "bytes": 1447,
+      "rawSha256": "f7ae65c0e723f95306c84702519305cfb81fc1e7ac263b1a3e4e31976386c3a2"
+    },
+    {
+      "file": "initial-gc/before-facing-zoom.log.gz",
+      "sha256": "29e117454e9409fa75443697781b7c157c9de59b8be5061570c048b581dd2e0d",
+      "bytes": 447,
+      "rawSha256": "3f0c91b6694825a9e4ee4f5723f45c0c10a92223ea25843cacaf53852bdca53a"
+    },
+    {
+      "file": "candidate/report.json.gz",
+      "sha256": "866d2891a7ad218dbe98156df48590e9372b43bc531e3d5bbde430e00fb81200",
+      "bytes": 68749,
+      "rawSha256": "632d553a62e8f602f830395e76acc61f68556919117ed4a73a0e669482241de5"
+    },
+    {
+      "file": "candidate/trace.json.gz",
+      "sha256": "f002d09b28a0305a83fb658dd013b8b2559cdafe187db41e4b84b0fee009644a",
+      "bytes": 19861054,
+      "rawSha256": "5a355239984ab260ab1b485a0439b764e058a54e7538948813a1c55ebeaa97db"
+    },
+    {
+      "file": "candidate/run.log.gz",
+      "sha256": "c4feb36957dd361e89562d5fe1e43d01775310731aeead744ecddbc0ada222c7",
+      "bytes": 7617,
+      "rawSha256": "1962320d7ea9d0040814c68606c2d2511d9b297713cf87fc3c25b04588da049e"
+    },
+    {
+      "file": "candidate/idle-tail-gc.json.gz",
+      "sha256": "5853e2200878bcee8086d37f6b12529790cb59622ec8d41e4879b3dff1aedcab",
+      "bytes": 1208,
+      "rawSha256": "31476d7bf4a36dba9372e92e222845df2c029385eecda1a6e6876c7175e73c53"
+    },
+    {
+      "file": "candidate/idle-tail-gc.log.gz",
+      "sha256": "c4907b076667f6e732d17bcb91b0cac741a0a97aba3d49ed1909a96f925726dd",
+      "bytes": 390,
+      "rawSha256": "7f74a50061e779d3debed7218b11af4b0b180cad62473d3101ea816b2d2eea5d"
+    },
+    {
+      "file": "candidate/idle-tail-analysis.json.gz",
+      "sha256": "412f4717217d8c8bb4f0864e5b01cbe28726a084186dc93d36b4399fb980a271",
+      "bytes": 2796,
+      "rawSha256": "92d413e2f1fd77e4ab0d504170a565c2671d6a4c40dac6f0ab96d225902f9b10"
+    },
+    {
+      "file": "candidate/idle-tail-analysis.log.gz",
+      "sha256": "161fe186f2a0269a2459bcc7bc07a1f9c27a2a4f869d0206d45c42d896e21873",
+      "bytes": 570,
+      "rawSha256": "720194dd8eea280c956d7f2042cf9a9fc9a1d43a3f760bd73e374bac43aed87a"
+    },
+    {
+      "file": "candidate/facing-zoom-gc.json.gz",
+      "sha256": "7289308752354beb43da87db23eb9e6ce29da4578d29392c19e1e3d2705e3ca7",
+      "bytes": 3318,
+      "rawSha256": "f20e8b15bdf8d90136fb27934a05b2040fe686dd2b9590fd8593e243b41010cf"
+    },
+    {
+      "file": "candidate/facing-zoom-gc.log.gz",
+      "sha256": "fcfb6255c043613185515ab05f466c3e05b8d18ffc9be597fe92543fad782197",
+      "bytes": 586,
+      "rawSha256": "10e3edb711c4fd3c9d51b14b9fbd990a5e76a05d2dd1171f437bf01e43f0c8c5"
+    },
+    {
+      "file": "candidate/facing-zoom-analysis.json.gz",
+      "sha256": "6296c65bb76b49e0cdce02870f763c169aa86eebb30b114713bf323ae19b5d43",
+      "bytes": 8197,
+      "rawSha256": "da61c31e478d78b193d0859c50defe43ceea423dd62024c47237141d7e444935"
+    },
+    {
+      "file": "candidate/facing-zoom-analysis.log.gz",
+      "sha256": "e358893a60098c6fb79501dc3c2bb8f1b3f4d48f45152e34a019a75b92a0547d",
+      "bytes": 506,
+      "rawSha256": "f368d331546e4d07bed210079a23dbfe5a21ab315610de12ead7131acc5f4521"
+    },
+    {
+      "file": "outputs/lifecycle-idle-candidate-trace.objects.tixtab.gz",
+      "sha256": "6291ea7b13e3e4109510214b51da3bc01213a49fe9f9921590cb4c25aae94300",
+      "bytes": 7263578,
+      "rawSha256": "7e24e545137e863062edd2b78f6e9f204fc1a4f101a570f826c2ed2af28e013b"
+    },
+    {
+      "file": "outputs/lifecycle-idle-candidate-trace.objects.pdf.gz",
+      "sha256": "80d84c2867fcc1d5243d6ffff75a22a64efc03d71b676127c141b1b9dbaeb483",
+      "bytes": 1456044,
+      "rawSha256": "ec2dd448af857d6bae7ba186646aa44278532c920b2451eeb96916ccc324ce0e"
+    },
+    {
+      "file": "initial-gc/candidate-idle-tail.json.gz",
+      "sha256": "b5bc9d04dc94a800838f613bf22c6cbf9519584bb855e30b4ba11cc9a5521636",
+      "bytes": 1206,
+      "rawSha256": "08585be5d2dd56e5fadc21426efc18adf31160c0784d65cd1b875129a9b63b39"
+    },
+    {
+      "file": "initial-gc/candidate-idle-tail.log.gz",
+      "sha256": "c4907b076667f6e732d17bcb91b0cac741a0a97aba3d49ed1909a96f925726dd",
+      "bytes": 390,
+      "rawSha256": "7f74a50061e779d3debed7218b11af4b0b180cad62473d3101ea816b2d2eea5d"
+    },
+    {
+      "file": "initial-gc/candidate-facing-zoom.json.gz",
+      "sha256": "122df6850a6a61818cd89f5275dd7517a170e0570295e1840f2354aa317121f9",
+      "bytes": 3226,
+      "rawSha256": "31a66cd8d614df1debfd718f14dad9669fc75974b20bd605c3e496d050954f7c"
+    },
+    {
+      "file": "initial-gc/candidate-facing-zoom.log.gz",
+      "sha256": "c8e91d3f64a06c5f77b585cd6d3f73557ee6a964afb9773ecfede545835d9054",
+      "bytes": 586,
+      "rawSha256": "3772ddb917ef28d667efa6cc19ab23136d32bafc886e710efea7c23c82100194"
+    },
+    {
+      "file": "sources/scripts/benchmark-workflow.mjs.gz",
+      "sha256": "31e79d9b3415c7fc43be5b1750a713b3c1a640fdebbce0c0fa2a7a1fb361a51c",
+      "bytes": 6864,
+      "rawSha256": "603b53b6ce5f8a32583532ce39aba2852e4481b9a3453971e135e90967afc922"
+    },
+    {
+      "file": "sources/scripts/performance-settle.mjs.gz",
+      "sha256": "e76fcd22972458753effa670ef12041312ae72dfaa88ff19c8994b5c7989480b",
+      "bytes": 1453,
+      "rawSha256": "6c8d09119b01e63ccb24b23ca1903f7d1248714875a6542e1f3913d54c90fb22"
+    },
+    {
+      "file": "sources/scripts/performance-demand.mjs.gz",
+      "sha256": "5f0cb9ea2d05f984ccd6cdbd1d0ba8169c3476cb82cb44c3ee03eae70c3c4a34",
+      "bytes": 2666,
+      "rawSha256": "448c48028987cb54bedfb11bea02e3899766981f6693d522d92db600c52a402d"
+    },
+    {
+      "file": "sources/scripts/performance-fixture.mjs.gz",
+      "sha256": "3f5bf865ffaf71d21ba38bedbc3b1c5473f8584b97a4ce72f970e2af13884090",
+      "bytes": 1755,
+      "rawSha256": "bb4581358669724c26cf7817b88d443713f378e5cf1f23fd4e6a3ea5dda1bf56"
+    },
+    {
+      "file": "sources/scripts/object-workflow.mjs.gz",
+      "sha256": "521f24e8df845af8672a8a32b91f8f0fce8d8eee18b56e7e1b719f55a8c2389a",
+      "bytes": 1944,
+      "rawSha256": "51e4c3d225b71f142847737f6dbbd7168dac39fae7b52c1884fa69b8af6e3de6"
+    },
+    {
+      "file": "sources/scripts/analyze-workflow-trace.mjs.gz",
+      "sha256": "7f19af63716a7d2f74a432135ee7516ea83fd830131d4b1d40dd4ffe5964a8e4",
+      "bytes": 2060,
+      "rawSha256": "f52bd988a65b9c1fc6f66559100669ec393391c9a79fa66477f47a4201672725"
+    },
+    {
+      "file": "sources/scripts/analyze-workflow-gc.mjs.gz",
+      "sha256": "0d050e9bb7d95b18876b589a36ed3644208aa702be9adcfd3c7372da10093c68",
+      "bytes": 1990,
+      "rawSha256": "4cdd2874fdf974b07a8ef93a8928c85443ae3cf33dfa5fdcb1f224437ba78676"
+    },
+    {
+      "file": "sources/scripts/trace-intervals.mjs.gz",
+      "sha256": "e98f8886ff14d82d769989524327656a2be6d5d174cc56c106696a93c77d8948",
+      "bytes": 501,
+      "rawSha256": "7f35f8391ab6e7be4e9a405957bae2f50523621f88fd2935ea0ee0c389a86762"
+    },
+    {
+      "file": "sources/scripts/trace-intervals.test.mjs.gz",
+      "sha256": "943925ca97e46ffaba29d929a3b673eee40f3f162b1945aafce43bbfa8522c33",
+      "bytes": 732,
+      "rawSha256": "fde4a85afd24d2d26d3ff7610fdf0859d68661c6c030ccdfe73884f1df439c04"
+    },
+    {
+      "file": "sources/scripts/archive-lifecycle-idle.mjs.gz",
+      "sha256": "10d29789e9f242bc317d810d350ee2551d2fc3f7ab1962ea76e9776d56a18ddc",
+      "bytes": 1570,
+      "rawSha256": "3c57ebba5b2db25c681eedd4a9e0c4f00b06ae22d257b0ce6912aa10ab9ec91e"
+    },
+    {
+      "file": "sources/scripts/verify-lifecycle-idle-archive.mjs.gz",
+      "bytes": 2688,
+      "sha256": "982ec7b99b8fca7f657fd69b7858ae9ada64e1231d4087dacb307b30bf358eb2",
+      "rawSha256": "c2404e7bef3d546c4ab11d1f6f6b5e7f52135dc90d314f8a426d27c1abf7bbc7"
+    },
+    {
+      "file": "evidence/lifecycle-idle-summary.json.gz",
+      "sha256": "06f74b49e13b138e197dad0c80eef516b17a98a863bd7337b8e4535d6476a0f8",
+      "bytes": 2244,
+      "rawSha256": "0a4b7041df6b2c08a6e889dd2f52d925f90a6e3678fd8a0823cec63f071abf82"
+    },
+    {
+      "file": "evidence/lifecycle-idle-summary.log.gz",
+      "sha256": "4fa67e3bfebfde75a328840487be4ea5987ff6f82240959c9e420b5287eaa8ba",
+      "bytes": 2268,
+      "rawSha256": "727b59e8477ae3192f2b5462dbc564f01708f03cff41645a3f7909f0295634ba"
+    },
+    {
+      "file": "evidence/summarize-lifecycle-idle.mjs.gz",
+      "sha256": "749cb36aa5f525ad64dd5b36fcc4d539bae70bbb588e90bf41a919c332ac5b28",
+      "bytes": 610,
+      "rawSha256": "5f34e0c79406206304fa9ffb4badb45109dddf3919d7b13c5ce359f1772db932"
+    },
+    {
+      "file": "evidence/lifecycle-idle-source-locations.json.gz",
+      "sha256": "865e57035a1438e55bb68e0a1ffc343c9abd26f7133786ed4027f0ec38775d8d",
+      "bytes": 1319,
+      "rawSha256": "e6f92ad6da82ccbb5ccce315c053ba84e5d77db66d2ef9b67d903526b91a43f9"
+    },
+    {
+      "file": "evidence/lifecycle-idle-source-locations.log.gz",
+      "sha256": "48b1d2210068f77bceeb629c67df710e27bf86e49e1f1ae77336865a1c382105",
+      "bytes": 288,
+      "rawSha256": "7592275b6cbd3389f577c42302b4856297ddd711ad03e37da7d25737263a0c51"
+    },
+    {
+      "file": "evidence/lifecycle-idle-locations.mjs.gz",
+      "sha256": "b053b484d4ea8bd2d1f307e8b17565a0d35fc6301c4d747578c1425bb4df338c",
+      "bytes": 849,
+      "rawSha256": "b97ba0b7f1f7d2c4676a9892d4e8b6e835c8630b128baac2bcd0329afaea994f"
+    },
+    {
+      "file": "evidence/lifecycle-idle-initial-intervals.mjs.gz",
+      "sha256": "fef956c5d328054b07ad2f49a853426c87d32047342fc8883b0d6207d24e691b",
+      "bytes": 363,
+      "rawSha256": "49ead82bfd7462081cdb4bc3855152082f34bcbc6cd1287e3161ceba72030961"
+    },
+    {
+      "file": "evidence/lifecycle-idle-initial-interval-tests.log.gz",
+      "sha256": "89bfa28371dbd3f002525302ffad718df04700f6389303073771db96f32286c2",
+      "bytes": 696,
+      "rawSha256": "4707a6feb6c9e966224f39e2b41239b78c5848f4cf9fe44f806b515d3cba14be"
+    },
+    {
+      "file": "evidence/lifecycle-idle-interval-tests.log.gz",
+      "sha256": "10e7b0ed5096bf93da60bb1fd4ba16a4a5deaf4337d433088b0999d8b3608259",
+      "bytes": 350,
+      "rawSha256": "4f5d5b8443db4623537ed4090d6202099a49ce9e63a0157b540c0de6d4979755"
+    },
+    {
+      "file": "evidence/lifecycle-idle-interval-tests-final.log.gz",
+      "sha256": "f129c14d068516ce533ec2c46be91a5bb8b93919a614e9bf982ccd7a7a76cc49",
+      "bytes": 418,
+      "rawSha256": "8c3a59c575e256c1670a91291f6a2ad6a845b541c45ee2829fd532a86178ff68"
+    },
+    {
+      "file": "evidence/lifecycle-idle-initial-gc.mjs.gz",
+      "sha256": "ffada30bd52a1819fdef7a85501c9e1c4388007084e4c4904ee1436a3e3067a7",
+      "bytes": 2059,
+      "rawSha256": "5ee38940508122fb4cc8f69be395ac191b7fac5de4e6b82387b37fd62e1e6959"
+    },
+    {
+      "file": "evidence/lifecycle-idle-union-v1.mjs.gz",
+      "sha256": "d045454c52704476c49f42b553c5af28e8dd53b8500b24b183098f7d9ad7f531",
+      "bytes": 366,
+      "rawSha256": "312202f6fd09135dc33756234faabf977191e1a403bf3940e395d1d0f5d094c2"
+    },
+    {
+      "file": "evidence/lifecycle-idle-summary-v1.json.gz",
+      "sha256": "f3714cddf426b6e96c6e9e7885e0bef7820397d685a9eeb48819ef463f20c0a3",
+      "bytes": 2229,
+      "rawSha256": "feb027706b7c2a806c71cc964b6cd103f982ce11ef5b9112184e76f306a22858"
+    },
+    {
+      "file": "README.md",
+      "bytes": 5559,
+      "sha256": "1581d1b094cfa810c58a40e97994ab69347cb8d49073ed3107bb29813752863c"
+    },
+    {
+      "file": "evidence/lifecycle-idle-initial-archive-verifier.mjs.gz",
+      "bytes": 2672,
+      "sha256": "db012b72b898207d9b49b73ecef095180ff153b84e1eb0ca10d120801f4ed5d8",
+      "rawSha256": "2064694f73581456d4c798b06833253c5a0fdfe85c89935bf02da53e97d0d3c7"
+    },
+    {
+      "file": "evidence/lifecycle-idle-archive-verify-initial.log.gz",
+      "bytes": 1244,
+      "sha256": "0a669d76f5559a2a0c0233cd5bf6caee4801419c354ecb79196b34cb97b308ac",
+      "rawSha256": "3122305bbdb1c9a4e1b9975a57b5fd7df3f12c14e5019cf58ceecbeb80ded3fe"
+    },
+    {
+      "file": "evidence/repair-lifecycle-idle-archive.mjs.gz",
+      "bytes": 560,
+      "sha256": "160ecf3f1f87b7cc18223c877d9d01f7c1ad2469a2be7eba6cf2c62432664e57",
+      "rawSha256": "d504d9b26a346365bca7528cc805beebb3341b2cb93b54e64399678b08d99290"
+    },
+    {
+      "file": "evidence/lifecycle-idle-archive-verify.log.gz",
+      "bytes": 810,
+      "sha256": "8b56f2197e40d3aca0d73995f4dd7280c4dcf08d98c722c8d5a3b23df13ffa24",
+      "rawSha256": "8c5b0327f1be89b3ebed43f8d08082447032344ba567886b256f525ac04bbf1f"
+    },
+    {
+      "file": "evidence/finalize-lifecycle-idle.mjs.gz",
+      "bytes": 531,
+      "sha256": "87f510fbc50162528945ab2d0ba979b7838ce3401a16da5b50991e7df0a87a67",
+      "rawSha256": "1817a58209102dbc9a12c25eb033f5e125b2567aad4ee4e264d387ead0e08e4f"
+    }
+  ],
+  "limits": "Independent traced diagnostics only; do not merge with ordinary resource runs or treat wall unions as CPU/energy."
+}

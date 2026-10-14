@@ -1,11 +1,14 @@
 import { useAppearance } from './appearance';
+import { trackPerformance } from './performanceLedger';
 import { t as tr, useLocale } from './i18n';
 import { memo, useEffect, useRef, useState } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { isPicture, type Page } from './model';
-import { requestPdfBitmap, renderingCancelled } from './pdfRenderCache';
+import { requestPdfThumbnail } from './pdfRenderCache';
+import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
 import { finalInkPath } from './ink';
 import { pageLayers } from './pageLayers';
+import { groupDisplay } from './objectGroup';
 export default memo(function PageThumbnail({
   page,
   pdf,
@@ -14,10 +17,10 @@ export default memo(function PageThumbnail({
   pdf: PDFDocumentProxy | null;
 }) {
   useLocale();
-  const { pdfNight } = useAppearance();
+  const { night, pdfNight } = useAppearance();
   const root = useRef<HTMLDivElement>(null),
-    canvas = useRef<HTMLCanvasElement>(null),
     [visible, setVisible] = useState(false);
+  const { host, display, recovery } = usePdfBitmapDisplay();
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
       root: root.current?.closest('.page-list'),
@@ -27,45 +30,35 @@ export default memo(function PageThumbnail({
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    const c = canvas.current!;
     let dead = false,
       cancel: (() => void) | undefined;
     if (!visible || !pdf || page.sourceIndex === null) {
-      c.width = 1;
-      c.height = 1;
+      display.current!.clear();
       return;
     }
-    const lease = requestPdfBitmap(
-      pdf,
-      page.sourceIndex,
-      Math.min(180 / page.width, 240 / page.height),
-      2,
-      pdfNight,
-    );
+    const lease = requestPdfThumbnail(pdf, page.sourceIndex, page.width, page.height, pdfNight);
     cancel = lease.cancel;
-    void lease.promise
-      .then((bitmap) => {
+    void trackPerformance('pdf-display', () =>
+      lease.promise.then((bitmap) => {
         if (!dead) {
-          c.width = bitmap.width;
-          c.height = bitmap.height;
-          c.getContext('2d')!.drawImage(bitmap, 0, 0);
-          c.dataset.renderedNight = String(pdfNight);
+          display.current!.show(bitmap, pdfNight);
         }
-      })
-      .catch(() => {});
+      }),
+    ).catch(() => {});
     return () => {
       dead = true;
       cancel?.();
     };
-  }, [pdf, page.id, visible, pdfNight]);
+  }, [pdf, page.id, page.sourceIndex, page.width, page.height, visible, pdfNight, recovery]);
   return (
     <div
       className={`page-mini page-thumbnail ${page.sourceIndex === null ? `thumbnail-${page.paper}` : ''}`}
       data-pdf-night={pdfNight}
+      data-pdf-source={page.sourceIndex ?? ''}
       ref={root}
       style={{ aspectRatio: `${page.width}/${page.height}` }}
     >
-      <canvas ref={canvas} />
+      <div ref={host} style={{ display: 'contents' }} />
       {visible && (
         <svg viewBox={`0 0 ${page.width} ${page.height}`} aria-hidden="true">
           {pageLayers(page).map((i) =>
@@ -73,7 +66,8 @@ export default memo(function PageThumbnail({
               <image
                 key={`object:${i.id}`}
                 data-night-ink={!isPicture(i)}
-                href={i.displayData ?? i.data}
+                href={groupDisplay(i, night, pdfNight)}
+                style={i.group ? { filter: 'none' } : undefined}
                 x={i.x}
                 y={i.y}
                 width={i.width}

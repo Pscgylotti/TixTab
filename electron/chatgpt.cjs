@@ -184,27 +184,31 @@ function validateInput(raw) {
     throw fail('invalid');
   let total = 0,
     images = 0,
+    imageBytes = 0,
     files = 0;
   const input = raw.messages.map((m) => {
     if (
       !m ||
       !['user', 'assistant'].includes(m.role) ||
       typeof m.text !== 'string' ||
-      m.text.length > 32000
+      m.text.length > 64000
     )
       throw fail('invalid');
     total += m.text.length;
     const content = [{ type: m.role === 'user' ? 'input_text' : 'output_text', text: m.text }];
-    if (m.image !== undefined) {
+    if (m.images !== undefined && (!Array.isArray(m.images) || m.images.length > 6))
+      throw fail('input-limit');
+    for (const image of [...(m.image !== undefined ? [m.image] : []), ...(m.images || [])]) {
       if (
         m.role !== 'user' ||
-        typeof m.image !== 'string' ||
-        !/^data:image\/(?:png|jpeg);base64,[a-zA-Z0-9+/=]+$/.test(m.image) ||
-        m.image.length > 3000000 ||
-        ++images > 2
+        typeof image !== 'string' ||
+        !/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(image) ||
+        image.length > 3000000 ||
+        ++images > 6 ||
+        (imageBytes += image.length) > 12000000
       )
         throw fail('input-limit');
-      content.push({ type: 'input_image', image_url: m.image });
+      content.push({ type: 'input_image', image_url: image });
     }
     if (m.file !== undefined) {
       const file = m.file;

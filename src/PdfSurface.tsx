@@ -1,15 +1,19 @@
 import { MIN_ZOOM, MAX_ZOOM } from './pageFit';
+import { performanceDelay, trackPerformance } from './performanceLedger';
 import { useAppearance, renderPolicy, pageRenderScale } from './appearance';
 import PdfOriginalImages from './PdfOriginalImages';
 import { t as tr, useLocale } from './i18n';
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { priorPdfBitmap, requestPdfBitmap, renderingCancelled } from './pdfRenderCache';
+import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
 import type { Page, Tool } from './model';
-import PageEditor from './PageEditor';
+import PageEditor, { clipsForeground } from './PageEditor';
 import PdfDetailLayer from './PdfDetailLayer';
 import { PanZoomPointers } from './gestures';
+import { useDeferredZoom } from './useDeferredZoom';
 import { objectBox } from './objectSelection';
+import { useNavigation } from './DocumentNavigator';
 export interface PenDiagnostic {
   type: string;
   pressure: number;
@@ -25,6 +29,7 @@ interface Props {
 
   zoom: number;
   resetView: number;
+  fitWidth?: boolean;
   setZoom: (zoom: number) => void;
   onChange: (page: Page) => void;
   onDiagnostic: (d: PenDiagnostic) => void;
@@ -40,9 +45,10 @@ export default function PdfSurface({
   color,
   size,
 
-  zoom,
+  zoom: committedZoom,
   resetView,
-  setZoom,
+  fitWidth = false,
+  setZoom: commitZoom,
   onChange,
   onDiagnostic,
   onRender,
@@ -51,10 +57,12 @@ export default function PdfSurface({
   focusObjectId,
 }: Props) {
   useLocale();
+  const navigation = useNavigation();
   const { pdfNight } = useAppearance(),
     policy = renderPolicy();
-  const stage = useRef<HTMLDivElement>(null),
-    background = useRef<HTMLCanvasElement>(null);
+  const [zoom, setZoom] = useDeferredZoom(committedZoom, commitZoom, resetView);
+  const stage = useRef<HTMLDivElement>(null);
+  const { host, display, recovery } = usePdfBitmapDisplay('pdf-layer');
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   useEffect(() => {
     const image = objectBox(
@@ -100,39 +108,63 @@ export default function PdfSurface({
     setOffset(next);
   };
   useEffect(() => {
-    const t = setTimeout(() => setSettledZoom(zoom), policy.settleMs);
-    return () => clearTimeout(t);
+    return performanceDelay('view-settle', () => setSettledZoom(zoom), policy.settleMs);
   }, [zoom, policy.settleMs]);
   useEffect(() => {
-    setOffset({ x: 0, y: 0 });
+    setOffset({
+      x: 0,
+      y: fitWidth
+        ? Math.max(0, (page.height * zoom - (stage.current?.clientHeight ?? 0)) / 2 + 8)
+        : 0,
+    });
   }, [page.id, resetView]);
   useEffect(() => {
+    const target = navigation?.target;
+    if (target?.pageId === page.id && target.rect) {
+      const r = target.rect;
+      setOffset({
+        x: (page.width / 2 - r.x - r.width / 2) * zoom,
+        y: (page.height / 2 - r.y - r.height / 2) * zoom,
+      });
+    }
+  }, [navigation?.target, page.id]);
+  useEffect(() => {
     const el = stage.current!;
+    // A precision touchpad can report several wheel steps per frame; move once.
+    let dx = 0,
+      dy = 0,
+      frame = 0;
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
       if (e.ctrlKey || e.metaKey)
         zoomTo(zoomRef.current * Math.exp(-e.deltaY * 0.008), e.clientX, e.clientY);
-      else setOffset((o) => ({ x: o.x - e.deltaX, y: o.y - e.deltaY }));
+      else {
+        dx += e.deltaX;
+        dy += e.deltaY;
+        frame ||= requestAnimationFrame(() => {
+          const x = dx,
+            y = dy;
+          dx = dy = frame = 0;
+          setOffset((o) => ({ x: o.x - x, y: o.y - y }));
+        });
+      }
     };
     el.addEventListener('wheel', wheel, { passive: false });
-    return () => el.removeEventListener('wheel', wheel);
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener('wheel', wheel);
+    };
   }, []);
   useEffect(() => {
     let dead = false,
       cancel: (() => void) | undefined;
-    const canvas = background.current!,
-      context = canvas.getContext('2d')!;
     if (shownPage.current !== `${page.id}:${pdfNight}`) {
       shownPage.current = `${page.id}:${pdfNight}`;
-      canvas.width = 1;
-      canvas.height = 1;
+      display.current!.clear();
     }
     const show = (cached: HTMLCanvasElement) => {
       if (dead) return;
-      canvas.width = cached.width;
-      canvas.height = cached.height;
-      canvas.getContext('2d')!.drawImage(cached, 0, 0);
-      canvas.dataset.renderedNight = String(pdfNight);
+      display.current!.show(cached, pdfNight);
     };
     const run = async () => {
       if (!pdf || page.sourceIndex === null) {
@@ -166,7 +198,7 @@ export default function PdfSurface({
       await render(target);
       if (!dead) onRender(tr('高清 · 就绪'));
     };
-    void run().catch((e) => {
+    void trackPerformance('pdf-display', run).catch((e) => {
       if (!dead && !renderingCancelled(e))
         onRender(tr('\u6E32\u67D3\u5931\u8D25\uFF1A{0}', e.message));
     });
@@ -176,6 +208,7 @@ export default function PdfSurface({
     };
   }, [
     pdf,
+    recovery,
     page.id,
     page.sourceIndex,
     settledZoom,
@@ -246,13 +279,15 @@ export default function PdfSurface({
         <div
           className={`paper paper-${page.sourceIndex === null ? page.paper : 'plain'}`}
           data-pdf-night={pdfNight}
+          data-pdf-source={page.sourceIndex ?? ''}
+          data-page-id={page.id}
           style={{
             width: page.width,
             height: page.height,
             transform: `translate(-50%, -50%) scale(${zoom})`,
           }}
         >
-          <canvas className="pdf-layer" ref={background} />
+          <div ref={host} style={{ display: 'contents' }} />
           <PdfDetailLayer
             pdf={pdf}
             sourceIndex={page.sourceIndex}
@@ -273,7 +308,12 @@ export default function PdfSurface({
             viewKey={`${offset.x}:${offset.y}`}
             priority={0}
           />
-          <PdfOriginalImages pdf={pdf} sourceIndex={page.sourceIndex} enabled={tool === 'hand'} />
+          <PdfOriginalImages
+            pdf={pdf}
+            sourceIndex={page.sourceIndex}
+            enabled={tool === 'hand'}
+            pageId={page.id}
+          />
           <PageEditor
             page={page}
             pdf={pdf}
@@ -287,6 +327,9 @@ export default function PdfSurface({
             onEditObject={onEditObject}
             focusObjectId={focusObjectId}
             viewport={stage}
+            // A view key that changes with every pan frame would re-render the
+            // whole editor; only pages that clip their foreground need it.
+            viewKey={clipsForeground(page, false) ? `${offset.x}:${offset.y}:${zoom}` : undefined}
           />
         </div>
       </div>

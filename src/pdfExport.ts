@@ -16,6 +16,7 @@ import {
 import type { Notebook, Page } from './model';
 import { finalInkPath } from './ink';
 import { pageLayers } from './pageLayers';
+import { groupLeaves } from './objectGroup';
 import { t } from './i18n';
 import { SignedPdfExportError, type PdfExportProgress } from './pdfExportProtocol';
 export { SignedPdfExportError } from './pdfExportProtocol';
@@ -326,7 +327,7 @@ async function appendOverlay(
 ) {
   const layer = PDFPage.create(doc);
   layer.setSize(p.width, p.height);
-  for (const image of pageLayers(p)) {
+  for (const image of pageLayers(p).flatMap((i) => (i ? groupLeaves(i) : [i]))) {
     if (image) {
       const png = await doc.embedPng(image.data),
         scale = Math.min(image.width / png.width, image.height / png.height),
@@ -430,7 +431,8 @@ export async function exportPdf(
       notebook.pages.length !== original.length ||
       notebook.pages.some((page, i) => page.sourceIndex !== i),
     painted = notebook.pages.some((page) => page.strokes.length || page.images.length);
-  if (notebook.source && !reordered && !painted) return notebook.source.slice();
+  const bookmarked = notebook.bookmarks?.some((b) => notebook.pages.some((p) => p.id === b.pageId));
+  if (notebook.source && !reordered && !painted && !bookmarked) return notebook.source.slice();
   let signed = false;
   visitDictionaries(output, (dict) => {
     if (dict.has(name('ByteRange')) && dict.has(name('Contents'))) signed = true;
@@ -469,6 +471,43 @@ export async function exportPdf(
     );
   } else if (!notebook.source)
     for (const page of notebook.pages) output.addPage([page.width, page.height]);
+  if (bookmarked) {
+    let rootRef = output.catalog.get(name('Outlines')),
+      root = resolve(output, rootRef);
+    if (!(root instanceof PDFDict)) {
+      root = output.context.obj({ Type: 'Outlines' });
+      rootRef = output.context.register(root);
+      output.catalog.set(name('Outlines'), rootRef);
+    }
+    const tree = root as PDFDict;
+    let lastRef = tree.get(name('Last')),
+      last = resolve(output, lastRef),
+      added = 0;
+    const pageIds = new Map(notebook.pages.map((p, i) => [p.id, i]));
+    for (const bookmark of notebook.bookmarks ?? []) {
+      const i = pageIds.get(bookmark.pageId);
+      if (i === undefined) continue;
+      const item = output.context.obj({
+        Title: PDFHexString.fromText(bookmark.title),
+        Parent: rootRef,
+        Dest: [output.getPage(i).ref, name('Fit')],
+      });
+      const ref = output.context.register(item);
+      if (last instanceof PDFDict && lastRef) {
+        last.set(name('Next'), ref);
+        item.set(name('Prev'), lastRef);
+      } else tree.set(name('First'), ref);
+      tree.set(name('Last'), ref);
+      last = item;
+      lastRef = ref;
+      added++;
+    }
+    const old = resolve(output, tree.get(name('Count')));
+    tree.set(
+      name('Count'),
+      PDFNumber.of(Math.max(0, old instanceof PDFNumber ? old.asNumber() : 0) + added),
+    );
+  }
   for (let i = 0; i < notebook.pages.length; i++) {
     const p = notebook.pages[i];
     if (p.strokes.length || p.images.length)

@@ -1,0 +1,6 @@
+{
+  "referenceSource": null,
+  "originalSha256": "3fecbe14c4b95f637c1c60d06c3886073fb5bdd12d87e24d9726b8c9a7677bd3",
+  "compiledSha256": "3fecbe14c4b95f637c1c60d06c3886073fb5bdd12d87e24d9726b8c9a7677bd3",
+  "mechanism": "Only the worker mask cache budget differs: zero versus bounded 24 MiB/eight exact masks. Pixel color/alpha/resolution, PDF raster cache, scheduling and worker lifetime stay fixed."
+}

@@ -1,11 +1,18 @@
 import { formulaRows, strokeBounds, formulaCrop, mergeFormulaRows } from './formulaLines';
 import TaskCenterButton from './TaskCenterButton';
 import { t as tr, useLocale } from './i18n';
+import { performanceLedger, performanceOutcome, type PerformanceFinish } from './performanceLedger';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Settings2 } from 'lucide-react';
+import { Settings2, X } from 'lucide-react';
+import LatexSource from './LatexSource';
+import { LatexHistory } from './latexHistory';
+import { loadFormulaDraft, saveFormulaDraft, type FormulaDraft } from './formulaDraft';
+import { deferredFormulaSave } from './deferredSave';
+import { FormulaInk } from './formulaInk';
 import katex from 'katex';
+import { canvasPngDataUrl } from './canvasPng';
 import 'katex/dist/katex.min.css';
-import { drawStroke, drawStrokes } from './ink';
+import { drawStroke } from './ink';
 import { uid, isEraser, hitStroke, type Point, type Stroke } from './model';
 import { copyText } from './clipboard';
 import {
@@ -24,22 +31,27 @@ export default function FormulaDialog({
   initialLatex = '',
   initialMacros,
   editing = false,
+  draftKey,
 }: {
   onClose: () => void;
   onInsert: (data: string, w: number, h: number, latex: string, macros: LatexMacros) => void;
   initialLatex?: string;
   initialMacros?: LatexMacros;
   editing?: boolean;
+  draftKey: string;
 }) {
   useLocale();
   const settingsId = useId();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftError, setDraftError] = useState('');
+  const draftWritable = useRef(false);
   const canvas = useRef<HTMLCanvasElement>(null),
     result = useRef<HTMLDivElement>(null),
     active = useRef<Stroke | null>(null),
     owner = useRef<number | null>(null),
     strokes = useRef<Stroke[]>([]);
-  const [latex, setLatex] = useState(initialLatex),
+  const [latex, setLatexState] = useState(initialLatex),
     [status, setStatus] = useState(
       tr(
         '\u5728\u4E0B\u65B9\u5199\u4E00\u4E2A\u516C\u5F0F\uFF0C\u7136\u540E\u70B9\u51FB\u8BC6\u522B\u3002',
@@ -47,6 +59,24 @@ export default function FormulaDialog({
     ),
     [busy, setBusy] = useState(false),
     [reachable, setReachable] = useState(false);
+  const [insertionPosition, setInsertionPositionState] = useState(initialLatex.length);
+  const textHistory = useRef(new LatexHistory(initialLatex));
+  const setLatex = (value: string, position = textHistory.current.current.position, kind = '') => {
+    textHistory.current.commit(value, position, kind);
+    setLatexState(value);
+    setInsertionPositionState(position);
+  };
+  const setInsertionPosition = (position: number) => {
+    textHistory.current.move(position);
+    setInsertionPositionState(position);
+  };
+  const travelText = (redo = false) => {
+    const entry = redo ? textHistory.current.redo() : textHistory.current.undo();
+    if (entry) {
+      setLatexState(entry.value);
+      setInsertionPositionState(entry.position);
+    }
+  };
   const api = useProviderConfig('formula', 'texo-native');
   const { provider: config, patch, selectProvider } = api,
     provider = config.type;
@@ -74,39 +104,148 @@ export default function FormulaDialog({
   const committed = useRef<HTMLCanvasElement | null>(null),
     frame = useRef(0),
     dirty = useRef(true);
+  const ink = useRef<FormulaInk | null>(null);
+  ink.current ??= new FormulaInk();
+  const draft = useRef<{ ready: boolean; value: FormulaDraft }>(null!);
+  draft.current = {
+    ready: draftReady,
+    value: {
+      version: 1,
+      latex,
+      position: insertionPosition,
+      strokes: strokes.current,
+      multiline,
+      byRow,
+      macros,
+      macroDraft,
+    },
+  };
+  const saveDraft = () => {
+    if (!draft.current.ready || !draftWritable.current) return;
+    const value = {
+      ...draft.current.value,
+      strokes: active.current ? [...strokes.current, active.current] : strokes.current,
+    };
+    void saveFormulaDraft(draftKey, value)
+      .then(() => {
+        if (mounted.current) setDraftError('');
+      })
+      .catch(() => {
+        if (mounted.current) setDraftError(tr('公式草稿保存失败，请复制 LaTeX 并保留画板截图。'));
+      });
+  };
+  const saveRef = useRef(saveDraft);
+  saveRef.current = saveDraft;
+  const saver = useRef<ReturnType<typeof deferredFormulaSave> | null>(null);
+  saver.current ??= deferredFormulaSave(() => saveRef.current());
+  const persistRef = useRef(() => saver.current!.schedule());
+  useEffect(() => {
+    let cancelled = false;
+    mounted.current = true;
+    void loadFormulaDraft(draftKey)
+      .then((saved) => {
+        if (cancelled) return;
+        draftWritable.current = true;
+        if (saved) {
+          strokes.current = saved.strokes;
+          textHistory.current.reset(saved.latex, saved.position);
+          setLatexState(saved.latex);
+          setInsertionPosition(saved.position);
+          setMultiline(saved.multiline);
+          setByRow(saved.byRow);
+          setMacros(saved.macros);
+          setMacroDraft(saved.macroDraft);
+        }
+        setDraftReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDraftError(tr('无法读取公式草稿，请检查本机存储空间。'));
+          // Keep storage untouched if reading failed; edits can still be copied or inserted.
+          setDraftReady(true);
+        }
+      });
+    const flush = () => {
+      // Include a still-active pen stroke on pagehide; a normal close only flushes changes.
+      if (active.current) persistRef.current();
+      saver.current!.flush();
+    };
+    window.addEventListener('pagehide', flush);
+    return () => {
+      cancelled = true;
+      mounted.current = false;
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
+  }, [draftKey]);
+  useEffect(() => {
+    if (draftReady) persistRef.current();
+  }, [draftReady, latex, insertionPosition, multiline, byRow, macros, macroDraft]);
   const redraw = () => {
     cancelAnimationFrame(frame.current);
     frame.current = 0;
-    committed.current ??= document.createElement('canvas');
-    const base = committed.current;
-    if (dirty.current) {
-      base.width = 960;
-      base.height = drawingHeight;
-      const ctx = base.getContext('2d')!;
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, 960, drawingHeight);
-      drawStrokes(ctx, strokes.current);
-      dirty.current = false;
+    const finish = paintFinish.current ?? performanceLedger?.begin('formula-paint');
+    paintFinish.current = undefined;
+    try {
+      committed.current ??= document.createElement('canvas');
+      const base = committed.current;
+      if (dirty.current) {
+        if (!ink.current!.paint(base, strokes.current, drawingHeight)) {
+          finish?.('cancelled');
+          return;
+        }
+        dirty.current = false;
+      }
+      const ctx = canvas.current!.getContext('2d', { desynchronized: true })!;
+      ctx.drawImage(base, 0, 0);
+      if (active.current) drawStroke(ctx, active.current);
+      finish?.();
+    } catch (error) {
+      finish?.(performanceOutcome(error));
+      throw error;
     }
-    const ctx = canvas.current!.getContext('2d', { desynchronized: true })!;
-    ctx.drawImage(base, 0, 0);
-    if (active.current) drawStroke(ctx, active.current);
   };
+  const paintFinish = useRef<PerformanceFinish | undefined>(undefined);
+  const recoveryDraw = useRef(() => {});
   const queueDraw = () => {
-    if (!frame.current) frame.current = requestAnimationFrame(redraw);
+    if (!frame.current) {
+      paintFinish.current = performanceLedger?.begin('formula-paint');
+      frame.current = requestAnimationFrame(redraw);
+    }
   };
+  recoveryDraw.current = queueDraw;
   useEffect(() => {
     redraw();
+    const base = committed.current!,
+      visible = canvas.current!;
+    const invalidate = () => {
+      ink.current!.reset();
+      dirty.current = true;
+    };
+    const restore = () => {
+      invalidate();
+      recoveryDraw.current();
+    };
+    for (const target of [base, visible]) {
+      target.addEventListener('contextlost', invalidate);
+      target.addEventListener('contextrestored', restore);
+    }
     return () => {
+      for (const target of [base, visible]) {
+        target.removeEventListener('contextlost', invalidate);
+        target.removeEventListener('contextrestored', restore);
+      }
       mounted.current = false;
       abort.current?.abort();
       cancelAnimationFrame(frame.current);
+      paintFinish.current?.('cancelled');
+      paintFinish.current = undefined;
     };
   }, []);
   useEffect(() => {
     dirty.current = true;
     redraw();
-  }, [drawingHeight]);
+  }, [drawingHeight, draftReady]);
   useEffect(() => {
     if (result.current)
       katex.render(latex || tr('\\text{\u516C\u5F0F\u9884\u89C8}'), result.current, {
@@ -130,8 +269,8 @@ export default function FormulaDialog({
       e.pointerType === 'pen' ? Math.max(0.01, e.pressure) : 0.5,
     ];
   };
-  const recognize = async () => {
-    if (owner.current !== null) return;
+  const recognize = async (mode: 'replace' | 'insert') => {
+    if (owner.current !== null || busy || !draftReady) return;
     if (!strokes.current.length) {
       setStatus(tr('\u8BF7\u5148\u624B\u5199\u4E00\u4E2A\u516C\u5F0F'));
       return;
@@ -189,7 +328,12 @@ export default function FormulaDialog({
         crop.width = crop.height = 1;
       }
       if (valid() && last) {
-        setLatex(mergeFormulaRows(values));
+        const recognized = mergeFormulaRows(values);
+        const at = Math.max(0, Math.min(latex.length, insertionPosition));
+        setLatex(
+          mode === 'insert' ? latex.slice(0, at) + recognized + latex.slice(at) : recognized,
+        );
+        setInsertionPosition((mode === 'insert' ? at : 0) + recognized.length);
         setReachable(!fallback);
         setStatus(
           (rows.length > 1 ? tr('识别行数：{0}', rows.length) + ' · ' : '') +
@@ -213,8 +357,7 @@ export default function FormulaDialog({
       >
         <header>
           <div>
-            <h2>{tr('把灵感写成公式')}</h2>
-            <p>{tr('手写 → LaTeX · Texo 本地优先')}</p>
+            <h2>{tr('手写公式')}</h2>
           </div>
           <div className="row formula-header-actions">
             <button
@@ -226,10 +369,17 @@ export default function FormulaDialog({
               <Settings2 size={18} aria-hidden="true" />
               {tr('设置')}
             </button>
-            <button onClick={onClose}>{tr('关闭')}</button>
+            <button className="icon-button" aria-label={tr('关闭')} onClick={onClose}>
+              <X size={20} aria-hidden="true" />
+            </button>
           </div>
         </header>
         <div className="formula-body">
+          {draftError && (
+            <p role="alert" className="error">
+              {draftError}
+            </p>
+          )}
           <section
             id={settingsId}
             className="formula-settings-panel"
@@ -461,12 +611,13 @@ export default function FormulaDialog({
           </section>
           <div className="row formula-drawing-actions">
             <button
-              disabled={busy}
+              disabled={busy || !draftReady}
               onClick={() => {
                 strokes.current = [];
                 active.current = null;
                 dirty.current = true;
                 redraw();
+                persistRef.current();
               }}
             >
               {tr('清空画板')}
@@ -488,6 +639,7 @@ export default function FormulaDialog({
               onPointerDown={(e) => {
                 if (
                   busy ||
+                  !draftReady ||
                   e.pointerType === 'touch' ||
                   owner.current !== null ||
                   (e.button !== 0 && !isEraser(e))
@@ -527,18 +679,20 @@ export default function FormulaDialog({
               onPointerUp={(e) => {
                 if (e.pointerId !== owner.current) return;
                 if (active.current) {
-                  strokes.current.push(active.current);
+                  strokes.current = [...strokes.current, active.current];
                   dirty.current = true;
                 }
                 active.current = null;
                 owner.current = null;
                 redraw();
+                persistRef.current();
               }}
               onPointerCancel={(e) => {
                 if (e.pointerId === owner.current) {
                   active.current = null;
                   owner.current = null;
                   redraw();
+                  persistRef.current();
                 }
               }}
               onLostPointerCapture={(e) => {
@@ -546,6 +700,7 @@ export default function FormulaDialog({
                   active.current = null;
                   owner.current = null;
                   redraw();
+                  persistRef.current();
                 }
               }}
             />
@@ -555,9 +710,21 @@ export default function FormulaDialog({
             <p className="formula-status" role="status">
               {tr(status)}
             </p>
-            <button className="primary" disabled={busy || !api.ready} onClick={recognize}>
-              {busy ? tr('正在识别…') : tr('识别手写公式')}
-            </button>
+            <div className="row formula-recognize-actions">
+              <button
+                disabled={busy || !api.ready || !draftReady}
+                onClick={() => void recognize('replace')}
+              >
+                {tr('识别并覆盖')}
+              </button>
+              <button
+                className="primary"
+                disabled={busy || !api.ready || !draftReady}
+                onClick={() => void recognize('insert')}
+              >
+                {tr('识别并插入')}
+              </button>
+            </div>
             {busy && (
               <button
                 onClick={() => {
@@ -570,15 +737,16 @@ export default function FormulaDialog({
               </button>
             )}
           </div>
-          <label className="field-label" htmlFor="latex">
-            {tr('LaTeX · 可直接修改')}
-          </label>
-          <textarea
-            id="latex"
-            disabled={busy}
+          <LatexSource
             value={latex}
-            onChange={(e) => setLatex(e.target.value)}
-            placeholder={tr('例如：\\\\int_0^1 x^2 \\\\, dx = \\\\frac{1}{3}')}
+            position={insertionPosition}
+            disabled={busy || !draftReady}
+            onChange={setLatex}
+            onPosition={setInsertionPosition}
+            onUndo={() => travelText()}
+            onRedo={() => travelText(true)}
+            canUndo={textHistory.current.canUndo}
+            canRedo={textHistory.current.canRedo}
           />
           <div className="formula-preview" ref={result} />
 
@@ -617,7 +785,7 @@ export default function FormulaDialog({
                     },
                   });
                   onInsert(
-                    c.toDataURL('image/png'),
+                    await canvasPngDataUrl(c),
                     (c.width / scale) * 2,
                     (c.height / scale) * 2,
                     latex,

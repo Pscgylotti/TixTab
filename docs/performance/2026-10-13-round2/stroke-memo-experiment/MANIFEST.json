@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "decision": "Rejected: no demonstrated whole-workflow resource improvement; removed from production.",
+  "entries": [
+    {
+      "file": "before-1.json.gz",
+      "sha256": "3285e01d3496a0ea85628ff3c7c2bd3d4adfbdc95b3278ebaa7cc75f029d382e",
+      "reportSha256": "1f189dd6530e939ce0bd0ca81dc3587f705215e309ae589ffdb8cc141cd42560",
+      "buildSha256": "2d6788c1f6d9f56279f823cf7d415ba380490bd82e377e7a2c93b50ad3ce2a8c",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    },
+    {
+      "file": "before-2.json.gz",
+      "sha256": "8971f788f57a73448634c729917f1b6f65429c8d50a427f4205fd4e1499e51d3",
+      "reportSha256": "c4d096c8263b90aa630c32d6aca7afdc6d1735300fcd63656bbdcef4b8701006",
+      "buildSha256": "2d6788c1f6d9f56279f823cf7d415ba380490bd82e377e7a2c93b50ad3ce2a8c",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    },
+    {
+      "file": "before-3.json.gz",
+      "sha256": "b21dad2a28e85bee9beeb081679c73da96b5805511e5a41f91be7573badba659",
+      "reportSha256": "5056d7233e0813ccc84dbef07281515d98a181b3e95ae51b2ec9eff6f66dfe17",
+      "buildSha256": "2d6788c1f6d9f56279f823cf7d415ba380490bd82e377e7a2c93b50ad3ce2a8c",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    },
+    {
+      "file": "candidate-1.json.gz",
+      "sha256": "4a291e3320212d3b191653a29d5c6d4a598a65811c2555383a87a4d85f4ddfd7",
+      "reportSha256": "15048850cb64f7df79133149a79f1ff7afb0a30da72cb1f622386a48121f1147",
+      "buildSha256": "5b79fff487bf9a1d4540799960ba36ce8061a48efbc4f28c1e0145aa53d803f4",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    },
+    {
+      "file": "candidate-2.json.gz",
+      "sha256": "ac15d85777920ffe968c07a39fc2819c92161348341a7b0807331d2243895f67",
+      "reportSha256": "2a34cd534bc838a55e8caf137772f5e718b99fbdc7b428c6115e78e9301e7c0c",
+      "buildSha256": "5b79fff487bf9a1d4540799960ba36ce8061a48efbc4f28c1e0145aa53d803f4",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    },
+    {
+      "file": "candidate-3.json.gz",
+      "sha256": "862fcce1896bf3b20b964a30c081bc54f9f1c102ae07db8f7db38664ab43d15b",
+      "reportSha256": "28346b9e3edf82cfaad9f29b7b9c63c749b764991a5bcf258e13d6e556e1aba9",
+      "buildSha256": "5b79fff487bf9a1d4540799960ba36ce8061a48efbc4f28c1e0145aa53d803f4",
+      "harnessSha256": "7780e03f40f9d88a0e6951378ce236ed27feb096a1eb0b42b298051c6279094f"
+    }
+  ],
+  "evidence": [
+    {
+      "file": "experiment-sources/scripts/build-foreground-control.mjs.gz",
+      "sha256": "bcaf61484892ba09981d064764b1464ffbb0b39f8511d9accb4dd078b6c60aa5",
+      "rawSha256": "a39928c7093e86de5ba43028f7aec2f6523ffaeda4e38079cccbc0e2ec65ae5d",
+      "source": "scripts/build-foreground-control.mjs"
+    },
+    {
+      "file": "experiment-sources/src/PageEditor.tsx.gz",
+      "sha256": "013efee58507ba12fad2b3e8e66da45405902cbaf24452d24c618fecbc5d2e32",
+      "rawSha256": "bd7fe3f6192c653d4a4851e0cd4ae4e3d7f579212386c132b3854952d87dab72",
+      "source": "src/PageEditor.tsx"
+    },
+    {
+      "file": "experiment-sources/tests/foreground-culling.spec.ts.gz",
+      "sha256": "b1963c203e196de12c6967a188b8faf3e566c5c0fdc89b6948e6e263ce5a92dd",
+      "rawSha256": "08b2d85872abc4cc6b5695efdf6394cfdacd704ea2f9e15a65f46c092e18b609",
+      "source": "tests/foreground-culling.spec.ts"
+    },
+    {
+      "file": "native-correctness/.last-run.json.gz",
+      "sha256": "eeb2d2f2d42ce7a6a891fb0b1fa5ae847db0110fdf2d769e41c519444aadb45d",
+      "rawSha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    },
+    {
+      "file": "native-correctness/foreground-culling-foregro-92dd9-e-full-project-across-views/full-foreground.pdf.gz",
+      "sha256": "b98baa1cbc3f07d6c54aa05cc207fc5b2d9682798c94000132dfa8d77a1af6bc",
+      "rawSha256": "375123f7141fe9e86b21a8538c0a86e3330ea1f3aec07a172e66259c816b1d42"
+    },
+    {
+      "file": "native-correctness/foreground-culling-foregro-92dd9-e-full-project-across-views/pixel-comparisons.json.gz",
+      "sha256": "7189313c81423443af113c5f9f382cc7bb35ea001a2bfbe3ed4c638170219a1c",
+      "rawSha256": "62711999019ac4043f5f77c059294708bb0b5e62f9f86432d1989a8b7f25448e"
+    },
+    {
+      "file": "native-correctness/foreground-culling-foregro-92dd9-e-full-project-across-views/transient-coverage.json.gz",
+      "sha256": "ea38c712608cab14072dcd7f303ce024c8be5daf85ade5a3ea82feda036836c1",
+      "rawSha256": "58189e70f6d82d58ff108e9b2663dc78978b747a4011d1ce76e2d2a9f29b1146"
+    },
+    {
+      "file": "native-correctness.log",
+      "sha256": "59c84acd74a654101b2240f7965a37a60a7a433698e36b5605067a2dae5fba68"
+    }
+  ],
+  "sourceManifestSha256": "b97139bbe928079c503dd1217d8de974c350ac6860bf9aeeea51693aa701f07d"
+}

@@ -1,0 +1,6 @@
+{
+  "referenceSource": ".cache/object-contain-original.css",
+  "originalSha256": "9ddc35e3eec5d1f9fc54dcf80ada3a128caa1de629a10a34a6e40bcf47e9e69c",
+  "compiledSha256": "58d7cd1b1aa9be96ae6cbb89110ed06992c0afd6414916089f440d3a4faa9e52",
+  "mechanism": "Only chrome.css differs: contain object layout/style/paint with a two CSS pixel overflow clip margin; preserve the original image, CSS geometry, stacking, filters and final commit."
+}

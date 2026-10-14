@@ -4,12 +4,12 @@ const { PDFDocument, StandardFonts, rgb, degrees } = createRequire(import.meta.u
 async function fixture(page: import('@playwright/test').Page) {
   const png = await page.evaluate(() => {
     const c = document.createElement('canvas');
-    c.width = 90;
-    c.height = 60;
+    c.width = 900;
+    c.height = 600;
     const x = c.getContext('2d')!;
     ['#ff0000', '#00ff00', '#0000ff'].forEach((v, i) => {
       x.fillStyle = v;
-      x.fillRect(i * 30, 0, 30, 60);
+      x.fillRect(i * 300, 0, 300, 600);
     });
     return c.toDataURL();
   });
@@ -176,12 +176,21 @@ test('night colors preserve bitmap hue, rotated/cropped geometry, original previ
   expect(pixels.blue).toEqual([0, 0, 158]);
   expect(pixels.vector[0]).toBeGreaterThan(pixels.vector[1]);
   await page.getByRole('button', { name: '移动', exact: true }).click();
-  await page.getByRole('button', { name: '查看原图 1', exact: true }).click();
+  const imagePoint = await page.locator('.pdf-layer').evaluate((canvas) => {
+    const b = canvas.getBoundingClientRect();
+    return { x: b.left + (b.width * 290) / 600, y: b.top + (b.height * 340) / 800 };
+  });
+  await expect(page.locator('.pdf-original-image')).toHaveCount(0);
+  await page.mouse.dblclick(imagePoint.x, imagePoint.y);
   const modal = page.getByRole('dialog', { name: '原图', exact: true });
   await expect(modal).toBeVisible();
   await expect
     .poll(() => modal.locator('canvas').evaluate((c: HTMLCanvasElement) => c.width))
     .toBeGreaterThan(100);
+  expect(
+    await modal.locator('canvas').evaluate((c: HTMLCanvasElement) => [c.width, c.height]),
+  ).toEqual([900, 600]);
+  expect((await modal.boundingBox())!.width).toBeGreaterThan(1000);
   expect(
     await modal
       .locator('canvas')
@@ -192,7 +201,63 @@ test('night colors preserve bitmap hue, rotated/cropped geometry, original previ
         ),
       ),
   ).toEqual([255, 0, 0]);
+  const preview = modal.locator('.original-image-content'),
+    transform = modal.locator('.original-image-transform'),
+    originalBounds = await preview.boundingBox(),
+    pdfBounds = await page.locator('.pdf-layer').boundingBox();
+  await modal.getByRole('button', { name: '放大原图', exact: true }).click();
+  await expect(modal.locator('output')).toHaveText('125%');
+  expect(await preview.boundingBox()).toEqual(originalBounds);
+  const box = originalBounds!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2 + 20);
+  await page.mouse.up();
+  await expect(transform).not.toHaveCSS('transform', 'matrix(1.25, 0, 0, 1.25, 0, 0)');
+  await page.mouse.wheel(0, -100);
+  await expect
+    .poll(async () => Number((await modal.locator('output').textContent())!.replace('%', '')))
+    .toBeGreaterThan(125);
+  await modal.getByRole('button', { name: '重置原图缩放' }).click();
+  await expect(modal.locator('output')).toHaveText('100%');
+  await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+  const cdp = await page.context().newCDPSession(page),
+    cx = box.x + box.width / 2,
+    cy = box.y + box.height / 2;
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [
+      { x: cx - 20, y: cy, id: 1 },
+      { x: cx + 20, y: cy, id: 2 },
+    ],
+  });
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [
+      { x: cx - 40, y: cy, id: 1 },
+      { x: cx + 40, y: cy, id: 2 },
+    ],
+  });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(modal.locator('output')).toHaveText('200%');
+  await cdp.detach();
+  expect(await page.locator('.pdf-layer').boundingBox()).toEqual(pdfBounds);
+  await modal.getByRole('button', { name: '缩小原图' }).click();
+  await expect(modal.locator('output')).toHaveText('160%');
+  await preview.focus();
+  await page.keyboard.press('Home');
+  await expect(modal.locator('output')).toHaveText('100%');
+  await expect(preview).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await page.getByRole('button', { name: '关闭原图' }).click();
+  await page.getByRole('button', { name: '实验性夜间模式', exact: true }).click();
+  await page.mouse.dblclick(imagePoint.x, imagePoint.y);
+  await expect(modal).toBeVisible();
+  await expect
+    .poll(() => modal.locator('canvas').evaluate((c: HTMLCanvasElement) => c.width))
+    .toBe(900);
+  await modal.screenshot({ path: '.cache/native-original-image-zoom.png' });
+  await page.getByRole('button', { name: '关闭原图' }).click();
+  await page.getByRole('button', { name: '实验性夜间模式', exact: true }).click();
   await page.getByRole('button', { name: '查看原色', exact: true }).click();
   await expect
     .poll(() =>
@@ -217,6 +282,7 @@ test('night colors preserve bitmap hue, rotated/cropped geometry, original previ
   await page.mouse.dblclick(glyph.x, glyph.y);
   await expect(page.locator('.selection-flyout')).toBeVisible();
   await page.getByRole('button', { name: '关闭划词工具' }).click();
+  await page.getByRole('button', { name: '移动', exact: true }).click();
   for (const mode of ['连续页面预览', '双页预览']) {
     await page.getByRole('button', { name: mode, exact: true }).click();
     await expect
@@ -227,6 +293,20 @@ test('night colors preserve bitmap hue, rotated/cropped geometry, original previ
           .evaluate((c: HTMLCanvasElement) => c.getContext('2d')!.getImageData(0, 0, 1, 1).data[0]),
       )
       .toBe(28);
+    const point = await page
+      .locator('.reading-pdf')
+      .first()
+      .evaluate((canvas) => {
+        const b = canvas.getBoundingClientRect();
+        return { x: b.left + (b.width * 290) / 600, y: b.top + (b.height * 340) / 800 };
+      });
+    await page.mouse.dblclick(point.x, point.y);
+    await expect(modal).toBeVisible();
+    await expect
+      .poll(() => modal.locator('canvas').evaluate((c: HTMLCanvasElement) => c.width))
+      .toBe(900);
+    await expect(modal).toHaveCSS('background-color', 'rgb(30, 36, 47)');
+    await page.getByRole('button', { name: '关闭原图' }).click();
   }
   // Independent real PDF render checks image geometry after crop+90° rotation, including tiles.
   const transformed = await page.evaluate(async (base64) => {
@@ -390,7 +470,8 @@ test('dense PDF workload: eco profile bounds pixels and repeat work without stal
         frames: gaps.length,
         maxFrameGapMs: Math.max(0, ...gaps),
         repeatNewRenders: repeat.renders - first.renders,
-        cacheBytes: repeat.bytes,
+        cacheBytes: repeat.bytes - repeat.pageBytes,
+        pageCacheBytes: repeat.pageBytes,
         budgetBytes: policy.cacheBytes,
       });
     }
@@ -524,9 +605,9 @@ test('dark formula preview exports readable original ink and Excalidraw follows 
   expect(stored.dark / stored.opaque).toBeGreaterThan(0.95);
   await page.getByRole('button', { name: '草图', exact: true }).click();
   await expect(page.locator('.excalidraw.theme--dark')).toBeVisible();
-  await page.getByRole('button', { name: '保存草图并关闭', exact: true }).click();
+  await page.locator('.sketch-modal').getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '实验性夜间模式', exact: true }).click();
   await page.getByRole('button', { name: '草图', exact: true }).click();
   await expect(page.locator('.excalidraw')).not.toHaveClass(/theme--dark/);
-  await page.getByRole('button', { name: '保存草图并关闭', exact: true }).click();
+  await page.locator('.sketch-modal').getByRole('button', { name: '关闭', exact: true }).click();
 });

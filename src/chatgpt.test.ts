@@ -476,7 +476,7 @@ describe('ChatGPT official local-client integration', () => {
       }),
     ).toThrow('input-limit');
     expect(() =>
-      validateInput({ model: 'x', messages: [{ role: 'user', text: 'a'.repeat(32001) }] }),
+      validateInput({ model: 'x', messages: [{ role: 'user', text: 'a'.repeat(64001) }] }),
     ).toThrow();
     expect(
       validateInput({

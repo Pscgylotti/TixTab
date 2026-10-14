@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">TixTab — Tab and stroke</title>
+  <desc id="desc">A minimal handwritten T combines a document tab and a diagonal pen stroke.</desc>
+  <defs>
+    <linearGradient id="tile" x1="72" y1="24" x2="432" y2="488" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#658FEA"/>
+      <stop offset=".5" stop-color="#4775DB"/>
+      <stop offset="1" stop-color="#365EB9"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="120" fill="url(#tile)"/>
+  <path d="M183 132h134a28 28 0 0 1 28 28v31H155v-31a28 28 0 0 1 28-28Z" fill="#BDD0FA"/>
+  <path d="M146 171h200a27 27 0 0 1 0 54h-64l-33 112a29 29 0 0 1-7 12l-25 26a5 5 0 0 1-8-2l-11-34a29 29 0 0 1 0-17l29-97h-81a27 27 0 0 1 0-54Z" fill="#F9FBFF"/>
+</svg>

@@ -21,10 +21,17 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   text: string;
+  /** Internal request instructions and UI context never appear in message bubbles/copy. */
+  instruction?: string;
+  reading?: string;
+  action?: 'summary' | 'svg';
   context?: string;
   pageId?: string;
   pageNumber?: number;
   image?: string;
+  images?: string[];
+  imageNames?: string[];
+  pages?: { id: string; number: number }[];
   file?: { name: string; data: string };
   fileName?: string;
   failed?: boolean;
@@ -73,18 +80,30 @@ export async function chatRequest<T>(request: Record<string, unknown>): Promise<
 }
 export function conversationInput(messages: ChatMessage[]) {
   // Failed/incomplete answers are visible locally, but never presented as finished model turns.
-  return messages
+  const turns = messages
     .filter((m) => !m.failed)
     .slice(-31)
     .map((m) => ({
       role: m.role,
       text:
         m.fileName && !m.file
-          ? `[Previously attached original PDF: ${m.fileName}. The file is not attached to this turn. Use the prior summary, or ask to reattach for unsupported details.]\n${m.text}`
+          ? `[Previously attached original PDF: ${m.fileName}. The file is not attached to this turn. Use the prior summary, or ask to reattach for unsupported details.]\n${requestText(m)}`
           : m.context
-            ? `${m.context}${!m.image && m.context.includes('[Attached page image') ? '\n[The image is no longer attached in this turn. Ask the user to reattach it if needed.]' : ''}\n\nUser question:\n${m.text}`
-            : m.text,
+            ? `${m.context}${!m.image && !m.images?.length && (m.context.includes('[Attached page image') || m.imageNames?.length) ? '\n[The image is no longer attached in this turn. Ask the user to reattach it if needed.]' : ''}\n\n${requestText(m)}`
+            : requestText(m),
       ...(m.image ? { image: m.image } : {}),
+      ...(m.images?.length ? { images: m.images } : {}),
       ...(m.file ? { file: m.file } : {}),
     }));
+  // Keep the most recent turns within the native context budget; API PDF text has its own bound.
+  let length = turns.reduce((sum, turn) => sum + turn.text.length, 0);
+  while (turns.length > 1 && length > 64000) length -= turns.shift()!.text.length;
+  while (turns.length > 1 && turns[0].role === 'assistant') turns.shift();
+  return turns;
+}
+function requestText(m: ChatMessage) {
+  if (m.role === 'assistant' || (!m.reading && !m.instruction)) return m.text;
+  return [m.reading, m.instruction, m.text ? `User question:\n${m.text}` : '']
+    .filter(Boolean)
+    .join('\n\n');
 }
