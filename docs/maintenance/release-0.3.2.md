@@ -9,3 +9,10 @@
 - 原有 0.3.1 安装包和五个冻结性能脚本保持不变。私有工作目录、模型、原书图片/识别正文、凭据与本机日志不进入发布源代码或安装包。
 
 安装包和校验清单、源码提交见 Release 随附 `BUILD-INFO.json` / `SHA256SUMS.txt`。原生 Tesseract 的 DAWG/beam 解码及归一化保真、混合模式空格与长期内存压力仍待进一步验证。
+
+## 发布记录 / Publication
+
+- 正式发布：[TixTab 0.3.2](https://github.com/Pscgylotti/TixTab/releases/tag/v0.3.2)，已公开，非预发布。
+- 源码标签 `v0.3.2` 指向 `f8d97742ae28cb32c93dd39bb11104e5038a51f2`；此发布记录为后续文档提交，不移动标签或重建安装包。
+- 安装包 `TixTab-0.3.2-lite-setup-x64.exe`：138,292,000 字节，SHA256 `466b23d8e9841187b4932c1baebd373b13005d559832fc311d518e38eaf75ae6`。
+- GitHub 返回的安装包、`BUILD-INFO.json` 和 `SHA256SUMS.txt` 摘要均与本地产物一致，三个资产均为 `uploaded`。
