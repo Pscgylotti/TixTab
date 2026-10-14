@@ -1,14 +1,16 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 const directory = resolve(`release/${pkg.version}/lite`),
   file = `TixTab-${pkg.version}-lite-setup-x64.exe`;
-const sha = async (path) =>
-  createHash('sha256')
-    .update(await readFile(path))
-    .digest('hex');
+const sha = async (path) => {
+  const hash = createHash('sha256');
+  for await (const chunk of createReadStream(path)) hash.update(chunk);
+  return hash.digest('hex');
+};
 const info = {
   version: pkg.version,
   source: 'https://github.com/Pscgylotti/TixTab',
@@ -31,13 +33,13 @@ const info = {
     ),
   ),
   validation: {
-    unit: '387 tests / 69 files',
+    unit: '455 tests / 89 files',
     browser:
-      'Active UI regressions plus bitmap OCR, transparent overlays, ink selection, page jumps, reordering and canvas retirement',
+      'Image downloads, image extraction, cross-document page clipboard, UI scale, pressure mapping, real CPU four-worker cancellation, mixed NPU layout/timing and bitmap OCR regressions',
     packaged:
-      'Windows synthetic pen hover; all-view image/reference activation; foreground pixels/layer order and complete PDF export',
+      'Static ASAR/build asset SHA256 and file-set verification, required backend/preload modules, native binding/icon and model exclusion; this release did not launch the installer or packaged application',
     nativeModels:
-      'PP-OCRv4 CPU line geometry; Whisper NPU cold/warm/idle reload; backend lifecycle/resource policy',
+      '17 Tesseract backend tests plus HTTP lifecycle; strict NPU English/mixed functional samples; 61-page English CPU/GPU/NPU experimental comparison. Mixed spacing errors remain. No speed or energy guarantee',
     installer:
       'Compiled NSIS installer. Earlier isolated upgrade/repair/downgrade fixture evidence retained. Full installation was not rerun on this host.',
     limits:

@@ -1,4 +1,26 @@
 /* Shared settings surfaces. Editor-owned controls retain their own layout. */
+.ui-scale-setting {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+}
+.ui-scale-controls {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) 3ch auto;
+  gap: 10px;
+  align-items: center;
+}
+.ui-scale-controls input {
+  width: 100%;
+  min-width: 0;
+}
+.ui-scale-controls output {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.ui-scale-setting .appearance-note {
+  margin: 0;
+}
 :root {
   --ui-field: var(--surface);
   --ui-field-border: var(--border-strong);
@@ -100,4 +122,42 @@
     ):not(.excalidraw *) {
     min-height: var(--hit);
   }
+}
+.pressure-curve-graph {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  touch-action: none;
+  user-select: none;
+}
+.pressure-curve-graph polyline {
+  fill: none;
+  stroke: var(--accent, #7ba7ef);
+  stroke-width: 2;
+}
+.pressure-curve-graph circle {
+  fill: var(--accent, #7ba7ef);
+  stroke: var(--panel, #232b36);
+  stroke-width: 2;
+  cursor: grab;
+}
+.pressure-curve-graph text {
+  fill: currentColor;
+  font-size: 10px;
+  opacity: 0.65;
+}
+.pressure-curve-guide {
+  fill: none;
+  stroke: currentColor;
+  opacity: 0.2;
+  stroke-width: 1;
+}
+.pressure-curve-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pressure-curve-actions span {
+  margin-right: auto;
 }

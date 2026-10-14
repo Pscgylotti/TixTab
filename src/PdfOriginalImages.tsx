@@ -9,6 +9,7 @@ import { polygonBox, transformPolygon, type ImagePolygon } from './pdfNightGeome
 import { requestPdfTile, renderingCancelled } from './pdfRenderCache';
 import { t as tr, useLocale } from './i18n';
 import ZoomableImagePreview from './ZoomableImagePreview';
+import ImageDownloadButton from './ImageDownloadButton';
 import { refreshPenHover, registerPenTargets, usePenInteraction } from './penInteraction';
 export default function PdfOriginalImages({
   pdf,
@@ -351,13 +352,22 @@ export default function PdfOriginalImages({
                     <ScanText size={17} />
                   </button>
                 </div>
-                <button
-                  className="icon-button"
-                  aria-label={tr('关闭原图')}
-                  onClick={() => setSelected(null)}
-                >
-                  <X size={18} />
-                </button>
+                <div className="original-image-heading">
+                  <ImageDownloadButton
+                    compact
+                    source={() => canvas.current}
+                    name={`TixTab-page-${(sourceIndex ?? 0) + 1}-image-${selectedImageIndex.current + 1}.png`}
+                    disabled={!imageAspect}
+                    onError={setStatus}
+                  />
+                  <button
+                    className="icon-button"
+                    aria-label={tr('关闭原图')}
+                    onClick={() => setSelected(null)}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </header>
               {status && <p role="status">{status}</p>}
               {showOcr && (

@@ -10,6 +10,7 @@ const {
   nativeTheme,
   safeStorage,
   screen,
+  dialog,
 } = require('electron');
 const { attachNativePen } = require('./pen-native.cjs');
 const { createPenHaptics } = require('./pen-haptics.cjs');
@@ -25,6 +26,7 @@ const { createDictation } = require('./dictation.cjs');
 const { createNeuralDictation } = require('./neural-dictation.cjs');
 const { createRuntimeInstaller } = require('./runtime-installer.cjs');
 const { createPdfEditor } = require('./pdf-editor.cjs');
+const { createImageExport } = require('./image-export.cjs');
 const { createChatGPT, createCredentialStore } = require('./chatgpt.cjs');
 const modelCatalog = require('./model-catalog.json');
 const path = require('node:path');
@@ -226,6 +228,32 @@ app.whenReady().then(() => {
         .then((diagnostics) => ({ ok: !!diagnostics, diagnostics }));
     if (request.action === 'cancel') return { ok: runtimeInstaller.cancel(owner) };
     return runtimeInstaller.install(owner, request.id);
+  });
+  const imageExport = createImageExport({
+    chooseDirectory: async (owner) => {
+      const window = BrowserWindow.fromWebContents(owner);
+      if (!window) return null;
+      const result = await dialog.showOpenDialog(window, {
+        properties: ['openDirectory', 'createDirectory'],
+        title: 'TixTab — Save images',
+      });
+      return result.canceled ? null : result.filePaths[0];
+    },
+  });
+  const imageExportOwners = new WeakSet();
+  app.once('before-quit', () => imageExport.dispose());
+  ipcMain.handle('images:export', (event, request) => {
+    if (!providerSender(event)) return { ok: false, error: 'invalid' };
+    const owner = event.sender;
+    if (!imageExportOwners.has(owner)) {
+      imageExportOwners.add(owner);
+      owner.once('destroyed', () => imageExport.cancel(owner));
+      owner.on('render-process-gone', () => imageExport.cancel(owner));
+      owner.on('did-start-navigation', (_event, details) => {
+        if (details.isMainFrame && !details.isSameDocument) imageExport.cancel(owner);
+      });
+    }
+    return imageExport.run(owner, request);
   });
   const pdfEditor = createPdfEditor({
     runtime: path.join(app.getPath('home'), '.surfacetab/pdf-runtime'),

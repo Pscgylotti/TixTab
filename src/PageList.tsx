@@ -23,6 +23,10 @@ export default function PageList({
   onMove,
   onDelete,
   onDuplicate,
+  onCopyPage,
+  onPastePage,
+  hasCopiedPage,
+  onClearClipboard,
   onEditPages,
 }: {
   pages: Page[];
@@ -32,6 +36,10 @@ export default function PageList({
   onMove: (from: number, to: number) => void;
   onDelete: (i: number, anchor: DOMRect) => void;
   onDuplicate: (i: number) => void;
+  onCopyPage?: (i: number) => void;
+  onPastePage?: (i: number) => void;
+  hasCopiedPage?: boolean;
+  onClearClipboard?: () => void;
   onEditPages?: (action: PageAction, index: number) => void;
 }) {
   useLocale();
@@ -97,7 +105,7 @@ export default function PageList({
     if (r)
       setMenuPosition({
         left: Math.min(window.innerWidth - 188, Math.max(8, r.right - 170)),
-        top: Math.min(window.innerHeight - 300, Math.max(8, r.top + 25)),
+        top: Math.max(8, Math.min(window.innerHeight - 500, r.top + 25)),
       });
     const close = (event: Event) => {
       if (!(event.target as HTMLElement).closest('.page-actions-menu,.page-card')) setMenu(null);
@@ -262,6 +270,24 @@ export default function PageList({
   return (
     <div
       className="page-list"
+      onKeyDown={(event) => {
+        if (
+          !(event.ctrlKey || event.metaKey) ||
+          event.altKey ||
+          event.shiftKey ||
+          !['c', 'v'].includes(event.key.toLowerCase())
+        )
+          return;
+        event.preventDefault();
+        event.stopPropagation();
+        const value = (event.target as HTMLElement)
+          .closest('[data-page-index]')
+          ?.getAttribute('data-page-index');
+        const at = value === null || value === undefined ? index : Number(value);
+        if (!Number.isInteger(at) || !pages[at]) return;
+        if (event.key.toLowerCase() === 'c') onCopyPage?.(at);
+        else if (hasCopiedPage) onPastePage?.(at);
+      }}
       ref={root}
       onPointerDownCapture={(e) => {
         if (contact.current && contact.current.id !== e.pointerId) {
@@ -360,6 +386,41 @@ export default function PageList({
                     >
                       {tr('复制页面')}
                     </button>
+                    {onCopyPage && (
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setMenu(null);
+                          onCopyPage(i);
+                        }}
+                      >
+                        {tr('复制页面到剪贴板')}
+                      </button>
+                    )}
+                    {onPastePage && (
+                      <button
+                        role="menuitem"
+                        disabled={!hasCopiedPage}
+                        onClick={() => {
+                          setMenu(null);
+                          onPastePage(i);
+                        }}
+                      >
+                        {tr('粘贴页面')}
+                      </button>
+                    )}
+                    {onClearClipboard && (
+                      <button
+                        role="menuitem"
+                        disabled={!hasCopiedPage}
+                        onClick={() => {
+                          setMenu(null);
+                          onClearClipboard();
+                        }}
+                      >
+                        {tr('清除页面剪贴板')}
+                      </button>
+                    )}
                     {onEditPages &&
                       (['rotate', 'crop', 'split'] as const).map((action) => (
                         <button

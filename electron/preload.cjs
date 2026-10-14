@@ -1,5 +1,11 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
 contextBridge.exposeInMainWorld('surfaceDesktop', {
+  setUiScale: (value) => {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0.5 || value > 4)
+      return false;
+    webFrame.setZoomFactor(value / 2);
+    return true;
+  },
   penHaptics: {
     run: (action, value) => ipcRenderer.invoke('pen:haptic', action, value),
     onStatus: (callback) => {
@@ -18,6 +24,7 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
   editCommand: (command) => ipcRenderer.invoke('edit:command', command),
   editKey: (key, select) => ipcRenderer.invoke('edit:key', key, select),
   openClipboardHistory: () => ipcRenderer.invoke('edit:clipboard-history'),
+  imageExport: { run: (request) => ipcRenderer.invoke('images:export', request) },
   pdfEditor: { run: (request) => ipcRenderer.invoke('pdf-editor:run', request) },
   runtimes: {
     run: (request) => ipcRenderer.invoke('runtimes:run', request),

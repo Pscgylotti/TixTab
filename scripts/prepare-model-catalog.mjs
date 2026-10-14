@@ -6,6 +6,11 @@ const texo = await read('texo/manifest.json'),
   reading = await read('reading-manifest.json'),
   ocr = await read('ppocrv4/manifest.json');
 const models = [];
+// Optional runtimes/models are pinned by their dedicated preparation scripts.
+// Regenerating the base catalog must not remove those independent records.
+const previous = JSON.parse(
+  await readFile(new URL('../electron/model-catalog.json', import.meta.url), 'utf8'),
+);
 const add = (id, name, feature, revision, license, source, device, files, metadata = []) =>
   models.push({
     id,
@@ -82,6 +87,29 @@ add(
   })),
   [{ path: 'ppocrv4/manifest.json', data: ocr }],
 );
+add(
+  'tesseract-openvino',
+  'Tesseract English Fast + Best',
+  'ocr',
+  'englishqueuev1',
+  'Apache-2.0',
+  'https://github.com/tesseract-ocr/tessdata_best',
+  'NPU · experimental queued recognition · CPU layout',
+  [
+    {
+      path: 'tesseract-openvino/fast.traineddata',
+      bytes: 4113088,
+      sha256: '7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2',
+      url: 'https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/eng.traineddata',
+    },
+    {
+      path: 'tesseract-openvino/best.traineddata',
+      bytes: 15400601,
+      sha256: '8280aed0782fe27257a68ea10fe7ef324ca0f8d85bd2fd145d1c2b560bcb66ba',
+      url: 'https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/e12c65a915945e4c28e237a9b52bc4a8f39a0cec/eng.traineddata',
+    },
+  ],
+);
 for (const [id, prefix, name, license] of [
   [
     'piper-en',
@@ -120,6 +148,25 @@ add(
     .filter((f) => f.name.startsWith('piper/runtime/'))
     .map((f) => ({ path: f.name, bytes: f.size, sha256: f.sha256, url: f.url })),
 );
+add(
+  'tesseract-openvino-zh',
+  'Tesseract 中英混合 Best',
+  'ocr',
+  'mixedqueuev1',
+  'Apache-2.0',
+  'https://github.com/tesseract-ocr/tessdata_best',
+  'NPU · Simplified Chinese + English · experimental',
+  [
+    {
+      path: 'tesseract-openvino-zh/mixed-best.traineddata',
+      bytes: 13077423,
+      sha256: '4fef2d1306c8e87616d4d3e4c6c67faf5d44be3342290cf8f2f0f6e3aa7e735b',
+      url: 'https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/e12c65a915945e4c28e237a9b52bc4a8f39a0cec/chi_sim.traineddata',
+    },
+  ],
+);
+const generatedIds = new Set(models.map((m) => m.id));
+models.push(...previous.models.filter((m) => !generatedIds.has(m.id)));
 await writeFile(
   new URL('../electron/model-catalog.json', import.meta.url),
   JSON.stringify({ version: 1, models }, null, 2) + '\n',

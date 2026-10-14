@@ -1,19 +1,18 @@
 import { uid, type Notebook, type Page, type PlacedImage } from './model';
 export function clonePage(page: Page, sourceIndex = page.sourceIndex): Page {
-  const cloneImage = (image: PlacedImage): PlacedImage => ({
-    ...structuredClone(image),
-    id: uid(),
-    ...(image.group
-      ? { group: { ...image.group, objects: image.group.objects.map(cloneImage) } }
-      : {}),
-  });
+  const copy = structuredClone(page);
+  const resetImageIds = (image: PlacedImage): PlacedImage => {
+    image.id = uid();
+    image.group?.objects.forEach(resetImageIds);
+    return image;
+  };
   return {
-    ...page,
+    ...copy,
     id: uid(),
     sourceIndex,
-    strokes: page.strokes.map((s) => ({ ...s, id: uid(), points: s.points.map((p) => [...p]) })),
-    images: page.images.map(cloneImage),
-    reviews: page.reviews?.map((n) => ({ ...n, id: uid(), region: { ...n.region } })),
+    strokes: copy.strokes.map((s) => ({ ...s, id: uid() })),
+    images: copy.images.map(resetImageIds),
+    reviews: copy.reviews?.map((n) => ({ ...n, id: uid() })),
   };
 }
 /** Give a duplicate its own source page, so export never aliases one PDF page twice. */

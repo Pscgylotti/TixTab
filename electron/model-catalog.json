@@ -385,6 +385,31 @@
       "bytes": 16189007
     },
     {
+      "id": "tesseract-openvino",
+      "name": "Tesseract English Fast + Best",
+      "feature": "ocr",
+      "revision": "englishqueuev1",
+      "license": "Apache-2.0",
+      "source": "https://github.com/tesseract-ocr/tessdata_best",
+      "device": "NPU · experimental queued recognition · CPU layout",
+      "files": [
+        {
+          "path": "tesseract-openvino/fast.traineddata",
+          "bytes": 4113088,
+          "sha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2",
+          "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/eng.traineddata"
+        },
+        {
+          "path": "tesseract-openvino/best.traineddata",
+          "bytes": 15400601,
+          "sha256": "8280aed0782fe27257a68ea10fe7ef324ca0f8d85bd2fd145d1c2b560bcb66ba",
+          "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/e12c65a915945e4c28e237a9b52bc4a8f39a0cec/eng.traineddata"
+        }
+      ],
+      "metadata": [],
+      "bytes": 19513689
+    },
+    {
       "id": "piper-en",
       "name": "Piper Lessac English",
       "feature": "speech",
@@ -470,6 +495,25 @@
       ],
       "metadata": [],
       "bytes": 18712461
+    },
+    {
+      "id": "tesseract-openvino-zh",
+      "name": "Tesseract 中英混合 Best",
+      "feature": "ocr",
+      "revision": "mixedqueuev1",
+      "license": "Apache-2.0",
+      "source": "https://github.com/tesseract-ocr/tessdata_best",
+      "device": "NPU · Simplified Chinese + English · experimental",
+      "files": [
+        {
+          "path": "tesseract-openvino-zh/mixed-best.traineddata",
+          "bytes": 13077423,
+          "sha256": "4fef2d1306c8e87616d4d3e4c6c67faf5d44be3342290cf8f2f0f6e3aa7e735b",
+          "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/e12c65a915945e4c28e237a9b52bc4a8f39a0cec/chi_sim.traineddata"
+        }
+      ],
+      "metadata": [],
+      "bytes": 13077423
     },
     {
       "id": "unimumer-qwen3-vl-2b",

@@ -6,10 +6,14 @@ import { polygonBox, transformPolygon, type ImagePolygon } from './pdfNightGeome
 import { normalizeOcr, type OcrAnnotation, type OcrLine } from './ocrLayout';
 import { runBitmapJobs } from './bitmapOcrPool';
 import { recognitionImageSize } from './recognitionImageSize';
+import { abortWait } from './abortWait';
 export interface BitmapRecognition {
   text?: string;
   lines?: OcrLine[];
   engine: string;
+  timing?: Partial<
+    Record<'totalMs' | 'layoutMs' | 'inferenceMs' | 'compileMs' | 'serviceMs', number>
+  >;
 }
 type Recognize = (image: string, lane: number) => Promise<BitmapRecognition>;
 export interface BitmapInventory {
@@ -70,6 +74,7 @@ export async function scanBitmapPages(
     source: document.createElement('canvas'),
     input: document.createElement('canvas'),
   }));
+  let pictureDecode: Promise<unknown> = Promise.resolve();
   const recognize = async (lane: number): Promise<OcrAnnotation> => {
     signal.throwIfAborted();
     const { source, input } = lanes[lane];
@@ -114,10 +119,11 @@ export async function scanBitmapPages(
       let next = page;
       const jobs: ((lane: number) => Promise<void>)[] = [];
       if (pdf && page.sourceIndex !== null) {
-        const p = await pdf.getPage(page.sourceIndex + 1),
+        const p = await abortWait(pdf.getPage(page.sourceIndex + 1), signal),
           viewport = p.getViewport({ scale: 1 });
         const polygons =
-          options.inventory?.pdfImages.get(page.id) ?? (await getPdfImages(pdf, page.sourceIndex));
+          options.inventory?.pdfImages.get(page.id) ??
+          (await abortWait(getPdfImages(pdf, page.sourceIndex), signal));
         const parsed = new Set(page.bitmapOcr?.map((b) => b.imageIndex));
         for (const [imageIndex, polygon] of polygons.entries()) {
           if (!options.replace && parsed.has(imageIndex)) continue;
@@ -147,19 +153,24 @@ export async function scanBitmapPages(
         }
         if (!isPicture(image) || (image.ocr && !options.replace)) return;
         jobs.push(async (lane) => {
-          const bitmap = await createImageBitmap(
-            await (await fetch(image.data, { signal })).blob(),
-          );
-          try {
+          const decode = pictureDecode.then(async () => {
             signal.throwIfAborted();
-            const { source } = lanes[lane],
-              { width, height } = recognitionImageSize(bitmap.width, bitmap.height);
-            source.width = width;
-            source.height = height;
-            source.getContext('2d')!.drawImage(bitmap, 0, 0, width, height);
-          } finally {
-            bitmap.close();
-          }
+            const bitmap = await createImageBitmap(
+              await (await fetch(image.data, { signal })).blob(),
+            );
+            try {
+              signal.throwIfAborted();
+              const { source } = lanes[lane],
+                { width, height } = recognitionImageSize(bitmap.width, bitmap.height);
+              source.width = width;
+              source.height = height;
+              source.getContext('2d')!.drawImage(bitmap, 0, 0, width, height);
+            } finally {
+              bitmap.close();
+            }
+          });
+          pictureDecode = decode.catch(() => {});
+          await decode;
           const ocr = await recognize(lane);
           next = { ...next, images: updateObject(next.images, path, ocr) };
           options.onPage(next);

@@ -173,7 +173,7 @@ def health():
     return {'ok': True, 'engine': 'Texo OpenVINO', 'version': ov.__version__, 'devices': _devices,
             'loaded': _model is not None, 'encoderDevice': _model.encoder_device if _model else None,
             'decoderDevice': _model.encoder_device if _model_kind == ('unimumer', None) and _model else 'CPU', 'idleReleaseSeconds': IDLE_RELEASE_SECONDS,
-            'capabilities': ['recognize', 'unimumer-experimental', 'translate-experimental', 'synthesize-experimental', 'release-idle', 'idle-policy-v1', 'cache-lease-v1'] + (['ocr-experimental'] if importlib.util.find_spec('rapidocr') else []),
+            'capabilities': ['recognize', 'unimumer-experimental', 'translate-experimental', 'synthesize-experimental', 'tesseract-npu-queue-v1', 'tesseract-npu-mixed-v1', 'release-idle', 'idle-policy-v1', 'cache-lease-v1'] + (['ocr-experimental'] if importlib.util.find_spec('rapidocr') else []),
             'modelKind': _model_kind if _model is not None else None}
 
 
@@ -245,6 +245,27 @@ async def synthesize(body: SpeechRequest, request: Request):
         raise HTTPException(400, 'Speech exceeds the 65536 phoneme limit')
     return await run_native(request, ('piper', body.voice), lambda:create_piper(body.voice),
                             lambda model,cancelled:speech_response(model,body,cancelled))
+
+
+class TesseractRequest(ModelPolicy):
+    image: str = Field(max_length=24_000_000)
+    variant: Literal['fast', 'best', 'mixed-best'] = 'best'
+    batch: Literal[1, 2, 4] = 1
+    boxes: list[Annotated[list[Annotated[int, Field(strict=True, ge=0, le=8192)]],
+                          Field(min_length=4, max_length=4)]] = Field(max_length=2048)
+
+
+@app.post('/ocr-tesseract-npu')
+async def tesseract_npu(body: TesseractRequest, request: Request):
+    def factory():
+        try:
+            from .native_tesseract import NativeTesseract
+        except ImportError:
+            from native_tesseract import NativeTesseract
+        return NativeTesseract(body.variant, body.batch)
+    return await run_native(request, ('tesseract-npu', body.variant + ':' + str(body.batch)),
+                            factory, lambda model, cancelled:
+                            model.recognize(body.image, body.boxes, cancelled))
 
 
 async def run_native(request, kind, factory, invoke):

@@ -9,6 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { getPressureMapper } from './pressureCurve';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import {
   Pencil,
@@ -306,6 +307,7 @@ function PageEditor({
     } | null>(null),
     eraseLast = useRef<Point | null>(null),
     drawingPointer = useRef<number | null>(null);
+  const pressureMapper = useRef(getPressureMapper());
   const [pendingImages, setPendingImages] = useState<string[]>([]),
     [pendingCount, setPendingCount] = useState(0);
   const penTime = useRef(-Infinity),
@@ -357,7 +359,7 @@ function PageEditor({
     return [
       ((e.clientX - r.left) / r.width) * page.width,
       ((e.clientY - r.top) / r.height) * page.height,
-      e.pointerType === 'pen' ? Math.max(0.01, e.pressure) : 0.5,
+      e.pointerType === 'pen' ? Math.max(0.01, pressureMapper.current(e.pressure)) : 0.5,
     ];
   };
   // Painting runs every frame of a stroke; keep the same array while the set of
@@ -465,6 +467,7 @@ function PageEditor({
     e.currentTarget.setPointerCapture(e.pointerId);
     if (drawingPointer.current !== null) return;
     drawingPointer.current = e.pointerId;
+    pressureMapper.current = getPressureMapper();
     if (tool === 'eraser' || isEraser(e)) {
       erased.current = { strokes: new Set(), images: new Set(), highlights: new Map() };
       eraseLast.current = point(e.nativeEvent);

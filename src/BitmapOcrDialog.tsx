@@ -5,15 +5,21 @@ import type { Page } from './model';
 import { t, useLocale } from './i18n';
 import { parsePageRange } from './pdfInsertion';
 import { inspectBitmapPages, scanBitmapPages, type BitmapInventory } from './bitmapOcr';
-import { executeProvider, providerFailureStatus, withBitmapOcrPool } from './providers';
+import {
+  executeProvider,
+  providerFailureStatus,
+  withBitmapOcrPool,
+  withBitmapNpuOcr,
+} from './providers';
 import { useProviderConfig } from './providerSettings';
 import { loadOcrDevice } from './nativeOcr';
 import { ProviderAdvanced } from './ProviderAdvanced';
 import './bitmapOcr.css';
+const emptyTiming = { totalMs: 0, layoutMs: 0, inferenceMs: 0, compileMs: 0, serviceMs: 0 };
 function preferredBackend() {
   try {
     const type = localStorage.getItem('tixtab.bitmapOcrProvider');
-    if (type && ['local', 'native', 'web', 'llm'].includes(type)) return type;
+    if (type && ['local', 'native', 'web', 'llm', 'tesseract-npu'].includes(type)) return type;
   } catch {
     /* Default remains available without storage. */
   }
@@ -33,6 +39,15 @@ export default function BitmapOcrDialog({
   useLocale();
   const api = useProviderConfig('ocr', 'local');
   const [initialBackend] = useState(preferredBackend);
+  const [npu, setNpu] = useState(initialBackend === 'tesseract-npu');
+  const [variant, setVariant] = useState<import('./nativeTesseract').TesseractVariant>(() => {
+    try {
+      const saved = localStorage.getItem('tixtab.bitmapOcrNpuVariant');
+      return saved === 'fast' || saved === 'mixed-best' ? saved : 'best';
+    } catch {
+      return 'best';
+    }
+  });
   const [concurrency, setConcurrency] = useState(() => {
     try {
       const n = Number(localStorage.getItem('tixtab.bitmapOcrConcurrency'));
@@ -41,11 +56,13 @@ export default function BitmapOcrDialog({
       return 1;
     }
   });
+  const [timing, setTiming] = useState(emptyTiming);
   const initialized = useRef(false);
   const [range, setRange] = useState(''),
     [all, setAll] = useState(true),
     [replace, setReplace] = useState(false);
   const [busy, setBusy] = useState(false),
+    [stopping, setStopping] = useState(false),
     [status, setStatus] = useState(''),
     [count, setCount] = useState(0),
     [runTotal, setRunTotal] = useState<number | null>(null),
@@ -54,10 +71,16 @@ export default function BitmapOcrDialog({
   const controller = useRef<AbortController | null>(null),
     alive = useRef(true),
     closing = useRef(false);
+  const stop = () => {
+    if (!controller.current || controller.current.signal.aborted) return;
+    setStopping(true);
+    setStatus(t('正在停止并保留已完成结果…'));
+    controller.current.abort();
+  };
   const close = () => {
     if (controller.current) {
       closing.current = true;
-      controller.current.abort();
+      stop();
     } else onClose();
   };
   useEffect(() => {
@@ -89,7 +112,7 @@ export default function BitmapOcrDialog({
   useEffect(() => {
     if (api.ready && !initialized.current) {
       initialized.current = true;
-      api.selectProvider(initialBackend);
+      if (initialBackend !== 'tesseract-npu') api.selectProvider(initialBackend);
     }
   }, [api.ready]);
   const scope = indices.join(',');
@@ -117,6 +140,7 @@ export default function BitmapOcrDialog({
   useEffect(() => {
     setRunTotal(null);
     setCount(0);
+    setTiming(emptyTiming);
     setStatus('');
   }, [scope]);
   const start = async () => {
@@ -126,6 +150,8 @@ export default function BitmapOcrDialog({
     const completed = new Map<string, Page>();
     let images = 0;
     setBusy(true);
+    setTiming(emptyTiming);
+    setStopping(false);
     setCount(0);
     setRunTotal(replace ? inventory.total : inventory.total - inventory.parsed);
     setStatus(t('正在解析位图…'));
@@ -143,7 +169,7 @@ export default function BitmapOcrDialog({
             signal: abort.signal,
             replace,
             inventory,
-            concurrency: api.provider.type === 'local' ? concurrency : 1,
+            concurrency: !npu && api.provider.type === 'local' ? concurrency : 1,
             onPage: (p) => completed.set(p.id, p),
             onImage: (alreadyParsed) => {
               if (alive.current) {
@@ -155,34 +181,53 @@ export default function BitmapOcrDialog({
                 if (images === 1) setStatus(t('正在解析位图…'));
               }
             },
-            recognize:
-              recognize ??
-              (async (image) => {
-                if (images === 0 && alive.current)
-                  setStatus(
-                    t(
-                      ['native', 'local'].includes(api.provider.type)
-                        ? '正在准备本地模型并识别首张位图…'
-                        : '正在识别首张位图…',
-                    ),
-                  );
-                return executeProvider(
-                  {
-                    feature: 'ocr',
-                    input: image,
-                    ocrLayout: true,
-                    config: api.provider,
-                    device: loadOcrDevice(),
-                    localPreference: 'local',
-                  },
-                  {
-                    signal: abort.signal,
-                  },
+            recognize: async (image, lane) => {
+              const started = performance.now();
+              if (images === 0 && alive.current)
+                setStatus(
+                  t(
+                    npu || ['native', 'local'].includes(api.provider.type)
+                      ? '正在准备本地模型并识别首张位图…'
+                      : '正在识别首张位图…',
+                  ),
                 );
-              }),
+              const result: import('./bitmapOcr').BitmapRecognition = recognize
+                ? await recognize(image, lane)
+                : await executeProvider(
+                    {
+                      feature: 'ocr',
+                      input: image,
+                      ocrLayout: true,
+                      config: api.provider,
+                      device: loadOcrDevice(),
+                      localPreference: 'local',
+                    },
+                    {
+                      signal: abort.signal,
+                    },
+                  );
+              abort.signal.throwIfAborted();
+              if (alive.current)
+                setTiming((previous) => ({
+                  totalMs: previous.totalMs + performance.now() - started,
+                  layoutMs: previous.layoutMs + (result.timing?.layoutMs ?? 0),
+                  inferenceMs: previous.inferenceMs + (result.timing?.inferenceMs ?? 0),
+                  compileMs: previous.compileMs + (result.timing?.compileMs ?? 0),
+                  serviceMs: previous.serviceMs + (result.timing?.serviceMs ?? 0),
+                }));
+              return result;
+            },
           },
         );
-      if (api.provider.type === 'local') {
+      if (npu) {
+        setStatus(t('正在准备本地模型并识别首张位图…'));
+        await withBitmapNpuOcr(
+          variant,
+          variant === 'mixed-best' ? 1 : concurrency,
+          abort.signal,
+          scan,
+        );
+      } else if (api.provider.type === 'local') {
         setStatus(t('正在准备本地模型并识别首张位图…'));
         await withBitmapOcrPool(concurrency, abort.signal, scan);
       } else await scan();
@@ -192,12 +237,13 @@ export default function BitmapOcrDialog({
         setStatus(
           abort.signal.aborted
             ? t('已停止，保留已完成的识别结果')
-            : providerFailureStatus(error, ['web', 'llm'].includes(api.provider.type)),
+            : providerFailureStatus(error, !npu && ['web', 'llm'].includes(api.provider.type)),
         );
     } finally {
       if (alive.current) {
         if (completed.size) onApply([...completed.values()]);
         setBusy(false);
+        setStopping(false);
         if (closing.current) onClose();
       }
       controller.current = null;
@@ -265,9 +311,10 @@ export default function BitmapOcrDialog({
             {t('OCR 后端')}
             <select
               aria-label={t('OCR 后端')}
-              value={api.provider.type}
+              value={npu ? 'tesseract-npu' : api.provider.type}
               onChange={(e) => {
-                api.selectProvider(e.target.value);
+                setNpu(e.target.value === 'tesseract-npu');
+                if (e.target.value !== 'tesseract-npu') api.selectProvider(e.target.value);
                 try {
                   localStorage.setItem('tixtab.bitmapOcrProvider', e.target.value);
                 } catch {
@@ -278,10 +325,43 @@ export default function BitmapOcrDialog({
             >
               <option value="native">PP-OCRv4 · {t('本地')}</option>
               <option value="local">Tesseract · {t('本地')}</option>
+              <option value="tesseract-npu">Tesseract · NPU · {t('实验性')}</option>
               <option value="web">HTTP OCR API</option>
               <option value="llm">LLM API</option>
             </select>
           </label>
+          {npu && (
+            <>
+              <label>
+                {t('模型')}
+                <select
+                  aria-label={t('NPU Tesseract 模型')}
+                  value={variant}
+                  onChange={(e) => {
+                    const next =
+                      e.target.value === 'fast' || e.target.value === 'mixed-best'
+                        ? e.target.value
+                        : 'best';
+                    setVariant(next);
+                    try {
+                      localStorage.setItem('tixtab.bitmapOcrNpuVariant', next);
+                    } catch {}
+                  }}
+                >
+                  <option value="best">English · Best</option>
+                  <option value="fast">English · Fast</option>
+                  <option value="mixed-best">{t('简体中文 + English · 混合 Best')}</option>
+                </select>
+              </label>
+              <p className="muted">
+                {t(
+                  variant === 'mixed-best'
+                    ? '简体中文与英文混排，使用单个中文 Best 网络。需安装 Tesseract 中英混合 Best。暂固定单行 NPU 推理。实验性，字符与空格可能有误，请核对；NPU 不保证更快。'
+                    : '仅支持英文。CPU 分行，NPU 识别；队列上限 16 行。长行使用 NPU 单行推理。实验性结果可能存在字符与空格偏差，请核对。需在本地模型管理中安装 Tesseract English Fast + Best 与本地加速运行时。',
+                )}
+              </p>
+            </>
+          )}
           <details className="native-settings">
             <summary>{t('设置')}</summary>
             <label>
@@ -293,11 +373,13 @@ export default function BitmapOcrDialog({
               {t('重新识别已有结果')}
             </label>
             <label>
-              {t('并行任务数')}
+              {t(npu ? '最大识别批量' : '并行任务数')}
               <select
-                aria-label={t('并行任务数')}
-                disabled={api.provider.type !== 'local'}
-                value={concurrency}
+                aria-label={t(npu ? '最大识别批量' : '并行任务数')}
+                disabled={
+                  (npu && variant === 'mixed-best') || (!npu && api.provider.type !== 'local')
+                }
+                value={npu && variant === 'mixed-best' ? 1 : concurrency}
                 onChange={(e) => {
                   const n = Number(e.target.value);
                   setConcurrency(n);
@@ -313,10 +395,14 @@ export default function BitmapOcrDialog({
                 ))}
               </select>
             </label>
-            <p className="muted">
-              {t('Tesseract 支持并行识别；增加任务数会占用更多内存。其它后端保持串行。')}
-            </p>
-            {['web', 'llm'].includes(api.provider.type) && (
+            {!npu && (
+              <p className="muted">
+                {t(
+                  'Tesseract 按最大任务数并行识别；大图受 400 万输入像素总预算限制，自动减少同时识别数量。其它后端保持串行。',
+                )}
+              </p>
+            )}
+            {!npu && ['web', 'llm'].includes(api.provider.type) && (
               <>
                 <label>
                   {t('接口地址')}
@@ -354,9 +440,38 @@ export default function BitmapOcrDialog({
           )}
         </p>
         <p role="status">{status || t('默认跳过已识别的位图')}</p>
+        {timing.totalMs > 0 && (
+          <details className="native-settings">
+            <summary>{t('耗时详情')}</summary>
+            <p>{t('识别任务累计耗时：{0} 秒', (timing.totalMs / 1000).toFixed(2))}</p>
+            {npu && (
+              <>
+                <p>
+                  {t(
+                    'CPU 分行：{0} 秒 · NPU 推理：{1} 秒',
+                    (timing.layoutMs / 1000).toFixed(2),
+                    (timing.inferenceMs / 1000).toFixed(2),
+                  )}
+                </p>
+                <p>
+                  {t(
+                    '本次编译：{0} 秒 · 服务处理：{1} 秒',
+                    (timing.compileMs / 1000).toFixed(2),
+                    (timing.serviceMs / 1000).toFixed(2),
+                  )}
+                </p>
+              </>
+            )}
+            <p className="muted">
+              {t('累计任务耗时包含等待与传输，可能重叠，不等同整批实际耗时。')}
+            </p>
+          </details>
+        )}
         <footer>
           {busy ? (
-            <button onClick={() => controller.current?.abort()}>{t('停止')}</button>
+            <button disabled={stopping} onClick={stop}>
+              {t(stopping ? '正在停止…' : '停止')}
+            </button>
           ) : (
             <button
               className="primary"

@@ -14,6 +14,8 @@ Google 在线接入遵循[官方 Cloud Translation Basic REST 协议](https://do
 
 ## OCR 与朗读（2026-10-11）
 
+0.3.2 新增独立 Tesseract NPU 实验后端，默认 CPU 路径保留。英文 Fast 复用上述固定 `tessdata_fast`；英文 Best 和中英混合 `chi_sim` Best 使用官方 [tessdata_best](https://github.com/tesseract-ocr/tessdata_best) 提交 `e12c65a915945e4c28e237a9b52bc4a8f39a0cec`，上游 Apache-2.0。三个文件的大小和 SHA256 固定在 `electron/model-catalog.json`，轻量包不分发权重。OpenVINO 适配器不是原生 Tesseract 等价实现，混合模式存在空格遗漏；来源、解码及实机边界见 [说明](TESSERACT-OPENVINO.md)。
+
 - [Tesseract.js 7.0.0](https://github.com/naptha/tesseract.js)：Apache-2.0；本地 LSTM/WASM OCR。`tesseract-ocr/tessdata_fast` 固定提交 `87416418657359cb625c412a48b6e1d6d41c29bd`，`eng` + `chi_sim` 合计约 6.6MB，运行时关闭 CDN 路径。
 - [Piper 浏览器实现 1.0.5](https://github.com/Mintplex-Labs/piper-tts-web)：MIT 包装层，音素运行时含 eSpeak-NG，需保留其 GPL 许可。准备脚本将模型地址改为本机资源、单线程 WASM，并按实际声音的 `phoneme_id_map` 映射音素，避免中文模型误用英语 ID。
 - 声音源 `rhasspy/piper-voices` 固定提交 `c10ece1aade47bb51c153c893d14e5bf8e5b7117`，`en_US-lessac-low` 约 63.2MB，`zh_CN-huayan-x_low` 约 20.6MB；模型卡随下载保存。**模型许可不等于包装库 MIT**：Lessac 数据集有自己的许可链接，Huayan 模型卡标注数据集许可 Unknown；当前仅本机原型验证，重新分发这些声音前须核实权重/数据许可。

@@ -1,5 +1,6 @@
 import { formulaRows, strokeBounds, formulaCrop, mergeFormulaRows } from './formulaLines';
 import TaskCenterButton from './TaskCenterButton';
+import { getPressureMapper } from './pressureCurve';
 import { t as tr, useLocale } from './i18n';
 import { performanceLedger, performanceOutcome, type PerformanceFinish } from './performanceLedger';
 import { useEffect, useId, useRef, useState } from 'react';
@@ -256,6 +257,7 @@ export default function FormulaDialog({
         maxExpand: 1000,
       });
   }, [latex, macros]);
+  const pressureMapper = useRef(getPressureMapper());
   const point = (e: {
     clientX: number;
     clientY: number;
@@ -266,7 +268,7 @@ export default function FormulaDialog({
     return [
       ((e.clientX - r.left) / r.width) * 960,
       ((e.clientY - r.top) / r.height) * drawingHeight,
-      e.pointerType === 'pen' ? Math.max(0.01, e.pressure) : 0.5,
+      e.pointerType === 'pen' ? Math.max(0.01, pressureMapper.current(e.pressure)) : 0.5,
     ];
   };
   const recognize = async (mode: 'replace' | 'insert') => {
@@ -647,6 +649,7 @@ export default function FormulaDialog({
                   return;
                 e.currentTarget.setPointerCapture(e.pointerId);
                 owner.current = e.pointerId;
+                pressureMapper.current = getPressureMapper();
                 if (isEraser(e)) {
                   strokes.current = strokes.current.filter(
                     (s) => !hitStroke(s, point(e), point(e), 16),

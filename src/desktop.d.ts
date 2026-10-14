@@ -1,5 +1,6 @@
 interface Window {
   surfaceDesktop?: {
+    setUiScale?: (value: number) => boolean;
     penHaptics?: {
       run: (
         action: 'configure' | 'start' | 'stop' | 'status' | 'intensity',
@@ -7,6 +8,7 @@ interface Window {
       ) => Promise<import('./usePenHaptics').HapticStatus>;
       onStatus: (callback: (status: import('./usePenHaptics').HapticStatus) => void) => () => void;
     };
+    imageExport?: import('./imageExport').ImageExportBridge;
     pdfEditor?: import('./pdfNativeTypes').PdfEditorBridge;
     onNativePen?: (
       callback: (sample: import('./penInteraction').NativePenSample) => void,

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Copy, ScanText, X } from 'lucide-react';
 import { copyImage } from './clipboard';
 import { t, useLocale } from './i18n';
+import ImageDownloadButton from './ImageDownloadButton';
 
 export default function CapturePreview({
   image,
@@ -39,6 +40,7 @@ export default function CapturePreview({
         </header>
         <img className="capture-preview-image" src={image} alt={t('选中区域')} />
         <footer>
+          <ImageDownloadButton source={image} name="TixTab-capture.png" onError={setStatus} />
           <button
             disabled={copying}
             onClick={async () => {

@@ -119,3 +119,18 @@ it('times out a stuck recognition and terminates the actual worker', async () =>
   await rejected;
   expect(FakeWorker.instances[0].terminate).toHaveBeenCalledOnce();
 });
+it('layout-only sessions initialize English and never request CPU neural recognition', async () => {
+  const session = createOcrSession(false, true);
+  try {
+    await expect(session.localOcr(image, vi.fn())).resolves.toMatchObject({
+      text: '',
+      layoutBlocks: [],
+    });
+    const messages = FakeWorker.instances[0].messages;
+    expect(messages.find((m) => m.action === 'loadLanguage').payload.langs).toBe('eng');
+    expect(messages.at(-1).payload.output).toEqual({ text: false, layoutBlocks: true });
+  } finally {
+    session.releaseOcr();
+  }
+  expect(FakeWorker.instances[0].terminate).toHaveBeenCalledOnce();
+});

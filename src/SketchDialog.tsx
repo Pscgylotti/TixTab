@@ -1,7 +1,8 @@
 import { canvasPngDataUrl } from './canvasPng';
 import { t as tr, useLocale } from './i18n';
 import { useAppearance } from './appearance';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { installSketchPressure } from './sketchPressure';
 import { X } from 'lucide-react';
 import {
   Excalidraw,
@@ -27,6 +28,8 @@ interface Props {
 }
 export default function SketchDialog({ scene, bitmap, editing, onClose, onInsert }: Props) {
   const locale = useLocale();
+  const editor = useRef<HTMLDivElement>(null);
+  useEffect(() => (editor.current ? installSketchPressure(editor.current) : undefined), []);
   const { night } = useAppearance();
   const api = useRef<ExcalidrawImperativeAPI | null>(null),
     [error, setError] = useState('');
@@ -136,7 +139,7 @@ export default function SketchDialog({ scene, bitmap, editing, onClose, onInsert
             </button>
           </div>
         </header>
-        <div className="sketch-editor">
+        <div className="sketch-editor" ref={editor}>
           <Excalidraw
             theme={night ? 'dark' : 'light'}
             excalidrawAPI={(value) => {

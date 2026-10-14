@@ -34,6 +34,12 @@ Indexing returns geometry only, without image/font messages. A separate temporar
 
 ## 后续模型验证 / Model evaluation queue
 
+新增可选 **Tesseract · NPU · 实验性**，英文 Best（默认）/Fast 和 **简体中文 + English · 混合 Best**。16 行有界队列；英文最大 batch 1/2/4，混合模式暂固定单行 NPU 推理。CPU 只负责分行和前后处理，NPU 失败不回退。混合模式另需安装 **Tesseract 中英混合 Best**，仍有空格遗漏等实验性限制。安装、资源生命周期、已知精度限制见 [Tesseract OpenVINO](TESSERACT-OPENVINO.md)。原 CPU Tesseract 中英支持及默认选择不变。
+
+Optional **Tesseract · NPU · Experimental** offers English Best (default), Fast, and **Simplified Chinese + English · Mixed Best**. A 16-line queue is bounded; English supports maximum batches 1/2/4, while mixed mode currently uses single-line NPU inference. CPU handles layout/pre/postprocessing, with explicit NPU errors. Install the separate mixed Best model. Spacing errors remain an experimental limitation. The existing bilingual CPU default is unchanged.
+
+CPU 1/2/4 现在表示最大并发数量，活动输入另受 400 万像素总预算限制；大图自动减少并发，空闲 worker 共享/高水位回收。停止立即终止专用扫描 PDF worker，并取消加载/绘图/清理等待；完成结果保留。此预算不是整个进程内存上限。详情中可查看分行/推理/编译/服务累计计时，不能直接当作整批墙钟时间或能耗证据。
+
 2026-10-14 单次实际运行验证：当前浏览器能取得非软件回退的 Intel Xe-2LPG WebGPU adapter，OpenVINO 同时枚举到 Arc 130V GPU。向本地 Tesseract provider 指定 GPU 后，实际结果仍标记 CPU (WASM)，加载 tesseract-core-relaxedsimd-lstm.wasm.js；英文样本完整返回。一次含初始化耗时约 394 ms，仅验证执行路径，不是 GPU 推理或加速比。复现：tests/tesseract-backend-capability.spec.ts；本地记录：.cache/tesseract-gpu-check/result.json。当前缺少 Tesseract LSTM 的 GPU 执行实现，不能将旧 OpenCL legacy 支持当作可用的同模型 GPU 后端。
 
 - 英文论文：验证 en_PP-OCRv5_mobile_rec，分别记录漏行、字符错误、空格与段落顺序；不能只比较平均置信度。

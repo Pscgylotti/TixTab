@@ -61,6 +61,8 @@ import {
   CircleHelp,
   X,
   FilePlus2,
+  ClipboardCopy,
+  ClipboardPaste,
   Check,
   MoveUpRight,
   Columns2,
@@ -109,7 +111,20 @@ import PageJump from './PageJump';
 import SidebarResizer from './SidebarResizer';
 import { useDocumentNavigation } from './DocumentNavigator';
 import { duplicateNotebookPage } from './duplicatePage';
+import { copyNotebookPage, pasteNotebookPage } from './pageTransfer';
+import {
+  storeCopiedPage,
+  getCopiedPage,
+  pageFromClipboard,
+  isPageClipboardToken,
+  clearPageClipboard,
+  usePageClipboard,
+} from './pageClipboard';
+import ExtraTools from './ExtraTools';
+import UiScaleSettings from './UiScaleSettings';
+import PressureCurveSettings from './PressureCurveSettings';
 import { historyTarget, historyViewportIndex } from './historyNavigation';
+import { trimSourceHistory } from './sourceHistory';
 import { applyNativeDrafts } from './nativePdfDrafts';
 import { pdfEditErrors } from './pdfNativeTypes';
 import AppContexts from './AppContexts';
@@ -173,6 +188,23 @@ function savedChrome(key: string) {
   }
 }
 export default function App() {
+  const hasCopiedPage = usePageClipboard();
+  const pageTransferAbort = useRef<AbortController | null>(null);
+  useEffect(() => {
+    const cancel = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && pageTransferAbort.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        pageTransferAbort.current.abort();
+      }
+    };
+    window.addEventListener('keydown', cancel, true);
+    return () => {
+      window.removeEventListener('keydown', cancel, true);
+      pageTransferAbort.current?.abort();
+      clearPageClipboard();
+    };
+  }, []);
   const locale = useLocale();
   const writingHand = useWritingHand();
   const appearance = useAppearance();
@@ -574,15 +606,22 @@ export default function App() {
   );
   const commit = useCallback(
     (n: Notebook) => {
-      history.current = [
-        ...history.current.slice(appearance.memoryMode === 'minimal' ? -4 : -39),
-        current.current,
-      ];
+      history.current = trimSourceHistory(
+        [...history.current.slice(appearance.memoryMode === 'minimal' ? -4 : -39), current.current],
+        n,
+        (appearance.memoryMode === 'minimal'
+          ? 32
+          : appearance.mode === 'eco' || (appearance.mode === 'auto' && appearance.battery)
+            ? 120
+            : 200) *
+          1024 *
+          1024,
+      );
       future.current = [];
       current.current = n;
       setNotebook(n);
     },
-    [appearance.memoryMode],
+    [appearance.memoryMode, appearance.mode, appearance.battery],
   );
   const selectNavigationPage = useCallback((next: number) => {
     readingObserved.current = false;
@@ -1210,9 +1249,21 @@ export default function App() {
         zoteroOpen ||
         ocrImage ||
         bitmapOcrOpen ||
+        document.querySelector('[aria-modal="true"]') ||
         target?.closest('input,textarea,select,[contenteditable="true"],[role="textbox"]')
       )
         return;
+      const copiedPage = event.clipboardData ? pageFromClipboard(event.clipboardData) : null;
+      if (copiedPage) {
+        event.preventDefault();
+        pasteCopiedPage(viewRef.current.index, copiedPage);
+        return;
+      }
+      if (isPageClipboardToken(event.clipboardData?.getData('text/plain') || '')) {
+        event.preventDefault();
+        notify(tr('页面剪贴板已失效，请在此窗口重新复制页面。'));
+        return;
+      }
       const files = Array.from(event.clipboardData?.files || []).filter(isImageFile);
       const text = event.clipboardData?.getData('text/plain') || '';
       const objects = event.clipboardData ? objectsFromClipboard(event.clipboardData) : null;
@@ -1394,6 +1445,51 @@ export default function App() {
     pages.splice(to, 0, moving);
     commit({ ...current.current, pages });
     setIndex(pages.findIndex((p) => p.id === activeId));
+  };
+  const pageTransferFailure = (error: unknown) => {
+    if (error instanceof Error && error.name === 'AbortError') return;
+    const code = error instanceof Error ? error.message : '';
+    notify(
+      tr(
+        code === 'pending-pdf-edits'
+          ? '请先应用或放弃此页暂存的 PDF 编辑。'
+          : code === 'page-clipboard-large'
+            ? '页面剪贴板最多保留 64 MiB，请减少本页内容后重试。'
+            : '页面复制或粘贴失败，请重试。',
+      ),
+    );
+  };
+  const copyPageToClipboard = (at: number) => {
+    void documentOperation(async () => {
+      const owner = new AbortController();
+      pageTransferAbort.current = owner;
+      try {
+        const payload = await copyNotebookPage(current.current, at, owner.signal);
+        const system = await storeCopiedPage(payload, owner.signal);
+        notify(
+          tr(system ? '页面已复制，切换文档后可粘贴。' : '页面已复制，请使用“粘贴页面”按钮。'),
+        );
+      } finally {
+        if (pageTransferAbort.current === owner) pageTransferAbort.current = null;
+      }
+    }).catch(pageTransferFailure);
+  };
+  const pasteCopiedPage = (at: number, payload = getCopiedPage()) => {
+    if (!payload) return;
+    void documentOperation(async () => {
+      const owner = new AbortController();
+      pageTransferAbort.current = owner;
+      try {
+        const before = current.current;
+        const next = await pasteNotebookPage(before, at, payload, owner.signal);
+        if (current.current !== before) throw Error('document-changed');
+        commit(next);
+        setIndex(at + 1);
+        notify(tr('已粘贴页面。'));
+      } finally {
+        if (pageTransferAbort.current === owner) pageTransferAbort.current = null;
+      }
+    }).catch(pageTransferFailure);
   };
   const duplicatePage = (at: number) =>
     reportOperation(() =>
@@ -2047,6 +2143,10 @@ export default function App() {
                     onSelect={(i) => navigation.go(notebook.pages[i].id)}
                     onMove={movePage}
                     onDuplicate={duplicatePage}
+                    onCopyPage={copyPageToClipboard}
+                    onPastePage={pasteCopiedPage}
+                    hasCopiedPage={hasCopiedPage}
+                    onClearClipboard={clearPageClipboard}
                     onEditPages={(action, index) => {
                       selectNavigationPage(index);
                       setPageOperation({ action, index });
@@ -2073,6 +2173,24 @@ export default function App() {
                       disabled={busy}
                     >
                       <FilePlus2 size={16} />
+                    </button>
+                    <button
+                      className="add-page"
+                      aria-label={tr('复制页面到剪贴板')}
+                      title={tr('复制页面到剪贴板')}
+                      disabled={busy}
+                      onClick={() => copyPageToClipboard(index)}
+                    >
+                      <ClipboardCopy size={16} />
+                    </button>
+                    <button
+                      className="add-page"
+                      aria-label={tr('粘贴页面')}
+                      title={tr('粘贴页面')}
+                      disabled={busy || !hasCopiedPage}
+                      onClick={() => pasteCopiedPage(index)}
+                    >
+                      <ClipboardPaste size={16} />
                     </button>
                     <button
                       className="add-page"
@@ -2157,6 +2275,7 @@ export default function App() {
                     </button>
                   </div>
                 )}
+                <ExtraTools notebook={notebook} pdf={pdf} index={index} disabled={busy || !ready} />
                 <button
                   className="icon-button"
                   aria-label={tr('打开 ChatGPT 聊天')}
@@ -2694,6 +2813,8 @@ export default function App() {
                         <option value="en">English</option>
                       </select>
                     </label>
+                    <UiScaleSettings />
+                    <PressureCurveSettings />
                     <label className="appearance-setting">
                       <span>
                         <input

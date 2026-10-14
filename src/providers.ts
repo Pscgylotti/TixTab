@@ -511,21 +511,96 @@ export async function withBitmapOcrPool<T>(
       withModelCacheUse(async () => {
         const { requireLocalModels } = await import('./modelLibrary');
         const { createOcrSession, releaseOcr } = await import('./ocrWorkerSession');
+        const { createOcrPixelBudget, ocrInputPixels } = await import('./ocrPixelBudget');
+        const acquirePixels = createOcrPixelBudget();
         await requireLocalModels(['tesseract']);
         signal.throwIfAborted();
         await activate('bitmap:tesseract', releaseOcr, false, signal);
         releaseOcr();
-        const lanes = Array.from({ length: Math.max(1, Math.min(4, Math.floor(count))) }, () =>
-          createOcrSession(false),
-        );
+        const poolAbort = new AbortController();
+        const poolSignal = AbortSignal.any([signal, poolAbort.signal]);
+        const slots: {
+          session: ReturnType<typeof createOcrSession>;
+          busy: boolean;
+          pixels: number;
+        }[] = [];
+        const activeJobs = new Set<Promise<import('./bitmapOcr').BitmapRecognition>>();
+        const limit = Math.max(1, Math.min(4, Math.floor(count)));
         try {
-          return await work(async (image, lane) => ({
-            ...(await lanes[lane].localOcr(image, () => {}, signal, true)),
-            engine: 'Tesseract',
-          }));
+          return await work((image) => {
+            const run = async () => {
+              const pixels = ocrInputPixels(image);
+              const releasePixels = await acquirePixels(pixels, poolSignal);
+              let slot: (typeof slots)[number] | undefined;
+              try {
+                poolSignal.throwIfAborted();
+                // Reuse an idle owner, not a fixed decode lane. A long scan of
+                // 4MP pages must not eventually grow four idle WASM heaps.
+                slot = slots.find((s) => !s.busy);
+                if (!slot) {
+                  if (slots.length >= limit) throw new Error('OCR pool owner limit exceeded');
+                  slot = { session: createOcrSession(false), busy: false, pixels: 0 };
+                  slots.push(slot);
+                }
+                slot.busy = true;
+                slot.pixels = Math.max(slot.pixels, pixels);
+                return {
+                  ...(await slot.session.localOcr(image, () => {}, poolSignal, true)),
+                  engine: 'Tesseract',
+                };
+              } finally {
+                if (slot) slot.busy = false;
+                // WASM heaps do not shrink. Discard idle high-water owners
+                // when the workload changes from large pages to small images.
+                while (slots.reduce((n, s) => n + s.pixels, 0) > 4_000_000) {
+                  const index = slots.findIndex((s) => !s.busy);
+                  if (index < 0) break;
+                  slots.splice(index, 1)[0].session.releaseOcr();
+                }
+                releasePixels();
+              }
+            };
+            const job = run();
+            activeJobs.add(job);
+            void job.then(
+              () => activeJobs.delete(job),
+              () => activeJobs.delete(job),
+            );
+            return job;
+          });
         } finally {
-          lanes.forEach((lane) => lane.releaseOcr());
+          poolAbort.abort();
+          await Promise.allSettled([...activeJobs]);
+          slots.forEach((slot) => slot.session.releaseOcr());
+          slots.length = 0;
         }
+      }, signal),
+    signal,
+  );
+}
+
+export async function withBitmapNpuOcr<T>(
+  variant: import('./nativeTesseract').TesseractVariant,
+  batch: number,
+  signal: AbortSignal,
+  work: (
+    recognize: (image: string, lane: number) => Promise<import('./bitmapOcr').BitmapRecognition>,
+  ) => Promise<T>,
+) {
+  return providerTasks.withLocalLane(
+    () =>
+      withModelCacheUse(async () => {
+        const { requireLocalModels } = await import('./modelLibrary');
+        const { releaseOcr } = await import('./ocrWorkerSession');
+        const { withQueuedNpuTesseract } = await import('./nativeTesseract');
+        await requireLocalModels([
+          'tesseract',
+          variant === 'mixed-best' ? 'tesseract-openvino-zh' : 'tesseract-openvino',
+        ]);
+        signal.throwIfAborted();
+        await activate('bitmap:tesseract-npu', releaseOcr, true, signal);
+        releaseOcr();
+        return withQueuedNpuTesseract(variant, batch, signal, work);
       }, signal),
     signal,
   );

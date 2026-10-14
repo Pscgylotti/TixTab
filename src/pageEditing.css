@@ -497,3 +497,48 @@
   padding: 4px 10px;
   font-size: 12px;
 }
+.image-export-modal {
+  width: min(460px, calc(100vw - 24px));
+  padding: 16px;
+  gap: 12px;
+}
+.image-export-modal header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.image-export-modal h2 {
+  margin: 0;
+  font-size: var(--fs-xl);
+}
+.image-export-body {
+  display: grid;
+  gap: 10px;
+}
+.image-export-body label {
+  display: grid;
+  gap: 6px;
+}
+.image-export-body p {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+.image-export-body progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.image-export-directory {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.image-export-modal footer {
+  display: flex;
+  justify-content: flex-end;
+}
+.extra-tools-menu > button {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 40px;
+}

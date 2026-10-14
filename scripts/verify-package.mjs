@@ -121,11 +121,21 @@ assert.ok(
   'Bundled Pinyin dictionary missing',
 );
 const catalog = json('electron/model-catalog.json');
-assert.equal(catalog.models.length, 12);
+assert.equal(catalog.models.length, 14);
 assert.equal(
   catalog.models.reduce((n, m) => n + m.files.length, 0),
-  60,
+  63,
 );
+for (const name of [
+  'native_tesseract.py',
+  'experimental/tesseract_graph.py',
+  'experimental/tesseract_batch_graph.py',
+  'experimental/tesseract_pipeline.py',
+])
+  assert.ok(
+    existsSync(join(dirname(dirname(archive)), 'backend', name)),
+    'Queued NPU OCR companion missing: ' + name,
+  );
 let checked = 0,
   bytes = 0;
 if (lite)

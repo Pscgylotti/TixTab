@@ -10,6 +10,8 @@ import './compactTools.css';
 import './settings.css';
 import { initializeAppearance } from './appearance';
 import { initializeRenderScheduler } from './pdfRenderCache';
+import { initializeUiScale } from './uiScale';
 initializeAppearance();
+initializeUiScale();
 initializeRenderScheduler();
 ReactDOM.createRoot(document.getElementById('root')!).render(<App />);
