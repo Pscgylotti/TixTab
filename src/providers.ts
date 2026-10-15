@@ -19,7 +19,7 @@ export interface ProviderCapability {
 const types: Record<ProviderFeature, string[]> = {
   translation: ['local', 'local-native', 'local-service', 'google', 'web', 'llm'],
   formula: ['texo-native', 'texo-cpu', 'texo-gpu', 'unimumer', 'pix2text', 'web', 'llm'],
-  ocr: ['native', 'local', 'texo', 'web', 'llm'],
+  ocr: ['native', 'local', 'tesseract-native', 'texo', 'web', 'llm'],
   speech: ['native', 'local', 'system', 'web', 'llm'],
 };
 export function providerCapabilities(): ProviderCapability[] {
@@ -318,6 +318,30 @@ async function attempt(
       };
     }
     if (feature === 'ocr') {
+      if (type === 'tesseract-native') {
+        const { withNativeCppOcr, nativeCppVariant, nativeCppModels } =
+          await import('./nativeCppOcr');
+        const { requireLocalModels } = await import('./modelLibrary');
+        const { releaseOcr } = await import('./ocrWorkerSession');
+        const variant = nativeCppVariant(config.model);
+        await requireLocalModels(nativeCppModels(variant));
+        await activate('ocr:tesseract-native', releaseOcr, false, ctx.signal);
+        releaseOcr();
+        ctx.progress(t('正在加载原生 OCR 模型…'));
+        const r = await withNativeCppOcr(variant, 1, ctx.signal, (recognize) =>
+          recognize(input, 0),
+        );
+        return {
+          ...local(),
+          ...r,
+          provider: type,
+          modelId: variant,
+          device: variant.startsWith('npu-') ? 'NPU' : 'CPU (native)',
+          engine: r.engine,
+          experimental: variant.startsWith('npu-'),
+          elapsed: performance.now() - start,
+        };
+      }
       const wasm = await import('./ocr');
       await activate(`${type}:tesseract`, wasm.releaseOcr, type === 'native', ctx.signal);
       if (type === 'native') {
@@ -420,9 +444,11 @@ export async function executeProvider(
             ? request.localPreference === 'local-native'
               ? 'local-native'
               : 'local'
-            : request.localPreference === 'local'
-              ? 'local'
-              : 'native';
+            : request.localPreference === 'tesseract-native'
+              ? 'tesseract-native'
+              : request.localPreference === 'local'
+                ? 'local'
+                : 'native';
       const offline =
         feature === 'translation' &&
         remote &&
@@ -579,6 +605,28 @@ export async function withBitmapOcrPool<T>(
   );
 }
 
+export async function withBitmapNativeCppOcr<T>(
+  variant: import('./nativeCppOcr').NativeCppVariant,
+  count: number,
+  signal: AbortSignal,
+  work: (
+    recognize: (image: string, lane: number) => Promise<import('./bitmapOcr').BitmapRecognition>,
+  ) => Promise<T>,
+) {
+  return providerTasks.withLocalLane(
+    () =>
+      withModelCacheUse(async () => {
+        const { requireLocalModels } = await import('./modelLibrary');
+        const { releaseOcr } = await import('./ocrWorkerSession');
+        const { withNativeCppOcr, nativeCppModels } = await import('./nativeCppOcr');
+        await requireLocalModels(nativeCppModels(variant));
+        await activate('bitmap:tesseract-native', releaseOcr, false, signal);
+        releaseOcr();
+        return withNativeCppOcr(variant, count, signal, work);
+      }, signal),
+    signal,
+  );
+}
 export async function withBitmapNpuOcr<T>(
   variant: import('./nativeTesseract').TesseractVariant,
   batch: number,

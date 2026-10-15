@@ -1,7 +1,6 @@
 import { MIN_ZOOM, MAX_ZOOM } from './pageFit';
 import { performanceDelay, trackPerformance } from './performanceLedger';
 import { useAppearance, renderPolicy, pageRenderScale } from './appearance';
-import PdfOriginalImages from './PdfOriginalImages';
 import { t as tr, useLocale } from './i18n';
 import {
   memo,
@@ -49,7 +48,6 @@ const ReadingPage = memo(function ReadingPage({
 
   top,
   viewport,
-  hand,
 }: {
   page: Page;
   pdf: PDFDocumentProxy | null;
@@ -69,7 +67,6 @@ const ReadingPage = memo(function ReadingPage({
 
   top?: number;
   viewport: RefObject<HTMLElement | null>;
-  hand: boolean;
 }) {
   useLocale();
   const nativeLive = useLiveNativeEdit(page.id);
@@ -200,13 +197,6 @@ const ReadingPage = memo(function ReadingPage({
           />
           {visible && (
             <>
-              <PdfOriginalImages
-                pdf={pdf}
-                sourceIndex={page.sourceIndex}
-                enabled={hand}
-                pageId={page.id}
-                bitmapOcr={page.bitmapOcr}
-              />
               <PageEditor
                 page={page}
                 pdf={pdf}
@@ -601,7 +591,6 @@ export default function ReadingView({
             top={mode === 'continuous' ? 8 + layout.offsets[start + i] : undefined}
             onEdit={onEdit}
             viewport={root}
-            hand={tool === 'hand'}
           />
         ))}
       </div>

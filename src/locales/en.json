@@ -1436,5 +1436,18 @@
   "已导出 {0} 份，失败 {1} 份：{2}": "Exported {0} files; {1} failed: {2}",
   "已导出 {0} 份已编辑 PDF。": "Exported {0} edited PDFs.",
   "已取消导出，已完成 {0} 份。": "Export cancelled; {0} files completed.",
-  "文件 {0} / {1}：{2}": "File {0} / {1}: {2}"
+  "文件 {0} / {1}：{2}": "File {0} / {1}: {2}",
+  "原生 OCR 组件未准备，请使用包含原生后端的桌面版本。": "Native OCR is unavailable. Use a desktop build that includes the native backend.",
+  "图片超过原生 OCR 的 400 万像素限制，请缩小区域。": "The image exceeds the native OCR limit of 4 million pixels. Select a smaller area.",
+  "原生 OCR 进程已退出，请重试。": "The native OCR process exited. Please try again.",
+  "原生 OCR 仅适用于桌面版本。": "Native OCR requires the desktop application.",
+  "原生 OCR 识别失败，请重试。": "Native OCR failed. Please try again.",
+  "原生 OCR 返回格式无效": "Invalid native OCR response",
+  "原生 Tesseract 模型": "Native Tesseract model",
+  "简体中文 + English · Fast": "Simplified Chinese + English · Fast",
+  "简体中文 + English · Best": "Simplified Chinese + English · Best",
+  "正在加载原生 OCR 模型…": "Loading native OCR models…",
+  "原生 NPU 实验组件或模型尚未准备。": "Experimental native NPU components or models are not ready.",
+  "原生 NPU 编译或推理失败：{0}；未回退 CPU。": "Native NPU compilation or inference failed: {0}; no CPU fallback was used.",
+  "实验性原生 NPU：仅英文、单行推理、无 CPU 识别回退；使用近似预处理与贪心解码，可能漏字或漏空格。": "Experimental native NPU: English only, single-line inference, no CPU recognition fallback. Approximate preprocessing and greedy decoding may omit characters or spaces."
 }

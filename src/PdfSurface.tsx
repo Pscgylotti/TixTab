@@ -1,7 +1,6 @@
 import { MIN_ZOOM, MAX_ZOOM } from './pageFit';
 import { performanceDelay, trackPerformance } from './performanceLedger';
 import { useAppearance, renderPolicy, pageRenderScale } from './appearance';
-import PdfOriginalImages from './PdfOriginalImages';
 import { t as tr, useLocale } from './i18n';
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
@@ -9,6 +8,7 @@ import { priorPdfBitmap, requestPdfBitmap, renderingCancelled } from './pdfRende
 import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
 import type { Page, Tool } from './model';
 import PageEditor, { clipsForeground } from './PageEditor';
+import { committedInkRatio } from './committedInk';
 import PdfDetailLayer from './PdfDetailLayer';
 import { PanZoomPointers } from './gestures';
 import { useDeferredZoom } from './useDeferredZoom';
@@ -318,13 +318,6 @@ export default function PdfSurface({
             viewKey={`${offset.x}:${offset.y}`}
             priority={0}
           />
-          <PdfOriginalImages
-            pdf={pdf}
-            sourceIndex={page.sourceIndex}
-            enabled={tool === 'hand'}
-            pageId={page.id}
-            bitmapOcr={page.bitmapOcr}
-          />
           <PageEditor
             page={page}
             pdf={pdf}
@@ -340,7 +333,11 @@ export default function PdfSurface({
             viewport={stage}
             // A view key that changes with every pan frame would re-render the
             // whole editor; only pages that clip their foreground need it.
-            viewKey={clipsForeground(page, false) ? `${offset.x}:${offset.y}:${zoom}` : undefined}
+            viewKey={
+              clipsForeground(page, zoom * window.devicePixelRatio > committedInkRatio(page))
+                ? `${offset.x}:${offset.y}:${zoom}`
+                : undefined
+            }
           />
         </div>
       </div>

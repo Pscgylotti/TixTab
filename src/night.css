@@ -102,7 +102,8 @@
 .pdf-image-interactions {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  /* Same page stacking context as links and ink selection; selection stays above it. */
+  z-index: 20001;
   pointer-events: none;
 }
 .pdf-image-interactions button {
@@ -116,6 +117,11 @@
   background: transparent;
   pointer-events: auto;
   cursor: pointer;
+}
+/* These buttons are transparent hit areas, including during pen contact. */
+.pdf-image-interactions button:is(:hover, :focus, :focus-visible),
+.pdf-image-interactions button:active:not(:disabled) {
+  background: transparent;
 }
 .pdf-image-interactions svg {
   display: block;

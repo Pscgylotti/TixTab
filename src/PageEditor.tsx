@@ -40,19 +40,21 @@ import {
   type PlacedImage,
   type Tool,
 } from './model';
-import { drawStroke, finalInkPath, cullingInkBounds } from './ink';
+import { finalInkPath, cullingInkBounds } from './ink';
+import { paintLiveInk, releaseLiveInk } from './liveInk';
 import type { ForegroundClip } from './foregroundViewport';
 import { useForegroundViewport } from './useForegroundViewport';
-import { CommittedInk } from './committedInk';
+import { CommittedInk, committedInkRatio } from './committedInk';
 import { SpatialIndex, imageBounds, sweptBounds } from './spatialIndex';
 import type { PenDiagnostic } from './PdfSurface';
 import ObjectLayer from './ObjectLayer';
 import GroupHierarchy from './GroupHierarchy';
 import PdfTextLayer from './PdfTextLayer';
 import PdfNavigationLayer from './PdfNavigationLayer';
+import PdfOriginalImages from './PdfOriginalImages';
 import InkSelectionLayer from './InkSelectionLayer';
 import ReviewLayer from './ReviewLayer';
-import { useAppearance, renderPolicy } from './appearance';
+import { useAppearance } from './appearance';
 import { lazy, Suspense } from 'react';
 const NativePdfLayer = lazy(() => import('./NativePdfLayer'));
 interface Props {
@@ -143,6 +145,15 @@ function PageEditor({
 }: Props) {
   useLocale();
   const { memoryMode } = useAppearance();
+  const [dpr, setDpr] = useState(window.devicePixelRatio);
+  useEffect(() => {
+    const resize = () => setDpr(window.devicePixelRatio);
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
+  // Keep completed ink sharp too: beyond the retained raster's density use
+  // vector paths, without allocating a full-page high-resolution canvas.
+  const vectorInk = reading || zoom * dpr > committedInkRatio(page);
   const root = useRef<HTMLDivElement>(null),
     ink = useRef<HTMLCanvasElement>(null),
     live = useRef<HTMLCanvasElement>(null);
@@ -152,7 +163,7 @@ function PageEditor({
     page.width,
     page.height,
     viewKey,
-    clipsForeground(page, reading),
+    clipsForeground(page, vectorInk),
   );
   const [selected, setSelected] = useState<string[]>([]);
   const [inkSelected, setInkSelected] = useState(false);
@@ -317,22 +328,10 @@ function PageEditor({
   if (!committed.current) committed.current = new CommittedInk();
   const imageIndex = useRef<SpatialIndex<PlacedImage> | null>(null);
   if (!imageIndex.current) imageIndex.current = new SpatialIndex<PlacedImage>(imageBounds);
-  const prepareCanvas = (canvas: HTMLCanvasElement) => {
-    const ratio = Math.min(
-      renderPolicy().minimal ? 1 : 2,
-      Math.sqrt((renderPolicy().minimal ? 1000000 : 4000000) / (page.width * page.height)),
-    );
-    const width = Math.ceil(page.width * ratio),
-      height = Math.ceil(page.height * ratio);
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
-    }
-  };
   useEffect(() => {
     if (ink.current) committed.current!.paint(ink.current, page);
     else committed.current!.reset();
-  }, [page.id, page.width, page.height, page.strokes, reading, memoryMode]);
+  }, [page.id, page.width, page.height, page.strokes, vectorInk, memoryMode]);
   useEffect(() => {
     const canvas = ink.current;
     if (!canvas) return;
@@ -343,8 +342,12 @@ function PageEditor({
     return () => {
       canvas.removeEventListener('contextlost', lost);
       canvas.removeEventListener('contextrestored', restored);
+      // Switching to vector ink/unmounting must release the old raster now,
+      // rather than retaining a detached GPU texture until garbage collection.
+      canvas.width = canvas.height = 1;
+      committed.current!.reset();
     };
-  }, [reading]);
+  }, [vectorInk]);
   useEffect(
     () => () => {
       cancelAnimationFrame(frame.current);
@@ -379,27 +382,27 @@ function PageEditor({
       paintFinish.current = undefined;
       try {
         const canvas = live.current!;
-        if (renderPolicy().minimal && !stroke.current && !erased.current) {
-          canvas.width = canvas.height = 1;
-          finish?.();
-          return;
-        }
-        if (stroke.current || erased.current) prepareCanvas(canvas);
-        const ctx = canvas.getContext('2d')!;
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const r = canvas.width / pageRef.current.width;
-        ctx.setTransform(r, 0, 0, r, 0, 0);
         const pending = erased.current;
         if (pending) {
-          for (const s of pending.highlights.values()) drawStroke(ctx, s, true);
           showPending([...pending.images]);
           setPendingCount(pending.images.size + pending.strokes.size);
         } else {
           showPending([]);
           setPendingCount(0);
         }
-        if (stroke.current) drawStroke(ctx, stroke.current);
+        const strokes = stroke.current
+          ? [stroke.current]
+          : [...(pending?.highlights.values() ?? [])];
+        if (strokes.length && root.current && viewport.current)
+          paintLiveInk(
+            canvas,
+            pageRef.current,
+            strokes,
+            root.current.getBoundingClientRect(),
+            viewport.current.getBoundingClientRect(),
+            window.devicePixelRatio,
+          );
+        else releaseLiveInk(canvas);
         finish?.();
       } catch (error) {
         finish?.(performanceOutcome(error));
@@ -542,7 +545,7 @@ function PageEditor({
           }}
           onChange={onChange}
         />
-        {reading ? (
+        {vectorInk ? (
           <StaticInk page={page} clip={clip} />
         ) : (
           <canvas className="ink-layer" ref={ink} style={{ zIndex: inkLayerIndex(page) * 2 + 1 }} />
@@ -580,6 +583,13 @@ function PageEditor({
           reading={!!reading}
           clip={clip}
           zoom={zoom}
+        />
+        <PdfOriginalImages
+          pdf={pdf}
+          sourceIndex={page.sourceIndex}
+          enabled={tool === 'hand'}
+          pageId={page.id}
+          bitmapOcr={page.bitmapOcr}
         />
         <InkSelectionLayer
           page={page}

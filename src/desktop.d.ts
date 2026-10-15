@@ -10,6 +10,7 @@ interface Window {
     };
     imageExport?: import('./imageExport').ImageExportBridge;
     batchPdf?: import('./batchWorkspace').BatchBridge;
+    nativeOcr?: import('./nativeCppOcr').NativeCppOcrBridge;
     pdfEditor?: import('./pdfNativeTypes').PdfEditorBridge;
     onNativePen?: (
       callback: (sample: import('./penInteraction').NativePenSample) => void,

@@ -3,6 +3,14 @@ import { drawStroke, drawStrokes, inkBounds } from './ink';
 import { SpatialIndex, unionBounds, type Bounds } from './spatialIndex';
 import { renderPolicy } from './appearance';
 
+export function committedInkRatio(page: { width: number; height: number }) {
+  const minimal = renderPolicy().minimal;
+  return Math.min(
+    minimal ? 1 : 2,
+    Math.sqrt((minimal ? 1000000 : 4000000) / (page.width * page.height)),
+  );
+}
+
 /** Retain the exact raster; a dynamic bounds hierarchy selects ordered survivors
  * for dirty-region replay. Reordering and large changes still replay the layer. */
 export class CommittedInk {
@@ -44,10 +52,7 @@ export class CommittedInk {
       canvas.width = canvas.height = 1;
       return { mode: 'full' as const, usedScratch: false, strokesDrawn: 0, pixelsCleared: 1 };
     }
-    const ratio = Math.min(
-        renderPolicy().minimal ? 1 : 2,
-        Math.sqrt((renderPolicy().minimal ? 1000000 : 4000000) / (page.width * page.height)),
-      ),
+    const ratio = committedInkRatio(page),
       width = Math.ceil(page.width * ratio),
       height = Math.ceil(page.height * ratio),
       previous = this.previous;

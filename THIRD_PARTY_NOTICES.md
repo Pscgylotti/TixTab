@@ -214,8 +214,9 @@ Generated from the locked dependency tree, including development tools. Exact pa
 | @vitest/spy | 3.2.7 | MIT | https://github.com/vitest-dev/vitest |
 | @vitest/utils | 3.2.7 | MIT | https://github.com/vitest-dev/vitest |
 | @xmldom/xmldom | 0.8.15 | MIT | git://github.com/xmldom/xmldom |
+| Leptonica (bundled native OCR helper) | 1.85.0 | BSD-2-Clause | https://github.com/DanBloomberg/leptonica |
 | PyMuPDF (optional local PDF runtime) | 1.28.2 | AGPL-3.0 / separate upstream commercial license | https://github.com/pymupdf/PyMuPDF |
-| Tesseract traineddata format / LSTM references (optional OpenVINO adapter) | 5.5.0 | Apache-2.0 upstream; TixTab adapter: AGPL-3.0-only | https://github.com/tesseract-ocr/tesseract/tree/5.5.0/src/lstm |
+| Tesseract (bundled native OCR / optional OpenVINO adapter) | 5.5.0 | Apache-2.0 upstream; TixTab adapter: AGPL-3.0-only | https://github.com/tesseract-ocr/tesseract/tree/5.5.0 |
 | abbrev | 4.0.0 | ISC | https://github.com/npm/abbrev-js |
 | agent-base | 7.1.4 | MIT | https://github.com/TooTallNate/proxy-agents |
 | ajv | 8.20.0 | MIT | ajv-validator/ajv |

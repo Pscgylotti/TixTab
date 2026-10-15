@@ -128,6 +128,17 @@ const json = (name) => JSON.parse(extractFile(archive, normalize(name)).toString
 const pkg = json('package.json');
 assert.equal(pkg.main, 'electron/main.cjs');
 assert.equal(pkg.version, JSON.parse(readFileSync('package.json', 'utf8')).version);
+for (const file of [
+  'tixtab-ocr.exe',
+  'TESSERACT-LICENSE.txt',
+  'LEPTONICA-LICENSE.txt',
+  'BUILD-INFO.json',
+])
+  assert.deepEqual(
+    readFileSync(join(dirname(dirname(archive)), 'native/ocr', file)),
+    readFileSync(join('.cache/native-ocr/runtime', file)),
+    'Native OCR runtime differs: ' + file,
+  );
 for (const name of ['batch-pdf.cjs', 'clipboard-shelf.cjs', 'main.cjs', 'preload.cjs'])
   assert.deepEqual(
     extractFile(archive, normalize('electron/' + name)),

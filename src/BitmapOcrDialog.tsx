@@ -10,16 +10,23 @@ import {
   providerFailureStatus,
   withBitmapOcrPool,
   withBitmapNpuOcr,
+  withBitmapNativeCppOcr,
 } from './providers';
 import { useProviderConfig } from './providerSettings';
 import { loadOcrDevice } from './nativeOcr';
 import { ProviderAdvanced } from './ProviderAdvanced';
+import NativeCppOcrSettings from './NativeCppOcrSettings';
+import { nativeCppVariant } from './nativeCppOcr';
 import './bitmapOcr.css';
 const emptyTiming = { totalMs: 0, layoutMs: 0, inferenceMs: 0, compileMs: 0, serviceMs: 0 };
 function preferredBackend() {
   try {
     const type = localStorage.getItem('tixtab.bitmapOcrProvider');
-    if (type && ['local', 'native', 'web', 'llm', 'tesseract-npu'].includes(type)) return type;
+    if (
+      type &&
+      ['local', 'native', 'tesseract-native', 'web', 'llm', 'tesseract-npu'].includes(type)
+    )
+      return type;
   } catch {
     /* Default remains available without storage. */
   }
@@ -57,6 +64,10 @@ export default function BitmapOcrDialog({
     }
   });
   const [timing, setTiming] = useState(emptyTiming);
+  const nativeNpu =
+    !npu &&
+    api.provider.type === 'tesseract-native' &&
+    nativeCppVariant(api.provider.model).startsWith('npu-');
   const initialized = useRef(false);
   const [range, setRange] = useState(''),
     [all, setAll] = useState(true),
@@ -169,7 +180,10 @@ export default function BitmapOcrDialog({
             signal: abort.signal,
             replace,
             inventory,
-            concurrency: !npu && api.provider.type === 'local' ? concurrency : 1,
+            concurrency:
+              !npu && !nativeNpu && ['local', 'tesseract-native'].includes(api.provider.type)
+                ? concurrency
+                : 1,
             onPage: (p) => completed.set(p.id, p),
             onImage: (alreadyParsed) => {
               if (alive.current) {
@@ -186,7 +200,7 @@ export default function BitmapOcrDialog({
               if (images === 0 && alive.current)
                 setStatus(
                   t(
-                    npu || ['native', 'local'].includes(api.provider.type)
+                    npu || ['native', 'local', 'tesseract-native'].includes(api.provider.type)
                       ? '正在准备本地模型并识别首张位图…'
                       : '正在识别首张位图…',
                   ),
@@ -224,6 +238,13 @@ export default function BitmapOcrDialog({
         await withBitmapNpuOcr(
           variant,
           variant === 'mixed-best' ? 1 : concurrency,
+          abort.signal,
+          scan,
+        );
+      } else if (api.provider.type === 'tesseract-native') {
+        await withBitmapNativeCppOcr(
+          nativeCppVariant(api.provider.model),
+          nativeCppVariant(api.provider.model).startsWith('npu-') ? 1 : concurrency,
           abort.signal,
           scan,
         );
@@ -325,11 +346,20 @@ export default function BitmapOcrDialog({
             >
               <option value="native">PP-OCRv4 · {t('本地')}</option>
               <option value="local">Tesseract · {t('本地')}</option>
+              <option value="tesseract-native" disabled={!window.surfaceDesktop?.nativeOcr}>
+                Tesseract · C++
+              </option>
               <option value="tesseract-npu">Tesseract · NPU · {t('实验性')}</option>
               <option value="web">HTTP OCR API</option>
               <option value="llm">LLM API</option>
             </select>
           </label>
+          {!npu && api.provider.type === 'tesseract-native' && (
+            <NativeCppOcrSettings
+              value={api.provider.model}
+              onChange={(model) => api.patch({ model })}
+            />
+          )}
           {npu && (
             <>
               <label>
@@ -377,9 +407,11 @@ export default function BitmapOcrDialog({
               <select
                 aria-label={t(npu ? '最大识别批量' : '并行任务数')}
                 disabled={
-                  (npu && variant === 'mixed-best') || (!npu && api.provider.type !== 'local')
+                  nativeNpu ||
+                  (npu && variant === 'mixed-best') ||
+                  (!npu && !['local', 'tesseract-native'].includes(api.provider.type))
                 }
-                value={npu && variant === 'mixed-best' ? 1 : concurrency}
+                value={nativeNpu || (npu && variant === 'mixed-best') ? 1 : concurrency}
                 onChange={(e) => {
                   const n = Number(e.target.value);
                   setConcurrency(n);
@@ -444,7 +476,7 @@ export default function BitmapOcrDialog({
           <details className="native-settings">
             <summary>{t('耗时详情')}</summary>
             <p>{t('识别任务累计耗时：{0} 秒', (timing.totalMs / 1000).toFixed(2))}</p>
-            {npu && (
+            {(npu || nativeNpu) && (
               <>
                 <p>
                   {t(

@@ -36,6 +36,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { spawn } = require('node:child_process');
 const { existsSync } = require('node:fs');
+const fs = require('node:fs/promises');
 let nativeProcess = null,
   nativeStarting = null;
 app.on('before-quit', () => {
@@ -117,6 +118,35 @@ app.whenReady().then(() => {
   });
   const providerSender = (event) =>
     event.senderFrame === event.sender.mainFrame && trusted(event.senderFrame.url);
+  const nativeOcr = require('./native-ocr.cjs').createNativeOcr({
+    // Experimental developer build is opt-in; the lite installer ships CPU only.
+    npu: app.isPackaged
+      ? undefined
+      : {
+          executable: path.resolve(
+            __dirname,
+            '../.cache/native-ocr/npu-runtime/tixtab-ocr-npu.exe',
+          ),
+          modelsRoot: path.resolve(__dirname, '../.cache/native-ocr/npu-models'),
+          cacheRoot: path.join(app.getPath('userData'), 'native-npu-cache'),
+        },
+    executable: app.isPackaged
+      ? path.join(process.resourcesPath, '../native/ocr/tixtab-ocr.exe')
+      : path.resolve(__dirname, '../.cache/native-ocr/runtime/tixtab-ocr.exe'),
+    workingRoot: path.join(app.getPath('userData'), 'native-ocr-jobs'),
+    resolveModel: async (name) => {
+      const downloaded = await modelLibrary.resolve(name);
+      if (downloaded) return downloaded;
+      const bundled = path.join(root, 'models', name);
+      return (await fs.stat(bundled).catch(() => null))?.isFile() ? bundled : null;
+    },
+  });
+  app.once('before-quit', () => void nativeOcr.dispose());
+  ipcMain.handle('ocr:native', (event, request) =>
+    providerSender(event)
+      ? nativeOcr.run(event.sender, request)
+      : { ok: false, error: 'untrusted' },
+  );
   ipcMain.handle('batch:run', (event, request) =>
     providerSender(event) ? batchPdf.run(event.sender, request) : { ok: false, error: 'untrusted' },
   );

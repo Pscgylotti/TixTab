@@ -9,6 +9,7 @@
     "predev": "node scripts/prepare-pdf-index-worker.mjs",
     "dev": "vite --host 127.0.0.1",
     "prepare:runtime": "node scripts/prepare-runtime.mjs",
+    "prepare:native-ocr": "node scripts/build-native-ocr.mjs",
     "prepare:icons": "node scripts/prepare-icons.mjs",
     "verify:icons": "node scripts/verify-icons.mjs --check",
     "model:texo": "node scripts/download-texo.mjs",
@@ -22,12 +23,12 @@
     "benchmark:compare": "node scripts/compare-workflows.mjs",
     "benchmark:build-control": "node scripts/build-performance-control.mjs",
     "test:performance-model": "node --test scripts/performance-demand.test.mjs",
-    "pack": "npm run build && electron-builder --config electron-builder.lite.cjs --win nsis --x64",
-    "pack:portable": "npm run build && electron-builder --config electron-builder.lite.cjs --win portable --x64",
+    "pack": "npm run prepare:native-ocr && npm run build && electron-builder --config electron-builder.lite.cjs --win nsis --x64",
+    "pack:portable": "npm run prepare:native-ocr && npm run build && electron-builder --config electron-builder.lite.cjs --win portable --x64",
     "model:translation": "node scripts/download-translation.mjs",
     "model:reading": "node scripts/download-reading-models.mjs",
     "model:ocr": "node scripts/download-ocr.mjs",
-    "pack:offline": "npm run build && electron-builder --win nsis --x64",
+    "pack:offline": "npm run prepare:native-ocr && npm run build && electron-builder --win nsis --x64",
     "format": "prettier --write src electron scripts tests *.ts *.cjs package.json .github",
     "format:check": "prettier --check src electron scripts tests *.ts *.cjs package.json .github",
     "verify:package": "node scripts/verify-package.mjs",
@@ -96,6 +97,10 @@
       "node_modules/@koromix/koffi-win32-x64/**/*"
     ],
     "extraFiles": [
+      {
+        "from": ".cache/native-ocr/runtime",
+        "to": "native/ocr"
+      },
       "README.md",
       {
         "from": "docs",

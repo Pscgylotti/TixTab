@@ -24,7 +24,7 @@ export const providerTypes: Record<ProviderSettingsFeature, string[]> = {
   chat: ['llm'],
   translation: ['local', 'local-native', 'local-service', 'google', 'web', 'llm'],
   speech: ['native', 'local', 'system', 'web', 'llm'],
-  ocr: ['native', 'local', 'texo', 'web', 'llm'],
+  ocr: ['native', 'local', 'tesseract-native', 'texo', 'web', 'llm'],
   formula: ['texo-native', 'texo-cpu', 'texo-gpu', 'unimumer', 'pix2text', 'web', 'llm'],
 };
 export const googleEndpoint = 'https://translation.googleapis.com/language/translate/v2';

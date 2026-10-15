@@ -1,4 +1,4 @@
-import { getStroke } from 'perfect-freehand';
+import { getStrokePoints, getStrokeOutlinePoints, type StrokeOptions } from 'perfect-freehand';
 import type { Stroke } from './model';
 import type { Bounds } from './spatialIndex';
 const paths = new WeakMap<Stroke, string>(),
@@ -18,12 +18,15 @@ export function outline(stroke: Stroke) {
   // perfect-freehand interpolates two-point strokes without pressure. Preserve all
   // three coordinates ourselves so short pen flicks retain real hardware pressure.
   const points =
-    stroke.points.length === 2
-      ? Array.from({ length: 5 }, (_, i) =>
-          stroke.points[0].map((v, axis) => v + ((stroke.points[1][axis] - v) * i) / 4),
-        )
-      : stroke.points;
-  return getStroke(points, {
+    stroke.points.length === 1
+      ? // Avoid the library's artificial [x+1,y+1] segment for a single tap.
+        [stroke.points[0], stroke.points[0], stroke.points[0]]
+      : stroke.points.length === 2
+        ? Array.from({ length: 5 }, (_, i) =>
+            stroke.points[0].map((v, axis) => v + ((stroke.points[1][axis] - v) * i) / 4),
+          )
+        : stroke.points;
+  const options: StrokeOptions = {
     size: stroke.size,
     thinning:
       stroke.tool === 'ballpoint' || stroke.tool === 'highlighter'
@@ -35,7 +38,18 @@ export function outline(stroke: Stroke) {
     streamline: 0.25,
     simulatePressure: false,
     last: true,
-  });
+  };
+  const samples = getStrokePoints(points, options);
+  const last = samples.at(-1);
+  if (last && samples.length > 1 && last.runningLength < 3) {
+    // perfect-freehand 1.2.2 skips every non-final sample within 3 units of
+    // the end. On a short fine stroke this includes its start, so its start
+    // cap rotates the *end* outline around the start and makes a large disk.
+    // Disable only that short-stroke tail pruning. No taper uses runningLength
+    // here; positions, pressure, smoothing and ordinary strokes stay intact.
+    last.runningLength += 3;
+  }
+  return getStrokeOutlinePoints(samples, options);
 }
 export function inkPath(stroke: Stroke) {
   const points = outline(stroke);

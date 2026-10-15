@@ -1,4 +1,5 @@
 import TaskCenterButton from './TaskCenterButton';
+import NativeCppOcrSettings from './NativeCppOcrSettings';
 import { t as tr, useLocale } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import { loadNativeDevice } from './nativeTexo';
@@ -95,11 +96,21 @@ export default function OcrDialog({
             >
               <option value="native">{tr('本地低功耗优先 · PP-OCRv4（实验）')}</option>
               <option value="local">{tr('本地 Tesseract · 中英文字')}</option>
+              <option value="tesseract-native" disabled={!window.surfaceDesktop?.nativeOcr}>
+                Tesseract · C++
+              </option>
               <option value="texo">{tr('本地 Texo · 公式转 LaTeX')}</option>
               <option value="web">HTTP OCR API</option>
               <option value="llm">{tr('图像 LLM API')}</option>
             </select>
           </label>
+          {provider === 'tesseract-native' && (
+            <NativeCppOcrSettings
+              value={config.model}
+              disabled={busy}
+              onChange={(model) => patch({ model })}
+            />
+          )}
           {provider === 'native' && (
             <details className="native-settings">
               <summary>{tr('本地加速设置')}</summary>

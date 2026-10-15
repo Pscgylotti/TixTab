@@ -4,8 +4,9 @@ import { join } from 'node:path';
 // Include build tools too: Electron itself is a dev dependency in package.json.
 const lock = JSON.parse(await readFile('package-lock.json', 'utf8'));
 const notices = [
+    '| Leptonica (bundled native OCR helper) | 1.85.0 | BSD-2-Clause | https://github.com/DanBloomberg/leptonica |',
     '| PyMuPDF (optional local PDF runtime) | 1.28.2 | AGPL-3.0 / separate upstream commercial license | https://github.com/pymupdf/PyMuPDF |',
-    '| Tesseract traineddata format / LSTM references (optional OpenVINO adapter) | 5.5.0 | Apache-2.0 upstream; TixTab adapter: AGPL-3.0-only | https://github.com/tesseract-ocr/tesseract/tree/5.5.0/src/lstm |',
+    '| Tesseract (bundled native OCR / optional OpenVINO adapter) | 5.5.0 | Apache-2.0 upstream; TixTab adapter: AGPL-3.0-only | https://github.com/tesseract-ocr/tesseract/tree/5.5.0 |',
   ],
   texts = [];
 for (const directory of Object.keys(lock.packages).filter((key) =>
