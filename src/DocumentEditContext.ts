@@ -6,5 +6,6 @@ export const DocumentEditContext = createContext<{
   notebook: Notebook;
   pdf?: PDFDocumentProxy | null;
   mode: 'single' | 'continuous' | 'dual';
+  onReviewCreated?: () => void;
   stageNative: (pageId: string, edit: NativePdfEdit) => void;
 } | null>(null);

@@ -159,6 +159,9 @@ test('review anchors, side cards, dual hover, mixed sizes and scoped rotate/crop
   await page.mouse.down();
   await page.mouse.move(paper.x + paper.width * 0.6, paper.y + paper.height * 0.3, { steps: 5 });
   await page.mouse.up();
+  await expect(page.getByRole('button', { name: '移动', exact: true })).toHaveClass(
+    /selected|active/,
+  );
   await expect(page.locator('.review-anchor')).toHaveCount(1);
   const anchor = await page.locator('.review-anchor').boundingBox();
   expect(anchor!.x).toBeCloseTo(paper.x + paper.width * 0.15, 0);
@@ -183,8 +186,13 @@ test('review anchors, side cards, dual hover, mixed sizes and scoped rotate/crop
   expect(screenStyle.radius).toBeCloseTo(5, 0);
   await page.getByRole('textbox', { name: '便签内容' }).fill('Review annotation 测试');
   await page.getByRole('button', { name: '关闭便签', exact: true }).click();
-  await expect(page.locator('.review-card')).toContainText('Review annotation 测试');
+  await expect(page.locator('.review-card')).toHaveCount(0);
+  await page.locator('.review-anchor').hover();
+  await expect(page.locator('.review-card')).toHaveCount(0);
   await page.locator('.review-anchor').click();
+  await expect(page.getByRole('textbox', { name: '便签内容' })).toHaveValue(
+    'Review annotation 测试',
+  );
   const beforeMove = (await page.locator('.review-anchor').boundingBox())!;
   await page.mouse.move(beforeMove.x + 20, beforeMove.y + beforeMove.height / 2);
   await page.mouse.down();
@@ -392,7 +400,7 @@ test('review editing is tool-gated; fixed-size cards drag across anchors and cli
   await page.mouse.up();
   expect((await anchor.boundingBox())!.x).toBeCloseTo(before.x, 0);
   await expect(card.locator('textarea')).toHaveCount(0);
-  await page.getByRole('button', { name: '便签', exact: true }).click();
+  await page.getByRole('button', { name: '移动', exact: true }).click();
   await anchor.click();
   await expect(card.locator('textarea')).toBeVisible();
   await expect(page.locator('.review-resize-handle')).toHaveCount(4);

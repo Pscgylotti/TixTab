@@ -1,6 +1,6 @@
 import type { PDFDocumentProxy } from './pdfTypes';
 import { isPicture, type Page } from './model';
-import { drawStrokes } from './ink';
+import { drawStrokes, cullingInkBounds } from './ink';
 import { pageLayers } from './pageLayers';
 import { recognitionImageSize } from './recognitionImageSize';
 import { groupLeaves } from './objectGroup';
@@ -53,10 +53,28 @@ export async function capturePage(
       if (!image) {
         if (options.ink === false) continue;
         ctx.filter = options.night ? 'invert(0.9) hue-rotate(180deg)' : 'none';
-        drawStrokes(ctx, page.strokes);
+        drawStrokes(
+          ctx,
+          page.strokes.filter((stroke) => {
+            const b = cullingInkBounds(stroke);
+            return (
+              b.maxX >= region.x &&
+              b.minX <= region.x + region.width &&
+              b.maxY >= region.y &&
+              b.minY <= region.y + region.height
+            );
+          }),
+        );
         ctx.filter = 'none';
         continue;
       }
+      if (
+        image.x + image.width < region.x ||
+        image.x > region.x + region.width ||
+        image.y + image.height < region.y ||
+        image.y > region.y + region.height
+      )
+        continue;
       const i = new Image();
       i.src =
         options.night && image.scratchPage && image.nightData

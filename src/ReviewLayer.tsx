@@ -4,6 +4,7 @@ import { StickyNote, Trash2, X } from 'lucide-react';
 import { DocumentEditContext } from './DocumentEditContext';
 import { uid, type Page, type ReviewNote, type Tool } from './model';
 import { t, useLocale } from './i18n';
+import { useNativeKeyboard } from './nativeKeyboard';
 import { reviewConnector } from './reviewGeometry';
 import './pageEditing.css';
 
@@ -19,9 +20,11 @@ export default function ReviewLayer({
   onChange: (page: Page) => void;
 }) {
   useLocale();
+  const nativeKeyboard = useNativeKeyboard();
   const context = useContext(DocumentEditContext);
   const root = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [closed, setClosed] = useState<Set<string>>(() => new Set());
   const [hover, setHover] = useState<string | null>(null);
   const [draft, setDraft] = useState<ReviewNote['region'] | null>(null);
   const [adjusted, setAdjusted] = useState<{ id: string; region: ReviewNote['region'] } | null>(
@@ -50,6 +53,7 @@ export default function ReviewLayer({
     offset: { x: number; y: number };
   } | null>(null);
   const [text, setText] = useState('');
+  const draftText = useRef<{ id: string; text: string } | null>(null);
   const savedText = useRef<{ id: string; text: string } | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const hoverNote = (id: string | null) => {
@@ -62,9 +66,18 @@ export default function ReviewLayer({
   const [bounds, setBounds] = useState<DOMRect | null>(null);
   const notes = page.reviews ?? [];
   const note = notes.find((n) => n.id === selected);
-  const dual = context?.mode === 'dual';
+  useEffect(() => {
+    const ids = new Set(notes.map((n) => n.id));
+    setClosed((old) =>
+      [...old].some((id) => !ids.has(id)) ? new Set([...old].filter((id) => ids.has(id))) : old,
+    );
+  }, [page.reviews]);
+  const scratchHost = root.current?.closest('.scratch-viewport');
+  const scratch = !!scratchHost;
+  const dual = !scratch && context?.mode === 'dual';
   useEffect(() => {
     setSelected(null);
+    setClosed(new Set());
     setHover(null);
     adjusting.current = null;
     setAdjusted(null);
@@ -87,6 +100,7 @@ export default function ReviewLayer({
   }, [!!adjusted, !!cardPreview]);
   useEffect(() => {
     setText(note?.text ?? '');
+    draftText.current = note ? { id: note.id, text: note.text } : null;
     savedText.current = note ? { id: note.id, text: note.text } : null;
   }, [note]);
   useLayoutEffect(() => {
@@ -164,13 +178,20 @@ export default function ReviewLayer({
     return { x: left, y: top, width: right - left, height: bottom - top };
   };
   const save = () => {
+    const draft = draftText.current;
+    // Focus/select/close events may run before the new textarea state is painted.
+    // Persist only the latest draft owned by this note, never another render's text.
     if (
       note &&
-      text !== note.text &&
-      !(savedText.current?.id === note.id && savedText.current.text === text)
+      draft?.id === note.id &&
+      draft.text !== note.text &&
+      !(savedText.current?.id === note.id && savedText.current.text === draft.text)
     ) {
-      savedText.current = { id: note.id, text };
-      onChange({ ...page, reviews: notes.map((n) => (n.id === note.id ? { ...n, text } : n)) });
+      savedText.current = { ...draft };
+      onChange({
+        ...page,
+        reviews: notes.map((n) => (n.id === note.id ? { ...n, text: draft.text } : n)),
+      });
     }
   };
   useEffect(() => {
@@ -179,7 +200,7 @@ export default function ReviewLayer({
     return () => clearTimeout(timer);
   }, [note, text]);
   useEffect(() => {
-    if (tool !== 'review') {
+    if (tool !== 'hand') {
       save();
       adjusting.current = null;
       setAdjusted(null);
@@ -190,9 +211,11 @@ export default function ReviewLayer({
     }
   }, [tool]);
   // Keep side cards in screen units, outside the clipped PDF paper and independent of zoom.
-  const canvasHost = root.current?.closest('.canvas-container');
+  const canvasHost = scratchHost ?? root.current?.closest('.canvas-container');
   const canvas = canvasHost?.getBoundingClientRect();
-  const visibleNotes = dual ? notes.filter((n) => n.id === selected || n.id === hover) : notes;
+  const visibleNotes = notes.filter(
+    (n) => !closed.has(n.id) && (!dual || n.id === selected || n.id === hover),
+  );
   const width = 240;
   let lastBottom = -Infinity;
   return (
@@ -245,6 +268,7 @@ export default function ReviewLayer({
           const n = { id: uid(), text: '', region: r };
           onChange({ ...page, reviews: [...notes, n] });
           setSelected(n.id);
+          context?.onReviewCreated?.();
         }}
         onPointerCancel={() => {
           adjusting.current = null;
@@ -259,7 +283,7 @@ export default function ReviewLayer({
           return (
             <button
               key={n.id}
-              className={`review-anchor ${selected === n.id || hover === n.id ? 'highlighted' : ''} ${tool === 'review' && selected === n.id ? 'editing' : ''}`}
+              className={`review-anchor ${selected === n.id || hover === n.id ? 'highlighted' : ''} ${tool === 'hand' && selected === n.id ? 'editing' : ''}`}
               aria-label={t('便签 {0}', i + 1)}
               style={{
                 left: n.region.x,
@@ -271,7 +295,7 @@ export default function ReviewLayer({
               }}
               onPointerDown={(e) => {
                 e.stopPropagation();
-                if (tool !== 'review' || e.button !== 0 || adjusting.current) return;
+                if (tool !== 'hand' || e.button !== 0 || adjusting.current) return;
                 e.preventDefault();
                 save();
                 setSelected(n.id);
@@ -303,6 +327,11 @@ export default function ReviewLayer({
                   return;
                 }
                 save();
+                setClosed((old) => {
+                  const next = new Set(old);
+                  next.delete(n.id);
+                  return next;
+                });
                 setSelected(n.id);
               }}
             >
@@ -317,12 +346,12 @@ export default function ReviewLayer({
                   rx={5 / zoom}
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth={tool === 'review' && selected === n.id ? 1.5 : 0.75}
+                  strokeWidth={tool === 'hand' && selected === n.id ? 1.5 : 0.75}
                   vectorEffect="non-scaling-stroke"
                 />
               </svg>
               <StickyNote style={{ width: 16 / zoom, height: 16 / zoom }} />
-              {tool === 'review' &&
+              {tool === 'hand' &&
                 selected === n.id &&
                 (['nw', 'ne', 'sw', 'se'] as const).map((corner) => (
                   <span
@@ -381,14 +410,27 @@ export default function ReviewLayer({
                 width: n.region.width * sx,
                 height: n.region.height * sy,
               };
-              const baseY = Math.max(region.y + region.height / 2 - 40, lastBottom + 8);
+              const baseY = scratch
+                ? region.y + region.height / 2 - 40
+                : Math.max(region.y + region.height / 2 - 40, lastBottom + 8);
               lastBottom = baseY + 108;
               const offset =
                 cardPreview?.id === n.id ? cardPreview.offset : (n.cardOffset ?? { x: 0, y: 0 });
-              const x = bounds.right - canvas.left + 14 + offset.x,
+              const x =
+                  (scratch ? region.x + region.width : bounds.right - canvas.left) + 14 + offset.x,
                 y = baseY + offset.y;
+              if (
+                scratch &&
+                n.id !== selected &&
+                (region.x + region.width < -width ||
+                  region.x > canvas.width + width ||
+                  region.y + region.height < -160 ||
+                  region.y > canvas.height + 160) &&
+                (x + width < 0 || x > canvas.width || y + 160 < 0 || y > canvas.height)
+              )
+                return null;
               const connector = reviewConnector(region, { x, y, width });
-              const editing = tool === 'review' && selected === n.id;
+              const editing = tool === 'hand' && selected === n.id;
               return (
                 <div
                   key={n.id}
@@ -478,44 +520,46 @@ export default function ReviewLayer({
                     >
                       <StickyNote size={14} />
                       <span>{t('便签 {0}', notes.indexOf(original) + 1)}</span>
-                      {selected === n.id && (
-                        <>
-                          {editing && (
-                            <button
-                              aria-label={t('删除便签')}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onChange({ ...page, reviews: notes.filter((a) => a.id !== n.id) });
-                                setSelected(null);
-                              }}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                          <button
-                            aria-label={t('关闭便签')}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              save();
-                              setSelected(null);
-                            }}
-                          >
-                            <X size={14} />
-                          </button>
-                        </>
+                      {editing && (
+                        <button
+                          aria-label={t('删除便签')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onChange({ ...page, reviews: notes.filter((a) => a.id !== n.id) });
+                            setSelected(null);
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       )}
+                      <button
+                        aria-label={t('关闭便签')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          save();
+                          setClosed((old) => new Set(old).add(n.id));
+                          setSelected((old) => (old === n.id ? null : old));
+                          if (hover === n.id) setHover(null);
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
                     </header>
                     {editing ? (
                       <textarea
                         aria-label={t('便签内容')}
+                        inputMode={nativeKeyboard ? 'text' : 'none'}
                         maxLength={10000}
                         value={text}
-                        onChange={(e) => setText(e.target.value)}
+                        onChange={(e) => {
+                          draftText.current = { id: n.id, text: e.target.value };
+                          setText(e.target.value);
+                        }}
                         onBlur={save}
                         autoFocus
                       />
                     ) : (
-                      <p>{n.text || t(tool === 'review' ? '点击编辑便签' : '空白便签')}</p>
+                      <p>{n.text || t(tool === 'hand' ? '点击编辑便签' : '空白便签')}</p>
                     )}
                   </article>
                 </div>

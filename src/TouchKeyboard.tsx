@@ -5,6 +5,7 @@ import Keyboard from 'simple-keyboard';
 import DictationButton from './DictationButton';
 import { copyText } from './clipboard';
 import FieldEditMenu from './FieldEditMenu';
+import { useNativeKeyboard, setNativeKeyboard } from './nativeKeyboard';
 import { moveTextSelection, type EditKey } from './keyboardSelection';
 import './chat.css';
 import {
@@ -95,10 +96,8 @@ export default function TouchKeyboard({
   const [open, setOpen] = useState(false),
     [width, setWidth] = useState(
       () => Number(localStorage.getItem('surfacetab.keyboardWidth')) || 480,
-    ),
-    [native, setNative] = useState(
-      () => localStorage.getItem('surfacetab.nativeKeyboard') === 'true',
     );
+  const native = useNativeKeyboard();
   const [mode, setMode] = useState<Mode>(() => {
     const saved = localStorage.getItem('surfacetab.keyboardMode');
     return saved === 'en' || saved === 'pinyin' || saved === 'voice' ? saved : 'latex';
@@ -175,26 +174,44 @@ export default function TouchKeyboard({
     };
   }, [chatOpen, hostDocument]);
   useEffect(() => {
-    localStorage.setItem('surfacetab.nativeKeyboard', String(native));
     const attributes = new Map<Field, string | null>();
+    const restore = (el: Field, old: string | null) => {
+      if (el.getAttribute('inputmode') !== 'none') return;
+      if (old === null) el.removeAttribute('inputmode');
+      else el.setAttribute('inputmode', old);
+    };
+    const prepareField = (el: EventTarget | null) => {
+      if (
+        !native &&
+        editable(el) &&
+        !el.closest('.touch-keyboard') &&
+        el.getAttribute('inputmode') !== 'none'
+      ) {
+        if (!attributes.has(el)) attributes.set(el, el.getAttribute('inputmode'));
+        el.setAttribute('inputmode', 'none');
+      }
+    };
     const prepare = () => {
       setFieldReady(
         !!field.current?.isConnected && !field.current.disabled && !field.current.readOnly,
       );
-      for (const el of hostDocument.querySelectorAll('input,textarea'))
-        if (editable(el) && !el.closest('.touch-keyboard') && !attributes.has(el)) {
-          attributes.set(el, el.getAttribute('inputmode'));
-          if (!native) el.setAttribute('inputmode', 'none');
+      for (const [el, old] of attributes)
+        if (!el.isConnected) {
+          restore(el, old);
+          attributes.delete(el);
         }
+      for (const el of hostDocument.querySelectorAll('input,textarea')) prepareField(el);
     };
     prepare();
     const observer = new MutationObserver(prepare);
     observer.observe(hostDocument.body, { childList: true, subtree: true });
     const pointer = (e: PointerEvent) => {
+      prepareField(e.target);
       pointerType.current = e.pointerType;
       if (editable(e.target) && !e.target.closest('.touch-keyboard')) updateComposition('');
     };
     const focus = (e: FocusEvent) => {
+      prepareField(e.target);
       if (editable(e.target) && !e.target.closest('.touch-keyboard')) {
         if (field.current !== e.target) updateComposition('');
         field.current = e.target;
@@ -204,15 +221,13 @@ export default function TouchKeyboard({
       }
     };
     hostDocument.addEventListener('pointerdown', pointer, true);
-    hostDocument.addEventListener('focusin', focus);
+    hostDocument.addEventListener('focusin', focus, true);
     return () => {
       observer.disconnect();
       hostDocument.removeEventListener('pointerdown', pointer, true);
-      hostDocument.removeEventListener('focusin', focus);
-      for (const [el, old] of attributes) {
-        if (old === null) el.removeAttribute('inputmode');
-        else el.setAttribute('inputmode', old);
-      }
+      hostDocument.removeEventListener('focusin', focus, true);
+      for (const [el, old] of attributes) restore(el, old);
+      attributes.clear();
     };
   }, [native, hostDocument]);
   const write = (content: string, backspace = false) => {
@@ -769,7 +784,7 @@ export default function TouchKeyboard({
                 <input
                   type="checkbox"
                   checked={native}
-                  onChange={(e) => setNative(e.target.checked)}
+                  onChange={(e) => setNativeKeyboard(e.target.checked)}
                 />
                 {tr('使用系统触摸键盘')}
               </label>

@@ -361,8 +361,11 @@ export default function App() {
     setRecognizingCapture(false);
     setBusy(true);
     try {
-      const selected = pageId ? notebook.pages.find((p) => p.id === pageId) : page;
-      if (selected) setOcrImage(await capturePage(selected, pdf, region));
+      const selected = pageId ? editablePages(notebook).find((p) => p.id === pageId) : page;
+      if (selected)
+        setOcrImage(
+          await capturePage(selected, notebook.pages.includes(selected) ? pdf : null, region),
+        );
     } catch (error) {
       notify(
         tr(
@@ -2386,6 +2389,7 @@ export default function App() {
         notebook,
         pdf,
         mode: viewMode,
+        onReviewCreated: () => setTool('hand'),
         stageNative: (pageId, edit) => {
           const n = current.current,
             total = n.pages.reduce(

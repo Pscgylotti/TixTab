@@ -75,7 +75,14 @@ export default function RegionCapture({
           const dx = Math.max(bounds.left - e.clientX, 0, e.clientX - bounds.right),
             dy = Math.max(bounds.top - e.clientY, 0, e.clientY - bounds.bottom),
             d = dx * dx + dy * dy;
-          if (d < distance) {
+          // Both sheets contain a PDF hit in scratch mode. Prefer the foreground
+          // PDF there; use the background sheet when the pointer is outside it.
+          if (
+            d < distance ||
+            (d === distance &&
+              paper?.classList.contains('scratch-paper') &&
+              !candidate.classList.contains('scratch-paper'))
+          ) {
             paper = candidate;
             distance = d;
           }
