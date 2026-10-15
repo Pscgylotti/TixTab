@@ -40,11 +40,9 @@ test('real PDFium renders cropped/rotated pages, consistent tiles and night colo
   const bytes = await fixture(page);
   const result = await page.evaluate(async (bytes) => {
     const { loadPdf } = await import('/src/pdf.ts');
-    const { setPdfRenderBackend } = await import('/src/appearance.ts');
     const { requestPdfBitmap, requestPdfTile } = await import('/src/pdfRenderCache.ts');
     const { getPdfiumStats } = await import('/src/pdfiumRaster.ts');
     const pdf = await loadPdf(new Uint8Array(bytes));
-    setPdfRenderBackend('pdfium');
     const checks = [];
     for (const index of [0, 1]) {
       const p = await pdf.getPage(index + 1),
@@ -53,10 +51,6 @@ test('real PDFium renders cropped/rotated pages, consistent tiles and night colo
       reference.width = Math.ceil(viewport.width);
       reference.height = Math.ceil(viewport.height);
       await p.render({ canvas: reference, viewport }).promise;
-      // The actual candidate must never silently fall back to PDF.js rendering.
-      p.render = () => {
-        throw new Error('unexpected PDF.js raster');
-      };
       const full = await requestPdfBitmap(pdf, index, 1.5).promise;
       const ctx = full.getContext('2d')!;
       const expected = reference
@@ -117,7 +111,7 @@ test('real PDFium renders cropped/rotated pages, consistent tiles and night colo
   });
 });
 
-test('PDFium UI works in all views with native text and image interactions, and can switch back', async ({
+test('PDFium UI works in all views with native text and image interactions, and uses the sole engine', async ({
   page,
 }) => {
   await page.addInitScript(() => localStorage.setItem('tixtab.pdfRenderBackend', 'pdfium'));
@@ -160,22 +154,8 @@ test('PDFium UI works in all views with native text and image interactions, and 
   await expect(
     page.locator('.pdf-detail-tile[data-ready=true] canvas[data-pdf-backend=pdfium]').first(),
   ).toBeVisible();
-  // Switch via the actual settings control, not only the internal API.
   await page.getByRole('button', { name: '设置', exact: true }).click();
-  const setting = page.getByRole('combobox', { name: 'PDF 渲染引擎', exact: true });
-  await expect(setting).toHaveValue('pdfium');
-  await setting.selectOption('pdfjs');
-  await expect(page.locator('.pdf-layer[data-pdf-backend=pdfjs]')).toBeAttached();
-  await expect
-    .poll(() =>
-      page.evaluate(async () => (await import('/src/pdfiumRaster.ts')).getPdfiumStats().documents),
-    )
-    .toBe(0);
-  expect(
-    await page.evaluate(
-      async () => (await import('/src/pdfiumRaster.ts')).getPdfiumStats().workers,
-    ),
-  ).toBe(1);
+  await expect(page.getByRole('combobox', { name: 'PDF 渲染引擎', exact: true })).toHaveCount(0);
 });
 
 test('PDFium progressive work cancels while paused and repeated document close reuses one resident engine without retaining documents', async ({
@@ -270,4 +250,73 @@ test('simultaneous PDFium documents share the engine and closing one preserves t
   expect(result.same).toBe(true);
   expect(result.distinct).toBe(true);
   expect(result.closed).toMatchObject({ workers: 1, documents: 0, pending: 0, sessions: 0 });
+});
+
+test('offset, rotation override, flipped viewport and skew render without a compatibility engine', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const bytes = await fixture(page);
+  const result = await page.evaluate(async (bytes) => {
+    const { loadPdf } = await import('/src/pdf.ts');
+    const pdf = await loadPdf(new Uint8Array(bytes)),
+      p = await pdf.getPage(1),
+      rows = [];
+    const base = p.getViewport({ scale: 1 }),
+      source = document.createElement('canvas');
+    source.width = base.width;
+    source.height = base.height;
+    await p.render({ canvas: source, viewport: base }).promise;
+    try {
+      for (const matrix of [
+        [1.5, 0, 0, 1.5, 17, 23],
+        [0, 1, -1, 0, 620, 15],
+        [1, 0.2, 0.25, 1, 5, 5],
+        [1, 0, 0, -1, 0, 620],
+      ]) {
+        const actual = document.createElement('canvas'),
+          expected = document.createElement('canvas');
+        actual.width = expected.width = 700;
+        actual.height = expected.height = 950;
+        const ctx = expected.getContext('2d')!;
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, 700, 950);
+        ctx.setTransform(...(matrix as [number, number, number, number, number, number]));
+        ctx.drawImage(source, 0, 0);
+        await p.render({ canvas: actual, viewport: base, transform: matrix }).promise;
+        const a = actual.getContext('2d')!.getImageData(0, 0, 700, 950).data,
+          b = ctx.getImageData(0, 0, 700, 950).data;
+        let checked = 0,
+          correct = 0;
+        for (let i = 0; i < b.length; i += 4)
+          if (
+            (b[i] < 40 && b[i + 1] > 160 && b[i + 2] < 90) ||
+            (b[i] > 190 && b[i + 1] < 45 && b[i + 2] < 65)
+          ) {
+            checked++;
+            if ([0, 1, 2].every((c) => Math.abs(a[i + c] - b[i + c]) < 4)) correct++;
+          }
+        rows.push({ checked, fidelity: correct / checked });
+        actual.width = actual.height = expected.width = expected.height = 1;
+      }
+      const rotated = document.createElement('canvas'),
+        viewport = p.getViewport({ scale: 1, rotation: 90, offsetX: 8, offsetY: 12 });
+      rotated.width = 620;
+      rotated.height = 430;
+      await p.render({ canvas: rotated, viewport }).promise;
+      rows.push({
+        checked: 10000,
+        fidelity: rotated.getContext('2d')!.getImageData(0, 0, 1, 1).data[0] === 255 ? 1 : 0,
+      });
+      rotated.width = rotated.height = 1;
+      return rows;
+    } finally {
+      source.width = source.height = 1;
+      await pdf.destroy();
+    }
+  }, Array.from(bytes));
+  for (const row of result) {
+    expect(row.checked).toBeGreaterThan(5000);
+    expect(row.fidelity).toBeGreaterThan(0.97);
+  }
 });

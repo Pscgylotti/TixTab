@@ -32,7 +32,7 @@ const resolve = (doc: PDFDocument, value: PDFObject | undefined) =>
   value ? doc.context.lookup(value) : undefined;
 
 /** Maps our bottom-left drawing space to the original, unrotated PDF space.
- * PDF.js displays the intersection of CropBox and MediaBox, in UserUnit units. */
+ * The reading viewport uses the CropBox/MediaBox intersection, in UserUnit units. */
 export function exportPageGeometry(page: PDFPage) {
   const rect = (r: { x: number; y: number; width: number; height: number }) => [
     Math.min(r.x, r.x + r.width),
@@ -319,7 +319,7 @@ function collectGarbage(doc: PDFDocument) {
 }
 
 /** A final annotation appearance follows existing annotations in the PDF array.
- * Some viewers (including PDF.js) reorder widgets above all other annotations. Its resources are private and original page streams stay
+ * Some viewers reorder widgets above all other annotations. The appearance resources are private and original page streams stay
  * untouched. One appearance per edited page avoids a PDF object per ink point. */
 async function appendOverlay(
   doc: PDFDocument,

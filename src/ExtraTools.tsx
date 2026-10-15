@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { Wrench, Images } from 'lucide-react';
 import type { Notebook } from './model';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import AnchoredPopover from './AnchoredPopover';
 import { t } from './i18n';
 const ImageExportDialog = lazy(() => import('./ImageExportDialog'));

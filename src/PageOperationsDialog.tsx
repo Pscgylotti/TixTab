@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, RotateCw, RotateCcw, Crop, Scissors, Undo2 } from 'lucide-react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import PageThumbnail from './PageThumbnail';
 import RegionCapture from './RegionCapture';
 import type { Notebook } from './model';

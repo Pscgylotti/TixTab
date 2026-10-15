@@ -1,6 +1,6 @@
 import { PDFDocument, PDFName, PDFNumber, ParseSpeeds } from 'pdf-lib';
 import type { PdfiumPageInfo } from './pdfiumProtocol';
-import { nativeImageSupport } from './pdfiumImageSupport';
+import { sourceImages } from './pdfSourceImages';
 /** The public PDFium ABI does not expose /UserUnit. Read dictionary attributes
  * in this Worker with the existing export library, then discard its object graph.
  * No image decoding, text extraction or second persistent document is created. */
@@ -36,5 +36,6 @@ export async function sourcePageGeometry(bytes: Uint8Array, check = () => {}) {
       objectNumber: page.ref.objectNumber,
     };
   });
-  return { pages, imageSupport: await nativeImageSupport(doc, check) };
+  const { images, native } = await sourceImages(doc, check);
+  return { pages, images, imageSupport: native };
 }

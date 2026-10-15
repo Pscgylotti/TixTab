@@ -347,7 +347,19 @@
   background: var(--surface);
   padding: 5px;
   border-radius: 5px;
-  pointer-events: none;
+  pointer-events: auto;
+}
+.native-dialog-preview-status {
+  position: absolute;
+  z-index: 3;
+  bottom: 6px;
+  left: 6px;
+  right: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface);
+  border-radius: 6px;
 }
 .native-edits-actions {
   display: flex;

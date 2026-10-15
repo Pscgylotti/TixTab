@@ -12,7 +12,7 @@ import {
   type RefObject,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { PenLine } from 'lucide-react';
 import { PanZoomPointers } from './gestures';
 import { useDeferredZoom } from './useDeferredZoom';
@@ -71,7 +71,7 @@ const ReadingPage = memo(function ReadingPage({
 }) {
   useLocale();
   const nativeLive = useLiveNativeEdit(page.id);
-  const { pdfNight, pdfRenderBackend } = useAppearance(),
+  const { pdfNight } = useAppearance(),
     policy = renderPolicy();
   const root = useRef<HTMLDivElement>(null),
     [visible, setVisible] = useState(false),
@@ -137,7 +137,6 @@ const ReadingPage = memo(function ReadingPage({
     renderScale,
 
     pdfNight,
-    pdfRenderBackend,
     policy.readingPixels,
     policy.dpr,
     policy.baseScale,

@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { createRequire } from 'node:module';
-const { PDFDocument } = createRequire(import.meta.url)('pdf-lib');
+const { PDFDocument, PDFName, PDFDict, PDFString, PDFHexString } = createRequire(import.meta.url)(
+  'pdf-lib',
+);
 import { preservationFixture } from '../scripts/pdf-preservation-fixture.mjs';
 import { mkdir, writeFile } from 'node:fs/promises';
 
@@ -31,14 +33,17 @@ test('export preserves source document fields, annotations, navigation, metadata
     ];
     const outputBytes = await exportPdf(notebook),
       output = await loadPdf(outputBytes),
-      errors = [];
+      errors = [],
+      diagnostics = [];
     for (const [newIndex, oldIndex] of [
       [0, 3],
       [2, 0],
       [3, 1],
       [4, 2],
     ]) {
-      const data = [];
+      const data = [],
+        images = [];
+      let width = 0;
       for (const [doc, index] of [
         [pdf, oldIndex],
         [output, newIndex],
@@ -48,30 +53,59 @@ test('export preserves source document fields, annotations, navigation, metadata
           c = document.createElement('canvas');
         c.width = Math.ceil(vp.width);
         c.height = Math.ceil(vp.height);
-        await p.render({ canvas: c, viewport: vp, annotationMode: 1 }).promise;
+        await p.render({ canvas: c, viewport: vp, widgets: true }).promise;
         data.push(c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data);
+        images.push(c.toDataURL());
+        width = c.width;
       }
       let error = 0;
-      for (let i = 0; i < data[0].length; i++) error += Math.abs(data[0][i] - data[1][i]);
+      const vp = (await pdf.getPage(oldIndex + 1)).getViewport({ scale: 0.5 });
+      const [x0, y0, x1, y1] = vp.convertToViewportRectangle([50, 45, 210, 70]);
+      // Removing a destination deliberately removes its visible link border.
+      // Exclude only that known annotation rectangle from pixel preservation.
+      for (let i = 0; i < data[0].length; i++) {
+        const x = Math.floor(i / 4) % width,
+          y = Math.floor(Math.floor(i / 4) / width);
+        if (
+          oldIndex === 0 &&
+          x >= Math.min(x0, x1) - 1 &&
+          x <= Math.max(x0, x1) + 1 &&
+          y >= Math.min(y0, y1) - 1 &&
+          y <= Math.max(y0, y1) + 1
+        )
+          continue;
+        error += Math.abs(data[0][i] - data[1][i]);
+      }
       errors.push(error / data[0].length);
+      if (error / data[0].length > 0.1) {
+        const xs = [],
+          ys = [];
+        for (let n = 0; n < data[0].length; n += 4)
+          if ([0, 1, 2].some((c) => Math.abs(data[0][n + c] - data[1][n + c]) > 16)) {
+            xs.push((n / 4) % width);
+            ys.push(Math.floor(n / 4 / width));
+          }
+        diagnostics.push({
+          newIndex,
+          oldIndex,
+          images,
+          bbox: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)],
+          pixels: xs.length,
+        });
+      }
     }
-    const fields = await output.getFieldObjects(),
-      dest = await output.getDestination('retained');
+    const dest = await output.getDestination('retained');
     const annotations = await (await output.getPage(3)).getAnnotations();
     const text = await (await output.getPage(3)).getTextContent();
     const out = {
-      fieldObjects: fields,
       bytes: Array.from(outputBytes),
       errors,
-      fields: Object.keys(fields ?? {}),
-      values: Object.fromEntries(
-        Object.entries(fields ?? {}).map(([key, entries]: any) => [
-          key,
-          entries.find((entry: any) => entry.value !== undefined)?.value,
-        ]),
-      ),
-      labels: await output.getPageLabels(),
-      destIndex: dest ? await output.getPageIndex(dest[0]) : null,
+      diagnostics,
+      destIndex: dest
+        ? typeof dest[0] === 'number'
+          ? dest[0]
+          : await output.getPageIndex(dest[0])
+        : null,
       removedDest: await output.getDestination('removed'),
       annotations: annotations.map((a: any) => ({
         subtype: a.subtype,
@@ -87,23 +121,66 @@ test('export preserves source document fields, annotations, navigation, metadata
   }, bytes);
   await mkdir('tmp/pdfs', { recursive: true });
   await writeFile('tmp/pdfs/preservation-export.pdf', new Uint8Array(result.bytes));
-  expect(result.fields.sort()).toEqual(
-    ['checked', 'group', 'group.field-0', 'group.field-1', 'group.field-2', 'group.field-3'].sort(),
-  );
-  expect(result.values['group.field-0']).toBe('value-0');
-  expect(result.values['checked']).toBe('Yes');
+  for (const item of result.diagnostics) {
+    for (let i = 0; i < item.images.length; i++)
+      await writeFile(
+        `tmp/pdfs/preservation-${item.oldIndex}-${i}.png`,
+        Buffer.from(item.images[i].split(',')[1], 'base64'),
+      );
+    console.log(JSON.stringify({ page: item.oldIndex, bbox: item.bbox, pixels: item.pixels }));
+  }
   expect(
     result.errors.every((n) => n < 0.1),
     JSON.stringify(result.errors),
   ).toBe(true);
   expect(result.destIndex).toBe(0);
   expect(result.removedDest).toBeNull();
-  expect(result.labels).toEqual(['11', '2', 'section-iii', 'section-iv', '10']);
-  expect(result.annotations.some((a: any) => a.contents === 'Original note 1')).toBe(true);
   expect(result.annotations.some((a: any) => a.url === 'https://example.com/reference')).toBe(true);
   expect(result.annotations.some((a: any) => a.dest === 'removed')).toBe(false);
   expect(result.text).toContain('Original page 1');
   const output = await PDFDocument.load(new Uint8Array(result.bytes), { updateMetadata: false });
+  const decode = (value: any) =>
+    value instanceof PDFName || value instanceof PDFString || value instanceof PDFHexString
+      ? value.decodeText()
+      : undefined;
+  const fields = Object.fromEntries(
+    output
+      .getForm()
+      .acroForm.getAllFields()
+      .map(([field]: any) => [field.getFullyQualifiedName(), decode(field.V())]),
+  );
+  expect(Object.keys(fields).sort()).toEqual(
+    ['checked', 'group', 'group.field-0', 'group.field-1', 'group.field-2', 'group.field-3'].sort(),
+  );
+  expect(fields['group.field-0']).toBe('value-0');
+  expect(fields.checked).toBe('Yes');
+  const nums = output.catalog.lookup(PDFName.of('PageLabels'), PDFDict).lookup(PDFName.of('Nums'));
+  const labels = [];
+  for (let i = 0; i < nums.size(); i += 2) {
+    const spec = nums.lookup(i + 1, PDFDict);
+    labels.push([
+      nums.lookup(i).asNumber(),
+      decode(spec.lookup(PDFName.of('S'))),
+      spec.lookup(PDFName.of('St')).asNumber(),
+      decode(spec.lookup(PDFName.of('P'))),
+    ]);
+  }
+  expect(labels).toEqual([
+    [0, 'D', 11, undefined],
+    [1, 'D', 2, undefined],
+    [2, 'r', 3, 'section-'],
+    [3, 'r', 4, 'section-'],
+    [4, 'D', 10, undefined],
+  ]);
+  const annotations = output
+    .getPage(2)
+    .node.Annots()
+    .asArray()
+    .map((ref: any) => output.context.lookup(ref, PDFDict));
+  expect(
+    annotations.some((a: any) => decode(a.lookup(PDFName.of('Contents'))) === 'Original note 1'),
+  ).toBe(true);
+
   expect(output.getTitle()).toBe('Preserved document title');
   expect(output.getAuthor()).toBe('TixTab fixture');
   expect(output.getCreationDate()?.toISOString()).toBe('2024-03-02T12:00:00.000Z');
@@ -156,15 +233,15 @@ test('ink and inserted images keep visual coordinates across crop, rotation and 
         out = await loadPdf(outputBytes),
         results = [];
       const { requestPdfBitmap } = await import('/src/pdfRenderCache.ts' as string);
-      // ENABLE_FORMS omits widget painting: PDF.js otherwise reorders widgets above
-      // stamps. Compare complete widget appearances separately in the first test.
+      // Omit the separate widget pass for overlay geometry checks; static form
+      // appearances are checked independently in the preservation fixture.
       for (let i = 1; i <= 4; i++) {
         const p = await out.getPage(i),
           vp = p.getViewport({ scale: 1 }),
           c = document.createElement('canvas');
         c.width = Math.ceil(vp.width);
         c.height = Math.ceil(vp.height);
-        await p.render({ canvas: c, viewport: vp, annotationMode: 2 }).promise;
+        await p.render({ canvas: c, viewport: vp, widgets: false }).promise;
         const data = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
         let count = 0,
           x = 0,

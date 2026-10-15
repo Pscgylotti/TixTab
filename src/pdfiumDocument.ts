@@ -1,44 +1,25 @@
-import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
-import { getPdfRenderBackend } from './appearance';
+import type { PDFDocumentProxy, PDFPageProxy } from './pdfTypes';
+import { renderPdfiumPage } from './pdfiumPageRender';
 import { PdfViewport } from './pdfViewport';
-import { openPdfiumDocument, queryPdfium, renderPdfium, type PdfRasterTask } from './pdfiumRaster';
+import { openPdfiumDocument, queryPdfium } from './pdfiumRaster';
 import type { PdfiumPageInfo } from './pdfiumProtocol';
 import { releasePdfRenderCache } from './pdfRenderCache';
-/** Temporary compatibility boundary. Only remaining image operations open
- * PDF.js; native document/page/navigation/raster operations never need its worker. */
+/** PDFium document facade. All public results are application-owned data. */
 export async function loadPdfiumDocument(input: Uint8Array): Promise<PDFDocumentProxy> {
   let source: Uint8Array | undefined = input,
     closed = false;
-  let legacy: Promise<PDFDocumentProxy> | undefined;
   let metadata: PdfiumPageInfo[] = [];
   const pages = new Map<number, Promise<PDFPageProxy>>();
   const alive = () => {
     if (closed) throw new Error('PDF document closed');
   };
-  const fallback = () => {
-    alive();
-    const bytes = source!;
-    return (legacy ??= import('./pdfLegacy').then(({ loadLegacyPdf }) => {
-      alive();
-      return loadLegacyPdf(bytes);
-    }));
-  };
   const document = {
     numPages: 0,
-    tixtabBackend: 'pdfium',
-    tixtabImageIndex: async (index: number) => {
+    getImages: async (index: number) => {
       alive();
-      try {
-        const result = await queryPdfium(document, { type: 'images', page: index });
-        if (result.type !== 'images') throw new Error('PDF image index unavailable');
-        return result.polygons;
-      } catch (error) {
-        if (!(error instanceof Error) || error.message !== 'PDFium image compatibility required')
-          throw error;
-        const legacyDocument = await fallback();
-        const { getPdfImages } = await import('./pdfNight');
-        return getPdfImages(legacyDocument, index);
-      }
+      const result = await queryPdfium(document, { type: 'images', page: index });
+      if (result.type !== 'images') throw new Error('PDF image index unavailable');
+      return result.polygons;
     },
     getData: async () => {
       alive();
@@ -55,8 +36,6 @@ export async function loadPdfiumDocument(input: Uint8Array): Promise<PDFDocument
         return previous;
       }
       const info = metadata[number - 1];
-      let legacyPage: PDFPageProxy | undefined;
-      const compatibility = async () => (legacyPage ??= await (await fallback()).getPage(number));
       const page = {
         pageNumber: number,
         view: [...info.view],
@@ -76,54 +55,10 @@ export async function loadPdfiumDocument(input: Uint8Array): Promise<PDFDocument
           if (reply.type !== 'annotations') throw new Error('PDF links unavailable');
           return reply.items;
         },
-        get recordedBBoxes() {
-          return legacyPage?.recordedBBoxes ?? null;
-        },
-        set recordedBBoxes(value: unknown) {
-          if (legacyPage) legacyPage.recordedBBoxes = value;
-        },
-        cleanup: () => legacyPage?.cleanup() ?? true,
-        render: (options: Parameters<PDFPageProxy['render']>[0]): PdfRasterTask => {
-          let inner: PdfRasterTask | undefined,
-            cancelled = false;
-          const task: PdfRasterTask = {
-            promise: Promise.resolve(),
-            cancel: () => {
-              cancelled = true;
-              inner?.cancel();
-            },
-          };
-          task.promise = (async () => {
-            alive();
-            const canvas = options.canvas ?? options.canvasContext?.canvas;
-            if (!canvas) throw new Error('PDF render canvas unavailable');
-            const t = options.transform;
-            if (
-              getPdfRenderBackend() !== 'pdfium' ||
-              (t && (t[0] !== 1 || t[1] !== 0 || t[2] !== 0 || t[3] !== 1 || t[4] > 0 || t[5] > 0))
-            ) {
-              inner = (await compatibility()).render(options);
-            } else {
-              inner = renderPdfium(
-                document,
-                number - 1,
-                canvas,
-                Math.ceil(options.viewport.width),
-                Math.ceil(options.viewport.height),
-                {
-                  x: Math.round(-(t?.[4] ?? 0)),
-                  y: Math.round(-(t?.[5] ?? 0)),
-                  width: canvas.width,
-                  height: canvas.height,
-                },
-              );
-            }
-            inner.onContinue = (resume: () => void) =>
-              task.onContinue ? task.onContinue(resume) : resume();
-            if (cancelled) inner.cancel();
-            await inner.promise;
-          })();
-          return task;
+        cleanup: () => true,
+        render: (options: Parameters<PDFPageProxy['render']>[0]) => {
+          alive();
+          return renderPdfiumPage(document, number - 1, info, options);
         },
       } as unknown as PDFPageProxy;
       const ready = Promise.resolve(page);
@@ -150,7 +85,7 @@ export async function loadPdfiumDocument(input: Uint8Array): Promise<PDFDocument
       return index;
     },
     cleanup: async () => {
-      if (legacy) await (await legacy).cleanup();
+      alive();
     },
     destroy: async () => {
       if (closed) return;
@@ -159,12 +94,6 @@ export async function loadPdfiumDocument(input: Uint8Array): Promise<PDFDocument
       pages.clear();
       metadata = [];
       source = undefined;
-      if (legacy) {
-        try {
-          await (await legacy).destroy();
-        } catch {}
-      }
-      legacy = undefined;
     },
   } as unknown as PDFDocumentProxy;
   try {

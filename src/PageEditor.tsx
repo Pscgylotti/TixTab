@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { getPressureMapper } from './pressureCurve';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import {
   Pencil,
   Trash2,

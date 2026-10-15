@@ -1,6 +1,6 @@
 import type { Page, PlacedImage } from './model';
 import { isPicture } from './model';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { inspectBitmapPages } from './bitmapOcr';
 import { bitmapPdfDecoder } from './bitmapPdfDecoder';
 import { canvasPng } from './imageDownload';

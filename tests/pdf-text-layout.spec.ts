@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createRequire } from 'node:module';
 const { PDFDocument, StandardFonts, degrees } = createRequire(import.meta.url)('pdf-lib');
 
-for (const backend of ['pdfjs', 'pdfium']) {
+for (const backend of ['pdfium']) {
   test(`${backend}: vertical arXiv targets follow text, and selection survives view changes`, async ({
     page,
   }) => {
@@ -72,9 +72,7 @@ test('app-owned text layout handles rotated crop/UserUnit, split words, line bre
   const result = await page.evaluate(async () => {
     const { renderPdfTextDom } = await import('/src/pdfTextDom.ts');
     const { PdfViewport } = await import('/src/pdfViewport.ts');
-    const { getLegacyPdfStats } = await import('/src/pdfLegacy.ts');
     const { glyphAtPoint } = await import('/src/textSelection.ts');
-    const before = getLegacyPdfStats().opens;
     const root = document.createElement('div');
     root.className = 'textLayer';
     root.style.cssText = 'position:fixed;left:0;top:100px;z-index:1000';
@@ -126,10 +124,9 @@ test('app-owned text layout handles rotated crop/UserUnit, split words, line bre
     }
     root.remove();
     getSelection()!.removeAllRanges();
-    return { text, rtl, rotations, opens: getLegacyPdfStats().opens - before };
+    return { text, rtl, rotations };
   });
   expect(result.text).toBe('First word\n中文文本');
   expect(result.rtl).toBe(0);
   expect(result.rotations.every((n) => n < 0.1)).toBe(true);
-  expect(result.opens).toBe(0);
 });

@@ -1,5 +1,6 @@
-import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
-export type TextContent = Awaited<ReturnType<PDFPageProxy['getTextContent']>>;
+import type { PDFDocumentProxy, PDFPageProxy } from './pdfTypes';
+import type { TextContent } from './pdfTypes';
+export type { TextContent } from './pdfTypes';
 import { performanceLedger, trackPerformance } from './performanceLedger';
 import { renderPolicy, subscribeAppearance } from './appearance';
 

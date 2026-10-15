@@ -1,7 +1,7 @@
 import WindowsAiOcrSettings from './WindowsAiOcrSettings';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, ScanText } from 'lucide-react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import type { Page } from './model';
 import { t, useLocale } from './i18n';
 import { parsePageRange } from './pdfInsertion';

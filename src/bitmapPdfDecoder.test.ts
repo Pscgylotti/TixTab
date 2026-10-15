@@ -1,46 +1,35 @@
 import { afterEach, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ getDocument: vi.fn(), draw: vi.fn(), stop: vi.fn() }));
-vi.mock('pdfjs-dist', () => ({
-  getDocument: mocks.getDocument,
-  PDFWorker: class {
-    destroy = mocks.stop;
-  },
-}));
-vi.mock('./pdfOriginalImage', () => ({ drawPdfOriginalImage: mocks.draw }));
+const mocks = vi.hoisted(() => ({ create: vi.fn(), draw: vi.fn(), close: vi.fn() }));
+vi.mock('./pdfiumRaster', () => ({ createPdfiumImageDecoder: mocks.create }));
 import { bitmapPdfDecoder } from './bitmapPdfDecoder';
-afterEach(() => {
-  vi.clearAllMocks();
+afterEach(() => vi.resetAllMocks());
+it('terminates a blocked decoder immediately on abort and does not wait for native acknowledgement', async () => {
+  mocks.draw.mockImplementation(() => new Promise(() => {}));
+  mocks.create.mockReturnValue({ draw: mocks.draw, close: mocks.close });
+  const abort = new AbortController(),
+    decoder = bitmapPdfDecoder({} as any, abort.signal);
+  const pending = decoder.draw(0, 0, {} as any);
+  const rejected = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+  await vi.waitFor(() => expect(mocks.draw).toHaveBeenCalled());
+  abort.abort();
+  await rejected;
+  await decoder.close();
+  expect(mocks.close).toHaveBeenCalled();
 });
-it.each(['data', 'load', 'draw', 'cleanup'])(
-  'cancels a stuck %s without waiting for PDF transport acknowledgement',
-  async (stage) => {
-    const never = () => new Promise<any>(() => {});
-    const abort = new AbortController(),
-      destroy = vi.fn(never),
-      cleanup = vi.fn(stage === 'cleanup' ? never : async () => {});
-    const source = { getData: vi.fn(stage === 'data' ? never : async () => new Uint8Array([1])) };
-    mocks.getDocument.mockReturnValue({
-      promise: stage === 'load' ? never() : Promise.resolve({ cleanup }),
-      destroy,
-    });
-    mocks.draw.mockImplementation(stage === 'draw' ? never : async () => true);
-    const decoder = bitmapPdfDecoder(source as any, abort.signal),
-      pending = decoder.draw(0, 0, {} as any);
-    const rejected = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
-    await vi.waitFor(() =>
-      expect(
-        stage === 'data'
-          ? source.getData
-          : stage === 'load'
-            ? mocks.getDocument
-            : stage === 'draw'
-              ? mocks.draw
-              : cleanup,
-      ).toHaveBeenCalled(),
-    );
-    abort.abort();
-    await rejected;
-    await decoder.close();
-    if (stage !== 'data') expect(mocks.stop).toHaveBeenCalled();
-  },
-);
+it('serializes decoding before parallel recognition and reuses only its own batch worker', async () => {
+  let finish!: (value: boolean) => void;
+  mocks.draw
+    .mockImplementationOnce(() => new Promise<boolean>((r) => (finish = r)))
+    .mockResolvedValue(true);
+  mocks.create.mockReturnValue({ draw: mocks.draw, close: mocks.close });
+  const decoder = bitmapPdfDecoder({} as any, new AbortController().signal);
+  const a = decoder.draw(0, 0, {} as any),
+    b = decoder.draw(1, 0, {} as any);
+  await vi.waitFor(() => expect(mocks.draw).toHaveBeenCalledTimes(1));
+  finish(true);
+  await Promise.all([a, b]);
+  await decoder.close();
+  expect(mocks.create).toHaveBeenCalledTimes(1);
+  expect(mocks.draw).toHaveBeenCalledTimes(2);
+  await expect(decoder.draw(2, 0, {} as any)).rejects.toThrow('closed');
+});

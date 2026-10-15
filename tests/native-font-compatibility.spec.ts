@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import { test, expect } from '@playwright/test';
 import { readFile, access, writeFile } from 'node:fs/promises';
-test('a real Type1 subset retains glyphs in PDF.js after appending s', async ({ page }) => {
+test('a real Type1 subset retains glyphs in PDFium after appending s', async ({ page }) => {
   const source = '.cache/page-editing/heading-source.pdf',
     edited = '.cache/page-editing/heading-cold.pdf';
   test.skip(
@@ -48,11 +48,11 @@ test('a real Type1 subset retains glyphs in PDF.js after appending s', async ({ 
     { source: Array.from(await readFile(source)), edited: Array.from(await readFile(edited)) },
   );
   await writeFile(
-    '.cache/page-editing/pdfjs-heading-original.png',
+    '.cache/page-editing/pdfium-heading-original.png',
     Buffer.from(result.original.split(',')[1], 'base64'),
   );
   await writeFile(
-    '.cache/page-editing/pdfjs-heading-edited.png',
+    '.cache/page-editing/pdfium-heading-edited.png',
     Buffer.from(result.edited.split(',')[1], 'base64'),
   );
   expect(result.text).toContain('HRESHOLDs');

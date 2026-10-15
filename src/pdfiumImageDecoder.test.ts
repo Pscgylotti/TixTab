@@ -1,8 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-vi.mock('./appearance', () => ({
-  getPdfRenderBackend: () => 'pdfium',
-  subscribeAppearance: () => () => {},
-}));
+
 import { createPdfiumImageDecoder, getPdfiumStats } from './pdfiumRaster';
 
 afterEach(() => vi.unstubAllGlobals());

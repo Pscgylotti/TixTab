@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { renderPolicy, setPowerMode, setMemoryMode } from './appearance';
 import {
   getPdfRenderStats,
@@ -347,11 +347,8 @@ it('uses a pre-rendered half and renders only its missing half at the same scale
   const full = await requestPdfBitmap(pdf, 0, 1).promise;
   expect(full.height).toBe(801);
   expect(calls).toEqual([
-    { height: 801, transform: undefined },
-    { height: 801, transform: undefined },
+    { height: 400, transform: [1, 0, 0, 1, -0, -0] },
+    { height: 401, transform: [1, 0, 0, 1, -0, -400] },
   ]);
-  expect(clips).toEqual([
-    [0, 0, 600, 402],
-    [0, 398, 600, 403],
-  ]);
+  expect(clips).toEqual([]);
 });

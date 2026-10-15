@@ -116,9 +116,9 @@ for (const name of [
     'Native editor/setup source differs: ' + name,
   );
 assert.equal(
-  entries.filter((name) => /^\/dist\/assets\/pdf-index-worker-[^/]+\.mjs$/.test(name)).length,
+  entries.filter((name) => /^\/dist\/assets\/pdfium\.worker-[^/]+\.js$/.test(name)).length,
   1,
-  'Geometry-only PDF worker must ship',
+  'PDFium worker must ship',
 );
 assert.ok(
   existsSync(archive + '.unpacked/node_modules/@koromix/koffi-win32-x64/win32_x64/koffi.node'),

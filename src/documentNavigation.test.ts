@@ -8,7 +8,7 @@ import {
   findObjectText,
 } from './documentNavigation';
 import { blankPage } from './model';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { PdfViewport } from './pdfViewport';
 it.each([0, 90, 180, 270])(
   'keeps rotated arXiv substring bounds and search aligned at page rotation %s',

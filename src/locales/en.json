@@ -1443,10 +1443,7 @@
   "原生 OCR 仅适用于桌面版本。": "Native OCR requires the desktop application.",
   "原生 OCR 识别失败，请重试。": "Native OCR failed. Please try again.",
   "原生 OCR 返回格式无效": "Invalid native OCR response",
-  "PDF 渲染引擎": "PDF rendering engine",
   "橡皮擦半径": "Eraser radius",
-  "PDFium WASM（实验）": "PDFium WASM (experimental)",
-  "切换后重新渲染页面。实验引擎尚未保证更低的内存占用。": "Pages are re-rendered after switching. Lower memory use is not yet guaranteed for the experimental engine.",
   "原生 Tesseract 模型": "Native Tesseract model",
   "简体中文 + English · Fast": "Simplified Chinese + English · Fast",
   "简体中文 + English · Best": "Simplified Chinese + English · Best",
@@ -1468,5 +1465,9 @@
   "创建识别器": "recognizer creation",
   "准备系统模型": "system model preparation",
   "检查系统模型": "system model readiness check",
-  "加载图片": "image loading"
+  "加载图片": "image loading",
+  "范围内位图数量": "Bitmap count in selected pages",
+  "范围内位图：{0}": "Bitmaps in selected pages: {0}",
+  "位图索引读取失败，请重试。": "Could not read the bitmap index. Please retry.",
+  "暂存预览失败，请重试。": "Draft preview failed. Please retry."
 }

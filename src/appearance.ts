@@ -2,9 +2,9 @@ import { useSyncExternalStore } from 'react';
 export type PowerMode = 'auto' | 'eco' | 'quality';
 export type RenderQuality = 'standard' | 'high' | 'ultra';
 export type MemoryMode = 'normal' | 'minimal';
-export type PdfRenderBackend = 'pdfjs' | 'pdfium';
-let pdfRenderBackend = saved('tixtab.pdfRenderBackend', 'pdfjs') as PdfRenderBackend;
-if (!['pdfjs', 'pdfium'].includes(pdfRenderBackend)) pdfRenderBackend = 'pdfjs';
+try {
+  localStorage.removeItem('tixtab.pdfRenderBackend');
+} catch {}
 let memoryMode = saved('tixtab.memoryMode', 'normal') as MemoryMode;
 if (!['normal', 'minimal'].includes(memoryMode)) memoryMode = 'normal';
 export const preRenderChoices = [0, 0.5, 1, 2, 3, 4] as const;
@@ -51,18 +51,8 @@ export function useAppearance() {
     original,
     preRender: memoryMode === 'minimal' ? 0 : preRender,
     memoryMode,
-    pdfRenderBackend,
     pdfNight: night && !original,
   };
-}
-export const getPdfRenderBackend = () => pdfRenderBackend;
-export function setPdfRenderBackend(value: PdfRenderBackend) {
-  if (!['pdfjs', 'pdfium'].includes(value) || value === pdfRenderBackend) return;
-  pdfRenderBackend = value;
-  try {
-    localStorage.setItem('tixtab.pdfRenderBackend', value);
-  } catch {}
-  changed();
 }
 export function setMemoryMode(value: MemoryMode) {
   if (!['normal', 'minimal'].includes(value)) return;

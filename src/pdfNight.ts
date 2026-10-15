@@ -1,6 +1,6 @@
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { trackPerformance, performanceLedger } from './performanceLedger';
-import { imagePolygons, transformPolygon, polygonBox, type ImagePolygon } from './pdfNightGeometry';
+import { transformPolygon, polygonBox, type ImagePolygon } from './pdfNightGeometry';
 import { renderPolicy, subscribeAppearance } from './appearance';
 let metadata = new WeakMap<PDFDocumentProxy, Map<number, Promise<ImagePolygon[]>>>();
 subscribeAppearance(() => {
@@ -18,45 +18,7 @@ export function getPdfImages(pdf: PDFDocumentProxy, index: number) {
     pages.set(index, promise);
   }
   if (!promise) {
-    promise = trackPerformance('pdf-images', async () => {
-      const custom = (
-        pdf as PDFDocumentProxy & {
-          tixtabImageIndex?: (index: number) => Promise<ImagePolygon[]>;
-        }
-      ).tixtabImageIndex;
-      if (custom) return custom(index);
-      return pdf.getPage(index + 1).then(async (p) => {
-        const { OPS } = await import('pdfjs-dist');
-        // The pinned worker extension returns transforms and image occurrences
-        // only: no image decoder, pixels, font data or renderer object cache.
-        const transport = (
-          pdf as unknown as {
-            _transport?: {
-              messageHandler?: {
-                sendWithPromise: (
-                  name: string,
-                  data: object,
-                ) => Promise<{ fnArray: number[]; argsArray: unknown[][] }>;
-              };
-            };
-          }
-        )._transport;
-        if (transport?.messageHandler)
-          return imagePolygons(
-            await transport.messageHandler.sendWithPromise('TixTabImageIndex', {
-              pageIndex: index,
-            }),
-            OPS,
-          );
-        // Lightweight test/embedded proxies without our worker still release
-        // temporary operator lists after collecting the geometry.
-        try {
-          return imagePolygons(await p.getOperatorList(), OPS);
-        } finally {
-          p.cleanup?.();
-        }
-      });
-    });
+    promise = trackPerformance('pdf-images', () => pdf.getImages(index));
     pages.set(index, promise);
     if (pages.size > (renderPolicy().minimal ? 2 : 128)) pages.delete(pages.keys().next().value!);
     promise.catch(() => pages!.delete(index));

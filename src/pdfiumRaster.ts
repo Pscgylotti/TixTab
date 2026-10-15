@@ -1,5 +1,5 @@
-import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
-import { getPdfRenderBackend, subscribeAppearance } from './appearance';
+import type { PDFDocumentProxy, RenderTask } from './pdfTypes';
+import type { SourceImage } from './pdfSourceImages';
 import type { PdfiumRequest, PdfiumResponse, PdfiumRegion, PdfiumPageInfo } from './pdfiumProtocol';
 import { abortWait } from './abortWait';
 
@@ -68,12 +68,14 @@ class Session {
   closed = false;
   pages: PdfiumPageInfo[] = [];
   imageSupport: boolean[] = [];
+  images: SourceImage[][] = [];
   private readonly lifetime = new AbortController();
   constructor(
     pdf: PDFDocumentProxy,
     owned?: Uint8Array,
     readonly engine = (resident ??= new Engine()),
     imageSupport?: boolean[],
+    images?: SourceImage[][],
   ) {
     live.add(this);
     const loadTimeout = setTimeout(
@@ -87,7 +89,7 @@ class Session {
       // result directly rather than cloning the entire file a second time.
       const bytes = owned ?? (this.engine.isolated ? data : data.slice());
       await this.request(
-        { type: 'open', id: ++sequence, documentId: this.documentId, bytes, imageSupport },
+        { type: 'open', id: ++sequence, documentId: this.documentId, bytes, imageSupport, images },
         [bytes.buffer],
       );
     })().finally(() => clearTimeout(loadTimeout));
@@ -117,6 +119,7 @@ class Session {
       if (data.type === 'opened') {
         this.pages = data.pages;
         this.imageSupport = data.imageSupport ?? [];
+        this.images = data.images;
       }
       if (data.type === 'rendered') {
         this.engine.heapBytes = data.heapBytes;
@@ -142,6 +145,7 @@ class Session {
     this.pending.clear();
     this.pages = [];
     this.imageSupport = [];
+    this.images = [];
     live.delete(this);
     if (release) {
       if (this.engine.isolated) this.engine.fail(error);
@@ -194,6 +198,7 @@ class Session {
     region: PdfiumRegion,
     signal: AbortSignal,
     onContinue: Pending['onContinue'],
+    widgets = true,
   ) {
     return this.request(
       {
@@ -204,6 +209,7 @@ class Session {
         fullWidth,
         fullHeight,
         region,
+        widgets,
       },
       [],
       signal,
@@ -240,9 +246,6 @@ export function releasePdfium(pdf: PDFDocumentProxy) {
   sessions.get(pdf)?.close();
   sessions.delete(pdf);
 }
-subscribeAppearance(() => {
-  if (getPdfRenderBackend() !== 'pdfium') for (const session of [...live]) session.close();
-});
 export function getPdfiumStats() {
   return {
     workers: resident ? 1 : 0,
@@ -268,7 +271,7 @@ export function createPdfiumImageDecoder(
     owner && !owner.closed && owner.imageSupport.length === pdf.numPages
       ? [...owner.imageSupport]
       : undefined;
-  const session = new Session(pdf, undefined, new Engine(true), hints);
+  const session = new Session(pdf, undefined, new Engine(true), hints, owner?.images);
   const abort = () => session.close();
   signal.addEventListener('abort', abort, { once: true });
   if (signal.aborted) abort();
@@ -314,6 +317,7 @@ export function renderPdfium(
   fullWidth: number,
   fullHeight: number,
   region: PdfiumRegion,
+  widgets = true,
 ): PdfRasterTask {
   const abort = new AbortController();
   const task: PdfRasterTask = { cancel: () => abort.abort(), promise: Promise.resolve() };
@@ -328,6 +332,7 @@ export function renderPdfium(
       region,
       abort.signal,
       (resume) => (task.onContinue ? task.onContinue(resume) : resume()),
+      widgets,
     );
     if (reply.type !== 'rendered') throw new Error('PDFium bitmap missing');
     try {

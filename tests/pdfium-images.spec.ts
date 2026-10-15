@@ -31,6 +31,26 @@ async function fixture(kind = 'ordinary') {
   );
   for (let i = 0; i < 3; i++) {
     const p = doc.addPage([400, 600]);
+    if (kind === 'softmask') {
+      const mask = doc.context.register(
+        doc.context.flateStream('0.5 g 0 0 400 600 re f', {
+          Type: 'XObject',
+          Subtype: 'Form',
+          BBox: [0, 0, 400, 600],
+          Group: { S: 'Transparency', CS: 'DeviceGray' },
+        }),
+      );
+      const state = p.node.newExtGState(
+        'PageMask',
+        doc.context.register(
+          doc.context.obj({ Type: 'ExtGState', SMask: { S: 'Luminosity', G: mask } }),
+        ),
+      );
+      p.node.addContentStream(
+        doc.context.register(doc.context.flateStream(`q ${state.toString()} gs`)),
+      );
+    }
+
     p.drawImage(image, {
       x: 30,
       y: 100,
@@ -121,39 +141,66 @@ async function fixture(kind = 'ordinary') {
   return Array.from(await doc.save());
 }
 
-test('native image ordering/transforms agree with the old index; source pixels, alpha and decoder lifetime stay bounded', async ({
+test('native image ordering/transforms match source geometry; source pixels, alpha and decoder lifetime stay bounded', async ({
   page,
 }) => {
   await page.goto('/');
   const result = await page.evaluate(
     async (bytes) => {
-      const { loadLegacyPdf, getLegacyPdfStats } = await import('/src/pdfLegacy.ts');
       const { loadPdfiumDocument } = await import('/src/pdfiumDocument.ts');
       const { getPdfImages } = await import('/src/pdfNight.ts');
       const { drawPdfOriginalImage } = await import('/src/pdfOriginalImage.ts');
       const { bitmapPdfDecoder } = await import('/src/bitmapPdfDecoder.ts');
       const { getPdfiumStats } = await import('/src/pdfiumRaster.ts');
-      const { setPdfRenderBackend } = await import('/src/appearance.ts');
-      setPdfRenderBackend('pdfium');
-      const reference = await loadLegacyPdf(new Uint8Array(bytes)),
-        native = await loadPdfiumDocument(new Uint8Array(bytes));
-      const before = getLegacyPdfStats().opens;
+      const native = await loadPdfiumDocument(new Uint8Array(bytes));
       try {
         const expected = [],
           actual = [];
         for (let i = 0; i < 3; i++) {
-          expected.push(await getPdfImages(reference, i));
+          const angle = (20 * Math.PI) / 180,
+            c = Math.cos(angle),
+            s = Math.sin(angle);
+          expected.push([
+            [30, 100, 110, 100, 110, 160, 30, 160],
+            [
+              200,
+              200,
+              200 + 90 * c,
+              200 + 90 * s,
+              200 + 90 * c - 70 * s,
+              200 + 90 * s + 70 * c,
+              200 - 70 * s,
+              200 + 70 * c,
+            ],
+            [132, 375, 181.2, 382, 187.2, 417, 138, 410],
+          ]);
           actual.push(await getPdfImages(native, i));
         }
-        const opensAfterIndex = getLegacyPdfStats().opens - before;
         const a = document.createElement('canvas'),
           b = document.createElement('canvas'),
           signal = new AbortController().signal;
         const referencePixels = [],
           nativePixels = [],
-          decoderOpens = [];
+          decodedImages = [];
         for (let i = 0; i < 3; i++) {
-          await drawPdfOriginalImage(reference, 0, i, a, signal);
+          a.width = 64;
+          a.height = 48;
+          const ctx = a.getContext('2d')!,
+            pixels = ctx.createImageData(64, 48);
+          for (let y = 0; y < 48; y++)
+            for (let x = 0; x < 64; x++) {
+              const at = (y * 64 + x) * 4;
+              pixels.data.set(
+                [
+                  x < 32 ? 230 : 20,
+                  y < 24 ? 190 : 30,
+                  x >= 32 ? 220 : 10,
+                  x < 8 && y < 8 ? 0 : 255,
+                ],
+                at,
+              );
+            }
+          ctx.putImageData(pixels, 0, 0);
           if (!(await drawPdfOriginalImage(native, 0, i, b, signal)))
             throw Error('Native original unavailable');
           referencePixels.push({
@@ -164,7 +211,7 @@ test('native image ordering/transforms agree with the old index; source pixels, 
             size: [b.width, b.height],
             data: Array.from(b.getContext('2d')!.getImageData(0, 0, b.width, b.height).data),
           });
-          decoderOpens.push(getLegacyPdfStats().opens - before);
+          decodedImages.push(i);
         }
         const decoder = bitmapPdfDecoder(native, signal, 768),
           sizes = [];
@@ -181,17 +228,14 @@ test('native image ordering/transforms agree with the old index; source pixels, 
         return {
           expected,
           actual,
-          opensAfterIndex,
-          opensAfterDecode: getLegacyPdfStats().opens - before,
           referencePixels,
           nativePixels,
-          decoderOpens,
+          decodedImages,
           sizes,
           after,
         };
       } finally {
         await native.destroy();
-        await reference.destroy();
       }
     },
     await fixture(),
@@ -215,39 +259,56 @@ test('native image ordering/transforms agree with the old index; source pixels, 
     expect(alphaError).toBeLessThanOrEqual(2);
     expect(colorError).toBeLessThanOrEqual(2);
   }
-  expect(result.opensAfterIndex).toBe(0);
-  // Clipped-source compatibility owns a temporary worker, never a second
-  // persistent reader/parser on the PDFium facade.
-  expect(result.decoderOpens).toEqual([0, 0, 0]);
-  expect(result.opensAfterDecode).toBe(0);
+  expect(result.decodedImages).toEqual([0, 1, 2]);
   expect(result.sizes.every((size) => size <= 768)).toBe(true);
   expect(result.after.decoderWorkers).toBe(0);
 });
 
-for (const kind of ['stencil', 'inline', 'appearance', 'opacity'])
-  test(`${kind}: preserves legacy image IDs and pixels through explicit compatibility`, async ({
+for (const kind of ['stencil', 'inline', 'appearance', 'opacity', 'softmask'])
+  test(`${kind}: preserves legacy image IDs and pixels without a second engine`, async ({
     page,
   }) => {
     await page.goto('/');
     const result = await page.evaluate(
-      async (bytes) => {
-        const { loadLegacyPdf } = await import('/src/pdfLegacy.ts');
+      async ({ bytes, kind }) => {
         const { loadPdfiumDocument } = await import('/src/pdfiumDocument.ts');
         const { getPdfImages } = await import('/src/pdfNight.ts');
         const { bitmapPdfDecoder } = await import('/src/bitmapPdfDecoder.ts');
         const { getPdfiumStats } = await import('/src/pdfiumRaster.ts');
-        const { setPdfRenderBackend } = await import('/src/appearance.ts');
-        setPdfRenderBackend('pdfium');
-        const a = await loadLegacyPdf(new Uint8Array(bytes)),
-          b = await loadPdfiumDocument(new Uint8Array(bytes));
+        const b = await loadPdfiumDocument(new Uint8Array(bytes));
         const canvas = document.createElement('canvas'),
           decoder = bitmapPdfDecoder(b, new AbortController().signal);
         try {
-          const expected = await getPdfImages(a, 0),
-            actual = await getPdfImages(b, 0);
+          const actual = await getPdfImages(b, 0);
+          const angle = (20 * Math.PI) / 180,
+            c = Math.cos(angle),
+            s = Math.sin(angle);
+          const expected = [
+            [30, 100, 110, 100, 110, 160, 30, 160],
+            [
+              200,
+              200,
+              200 + 90 * c,
+              200 + 90 * s,
+              200 + 90 * c - 70 * s,
+              200 + 90 * s + 70 * c,
+              200 - 70 * s,
+              200 + 70 * c,
+            ],
+            [132, 375, 181.2, 382, 187.2, 417, 138, 410],
+          ];
+          if (kind === 'inline') expected.push([10, 10, 20, 10, 20, 20, 10, 20]);
+          if (kind === 'appearance') expected.push([10, 20, 50, 20, 50, 60, 10, 60]);
           const decoded = await decoder.draw(0, 0, canvas);
+          const decodedSizes = [];
+          for (let i = 0; i < actual.length; i++) {
+            if (!(await decoder.draw(0, i, canvas))) throw Error('image missing');
+            decodedSizes.push([canvas.width, canvas.height]);
+          }
+          await decoder.draw(0, 0, canvas);
           await decoder.close();
           return {
+            decodedSizes,
             expected,
             actual,
             decoded,
@@ -257,15 +318,24 @@ for (const kind of ['stencil', 'inline', 'appearance', 'opacity'])
           };
         } finally {
           await decoder.close();
-          await a.destroy();
           await b.destroy();
           canvas.width = canvas.height = 1;
         }
       },
-      await fixture(kind),
+      { bytes: await fixture(kind), kind },
     );
-    expect(result.actual).toEqual(result.expected);
+    expect(result.actual).toHaveLength(result.expected.length);
+    result.actual.forEach((quad, i) =>
+      quad.forEach((n, j) => expect(n).toBeCloseTo(result.expected[i][j], 3)),
+    );
     expect(result.decoded).toBe(true);
+    expect(
+      result.decodedSizes.every(
+        (v, i) =>
+          v[0] === (kind === 'inline' && i === 3 ? 1 : 64) &&
+          v[1] === (kind === 'inline' && i === 3 ? 1 : 48),
+      ),
+    ).toBe(true);
     expect(result.size).toEqual([64, 48]);
     expect(result.alpha).toBe(255);
     expect(result.after.decoderWorkers).toBe(0);
@@ -280,9 +350,7 @@ test('ordinary bitmap batches never open PDF.js and release every decoder worker
       const { loadPdfiumDocument } = await import('/src/pdfiumDocument.ts');
       const { bitmapPdfDecoder } = await import('/src/bitmapPdfDecoder.ts');
       const { getPdfImages } = await import('/src/pdfNight.ts');
-      const { getLegacyPdfStats } = await import('/src/pdfLegacy.ts');
       const { getPdfiumStats } = await import('/src/pdfiumRaster.ts');
-      const { setPdfRenderBackend } = await import('/src/appearance.ts');
       const NativeWorker = window.Worker;
       let created = 0,
         terminated = 0,
@@ -298,9 +366,7 @@ test('ordinary bitmap batches never open PDF.js and release every decoder worker
           super.terminate();
         }
       };
-      setPdfRenderBackend('pdfium');
-      const opens = getLegacyPdfStats().opens,
-        pdf = await loadPdfiumDocument(new Uint8Array(bytes)),
+      const pdf = await loadPdfiumDocument(new Uint8Array(bytes)),
         sizes = [],
         workers = [];
       try {
@@ -347,7 +413,6 @@ test('ordinary bitmap batches never open PDF.js and release every decoder worker
           workers,
           sizes,
           cancelled,
-          opens: getLegacyPdfStats().opens - opens,
           stats: getPdfiumStats(),
         };
       } finally {
@@ -357,7 +422,6 @@ test('ordinary bitmap batches never open PDF.js and release every decoder worker
     },
     await fixture('scan'),
   );
-  expect(result.opens).toBe(0);
   expect(result.nonNativeCreated).toBe(0);
   expect(result.created - result.terminated).toBe(1);
   expect(result.workers).toEqual([0, 0, 0]);

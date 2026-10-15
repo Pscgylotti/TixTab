@@ -1,4 +1,5 @@
 import type { TextContent } from './pdfTextContent';
+import type { SourceImage } from './pdfSourceImages';
 export interface PdfiumRegion {
   x: number;
   y: number;
@@ -18,7 +19,14 @@ export interface PdfiumOutline {
   items: PdfiumOutline[];
 }
 export type PdfiumRequest =
-  | { type: 'open'; id: number; documentId: number; bytes: Uint8Array; imageSupport?: boolean[] }
+  | {
+      type: 'open';
+      id: number;
+      documentId: number;
+      bytes: Uint8Array;
+      imageSupport?: boolean[];
+      images?: SourceImage[][];
+    }
   | { type: 'release'; id: number; documentId: number }
   | { type: 'outline'; id: number; documentId: number }
   | { type: 'destination'; id: number; documentId: number; name: string }
@@ -41,6 +49,7 @@ export type PdfiumRequest =
       fullWidth: number;
       fullHeight: number;
       region: PdfiumRegion;
+      widgets?: boolean;
     }
   | { type: 'cancel'; id: number }
   | { type: 'resume'; id: number };
@@ -51,6 +60,7 @@ export type PdfiumResponse =
       documents: number;
       pages: PdfiumPageInfo[];
       imageSupport?: boolean[];
+      images: SourceImage[][];
     }
   | { type: 'outline'; id: number; items: PdfiumOutline[] }
   | { type: 'destination'; id: number; dest: unknown[] | null }

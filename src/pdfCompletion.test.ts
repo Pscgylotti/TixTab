@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 const night = vi.hoisted(() => ({ apply: vi.fn(() => Promise.resolve()) }));
 vi.mock('./pdfNight', () => ({ applyPdfNight: night.apply }));
 afterEach(() => {

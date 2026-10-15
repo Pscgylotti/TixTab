@@ -1,4 +1,4 @@
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { renderPolicy, subscribeAppearance } from './appearance';
 import type { Page, PlacedImage } from './model';
 import { readPdfTextContent } from './pdfTextContent';

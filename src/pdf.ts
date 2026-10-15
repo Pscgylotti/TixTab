@@ -1,15 +1,9 @@
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { uid, type Notebook } from './model';
 import { trackPerformance } from './performanceLedger';
 import { releasePdfRenderCache } from './pdfRenderCache';
-import { getPdfRenderBackend } from './appearance';
 export { exportPdf, SignedPdfExportError } from './pdfExportClient';
 export type { PdfExportProgress } from './pdfExportClient';
-export function pdfDocumentBackend(pdf: PDFDocumentProxy | null) {
-  return (pdf as unknown as { tixtabBackend?: string } | null)?.tixtabBackend === 'pdfium'
-    ? 'pdfium'
-    : 'pdfjs';
-}
 export function destroyPdf(pdf: PDFDocumentProxy | null | undefined) {
   if (!pdf) return Promise.resolve();
   releasePdfRenderCache(pdf);
@@ -17,9 +11,7 @@ export function destroyPdf(pdf: PDFDocumentProxy | null | undefined) {
 }
 export async function loadPdf(bytes: Uint8Array) {
   return trackPerformance('pdf-document', async () =>
-    getPdfRenderBackend() === 'pdfium'
-      ? (await import('./pdfiumDocument')).loadPdfiumDocument(bytes)
-      : (await import('./pdfLegacy')).loadLegacyPdf(bytes),
+    (await import('./pdfiumDocument')).loadPdfiumDocument(bytes),
   );
 }
 export async function importPdf(

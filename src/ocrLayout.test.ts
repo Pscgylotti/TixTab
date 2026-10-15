@@ -1,5 +1,4 @@
 import { test, expect, vi } from 'vitest';
-vi.mock('pdfjs-dist', () => ({ Util: {} }));
 import { normalizeOcr, tesseractLines, validOcr } from './ocrLayout';
 import { findBitmapText } from './documentNavigation';
 import { blankPage, newNotebook, validNotebook } from './model';

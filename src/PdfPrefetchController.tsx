@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import type { Page } from './model';
 import { useAppearance, renderPolicy, pageRenderScale } from './appearance';
 import { hasPdfBitmap, requestPdfBitmap, requestPdfHalf } from './pdfRenderCache';
@@ -76,7 +76,6 @@ export default function PdfPrefetch({
     mode,
     appearance.preRender,
     appearance.pdfNight,
-    appearance.pdfRenderBackend,
     appearance.mode,
     appearance.quality,
     appearance.battery,

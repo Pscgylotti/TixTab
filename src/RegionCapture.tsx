@@ -1,6 +1,7 @@
 import { t as tr, useLocale } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import type { PageRegion } from './capturePage';
+import { clippedCaptureBox } from './captureGeometry';
 export default function RegionCapture({
   onCapture,
   onClose,
@@ -50,10 +51,35 @@ export default function RegionCapture({
       aria-label={tr(label)}
       aria-modal="true"
       onPointerDown={(e) => {
-        if ((e.target as HTMLElement).closest('button') || contact.current) return;
-        const paper = document
-          .elementsFromPoint(e.clientX, e.clientY)
-          .find((el) => el.matches('.paper,.reading-paper')) as HTMLElement | undefined;
+        if ((e.target as HTMLElement).closest('.capture-hint') || contact.current || e.button !== 0)
+          return;
+        const area = e.currentTarget.getBoundingClientRect();
+        let paper: HTMLElement | undefined,
+          distance = Infinity;
+        for (const candidate of document.querySelectorAll<HTMLElement>('.paper,.reading-paper')) {
+          if (
+            targetPageId &&
+            candidate.closest<HTMLElement>('[data-page-id]')?.dataset.pageId !== targetPageId
+          )
+            continue;
+          const bounds = candidate.getBoundingClientRect();
+          if (
+            !bounds.width ||
+            !bounds.height ||
+            bounds.right <= area.left ||
+            bounds.left >= area.right ||
+            bounds.bottom <= area.top ||
+            bounds.top >= area.bottom
+          )
+            continue;
+          const dx = Math.max(bounds.left - e.clientX, 0, e.clientX - bounds.right),
+            dy = Math.max(bounds.top - e.clientY, 0, e.clientY - bounds.bottom),
+            d = dx * dx + dy * dy;
+          if (d < distance) {
+            paper = candidate;
+            distance = d;
+          }
+        }
         if (!paper) return;
         const pageId = paper.closest<HTMLElement>('[data-page-id]')?.dataset.pageId ?? null;
         if (targetPageId && pageId !== targetPageId) return;
@@ -70,36 +96,32 @@ export default function RegionCapture({
         };
         e.currentTarget.setPointerCapture(e.pointerId);
         e.preventDefault();
-        setBox({ x: e.clientX, y: e.clientY, width: 0, height: 0 });
+        setBox(clippedCaptureBox(rect, e.clientX, e.clientY, e.clientX, e.clientY));
       }}
       onPointerMove={(e) => {
         const c = contact.current;
         if (c?.id !== e.pointerId) return;
-        const x = Math.max(c.rect.left, Math.min(c.rect.right, e.clientX)),
-          y = Math.max(c.rect.top, Math.min(c.rect.bottom, e.clientY));
-        setBox({
-          x: Math.min(c.x, x),
-          y: Math.min(c.y, y),
-          width: Math.abs(x - c.x),
-          height: Math.abs(y - c.y),
-        });
+        setBox(clippedCaptureBox(c.rect, c.x, c.y, e.clientX, e.clientY));
       }}
       onPointerUp={(e) => {
         const c = contact.current;
         if (c?.id !== e.pointerId) return;
         contact.current = null;
-        const x = Math.max(c.rect.left, Math.min(c.rect.right, e.clientX)),
-          y = Math.max(c.rect.top, Math.min(c.rect.bottom, e.clientY));
+        const sampled = clippedCaptureBox(c.rect, c.x, c.y, e.clientX, e.clientY);
         const region = {
-          x: ((Math.min(c.x, x) - c.rect.left) / c.rect.width) * c.width,
-          y: ((Math.min(c.y, y) - c.rect.top) / c.rect.height) * c.height,
-          width: (Math.abs(x - c.x) / c.rect.width) * c.width,
-          height: (Math.abs(y - c.y) / c.rect.height) * c.height,
+          x: ((sampled.x - c.rect.left) / c.rect.width) * c.width,
+          y: ((sampled.y - c.rect.top) / c.rect.height) * c.height,
+          width: (sampled.width / c.rect.width) * c.width,
+          height: (sampled.height / c.rect.height) * c.height,
         };
         if (region.width > 4 && region.height > 4) onCapture(c.pageId, region);
         else setBox(null);
       }}
       onPointerCancel={() => {
+        contact.current = null;
+        setBox(null);
+      }}
+      onLostPointerCapture={() => {
         contact.current = null;
         setBox(null);
       }}

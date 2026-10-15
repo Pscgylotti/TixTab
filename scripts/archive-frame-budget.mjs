@@ -64,7 +64,10 @@ if (values.mode === 'create') {
           await readFile(`.cache/pdf-frame-budget-${phase}${suffix}.${ext}`),
         );
   for (const file of tools) await add('sources/' + file + '.gz', await readFile(file));
-  await add('dependency/pdf.mjs.gz', await readFile('node_modules/pdfjs-dist/build/pdf.mjs'));
+  await add(
+    'dependency/pdfium.wasm.gz',
+    await readFile('node_modules/@embedpdf/pdfium/dist/pdfium.wasm'),
+  );
   for (const a of report.objectDownloads) {
     const bytes = await readFile(a.path);
     assert.equal(sha(bytes), a.sha256);

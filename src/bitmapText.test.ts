@@ -1,5 +1,4 @@
 import { expect, test, vi } from 'vitest';
-vi.mock('pdfjs-dist', () => ({ Util: {} }));
 import { bitmapSelectionWords, bitmapTextLines, projectOcrPolygon } from './bitmapText';
 import { blankPage } from './model';
 

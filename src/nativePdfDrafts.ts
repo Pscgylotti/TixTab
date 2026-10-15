@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { uid, type Notebook, type Page } from './model';
 import type { NativePdfEdit, NativePdfRequest, NativePdfReply } from './pdfNativeTypes';
+import { abortWait } from './abortWait';
 let queue: Promise<unknown> = Promise.resolve();
 export function runPdfEditor(
   request: NativePdfRequest,
@@ -15,7 +16,7 @@ export function runPdfEditor(
     };
     signal?.addEventListener('abort', cancel, { once: true });
     try {
-      return await bridge.run(request);
+      return await (signal ? abortWait(bridge.run(request), signal) : bridge.run(request));
     } finally {
       signal?.removeEventListener('abort', cancel);
     }

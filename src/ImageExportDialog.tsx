@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import type { Notebook } from './model';
 import { X, Download } from 'lucide-react';
 import { t, useLocale } from './i18n';
 import { scopePages } from './pageOperations';
 import { chooseImageDirectory, exportBitmapImages, type ImageExportProgress } from './imageExport';
+import { inspectBitmapPages } from './bitmapOcr';
 export default function ImageExportDialog({
   notebook,
   pdf,
@@ -25,6 +26,44 @@ export default function ImageExportDialog({
     [progress, setProgress] = useState<ImageExportProgress | null>(null);
   const controller = useRef<AbortController | null>(null),
     alive = useRef(true);
+  const [count, setCount] = useState<{ total: number | null; error: string }>({
+    total: null,
+    error: '',
+  });
+  const [countRetry, setCountRetry] = useState(0);
+  useEffect(() => {
+    const abort = new AbortController();
+    setCount({ total: null, error: '' });
+    setProgress(null);
+    setStatus('');
+    const timer = setTimeout(
+      () => {
+        void (async () => {
+          const selected = scopePages(scope, range, index, notebook.pages.length).map(
+            (i) => notebook.pages[i],
+          );
+          const inventory = await inspectBitmapPages(selected, pdf, abort.signal);
+          const total = inventory.total;
+          inventory.pdfImages.clear();
+          if (!abort.signal.aborted) setCount({ total, error: '' });
+        })().catch((error) => {
+          if (!abort.signal.aborted)
+            setCount({
+              total: null,
+              error:
+                error instanceof Error && error.message === 'page-range'
+                  ? '页码范围无效。'
+                  : '位图索引读取失败，请重试。',
+            });
+        });
+      },
+      scope === 'range' ? 180 : 0,
+    );
+    return () => {
+      clearTimeout(timer);
+      abort.abort();
+    };
+  }, [scope, range, index, notebook.pages, pdf, countRetry]);
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -120,6 +159,18 @@ export default function ImageExportDialog({
               onChange={(e) => setRange(e.target.value)}
             />
           )}
+          <p className="muted" aria-live="polite" aria-label={t('范围内位图数量')}>
+            {count.error
+              ? t(count.error)
+              : count.total === null
+                ? t('正在统计位图…')
+                : t('范围内位图：{0}', count.total)}
+            {count.error && (
+              <button type="button" onClick={() => setCountRetry((n) => n + 1)}>
+                {t('重试')}
+              </button>
+            )}
+          </p>
           <p className="muted">
             {t('按原色逐张保存为 PNG，包含插入的位图。超过 6400 万像素或不支持的图片会跳过。')}
           </p>
@@ -145,7 +196,11 @@ export default function ImageExportDialog({
           {busy ? (
             <button onClick={() => controller.current?.abort()}>{t('停止')}</button>
           ) : (
-            <button className="primary" onClick={() => void start()}>
+            <button
+              className="primary"
+              disabled={count.total === null || count.total === 0}
+              onClick={() => void start()}
+            >
               <Download size={16} />
               {t('选择目录并提取')}
             </button>

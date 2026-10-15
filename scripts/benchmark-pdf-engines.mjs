@@ -83,7 +83,7 @@ try {
     { label: 'scanned-book', route: 'book', first, last },
     { label: 'vector-text', route: 'vector', first: 1, last: 12 },
   ]) {
-    for (const backend of ['pdfjs', 'pdfium']) {
+    for (const backend of ['pdfium']) {
       const browser = await chromium.launch({
         executablePath:
           process.env.SURFACETAB_CHROME ||
@@ -109,8 +109,6 @@ try {
           async ({ url, backend }) => {
             const { loadPdf } = await import('/src/pdf.ts');
             const { renderPdfium } = await import('/src/pdfiumRaster.ts');
-            const { setPdfRenderBackend } = await import('/src/appearance.ts');
-            setPdfRenderBackend(backend);
             const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
             const start = performance.now();
             const pdf = await loadPdf(bytes);
@@ -251,7 +249,7 @@ const sources = Object.fromEntries(
 const report = {
   timestamp: new Date().toISOString(),
   methodology:
-    'One pass per engine/input in a fresh browser. Identical output pixel budget, sequential pages, no page raster cache, page resources released between pages. PDFium uses the current hybrid adapter (PDF.js metadata remains); raster time includes worker transport and canvas presentation. First frame includes lazy WASM initialization/document import. Initialized engine remains resident after document close; closure waits for pending release messages. No repeated-run means or energy claims. Process memory is summed over this browser process tree at three checkpoints; sampled maximum is not a true peak. CPU time includes document setup and browser work.',
+    'One pass per engine/input in a fresh browser. Identical output pixel budget, sequential pages, no page raster cache, page resources released between pages. PDFium is the sole document engine; raster time includes worker transport and canvas presentation. First frame includes lazy WASM initialization/document import. Initialized engine remains resident after document close; closure waits for pending release messages. No repeated-run means or energy claims. Process memory is summed over this browser process tree at three checkpoints; sampled maximum is not a true peak. CPU time includes document setup and browser work.',
   sources,
   results,
 };

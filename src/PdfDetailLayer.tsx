@@ -1,6 +1,6 @@
 import { useAppearance, renderPolicy, renderDensity } from './appearance';
 import { memo, useEffect, useRef, useState, type RefObject } from 'react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { requestPdfTile, renderingCancelled, type PdfPixelRegion } from './pdfRenderCache';
 import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
 import { planPdfTiles, type TilePlan } from './pdfTiles';
@@ -24,7 +24,7 @@ const DetailTile = memo(function DetailTile({
   tile: PdfPixelRegion;
   priority: number;
 }) {
-  const { pdfNight, pdfRenderBackend } = useAppearance();
+  const { pdfNight } = useAppearance();
   const { host, display, recovery } = usePdfBitmapDisplay();
   const [ready, setReady] = useState(false),
     [error, setError] = useState(false);
@@ -56,7 +56,6 @@ const DetailTile = memo(function DetailTile({
     tile.height,
     priority,
     pdfNight,
-    pdfRenderBackend,
     recovery,
   ]);
   return (

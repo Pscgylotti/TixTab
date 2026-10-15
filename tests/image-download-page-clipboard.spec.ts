@@ -246,6 +246,12 @@ test('extra image tool exports current/all/range PNGs to the selected folder', a
     await page.evaluate(() => ((window as any).__savedImages = []));
     await dialog.getByLabel('页面范围', { exact: true }).selectOption(scope);
     if (scope === 'range') await dialog.getByLabel('指定页码').fill('2');
+    await expect(dialog.getByLabel('范围内位图数量')).toHaveText(`范围内位图：${count}`);
+    expect(
+      await page.evaluate(
+        async () => (await import('/src/pdfiumRaster.ts')).getPdfiumStats().decoderWorkers,
+      ),
+    ).toBe(0);
     await dialog.getByRole('button', { name: '选择目录并提取', exact: true }).click();
     await expect(dialog.getByRole('status')).toHaveText('图片提取完成。');
     const saved = await page.evaluate(() => (window as any).__savedImages);
@@ -282,13 +288,7 @@ test('batch export releases each canvas and its decoder worker; cancellation lea
         }
       };
       const pdf = await loadPdf(new Uint8Array(bytes));
-      let messages = 0;
-      const handler = (pdf as any)._transport.messageHandler.actionHandler,
-        original = handler.obj;
-      handler.obj = (data: any) => {
-        if (data[2] === 'Image') messages++;
-        return original(data);
-      };
+      const { getPdfiumStats } = await import('/src/pdfiumRaster.ts');
       const pages = Array.from({ length: 5 }, (_, i) => ({
         id: String(i),
         sourceIndex: i,
@@ -323,7 +323,7 @@ test('batch export releases each canvas and its decoder worker; cancellation lea
         abort.signal,
         () => {},
       );
-      const ownership = { created, terminated, messages };
+      const ownership = { created, terminated, decoders: getPdfiumStats().decoderWorkers };
       let stopped = false;
       const cancel = new AbortController();
       let afterStop = 0;
@@ -349,6 +349,9 @@ test('batch export releases each canvas and its decoder worker; cancellation lea
         stopped = cancel.signal.aborted;
       }
       await destroyPdf(pdf);
+      for (let i = 0; i < 100 && getPdfiumStats().pending; i++)
+        await new Promise((r) => setTimeout(r, 10));
+      const stats = getPdfiumStats();
       window.Worker = Native;
       return {
         done,
@@ -357,6 +360,7 @@ test('batch export releases each canvas and its decoder worker; cancellation lea
         active,
         peak,
         ownership,
+        stats,
         stopped,
         afterStop,
         created,
@@ -366,13 +370,20 @@ test('batch export releases each canvas and its decoder worker; cancellation lea
     [...file.buffer],
   );
   expect(result.done).toEqual({ total: 10, saved: 10, skipped: 0 });
-  expect(result.ownership).toEqual({ created: 2, terminated: 1, messages: 0 });
+  expect(result.ownership).toEqual({ created: 2, terminated: 1, decoders: 0 });
   expect(result.peak).toBe(1);
   expect(result.active).toBe(0);
   expect(result.closed).toBe(2);
   expect(result.stopped).toBe(true);
   expect(result.afterStop).toBe(1);
-  expect(result.created).toBe(result.terminated);
+  expect(result.created - result.terminated).toBe(1);
+  expect(result.stats).toMatchObject({
+    workers: 1,
+    decoderWorkers: 0,
+    documents: 0,
+    sessions: 0,
+    pending: 0,
+  });
 });
 
 test('focused thumbnail Ctrl+C copies its blank paper into another PDF without changing source bytes', async ({

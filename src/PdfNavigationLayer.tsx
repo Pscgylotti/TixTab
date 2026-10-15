@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { SpatialIndex, imageBounds } from './spatialIndex';
 import type { ForegroundClip } from './foregroundViewport';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import type { Page, Tool } from './model';
 import {
   detectedUrls,
@@ -33,10 +33,11 @@ function pageLinks(pdf: PDFDocumentProxy, sourceIndex: number) {
         const url = safeDocumentUrl(a.url ?? a.unsafeUrl ?? '');
         if (!url && !a.dest) return [];
         const boxes: number[][] = [];
-        if (a.quadPoints?.length >= 8)
-          for (let n = 0; n < a.quadPoints.length; n += 8) {
-            const xs = [0, 2, 4, 6].map((i) => a.quadPoints[n + i]),
-              ys = [1, 3, 5, 7].map((i) => a.quadPoints[n + i]);
+        const quadPoints = a.quadPoints;
+        if (quadPoints && quadPoints.length >= 8)
+          for (let n = 0; n < quadPoints.length; n += 8) {
+            const xs = [0, 2, 4, 6].map((i) => quadPoints[n + i]),
+              ys = [1, 3, 5, 7].map((i) => quadPoints[n + i]);
             boxes.push([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]);
           }
         else boxes.push(a.rect);

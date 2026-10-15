@@ -5,13 +5,28 @@ import { sourcePageGeometry } from './pdfiumSourceGeometry';
 import { nativeDestination, nativeOutline, nativeLinks } from './pdfiumNavigation';
 import { nativeText } from './pdfiumText';
 import { nativeImages, nativeOriginalImage } from './pdfiumImages';
+import { PDFDocument, ParseSpeeds } from 'pdf-lib';
+import type { SourceImage } from './pdfSourceImages';
+import { decodeSourceImage } from './pdfSourceImageDecode';
+import { openPdfiumForms } from './pdfiumForms';
 
 const scope = self as unknown as {
   postMessage: (data: PdfiumResponse, transfer: Transferable[]) => void;
   onmessage: (event: MessageEvent<PdfiumRequest>) => void;
 };
 let library: Promise<WrappedPdfiumModule> | undefined;
-const documents = new Map<number, { handle: number; pointer: number; imageSupport: boolean[] }>();
+const documents = new Map<
+  number,
+  {
+    handle: number;
+    pointer: number;
+    length: number;
+    imageSupport: boolean[];
+    images: SourceImage[][];
+    source?: Promise<PDFDocument>;
+    forms?: ReturnType<typeof openPdfiumForms>;
+  }
+>();
 let queue = Promise.resolve();
 const jobs = new Set<number>(),
   cancelled = new Set<number>();
@@ -39,6 +54,7 @@ async function run(message: Exclude<PdfiumRequest, { type: 'resume' | 'cancel' }
   if (message.type === 'release') {
     const document = documents.get(message.documentId);
     if (document) {
+      document.forms?.close();
       pdfium.FPDF_CloseDocument(document.handle);
       memory.wasmExports.free(document.pointer);
       documents.delete(message.documentId);
@@ -65,21 +81,37 @@ async function run(message: Exclude<PdfiumRequest, { type: 'resume' | 'cancel' }
       const pageCount = pdfium.FPDF_GetPageCount(documentHandle);
       const hints = message.imageSupport;
       const reuse =
-        !!hints && hints.length === pageCount && hints.every((v) => typeof v === 'boolean');
+        !!hints &&
+        !!message.images &&
+        message.images.length === pageCount &&
+        hints.length === pageCount &&
+        hints.every((v) => typeof v === 'boolean');
       // Isolated image decoders reuse preflight from the immutable reader
       // document; do not build another pdf-lib graph or scan all content again.
-      const { pages, imageSupport } = reuse
-        ? { pages: [], imageSupport: hints! }
+      const { pages, imageSupport, images } = reuse
+        ? { pages: [], imageSupport: hints!, images: message.images! }
         : await sourcePageGeometry(message.bytes, () => check(message.id));
       if (!reuse && pages.length !== pageCount) throw new Error('PDF page tree mismatch');
       check(message.id);
       documents.set(message.documentId, {
         handle: documentHandle,
         pointer: filePointer,
+        length: message.bytes.length,
         imageSupport,
+        images,
+        forms: reuse ? undefined : openPdfiumForms(pdfium, documentHandle),
       });
-      send({ type: 'opened', id: message.id, documents: documents.size, pages, imageSupport });
+      send({
+        type: 'opened',
+        id: message.id,
+        documents: documents.size,
+        pages,
+        imageSupport,
+        images,
+      });
     } catch (error) {
+      documents.get(message.documentId)?.forms?.close();
+      documents.delete(message.documentId);
       pdfium.FPDF_CloseDocument(documentHandle);
       memory.wasmExports.free(filePointer);
       throw error;
@@ -89,34 +121,71 @@ async function run(message: Exclude<PdfiumRequest, { type: 'resume' | 'cancel' }
   const documentHandle = documents.get(message.documentId)?.handle;
   if (!documentHandle) throw new Error('PDFium document not open');
   if (message.type === 'images' || message.type === 'original-image') {
-    if (!documents.get(message.documentId)!.imageSupport[message.page])
-      throw new Error('PDFium image compatibility required');
+    const document = documents.get(message.documentId)!;
+    const descriptors = document.images[message.page];
+    if (!descriptors) throw new Error('PDF image page unavailable');
+    if (message.type === 'images') {
+      send({ type: 'images', id: message.id, polygons: descriptors.map((image) => image.polygon) });
+      return;
+    }
+    if (
+      !Number.isSafeInteger(message.image) ||
+      !(message.maxPixels > 0 && message.maxPixels <= 64_000_000)
+    )
+      throw new Error('PDFium image size limit');
+    const descriptor = descriptors[message.image];
+    let bitmap: ImageBitmap | null = null;
     const page = pdfium.FPDF_LoadPage(documentHandle, message.page);
     if (!page) throw new Error('PDFium page unavailable');
     try {
-      const images = await nativeImages(pdfium, page, () => check(message.id));
-      if (message.type === 'images')
-        send({ type: 'images', id: message.id, polygons: images.map((image) => image.polygon) });
-      else {
+      if (descriptor && document.imageSupport[message.page]) {
+        const images = await nativeImages(pdfium, page, () => check(message.id));
         if (
-          !Number.isSafeInteger(message.image) ||
-          !(message.maxPixels > 0 && message.maxPixels <= 64_000_000)
-        )
-          throw new Error('PDFium image size limit');
-        const image = images[message.image],
-          bitmap = image
-            ? nativeOriginalImage(pdfium, documentHandle, page, image, message.maxPixels)
-            : null;
-        try {
-          check(message.id);
-          send(
-            { type: 'original-image', id: message.id, bitmap, heapBytes: memory.HEAPU8.byteLength },
-            bitmap ? [bitmap] : [],
-          );
-        } catch (error) {
-          bitmap?.close();
-          throw error;
+          images.length === descriptors.length &&
+          images.every(
+            (value, i) =>
+              value.width === descriptors[i].width &&
+              value.height === descriptors[i].height &&
+              value.polygon.every((n, j) => Math.abs(n - descriptors[i].polygon[j]) < 0.01),
+          )
+        ) {
+          try {
+            bitmap = nativeOriginalImage(
+              pdfium,
+              documentHandle,
+              page,
+              images[message.image],
+              message.maxPixels,
+            );
+          } catch (error) {
+            if (
+              !(error instanceof Error) ||
+              error.message !== 'PDF source image isolation required'
+            )
+              throw error;
+          }
         }
+      }
+      if (descriptor && !bitmap) {
+        // Only isolated decoder workers request pixels. Parse lazily from the
+        // owned native file buffer; do not clone the complete PDF again.
+        const source = await (document.source ??= PDFDocument.load(
+          memory.HEAPU8.subarray(document.pointer, document.pointer + document.length),
+          { updateMetadata: false, parseSpeed: ParseSpeeds.Fastest },
+        ));
+        bitmap = await decodeSourceImage(pdfium, source, descriptor, message.maxPixels, () =>
+          check(message.id),
+        );
+      }
+      try {
+        check(message.id);
+        send(
+          { type: 'original-image', id: message.id, bitmap, heapBytes: memory.HEAPU8.byteLength },
+          bitmap ? [bitmap] : [],
+        );
+      } catch (error) {
+        bitmap?.close();
+        throw error;
       }
     } finally {
       pdfium.FPDF_ClosePage(page);
@@ -179,12 +248,14 @@ async function run(message: Exclude<PdfiumRequest, { type: 'resume' | 'cancel' }
     throw new Error('PDFium raster size limit');
   const page = pdfium.FPDF_LoadPage(documentHandle, message.page);
   if (!page) throw new Error('PDFium page unavailable');
+  const forms = message.widgets === false ? undefined : documents.get(message.documentId)!.forms;
   let bitmap = 0,
     pause = 0,
     callback = 0,
     rendering = false;
   let output: OffscreenCanvas | undefined;
   try {
+    if (forms) pdfium.FORM_OnAfterLoadPage(page, forms.handle);
     bitmap = pdfium.FPDFBitmap_Create(region.width, region.height, 1);
     if (!bitmap) throw new Error('PDFium bitmap allocation failed');
     pdfium.FPDFBitmap_FillRect(bitmap, 0, 0, region.width, region.height, 0xffffffff);
@@ -222,6 +293,20 @@ async function run(message: Exclude<PdfiumRequest, { type: 'resume' | 'cancel' }
     }
     check(message.id);
     if (status !== 2) throw new Error('PDFium progressive render failed');
+    pdfium.FPDF_RenderPage_Close(page);
+    rendering = false;
+    if (forms)
+      pdfium.FPDF_FFLDraw(
+        forms.handle,
+        bitmap,
+        page,
+        -region.x,
+        -region.y,
+        fullWidth,
+        fullHeight,
+        0,
+        0x10,
+      );
     const pointer = pdfium.FPDFBitmap_GetBuffer(bitmap);
     const stride = pdfium.FPDFBitmap_GetStride(bitmap);
     if (!pointer || stride < region.width * 4) throw new Error('PDFium bitmap buffer unavailable');
@@ -242,6 +327,7 @@ async function run(message: Exclude<PdfiumRequest, { type: 'resume' | 'cancel' }
     if (pause) memory.wasmExports.free(pause);
     if (callback) memory.removeFunction(callback);
     if (bitmap) pdfium.FPDFBitmap_Destroy(bitmap);
+    if (forms) pdfium.FORM_OnBeforeClosePage(page, forms.handle);
     pdfium.FPDF_ClosePage(page);
     if (output) output.width = output.height = 1;
   }

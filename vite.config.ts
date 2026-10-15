@@ -16,8 +16,8 @@ export default defineConfig({
     entries: ['index.html'],
     include: [
       'pdf-lib',
+      'pdf-lib/es/core/parser/ByteStream',
       '@embedpdf/pdfium',
-      'pdfjs-dist',
       '@huggingface/transformers',
       'onnxruntime-web',
       '@mintplex-labs/piper-tts-web',

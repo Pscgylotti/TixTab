@@ -35,28 +35,14 @@ test('whole-document indexing sends no decoded images/fonts, agrees with the ren
       };
       const { loadPdf, destroyPdf } = await import('/src/pdf.ts' as string);
       const { getPdfImages } = await import('/src/pdfNight.ts' as string);
-      const { imagePolygons } = await import('/src/pdfNightGeometry.ts' as string);
       const { scanBitmapPages } = await import('/src/bitmapOcr.ts' as string);
-      const { OPS } = await import('/node_modules/.vite/deps/pdfjs-dist.js' as string);
-      const pdf = await loadPdf(new Uint8Array(bytes)),
-        handler = pdf._transport.messageHandler.actionHandler;
-      let images = 0,
-        fonts = 0;
-      const obj = handler.obj,
-        common = handler.commonobj;
-      handler.obj = (data: any) => {
-        if (data[2] === 'Image') images++;
-        return obj(data);
-      };
-      handler.commonobj = (data: any) => {
-        if (data[1] === 'Image') images++;
-        if (data[1] === 'Font') fonts++;
-        return common(data);
-      };
+      const { getPdfiumStats } = await import('/src/pdfiumRaster.ts' as string);
+      const pdf = await loadPdf(new Uint8Array(bytes));
+      const beforeStats = getPdfiumStats();
       try {
         const indexed = [];
         for (let i = 0; i < 12; i++) indexed.push(await getPdfImages(pdf, i));
-        const before = { images, fonts };
+        const before = getPdfiumStats();
         const pages = Array.from({ length: 12 }, (_, i) => ({
           id: String(i),
           sourceIndex: i,
@@ -82,20 +68,16 @@ test('whole-document indexing sends no decoded images/fonts, agrees with the ren
             completed++;
           },
         });
-        const afterScan = { images, fonts },
+        const afterScan = getPdfiumStats(),
           ownership = { created, terminated };
-        const p = await pdf.getPage(1),
-          actual = imagePolygons(await p.getOperatorList(), OPS);
-        await new Promise((r) => setTimeout(r, 50));
         return {
           before,
+          beforeStats,
           afterScan,
           ownership,
           completed,
           counts: indexed.map((a) => a.length),
           indexed: indexed[0],
-          actual,
-          after: { images, fonts },
         };
       } finally {
         await destroyPdf(pdf);
@@ -104,11 +86,12 @@ test('whole-document indexing sends no decoded images/fonts, agrees with the ren
     },
     Array.from(await d.save()),
   );
-  expect(result.before).toEqual({ images: 0, fonts: 0 });
+  expect(result.before.decoderWorkers).toBe(0);
+  expect(result.before.renders).toBe(result.beforeStats.renders);
   expect(result.counts).toEqual(Array(12).fill(2));
-  expect(result.afterScan).toEqual({ images: 0, fonts: 0 });
+  expect(result.afterScan.decoderWorkers).toBe(0);
+  expect(result.afterScan.renders).toBe(result.beforeStats.renders);
   expect(result.completed).toBe(24);
   expect(result.ownership).toEqual({ created: 2, terminated: 1 });
-  expect(result.indexed).toEqual(result.actual);
-  expect(result.after.images).toBeGreaterThan(0);
+  expect(result.indexed[0]).toEqual([40, 100, 120, 100, 120, 160, 40, 160]);
 });

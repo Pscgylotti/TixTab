@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { createRequire } from 'node:module';
+const { PDFDocument } = createRequire(import.meta.url)('pdf-lib');
 import { verifyPdfWorkerUi } from '../scripts/verify-pdf-worker-ui.mjs';
 import { verifyPdfUi } from '../scripts/verify-pdf-ui.mjs';
 import { preservationFixture } from '../scripts/pdf-preservation-fixture.mjs';
@@ -99,8 +101,7 @@ test('dense PDF export keeps the UI responsive and transfers source safely', asy
         main.output.length === worker.output.length &&
         main.output.every((v, i) => v === worker.output[i]);
       const output = await loadPdf(worker.output),
-        text = await (await output.getPage(1)).getTextContent(),
-        fields = await output.getFieldObjects();
+        text = await (await output.getPage(1)).getTextContent();
       const controller = new AbortController();
       let cancelled = '';
       try {
@@ -132,7 +133,7 @@ test('dense PDF export keeps the UI responsive and transfers source safely', asy
           notebook.source!.byteLength === bytes.length &&
           notebook.source!.every((v: number, i: number) => v === bytes[i]),
         pages: output.numPages,
-        field: fields?.['group.field-0']?.some((v: any) => v.value === 'value-0'),
+        outputBytes: Array.from(worker.output),
         text: text.items.map((i: any) => i.str).join(' '),
       };
       await pdf.destroy();
@@ -146,7 +147,9 @@ test('dense PDF export keeps the UI responsive and transfers source safely', asy
   expect(result.sourceAttached).toBe(true);
   expect(result.cancelled).toBe('AbortError');
   expect(result.pages).toBe(4);
-  expect(result.field).toBe(true);
+  const outputDocument = await PDFDocument.load(new Uint8Array(result.outputBytes));
+  expect(outputDocument.getForm().getTextField('group.field-0').getText()).toBe('value-0');
+  delete (result as any).outputBytes;
   expect(result.text).toContain('Original page 1');
   expect(result.stages).toEqual(
     expect.arrayContaining(['preparing', 'loading', 'structure', 'annotations', 'saving']),

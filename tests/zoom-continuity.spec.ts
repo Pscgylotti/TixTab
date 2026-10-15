@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createRequire } from 'node:module';
 const { PDFDocument, StandardFonts, rgb } = createRequire(import.meta.url)('pdf-lib');
 
-for (const backend of ['pdfjs', 'pdfium'])
+for (const backend of ['pdfium'])
   for (const view of ['单页标注', '连续页面预览', '双页预览'])
     test(`zoom retains a bounded CPU transition after raster loss and replaces it when ready: ${backend}/${view}`, async ({
       page,

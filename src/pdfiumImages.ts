@@ -35,7 +35,7 @@ export async function nativeImages(api: WrappedPdfiumModule, page: number, check
           !api.FPDFImageObj_GetImagePixelSize(object, p + 24, p + 28) ||
           !(m.getValue(p + 24, 'i32') > 0 && m.getValue(p + 28, 'i32') > 0)
         )
-          throw new Error('PDFium image compatibility required');
+          throw new Error('PDF image dimensions unavailable');
         images.push({
           object,
           polygon: transformPolygon([0, 0, 1, 0, 1, 1, 0, 1], matrix),
@@ -66,7 +66,7 @@ export function nativeOriginalImage(
   // GetRenderedBitmap includes the occurrence's clip. That is not the full
   // source bitmap, and the public ABI cannot remove a clip from an object.
   if (clip && api.FPDFClipPath_CountPaths(clip) > 0)
-    throw new Error('PDFium image compatibility required');
+    throw new Error('PDF source image isolation required');
   if (
     !(image.width > 0 && image.height > 0) ||
     image.width * image.height > 64_000_000 ||

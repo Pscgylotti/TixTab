@@ -48,7 +48,12 @@ test('native PDF editor uses actual short-lived backend, edits content, and undo
       backend: resolve('backend'),
       temporary: resolve('.cache/pdf-editor-ipc'),
     });
+  let failPreview = true;
   await page.exposeFunction('pdfEditorRun', async (request: any) => {
+    if (request.action === 'preview' && failPreview) {
+      failPreview = false;
+      return { ok: false, error: 'busy' };
+    }
     if (request.source) request.source = new Uint8Array(request.source);
     const result = await editor.run(owner, request);
     if (result.data?.source) result.data.source = Array.from(result.data.source);
@@ -81,7 +86,47 @@ test('native PDF editor uses actual short-lived backend, edits content, and undo
       await native.click();
       const dialog = page.getByRole('dialog', { name: '编辑 PDF 原生元素' });
       await dialog.getByRole('textbox', { name: '文本内容' }).fill('Changed');
+      if (view === '单页标注') {
+        await expect(dialog.locator('.native-dialog-preview-status')).toContainText(
+          '上一项 PDF 编辑尚未结束',
+        );
+        await expect
+          .poll(() =>
+            dialog
+              .locator('.native-dialog-preview canvas')
+              .evaluate((c: HTMLCanvasElement) => c.width),
+          )
+          .toBeGreaterThan(10);
+        await dialog
+          .locator('.native-dialog-preview-status')
+          .getByRole('button', { name: '重试', exact: true })
+          .click();
+        await expect(dialog.locator('.native-dialog-preview-status')).toHaveCount(0);
+      }
+      await expect
+        .poll(() =>
+          page
+            .locator('.native-pdf-preview canvas')
+            .first()
+            .evaluate((c: HTMLCanvasElement) => c.width)
+            .catch(() => 0),
+        )
+        .toBeGreaterThan(10);
+      await expect(dialog.locator('.native-dialog-preview canvas')).toBeVisible();
+      await expect(
+        page.getByText('暂存预览失败，请检查编辑参数后重试。', { exact: true }),
+      ).toHaveCount(0);
       await dialog.getByRole('button', { name: '暂存修改', exact: true }).click();
+      await expect(page.getByRole('button', { name: '应用 PDF 编辑', exact: true })).toBeVisible();
+      await expect
+        .poll(() =>
+          page
+            .locator('.native-pdf-preview canvas')
+            .first()
+            .evaluate((c: HTMLCanvasElement) => c.width)
+            .catch(() => 0),
+        )
+        .toBeGreaterThan(10);
       await page.getByRole('button', { name: '应用 PDF 编辑', exact: true }).click();
       await expect(dialog).toHaveCount(0);
       await expect(page.locator('.native-pdf-element[title="Changed"]')).toHaveCount(1);
@@ -204,6 +249,19 @@ test('review anchors, side cards, dual hover, mixed sizes and scoped rotate/crop
   await page.getByRole('menuitem', { name: '裁剪页面', exact: true }).click();
   const crop = page.getByRole('dialog', { name: '裁剪页面' });
   await crop.getByRole('combobox', { name: '作用范围' }).selectOption('all');
+  await crop.getByRole('button', { name: '在页面上框选裁剪区域' }).click();
+  const edge = (await page.locator('.paper').boundingBox())!;
+  await page.mouse.move(edge.x - 12, edge.y + edge.height * 0.2);
+  await page.mouse.down();
+  await page.mouse.move(edge.x + edge.width * 0.8, edge.y + edge.height * 0.8, { steps: 5 });
+  await page.mouse.up();
+  await expect(crop).toBeVisible();
+  expect(
+    Number(await crop.getByRole('spinbutton', { name: '左侧裁剪 (%)', exact: true }).inputValue()),
+  ).toBe(0);
+  expect(
+    Number(await crop.getByRole('spinbutton', { name: '右侧裁剪 (%)', exact: true }).inputValue()),
+  ).toBeCloseTo(20, 0);
   await crop.getByRole('spinbutton', { name: '左侧裁剪 (%)', exact: true }).fill('10');
   await crop.getByRole('spinbutton', { name: '上方裁剪 (%)', exact: true }).fill('10');
   await crop.getByRole('button', { name: '应用修改' }).click();
@@ -263,6 +321,19 @@ test('crop samples the chosen PDF page, previews real content, and clockwise/cou
       crop.locator('.crop-result-preview canvas').evaluate((el: HTMLCanvasElement) => el.width),
     )
     .toBeGreaterThan(1);
+  await crop.getByRole('button', { name: '在页面上框选裁剪区域' }).click();
+  const edge = (await page.locator('.paper').boundingBox())!;
+  await page.mouse.move(edge.x - 12, edge.y + edge.height * 0.2);
+  await page.mouse.down();
+  await page.mouse.move(edge.x + edge.width * 0.8, edge.y + edge.height * 0.8, { steps: 5 });
+  await page.mouse.up();
+  await expect(crop).toBeVisible();
+  expect(
+    Number(await crop.getByRole('spinbutton', { name: '左侧裁剪 (%)', exact: true }).inputValue()),
+  ).toBe(0);
+  expect(
+    Number(await crop.getByRole('spinbutton', { name: '右侧裁剪 (%)', exact: true }).inputValue()),
+  ).toBeCloseTo(20, 0);
   await crop.getByRole('spinbutton', { name: '左侧裁剪 (%)', exact: true }).fill('10');
   await crop.getByRole('spinbutton', { name: '右侧裁剪 (%)', exact: true }).fill('15');
   await crop.getByRole('spinbutton', { name: '上方裁剪 (%)', exact: true }).fill('20');

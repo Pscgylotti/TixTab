@@ -1,4 +1,4 @@
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { isPicture, type Page, type PlacedImage } from './model';
 import { getPdfImages } from './pdfNight';
 import { bitmapPdfDecoder } from './bitmapPdfDecoder';

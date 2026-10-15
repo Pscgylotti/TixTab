@@ -76,8 +76,7 @@ import {
   StickyNote,
   ListChecks,
 } from 'lucide-react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
-import PdfEngineSettings from './PdfEngineSettings';
+import type { PDFDocumentProxy } from './pdfTypes';
 import PdfSurface from './PdfSurface';
 import PdfPrefetch from './PdfPrefetchController';
 import { setPdfViewCacheKey } from './pdfRenderCache';
@@ -96,7 +95,6 @@ import {
   exportPdf,
   importPdf,
   loadPdf,
-  pdfDocumentBackend,
   SignedPdfExportError,
   type PdfExportProgress,
 } from './pdf';
@@ -604,11 +602,7 @@ export default function App() {
   }, []);
   useEffect(() => {
     const source = notebook.source;
-    if (
-      source === renderedSource.current &&
-      (!source || pdfDocumentBackend(pdfRef.current) === appearance.pdfRenderBackend)
-    )
-      return;
+    if (source === renderedSource.current) return;
     let dead = false;
     void (source ? loadPdf(source) : Promise.resolve(null))
       .then((document) => {
@@ -628,7 +622,7 @@ export default function App() {
     return () => {
       dead = true;
     };
-  }, [notebook.source, appearance.pdfRenderBackend]);
+  }, [notebook.source]);
   const persist = useCallback((n: Notebook, id = activeRef.current, view = viewRef.current) => {
     if (!id)
       return Promise.reject(new Error(tr('\u5DE5\u4F5C\u7A7A\u95F4\u5C1A\u672A\u5C31\u7EEA')));
@@ -1112,7 +1106,7 @@ export default function App() {
         );
         let next: Notebook,
           document: PDFDocumentProxy | null = null,
-          view = defaultView;
+          view = { ...defaultView, mode: viewRef.current.mode };
         try {
           if (target.cached) {
             const restored = await loadWorkspaceDocument(target.storageId, false);
@@ -2121,6 +2115,7 @@ export default function App() {
       navigation={navigation.value}
       editing={{
         notebook,
+        pdf,
         mode: viewMode,
         stageNative: (pageId, edit) => {
           const n = current.current,
@@ -3265,7 +3260,6 @@ export default function App() {
                         <option value="quality">{tr('画质优先')}</option>
                       </select>
                     </label>
-                    <PdfEngineSettings />
                     <label className="appearance-setting">
                       {tr('PDF 渲染清晰度')}
                       <select

@@ -10,14 +10,26 @@ import {
 import { useAppearance, renderPolicy, pageRenderScale } from './appearance';
 import { applyNightPolygons } from './pdfNight';
 import { t } from './i18n';
+import { pdfEditErrors } from './pdfNativeTypes';
+import { priorPdfBitmap } from './pdfRenderCache';
 const shown = new Map<string, HTMLCanvasElement>();
+const statuses = new Map<string, string>();
+const announce = () => window.dispatchEvent(new Event('tixtab-native-preview'));
 export function NativePreviewMirror({ page }: { page: Page }) {
   const root = useRef<HTMLCanvasElement>(null);
+  const context = useContext(DocumentEditContext),
+    { pdfNight } = useAppearance();
+  const [status, setStatus] = useState(statuses.get(page.id) ?? '');
   useEffect(() => {
     const mounted = root.current;
     const draw = () => {
-      const original = shown.get(page.id),
+      const original =
+          shown.get(page.id) ??
+          (context?.pdf && page.sourceIndex !== null
+            ? priorPdfBitmap(context.pdf, page.sourceIndex, pdfNight)
+            : undefined),
         target = root.current;
+      setStatus(statuses.get(page.id) ?? '');
       if (original && target) {
         const scale = Math.min(
           1,
@@ -34,8 +46,27 @@ export function NativePreviewMirror({ page }: { page: Page }) {
       window.removeEventListener('tixtab-native-preview', draw);
       if (mounted) mounted.width = mounted.height = 1;
     };
-  }, [page.id]);
-  return <canvas ref={root} width={1} height={1} />;
+  }, [page.id, page.sourceIndex, context?.pdf, pdfNight]);
+  return (
+    <>
+      <canvas ref={root} width={1} height={1} />
+      {status && (
+        <span className="native-dialog-preview-status" role="status">
+          {status}
+          <button
+            type="button"
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent('tixtab-native-preview-retry', { detail: page.id }),
+              )
+            }
+          >
+            {t('重试')}
+          </button>
+        </span>
+      )}
+    </>
+  );
 }
 export default function NativePdfPreview({ page, zoom }: { page: Page; zoom: number }) {
   const source = useContext(DocumentEditContext)?.notebook.source,
@@ -46,7 +77,15 @@ export default function NativePdfPreview({ page, zoom }: { page: Page; zoom: num
     scale = pageRenderScale(zoom, window.devicePixelRatio, page.width, page.height, false, policy);
   const root = useRef<HTMLDivElement>(null),
     [error, setError] = useState(''),
+    [retry, setRetry] = useState(0),
     [warning, setWarning] = useState(false);
+  useEffect(() => {
+    const retry = (event: Event) => {
+      if ((event as CustomEvent).detail === page.id) setRetry((n) => n + 1);
+    };
+    window.addEventListener('tixtab-native-preview-retry', retry);
+    return () => window.removeEventListener('tixtab-native-preview-retry', retry);
+  }, [page.id]);
   useEffect(() => {
     if (!source || page.sourceIndex === null || !edits.length) return;
     const controller = new AbortController();
@@ -81,13 +120,19 @@ export default function NativePdfPreview({ page, zoom }: { page: Page; zoom: num
           for (const old of root.current.querySelectorAll('canvas')) old.width = old.height = 1;
           root.current.replaceChildren(raster);
           shown.set(page.id, raster);
-          window.dispatchEvent(new Event('tixtab-native-preview'));
+          statuses.delete(page.id);
+          announce();
           setError('');
           setWarning(result.data.warning === 'font-replaced');
         }
       })()
         .catch((e) => {
-          if (!controller.signal.aborted) setError(e.message);
+          if (!controller.signal.aborted) {
+            const message = t(pdfEditErrors[e.message] ?? '暂存预览失败，请重试。');
+            setError(message);
+            statuses.set(page.id, message);
+            announce();
+          }
         })
         .finally(() => {
           if (raster && (!root.current || !root.current.contains(raster)))
@@ -98,10 +143,11 @@ export default function NativePdfPreview({ page, zoom }: { page: Page; zoom: num
       clearTimeout(timer);
       controller.abort();
     };
-  }, [source, page.id, page.sourceIndex, edits, pdfNight, scale, policy.basePixels]);
+  }, [source, page.id, page.sourceIndex, edits, pdfNight, scale, policy.basePixels, retry]);
   useEffect(() => {
     const host = root.current;
     return () => {
+      statuses.delete(page.id);
       for (const canvas of host?.querySelectorAll('canvas') ?? []) {
         if (shown.get(page.id) === canvas) shown.delete(page.id);
         canvas.width = canvas.height = 1;
@@ -118,7 +164,10 @@ export default function NativePdfPreview({ page, zoom }: { page: Page; zoom: num
       <div className="native-pdf-preview" ref={root} aria-label={t('PDF 暂存预览')} />
       {error && (
         <span className="native-preview-error" role="status">
-          {t('暂存预览失败，请检查编辑参数后重试。')}
+          {error}
+          <button type="button" onClick={() => setRetry((n) => n + 1)}>
+            {t('重试')}
+          </button>
         </span>
       )}
     </>

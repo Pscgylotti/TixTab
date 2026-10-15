@@ -2,7 +2,7 @@ import { useAppearance, renderPolicy } from './appearance';
 import { trackPerformance } from './performanceLedger';
 import { t as tr, useLocale } from './i18n';
 import { memo, useEffect, useRef, useState } from 'react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { isPicture, type Page } from './model';
 import { requestPdfThumbnail } from './pdfRenderCache';
 import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
@@ -18,7 +18,7 @@ export default memo(function PageThumbnail({
   pdf: PDFDocumentProxy | null;
 }) {
   useLocale();
-  const { night, pdfNight, memoryMode, pdfRenderBackend } = useAppearance();
+  const { night, pdfNight, memoryMode } = useAppearance();
   const root = useRef<HTMLDivElement>(null),
     [visible, setVisible] = useState(false);
   const { host, display, recovery } = usePdfBitmapDisplay();
@@ -50,17 +50,7 @@ export default memo(function PageThumbnail({
       dead = true;
       cancel?.();
     };
-  }, [
-    pdf,
-    page.id,
-    page.sourceIndex,
-    page.width,
-    page.height,
-    visible,
-    pdfNight,
-    recovery,
-    pdfRenderBackend,
-  ]);
+  }, [pdf, page.id, page.sourceIndex, page.width, page.height, visible, pdfNight, recovery]);
   return (
     <div
       className={`page-mini page-thumbnail ${page.sourceIndex === null ? `thumbnail-${page.paper}` : ''}`}

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { trackPerformance } from './performanceLedger';
 import { createPortal } from 'react-dom';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { X, ScanText } from 'lucide-react';
 import type { Page } from './model';
 import { getPdfImages } from './pdfNight';

@@ -84,17 +84,27 @@ test('one folder tab lazily reads PDFs, restores edits, searches/jumps and expor
   await expect(page.getByRole('tab', { name: 'Paper folder', exact: true })).toBeVisible();
   expect(await page.evaluate(() => (window as any).__batchReads)).toEqual(['a']);
   await edit(page);
+  await page.getByRole('button', { name: '连续页面预览', exact: true }).click();
   await panel.getByRole('button', { name: '下一份 PDF', exact: true }).click();
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   await expect(panel).toContainText('2 / 3');
+  await expect(page.getByRole('button', { name: '连续页面预览', exact: true })).toHaveClass(
+    /active/,
+  );
+  await page.getByRole('button', { name: '单页标注', exact: true }).click();
   await edit(page);
+  await page.getByRole('button', { name: '双页预览', exact: true }).click();
   await panel.getByRole('button', { name: '下一份 PDF', exact: true }).click();
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   await expect(panel).toContainText('3 / 3');
+  await expect(page.getByRole('button', { name: '双页预览', exact: true })).toHaveClass(/active/);
   await panel.getByRole('textbox', { name: '跳转到第几份 PDF' }).fill('1');
   await panel.getByRole('button', { name: '跳转', exact: true }).click();
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   await expect(panel).toContainText('1 / 3');
+  await expect(page.getByRole('button', { name: '连续页面预览', exact: true })).toHaveClass(
+    /active/,
+  );
   expect(await page.evaluate(() => (window as any).__batchReads)).toEqual(['a', 'b', 'c']);
   await panel.getByRole('button', { name: '展开文件列表' }).click();
   await panel.getByRole('textbox', { name: '搜索 PDF 文件名' }).fill('b.pdf');

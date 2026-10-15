@@ -6,7 +6,6 @@
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
-    "predev": "node scripts/prepare-pdf-index-worker.mjs",
     "dev": "vite --host 127.0.0.1",
     "prepare:runtime": "node scripts/prepare-runtime.mjs",
     "prepare:native-ocr": "node scripts/build-native-ocr.mjs",
@@ -48,7 +47,6 @@
     "lucide-react": "^0.468.0",
     "onnxruntime-web": "1.22.0-dev.20250409-89f8206ba4",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "5.4.624",
     "perfect-freehand": "^1.2.2",
     "pinyin-ime": "1.0.2",
     "rbush": "4.0.1",

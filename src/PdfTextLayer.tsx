@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { trackPerformance } from './performanceLedger';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { readPdfTextContent } from './pdfTextContent';
 import { renderPdfTextDom } from './pdfTextDom';
 import type { Page } from './model';

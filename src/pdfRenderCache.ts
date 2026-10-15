@@ -1,11 +1,6 @@
-import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
-import {
-  getPdfRenderBackend,
-  renderPolicy,
-  subscribeAppearance,
-  type PdfRenderBackend,
-} from './appearance';
-import { renderPdfium, releasePdfium, type PdfRasterTask } from './pdfiumRaster';
+import type { PDFDocumentProxy, PDFPageProxy } from './pdfTypes';
+import { renderPolicy, subscribeAppearance } from './appearance';
+import { releasePdfium, type PdfRasterTask } from './pdfiumRaster';
 import { applyPdfNight } from './pdfNight';
 import {
   performanceDelay,
@@ -40,7 +35,6 @@ interface Job {
   sourceIndex: number;
   scale: number;
   night: boolean;
-  backend: PdfRenderBackend;
   region?: PdfPixelRegion;
   priority: number;
   users: number;
@@ -73,7 +67,7 @@ const liveCacheStates = new Set<State>();
 const retiredBitmaps = new WeakSet<HTMLCanvasElement>();
 export const isRetiredPdfBitmap = (canvas: HTMLCanvasElement) => retiredBitmaps.has(canvas);
 
-/** Document switching must release rasters without waiting for PDF.js, React
+/** Document switching must release rasters without waiting for React
  * alternate effects or the GC to drop their last proxy reference. */
 export function releasePdfRenderCache(pdf: PDFDocumentProxy) {
   releasePdfium(pdf);
@@ -124,38 +118,6 @@ export function invalidatePdfBitmap(canvas: HTMLCanvasElement) {
 }
 function cachedContextLost(event: Event) {
   invalidatePdfBitmap(event.currentTarget as HTMLCanvasElement);
-}
-interface OperatorBounds {
-  isEmpty(index: number): boolean;
-  minX(index: number): number;
-  minY(index: number): number;
-  maxX(index: number): number;
-  maxY(index: number): number;
-}
-/** Operator bounds from a page render that ran to completion, in 0..1 page units. */
-const completeBounds = new WeakMap<PDFPageProxy, OperatorBounds>();
-/** In power-saving mode a detail tile executes only the drawing operators that
- * touch it instead of replaying the whole page. PDF.js still marks this path as
- * optional, so the full-quality modes keep the complete replay. */
-function partialTiles() {
-  return renderPolicy().eco;
-}
-function tileFilter(
-  bounds: OperatorBounds,
-  region: PdfPixelRegion,
-  viewport: { width: number; height: number },
-) {
-  // One pixel of slack covers antialiasing that spills over the tile edge.
-  const minX = (region.x - 1) / viewport.width,
-    minY = (region.y - 1) / viewport.height,
-    maxX = (region.x + region.width + 1) / viewport.width,
-    maxY = (region.y + region.height + 1) / viewport.height;
-  return (index: number) =>
-    !bounds.isEmpty(index) &&
-    bounds.minX(index) <= maxX &&
-    bounds.maxX(index) >= minX &&
-    bounds.minY(index) <= maxY &&
-    bounds.maxY(index) >= minY;
 }
 const continuations = new Map<Job, () => void>();
 let running = 0;
@@ -286,14 +248,7 @@ function stateFor(pdf: PDFDocumentProxy, thumbnail = false) {
   liveCacheStates.add(state);
   return state;
 }
-let backend = getPdfRenderBackend();
 subscribeAppearance(() => {
-  const nextBackend = getPdfRenderBackend();
-  if (nextBackend !== backend) {
-    backend = nextBackend;
-    for (const state of liveCacheStates) clearState(state);
-    pump();
-  }
   if (!renderPolicy().minimal) return;
   for (const state of liveCacheStates) {
     for (const canvas of [...state.cache.values()]) {
@@ -438,10 +393,7 @@ function pump() {
         output = canvas;
         canvas.width = job.region?.width ?? Math.ceil(viewport.width);
         canvas.height = job.region?.height ?? Math.ceil(viewport.height);
-        // PDF.js otherwise requests alpha:false, enabling Windows LCD subpixel
-        // text AA. Its RGB coverage is tied to light paper and becomes colored
-        // fringes after night conversion. Alpha surfaces use grayscale AA;
-        // share that source across day/night, thumbnails and tiles without rerendering.
+        // Grayscale coverage remains valid for day/night conversion.
         const canvasContext = canvas.getContext('2d', { alpha: true })!;
         const original = job.night && job.state.cache.get(job.key.replace(':night', ':day'));
         const halves = pageHalves(canvas.width, canvas.height),
@@ -459,123 +411,44 @@ function pump() {
           targetRegion = job.region ?? missing,
           fullWidth = Math.ceil(viewport.width),
           fullHeight = Math.ceil(viewport.height),
-          isHalf =
-            job.backend === 'pdfjs' &&
-            !!targetRegion &&
-            targetRegion.x === 0 &&
-            targetRegion.width === fullWidth &&
-            pageHalves(fullWidth, fullHeight).some(
-              (r) => r.y === targetRegion.y && r.height === targetRegion.height,
-            ),
-          region = isHalf
-            ? {
-                ...targetRegion!,
-                y: Math.max(0, targetRegion!.y - 2),
-                height:
-                  Math.min(fullHeight, targetRegion!.y + targetRegion!.height + 2) -
-                  Math.max(0, targetRegion!.y - 2),
-              }
-            : targetRegion,
-          work = missing || isHalf ? document.createElement('canvas') : canvas;
+          region = targetRegion,
+          work = missing ? document.createElement('canvas') : canvas;
         if (work !== canvas) scratch.add(work);
-        if (region && (missing || isHalf)) {
+        if (region && missing) {
           work.width = region.width;
           work.height = region.height;
         }
         const workContext =
           work !== canvas ? work.getContext('2d', { alpha: true })! : canvasContext;
-        // Preserve page coordinates for rotated fractional image sampling.
-        const raster = isHalf ? document.createElement('canvas') : work;
-        if (raster !== work) scratch.add(raster);
-        if (isHalf) {
-          raster.width = fullWidth;
-          raster.height = fullHeight;
-        }
-        const rasterContext = isHalf ? raster.getContext('2d', { alpha: true })! : workContext;
-        if (isHalf) {
-          rasterContext.save();
-          rasterContext.beginPath();
-          rasterContext.rect(region!.x, region!.y, region!.width, region!.height);
-          rasterContext.clip();
-        }
         if (original) workContext.drawImage(original, 0, 0);
         else if (ready.length !== 2) {
-          const partial = job.backend === 'pdfjs' && partialTiles(),
-            bounds = partial && region ? completeBounds.get(page) : undefined;
-          const recording = partial && !region && !completeBounds.has(page);
-          job.task =
-            job.backend === 'pdfium'
-              ? renderPdfium(
-                  job.pdf,
-                  job.sourceIndex,
-                  raster,
-                  fullWidth,
-                  fullHeight,
-                  region ?? { x: 0, y: 0, width: fullWidth, height: fullHeight },
-                )
-              : page.render({
-                  canvas: raster,
-                  canvasContext: rasterContext,
-                  viewport,
-                  // PDF.js already defaults to white. Make the opaque source contract
-                  // explicit for exact bitmap GPU dimming, including detail tiles.
-                  background: '#ffffff',
-                  ...(region && !isHalf ? { transform: [1, 0, 0, 1, -region.x, -region.y] } : {}),
-                  ...(recording ? { recordOperations: true } : {}),
-                  ...(bounds ? { operationsFilter: tileFilter(bounds, region!, viewport) } : {}),
-                });
-          if (job.backend === 'pdfjs') raster.dataset.pdfBackend = 'pdfjs';
+          job.task = page.render({
+            canvas: work,
+            canvasContext: workContext,
+            viewport,
+            background: '#ffffff',
+            ...(region ? { transform: [1, 0, 0, 1, -region.x, -region.y] } : {}),
+          });
           job.state.renders++;
           performanceLedger?.count('pdfPixels', work.width * work.height);
           job.task.onContinue = (next: () => void) => {
             if (paused()) continuations.set(job, next);
             else next();
           };
-          try {
-            await boundedStage(
-              trackPerformance('pdf-raster', () => job.task!.promise),
-              job,
-            );
-            if (recording && page.recordedBBoxes) completeBounds.set(page, page.recordedBBoxes);
-          } finally {
-            if (isHalf) rasterContext.restore();
-            // PDF.js also stores the bounds of an interrupted render. Operators
-            // it never reached would look empty and vanish from later tiles.
-            if (recording && !completeBounds.has(page)) page.recordedBBoxes = null;
-          }
+          await boundedStage(
+            trackPerformance('pdf-raster', () => job.task!.promise),
+            job,
+          );
         }
         if (job.cancelled) throw cancelled();
-        canvas.dataset.pdfBackend = job.backend;
-        if (isHalf)
-          workContext.drawImage(
-            raster,
-            region!.x,
-            region!.y,
-            region!.width,
-            region!.height,
-            0,
-            0,
-            region!.width,
-            region!.height,
-          );
+        canvas.dataset.pdfBackend = 'pdfium';
         if (job.night && ready.length !== 2) {
           const transform = [...viewport.transform];
-          if (!isHalf) {
-            transform[4] -= region?.x ?? 0;
-            transform[5] -= region?.y ?? 0;
-          }
+          transform[4] -= region?.x ?? 0;
+          transform[5] -= region?.y ?? 0;
           await boundedStage(
             trackPerformance('pdf-night', () =>
-              applyPdfNight(
-                work,
-                job.pdf,
-                job.sourceIndex,
-                transform,
-                true,
-                isHalf
-                  ? { width: fullWidth, height: fullHeight, x: region!.x, y: region!.y }
-                  : undefined,
-              ),
+              applyPdfNight(work, job.pdf, job.sourceIndex, transform, true),
             ),
             job,
           );
@@ -595,18 +468,7 @@ function pump() {
               missing.width,
               missing.height,
             );
-        } else if (isHalf && targetRegion)
-          canvasContext.drawImage(
-            work,
-            0,
-            targetRegion.y - region!.y,
-            targetRegion.width,
-            targetRegion.height,
-            0,
-            0,
-            targetRegion.width,
-            targetRegion.height,
-          );
+        }
         if (job.cancelled) throw cancelled();
         if (job.generation === job.state.generation) cache(job.state, job.key, canvas);
         else retiredBitmaps.add(canvas);
@@ -623,7 +485,6 @@ function pump() {
         if (!delivered && output) output.width = output.height = 1;
         job.task = undefined;
         if (renderPolicy().minimal && loadedPage) {
-          completeBounds.delete(loadedPage);
           loadedPage.cleanup?.();
         }
         continuations.delete(job);
@@ -754,7 +615,6 @@ function requestBitmap(
       sourceIndex,
       scale: Number(scale.toFixed(3)),
       night,
-      backend: getPdfRenderBackend(),
       region: region && { ...region },
       priority,
       users: 0,

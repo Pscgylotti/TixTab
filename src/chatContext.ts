@@ -1,4 +1,4 @@
-import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
+import type { PDFDocumentProxy, RenderTask } from './pdfTypes';
 import type { Page } from './model';
 import { drawStrokes } from './ink';
 import { pageLayers } from './pageLayers';

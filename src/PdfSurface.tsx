@@ -9,7 +9,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { priorPdfBitmap, requestPdfBitmap, renderingCancelled } from './pdfRenderCache';
 import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
 import type { Page, Tool } from './model';
@@ -71,7 +71,7 @@ export default function PdfSurface({
   useLocale();
   const nativeLive = useLiveNativeEdit(page.id);
   const navigation = useNavigation();
-  const { pdfNight, pdfRenderBackend } = useAppearance(),
+  const { pdfNight } = useAppearance(),
     policy = renderPolicy();
   const [zoom, setZoom] = useDeferredZoom(committedZoom, commitZoom, resetView);
   const stage = useRef<HTMLDivElement>(null);
@@ -241,7 +241,6 @@ export default function PdfSurface({
     settledZoom,
 
     pdfNight,
-    pdfRenderBackend,
     policy.basePixels,
     policy.dpr,
     policy.baseScale,

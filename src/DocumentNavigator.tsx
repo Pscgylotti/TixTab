@@ -10,7 +10,7 @@ import {
   X,
   Files,
 } from 'lucide-react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from './pdfTypes';
 import { uid, type Notebook } from './model';
 import { t, useLocale } from './i18n';
 import {
