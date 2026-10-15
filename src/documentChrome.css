@@ -7,7 +7,7 @@
   scrollbar-width: thin;
   padding: 2px 12px;
   border-bottom: 1px solid var(--border);
-  background: transparent;
+  background: var(--surface-tabs);
   min-height: 40px;
   user-select: none;
 }
@@ -83,6 +83,16 @@
   min-height: 36px;
   padding: 5px;
   flex-shrink: 0;
+}
+/* Keep the library entry compact while retaining its accessible name. */
+.zotero-mark {
+  display: inline-block;
+  width: 18px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: #c83434;
 }
 .pdf-drop-overlay {
   position: fixed;
@@ -307,14 +317,14 @@
 .app-shell > .topbar.collapsed {
   position: absolute;
   top: 0;
-  right: 4px;
+  right: 0;
   z-index: 25;
-  width: 64px;
+  width: 68px;
   height: var(--compact-row, 40px);
   min-height: var(--compact-row, 40px);
-  padding: 0;
+  padding: 0 4px 0 0;
   gap: 0;
-  background: transparent;
+  background: var(--surface-tabs);
   border: 0;
   box-shadow: none;
   backdrop-filter: none;
@@ -339,13 +349,13 @@
 .chrome-minimal > .topbar.collapsed {
   position: absolute;
   top: 0;
-  right: 4px;
+  right: 0;
   z-index: 25;
-  width: 64px;
+  width: 68px;
   height: var(--compact-row);
-  padding: 0;
+  padding: 0 4px 0 0;
   gap: 0;
-  background: transparent;
+  background: var(--surface-tabs);
   backdrop-filter: none;
 }
 .chrome-minimal > .topbar.collapsed > .collapsed-title {

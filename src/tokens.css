@@ -5,6 +5,7 @@
   /* Surfaces. The shell is translucent so Windows Mica shows through; anything
      that floats over the canvas is opaque so it never needs a backdrop blur. */
   --bg-app: #f4f7fbeb;
+  --surface-tabs: #f4f7fb;
   --bg-canvas: #e9edf3;
   --surface-chrome: #ffffffc4;
   --surface: #fff;
@@ -74,6 +75,7 @@
 }
 :root[data-night='true'] {
   --bg-app: #171b23;
+  --surface-tabs: #171b23;
   --bg-canvas: #12161d;
   --surface-chrome: #1e242ff5;
   --surface: #1e242f;

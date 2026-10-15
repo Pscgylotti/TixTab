@@ -2422,8 +2422,9 @@ export default function App() {
             title={tr('打开 Zotero 资料库')}
             onClick={() => setZoteroOpen(true)}
           >
-            <BookOpen size={16} />
-            <span>Zotero</span>
+            <span className="zotero-mark" aria-hidden="true">
+              Z
+            </span>
           </button>
           <button
             className="new-document-tab"
@@ -2604,13 +2605,6 @@ export default function App() {
           )}
           <main className="main-workspace">
             <div className={`workspace-heading${toolbarCollapsed ? ' tools-inline' : ''}`}>
-              {toolbarCollapsed && (
-                <div className="compact-drawing-strip">
-                  {renderHistoryControls(true)}
-                  {renderTools(true)}
-                  {renderInkControls(true)}
-                </div>
-              )}
               <div className="row workspace-path">
                 {!sidebar && (
                   <button
@@ -2636,6 +2630,13 @@ export default function App() {
                   <span>{tr('工作空间')}</span>
                 </button>
               </div>
+              {toolbarCollapsed && (
+                <div className="compact-drawing-strip">
+                  {renderHistoryControls(true)}
+                  {renderTools(true)}
+                  {renderInkControls(true)}
+                </div>
+              )}
               <div className="row workspace-controls">
                 {notebook.pages.some((p) => p.pdfEdits?.length) && (
                   <div className="native-edits-actions">
