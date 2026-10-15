@@ -4,6 +4,14 @@ export interface ScoreRect {
   width: number;
   height: number;
 }
+export type ScoreLocations = Record<
+  string,
+  { system: number; region: ScoreRect; detected?: boolean }
+>;
+export interface ScoreLayout {
+  systems: ScoreRect[];
+  noteLocations: ScoreLocations;
+}
 export interface ScoreNote {
   id: string;
   sourceId: string;
@@ -15,6 +23,7 @@ export interface ScoreNote {
   system: number;
   region: ScoreRect;
   muted?: boolean;
+  continuations?: { beat: number; duration: number; system: number; region: ScoreRect }[];
 }
 export interface MusicScore {
   version: 1;
@@ -58,8 +67,10 @@ export function validMusicScore(value: unknown): value is MusicScore {
     Array.isArray(s.notes) &&
     s.notes.length > 0 &&
     s.notes.length <= 20000 &&
+    s.notes.reduce((total, n) => total + (n?.continuations?.length ?? 0), 0) <= 40000 &&
     s.notes.every(
       (n) =>
+        n &&
         typeof n.id === 'string' &&
         n.id.length <= 120 &&
         typeof n.sourceId === 'string' &&
@@ -81,7 +92,23 @@ export function validMusicScore(value: unknown): value is MusicScore {
         n.system >= 0 &&
         n.system < s.systems.length &&
         rectValid(n.region) &&
-        (n.muted === undefined || typeof n.muted === 'boolean'),
+        (n.muted === undefined || typeof n.muted === 'boolean') &&
+        (n.continuations === undefined ||
+          (Array.isArray(n.continuations) &&
+            n.continuations.length <= 5000 &&
+            n.continuations.every(
+              (c) =>
+                c &&
+                finite(c.beat) &&
+                c.beat >= n.beat &&
+                finite(c.duration) &&
+                c.duration > 0 &&
+                c.beat + c.duration <= n.beat + n.duration + 0.001 &&
+                Number.isInteger(c.system) &&
+                c.system >= 0 &&
+                c.system < s.systems.length &&
+                rectValid(c.region),
+            ))),
     )
   );
 }
@@ -105,7 +132,21 @@ const steps: Record<string, number> = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6
 const semitones: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 /** MusicXML timing keeps chord onsets and backup/forward voices separate.
  * Layout coordinates, when present, stay normalized to the captured page. */
-export function parseMusicScore(xml: string, engine: MusicScore['engine']): MusicScore {
+export function parseMusicScore(
+  xml: string,
+  engine: MusicScore['engine'],
+  detected?: ScoreLayout,
+): MusicScore {
+  if (
+    detected &&
+    (!Array.isArray(detected.systems) ||
+      !detected.systems.length ||
+      detected.systems.length > 256 ||
+      !detected.systems.every(rectValid) ||
+      !detected.noteLocations ||
+      Object.keys(detected.noteLocations).length > 20000)
+  )
+    throw Error('score-format');
   if (xml.length > 4 * 1024 * 1024 || /<!ENTITY/i.test(xml)) throw Error('score-format');
   const doc = new DOMParser().parseFromString(
     xml.replace(/<!DOCTYPE[^>]*>/gi, ''),
@@ -144,7 +185,8 @@ export function parseMusicScore(xml: string, engine: MusicScore['engine']): Musi
   if (!parts.length || parts.length > 64) throw Error('score-format');
   let tempo = 120,
     positioned = false,
-    noteCount = 0;
+    noteCount = 0,
+    mappedCount = 0;
   for (const [pi, part] of parts.entries()) {
     let divisions = 1,
       beats = 4,
@@ -253,6 +295,16 @@ export function parseMusicScore(xml: string, engine: MusicScore['engine']): Musi
             (defaultX === null
               ? width * (0.1 + (0.8 * onset) / Math.max((beats * 4) / beatType, duration, 1))
               : Number(defaultX));
+          const located = detected?.noteLocations[node.getAttribute('id') ?? ''];
+          if (
+            located &&
+            (!rectValid(located.region) ||
+              !Number.isInteger(located.system) ||
+              located.system < 0 ||
+              located.system >= detected!.systems.length)
+          )
+            throw Error('score-format');
+          if (located && located.detected !== false) mappedCount++;
           notes.push({
             sourceId: `${pi}:${mi}:${notes.length}`,
             midi: clamp(Math.round((octave + 1) * 12 + semitones[step] + alter), 0, 127),
@@ -272,13 +324,15 @@ export function parseMusicScore(xml: string, engine: MusicScore['engine']): Musi
               part.getAttribute('id') ||
               `Part ${pi + 1}`
             ).slice(0, 100),
-            system,
-            region: region(
-              (x - 5) / pw,
-              (systemTop + (staff - 1) * (40 + gap) + y - 6) / ph,
-              10 / pw,
-              12 / ph,
-            ),
+            system: located?.system ?? system,
+            region:
+              located?.region ??
+              region(
+                (x - 5) / pw,
+                (systemTop + (staff - 1) * (40 + gap) + y - 6) / ph,
+                10 / pw,
+                12 / ph,
+              ),
             tieStart: children(node, 'tie').some((t) => t.getAttribute('type') === 'start'),
             tieStop: children(node, 'tie').some((t) => t.getAttribute('type') === 'stop'),
             voice: text(node, 'voice', '1'),
@@ -303,6 +357,7 @@ export function parseMusicScore(xml: string, engine: MusicScore['engine']): Musi
     }
     all.push(measures);
   }
+  if (detected) systems.splice(0, systems.length, ...detected.systems);
   const count = Math.max(...all.map((p) => p.length)),
     order: number[] = [];
   let repeatStart = 0;
@@ -323,6 +378,12 @@ export function parseMusicScore(xml: string, engine: MusicScore['engine']): Musi
           start = beat + n.localBeat;
         if (n.tieStop && previous && Math.abs(previous.beat + previous.duration - start) < 0.01) {
           previous.duration += n.duration;
+          (previous.continuations ??= []).push({
+            beat: start,
+            duration: n.duration,
+            system: Math.min(n.system, systems.length - 1),
+            region: n.region,
+          });
           if (!n.tieStart) ties.delete(key);
           continue;
         }
@@ -349,7 +410,13 @@ export function parseMusicScore(xml: string, engine: MusicScore['engine']): Musi
     systems,
     duration: Math.max(beat, ...notes.map((n) => n.beat + n.duration)),
     tempo,
-    positioning: positioned ? 'layout' : 'estimated',
+    positioning: detected
+      ? mappedCount === noteCount
+        ? 'layout'
+        : 'estimated'
+      : positioned
+        ? 'layout'
+        : 'estimated',
   };
   if (!validMusicScore(score)) throw Error('no-score');
   return score;
@@ -365,7 +432,15 @@ export function correctScoreNote(
 ) {
   const source = score.notes.find((n) => n.id === id)?.sourceId;
   if (!source) return score;
-  const notes = score.notes.map((n) => (n.sourceId === source ? { ...n, ...change } : n));
+  const notes = score.notes.map((n) => {
+    if (n.sourceId !== source) return n;
+    const next = { ...n, ...change };
+    if (change.duration !== undefined && n.continuations)
+      next.continuations = n.continuations
+        .filter((c) => c.beat < n.beat + change.duration!)
+        .map((c) => ({ ...c, duration: Math.min(c.duration, n.beat + change.duration! - c.beat) }));
+    return next;
+  });
   const next = {
     ...score,
     notes,

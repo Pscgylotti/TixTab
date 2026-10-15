@@ -30,9 +30,6 @@ from homr import main
 
 crop = {'x': 0., 'y': 0., 'width': 1., 'height': 1.}
 original_crop = main.autocrop
-original_detect = main.detect_staffs_in_image
-staff_rects = []
-
 
 def record_crop(image):
     cropped = original_crop(image)
@@ -44,21 +41,13 @@ def record_crop(image):
     return cropped
 
 
-def record_staffs(*args, **kwargs):
-    result = original_detect(*args, **kwargs)
-    height, width = result[1].shape[:2]
-    for group in result[0]:
-        x1 = min(s.min_x for s in group.staffs)
-        y1 = min(s.min_y for s in group.staffs)
-        x2 = max(s.max_x for s in group.staffs)
-        y2 = max(s.max_y for s in group.staffs)
-        staff_rects.append(dict(x=crop['x']+x1/width*crop['width'],y=crop['y']+y1/height*crop['height'],width=(x2-x1)/width*crop['width'],height=(y2-y1)/height*crop['height']))
-    return result
-
-
 import numpy as np
+from homr import staff_parsing, music_xml_generator
+# -I omits the script directory; only add our trusted bundled adapter directory.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from homr_layout import install_layout_hooks
+layout = install_layout_hooks(staff_parsing, music_xml_generator, crop)
 main.autocrop = record_crop
-main.detect_staffs_in_image = record_staffs
 
 
 def no_title(*args, **kwargs):
@@ -81,4 +70,4 @@ def offline_weights(*args, **kwargs):
 main.download_weights = offline_weights
 sys.argv = ['homr', sys.argv[1], '--gpu', 'no']
 main.main()
-Path(sys.argv[1]).with_suffix('.staffs.json').write_text(json.dumps(staff_rects), encoding='utf-8')
+Path(sys.argv[1]).with_suffix('.staffs.json').write_text(json.dumps(layout, allow_nan=False), encoding='utf-8')

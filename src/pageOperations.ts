@@ -89,7 +89,15 @@ export function transformPage(page: Page, operation: PageOperation): Page {
           ...page.score,
           positioning: 'estimated',
           systems: page.score.systems.map((r) => scoreBox(r)),
-          notes: page.score.notes.map((n) => ({ ...n, region: scoreBox(n.region) })),
+          notes: page.score.notes.map((n) => ({
+            ...n,
+            region: scoreBox(n.region),
+            ...(n.continuations
+              ? {
+                  continuations: n.continuations.map((c) => ({ ...c, region: scoreBox(c.region) })),
+                }
+              : {}),
+          })),
         }
       : undefined,
     nativeRevision: uid(),

@@ -335,9 +335,8 @@ async function appendOverlay(
         turn = image.rotation ?? 0,
         displayWidth = turn % 180 ? image.height : image.width,
         displayHeight = turn % 180 ? image.width : image.height,
-        scale = Math.min(displayWidth / png.width, displayHeight / png.height),
-        width = png.width * scale,
-        height = png.height * scale;
+        width = displayWidth,
+        height = displayHeight;
       layer.drawImage(png, {
         x:
           image.x +

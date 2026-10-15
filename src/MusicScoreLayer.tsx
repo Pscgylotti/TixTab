@@ -1,31 +1,27 @@
 import { useMemo } from 'react';
 import type { Page } from './model';
-import { cursorNote, useScoreCursor } from './musicTransport';
+import { cursorNote, scoreAnchors, useScoreCursor } from './musicTransport';
 import { t } from './i18n';
 export default function MusicScoreLayer({ page }: { page: Page }) {
   const cursor = useScoreCursor(page.id),
     score = page.score;
+  const anchors = useMemo(() => (score ? scoreAnchors(score) : []), [score]);
   const rows = useMemo(() => {
     const seen = new Set<string>(),
       groups = (score?.systems ?? []).map(() => [] as NonNullable<typeof score>['notes']);
-    for (const n of score?.notes ?? [])
-      if (!seen.has(n.sourceId)) {
-        seen.add(n.sourceId);
+    for (const n of anchors)
+      if (!seen.has(`${n.sourceId}:${n.system}:${n.region.x}`)) {
+        seen.add(`${n.sourceId}:${n.system}:${n.region.x}`);
         groups[n.system]?.push(n);
       }
     return groups;
-  }, [score]);
+  }, [score, anchors]);
   if (!score || !cursor.seek) return null;
-  const note = cursor.pageId === page.id ? cursorNote(score, cursor.beat) : undefined,
+  const note = cursor.pageId === page.id ? cursorNote(score, cursor.beat, anchors) : undefined,
     system = note && score.systems[note.system],
     selected = cursor.pageId === page.id && score.notes.find((n) => n.id === cursor.selectedId);
-  const next = note && score.notes.find((n) => n.system === note.system && n.beat > note.beat),
-    f = next ? Math.max(0, Math.min(1, (cursor.beat - note!.beat) / (next.beat - note!.beat))) : 0;
-  const x = note
-    ? ((note.region.x + note.region.width / 2) * (1 - f) +
-        (next ? next.region.x + next.region.width / 2 : 0) * f) *
-      page.width
-    : 0;
+  // Printed spacing is not proportional to duration. Hold at the current onset.
+  const x = note ? (note.region.x + note.region.width / 2) * page.width : 0;
   return (
     <svg
       className="music-score-layer"

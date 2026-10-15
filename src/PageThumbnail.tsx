@@ -69,6 +69,7 @@ export default memo(function PageThumbnail({
           {pageLayers(page).map((i) =>
             i ? (
               <image
+                preserveAspectRatio="none"
                 key={`object:${i.id}`}
                 data-night-ink={!isPicture(i)}
                 href={groupDisplay(i, night, pdfNight)}

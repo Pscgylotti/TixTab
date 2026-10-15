@@ -147,8 +147,15 @@ export default function LocalDocumentToolDialog({
               a.signal,
             );
             if (!result?.musicxml) throw Error('no-score');
-            let score = parseMusicScore(result.musicxml, engine === 'homr' ? 'homr' : 'audiveris');
-            if (result.systems?.length) score = remapScoreSystems(score, result.systems);
+            let score = parseMusicScore(
+              result.musicxml,
+              engine === 'homr' ? 'homr' : 'audiveris',
+              result.noteLocations
+                ? { systems: result.systems ?? [], noteLocations: result.noteLocations }
+                : undefined,
+            );
+            if (!result.noteLocations && result.systems?.length)
+              score = remapScoreSystems(score, result.systems);
             a.signal.throwIfAborted();
             const latest = current.current.pages.find((p) => p.id === page.id);
             if (latest) onApply([{ ...latest, score }]);

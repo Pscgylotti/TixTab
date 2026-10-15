@@ -1,0 +1,58 @@
+.image-crop-dialog {
+  width: min(640px, 94vw);
+  padding: 16px;
+}
+.image-crop-dialog header,
+.image-crop-dialog h2,
+.image-crop-dialog footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.image-crop-dialog header {
+  justify-content: space-between;
+}
+.image-crop-stage {
+  display: flex;
+  justify-content: center;
+  max-height: 52vh;
+  overflow: auto;
+  margin: 12px 0;
+}
+.image-crop-source {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  touch-action: none;
+  overflow: hidden;
+  cursor: crosshair;
+}
+.image-crop-source img {
+  display: block;
+  max-width: 100%;
+  max-height: 50vh;
+  user-select: none;
+  pointer-events: none;
+}
+.image-crop-region {
+  position: absolute;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 2000px #0008;
+  pointer-events: none;
+}
+.image-crop-values {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.image-crop-values label {
+  font-size: var(--fs-sm);
+}
+.image-crop-values input {
+  width: 100%;
+  min-width: 0;
+}
+.image-crop-dialog footer {
+  justify-content: flex-end;
+  margin-top: 12px;
+}

@@ -40,6 +40,11 @@ export interface PlacedImage {
   scratchPage?: boolean;
   /** Display-only night version of a detached PDF snapshot; original pixels remain in data. */
   nightData?: string;
+  crop?: {
+    original: string;
+    nightOriginal?: string;
+    rect: { x: number; y: number; width: number; height: number };
+  };
   colorKey?: { original: string; color: string; tolerance: number };
   correction?: { model: string; sourceImageIndex?: number };
   /** Immediate editable children in local coordinates; groups may contain other groups. */
@@ -343,6 +348,22 @@ export function validNotebook(value: unknown): value is Notebook {
                 (i.correction.sourceImageIndex === undefined ||
                   (Number.isInteger(i.correction.sourceImageIndex) &&
                     i.correction.sourceImageIndex >= 0)))) &&
+            (i.crop === undefined ||
+              (i.crop &&
+                typeof i.crop.original === 'string' &&
+                /^data:image\/(png|jpeg|webp);base64,/.test(i.crop.original) &&
+                (i.crop.nightOriginal === undefined ||
+                  /^data:image\/png;base64,/.test(i.crop.nightOriginal)) &&
+                i.crop.rect &&
+                [i.crop.rect.x, i.crop.rect.y, i.crop.rect.width, i.crop.rect.height].every(
+                  Number.isFinite,
+                ) &&
+                i.crop.rect.x >= 0 &&
+                i.crop.rect.y >= 0 &&
+                i.crop.rect.width > 0 &&
+                i.crop.rect.height > 0 &&
+                i.crop.rect.x + i.crop.rect.width <= 1.000001 &&
+                i.crop.rect.y + i.crop.rect.height <= 1.000001)) &&
             (i.colorKey === undefined ||
               (i.colorKey &&
                 /^data:image\/png;base64,/.test(i.colorKey.original) &&

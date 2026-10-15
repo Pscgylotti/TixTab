@@ -1,3 +1,4 @@
+import MusicTempoControl from './MusicTempoControl';
 import { musicInstruments, savedMusicInstrument, saveMusicInstrument } from './musicInstruments';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -294,20 +295,13 @@ export default function MusicPlayer({
                 </option>
               ))}
             </select>
-            <label>
-              BPM
-              <input
-                aria-label={t('播放速度')}
-                type="number"
-                min={20}
-                max={400}
-                value={tempo}
-                onChange={(e) => {
-                  stop();
-                  setTempo(Math.max(20, Math.min(400, Number(e.target.value) || 120)));
-                }}
-              />
-            </label>
+            <MusicTempoControl
+              value={tempo}
+              onChange={(bpm) => {
+                stop();
+                setTempo(bpm);
+              }}
+            />
           </div>
           <label className="music-instrument-control">
             {t('音色')}

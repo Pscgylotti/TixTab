@@ -25,6 +25,9 @@ import {
   Layers,
   Group,
   Ungroup,
+  RotateCcw,
+  RotateCw,
+  Crop,
 } from 'lucide-react';
 import { createObjectGroup, mergePageObjects, ungroupPageObject } from './objectGroup';
 import { copyObjects, pasteObjectsFromButton, containsScratchPage } from './objectClipboard';
@@ -63,6 +66,7 @@ import InkSelectionLayer from './InkSelectionLayer';
 import ReviewLayer from './ReviewLayer';
 import { useAppearance } from './appearance';
 import { lazy, Suspense } from 'react';
+const ImageCropDialog = lazy(() => import('./ImageCropDialog'));
 const ColorKeyDialog = lazy(() => import('./ColorKeyDialog'));
 const NativePdfLayer = lazy(() => import('./NativePdfLayer'));
 interface Props {
@@ -600,8 +604,45 @@ function PageEditor({
     queueInk();
   };
   const [colorKeyImage, setColorKeyImage] = useState<PlacedImage | null>(null);
+  const [cropImage, setCropImage] = useState<PlacedImage | null>(null);
+  const rotateImage = (turn: number) => {
+    if (!selectedImage) return;
+    const scale = Math.min(1, page.width / selectedImage.height, page.height / selectedImage.width);
+    const width = selectedImage.height * scale,
+      height = selectedImage.width * scale;
+    const image = {
+      ...selectedImage,
+      rotation: (((selectedImage.rotation ?? 0) + turn + 360) % 360) as PlacedImage['rotation'],
+      width,
+      height,
+      x: Math.max(
+        0,
+        Math.min(page.width - width, selectedImage.x + (selectedImage.width - width) / 2),
+      ),
+      y: Math.max(
+        0,
+        Math.min(page.height - height, selectedImage.y + (selectedImage.height - height) / 2),
+      ),
+    };
+    onChange({ ...page, images: page.images.map((i) => (i.id === image.id ? image : i)) });
+  };
   return (
     <>
+      {cropImage && (
+        <Suspense fallback={null}>
+          <ImageCropDialog
+            image={cropImage}
+            onClose={() => setCropImage(null)}
+            onApply={(image) => {
+              onChange({
+                ...page,
+                images: page.images.map((i) => (i.id === image.id ? image : i)),
+              });
+              setCropImage(null);
+            }}
+          />
+        </Suspense>
+      )}
       {colorKeyImage && (
         <Suspense fallback={null}>
           <ColorKeyDialog
@@ -764,6 +805,31 @@ function PageEditor({
                 <Pencil size={15} />
                 {tr('编辑')}
               </button>
+            )}
+            {selectedImage && isPicture(selectedImage) && !selectedImage.group && (
+              <>
+                <button
+                  aria-label={tr('逆时针旋转图片')}
+                  title={tr('逆时针旋转图片')}
+                  onClick={() => rotateImage(-90)}
+                >
+                  <RotateCcw size={15} />
+                </button>
+                <button
+                  aria-label={tr('顺时针旋转图片')}
+                  title={tr('顺时针旋转图片')}
+                  onClick={() => rotateImage(90)}
+                >
+                  <RotateCw size={15} />
+                </button>
+                <button
+                  aria-label={tr('裁剪图片')}
+                  title={tr('裁剪图片')}
+                  onClick={() => setCropImage(selectedImage)}
+                >
+                  <Crop size={15} />
+                </button>
+              </>
             )}
             {selectedImage &&
               isPicture(selectedImage) &&

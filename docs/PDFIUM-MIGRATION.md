@@ -1,6 +1,6 @@
 # PDFium WASM migration
 
-Current branch: `codex/pdfium-wasm`. Original checkpoint: `9d954d5`; previous image migration checkpoint: `9ccaecb`. Package version remains 0.3.3. This branch has not published or launched an installer.
+Current branch: `codex/pdfium-wasm`. Original checkpoint: `9d954d5`; previous image migration checkpoint: `9ccaecb`. Packaged in version 0.3.4. See [release notes](releases/0.3.4.md). The installer and packaged application are not launched on this validation host.
 
 ## Completed removal
 

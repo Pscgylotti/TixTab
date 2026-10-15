@@ -6,7 +6,7 @@ import { objectBox, objectsInBox, transformObjects, type ObjectBox } from './obj
 import { groupDisplay } from './objectGroup';
 import { useAppearance } from './appearance';
 import type { SpatialIndex } from './spatialIndex';
-type Corner = 'nw' | 'ne' | 'sw' | 'se';
+type Corner = 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'w' | 'e';
 interface Props {
   page: Page;
   index: SpatialIndex<PlacedImage>;
@@ -121,7 +121,29 @@ export default function ObjectLayer({
         x: Math.max(0, Math.min(page.width - o.width, o.x + dx)),
         y: Math.max(0, Math.min(page.height - o.height, o.y + dy)),
       };
-    else {
+    else if (g.handle.length === 1) {
+      const west = g.handle === 'w',
+        north = g.handle === 'n';
+      const horizontal = west || g.handle === 'e';
+      const width = horizontal
+        ? Math.max(
+            Math.min(16, o.width),
+            Math.min(west ? o.x + o.width : page.width - o.x, o.width + (west ? -dx : dx)),
+          )
+        : o.width;
+      const height = horizontal
+        ? o.height
+        : Math.max(
+            Math.min(16, o.height),
+            Math.min(north ? o.y + o.height : page.height - o.y, o.height + (north ? -dy : dy)),
+          );
+      g.latest = {
+        x: west ? o.x + o.width - width : o.x,
+        y: north ? o.y + o.height - height : o.y,
+        width,
+        height,
+      };
+    } else {
       const sx = g.handle.endsWith('w') ? -1 : 1,
         sy = g.handle.startsWith('n') ? -1 : 1,
         ax = o.x + (sx < 0 ? o.width : 0),
@@ -317,6 +339,17 @@ export default function ObjectLayer({
               {...handlers}
             />
           ))}
+          {selected.length === 1 &&
+            images.some((i) => i.id === selected[0] && isPicture(i) && !i.group) &&
+            (['n', 's', 'w', 'e'] as const).map((edge, n) => (
+              <button
+                key={edge}
+                className={`object-handle ${edge}`}
+                aria-label={tr('拉伸图片{0}', tr(['上边', '下边', '左边', '右边'][n]))}
+                onPointerDown={(e) => start(e, undefined, edge)}
+                {...handlers}
+              />
+            ))}
         </div>
       )}
     </>

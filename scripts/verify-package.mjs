@@ -109,6 +109,10 @@ for (const name of [
   'requirements-pdf.txt',
   'install_dependencies.py',
   'python-sources.json',
+  'document_correct.py',
+  'homr_runner.py',
+  'homr_layout.py',
+  'requirements-homr.txt',
 ])
   assert.deepEqual(
     readFileSync(join(dirname(dirname(archive)), 'backend', name)),
@@ -162,10 +166,10 @@ assert.ok(
   'Bundled Pinyin dictionary missing',
 );
 const catalog = json('electron/model-catalog.json');
-assert.equal(catalog.models.length, 14);
+assert.equal(catalog.models.length, 17);
 assert.equal(
   catalog.models.reduce((n, m) => n + m.files.length, 0),
-  63,
+  68,
 );
 for (const name of [
   'native_tesseract.py',

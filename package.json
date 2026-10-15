@@ -1,6 +1,6 @@
 {
   "name": "tixtab",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "private": true,
   "description": "Pen-first PDF reading and annotation workspace",
   "type": "module",
@@ -83,7 +83,7 @@
     "electronDist": "node_modules/electron/dist",
     "npmRebuild": false,
     "directories": {
-      "output": "release/0.3.3"
+      "output": "release/0.3.4"
     },
     "files": [
       "dist/**/*",
@@ -165,6 +165,7 @@
           "python-sources.json",
           "document_correct.py",
           "homr_runner.py",
+          "homr_layout.py",
           "requirements-homr.txt"
         ]
       },

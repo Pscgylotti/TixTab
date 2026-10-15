@@ -25,6 +25,7 @@ export interface LocalDocumentToolsBridge {
       image?: string;
       musicxml?: string;
       systems?: import('./musicScore').ScoreRect[];
+      noteLocations?: import('./musicScore').ScoreLocations;
       width?: number;
       height?: number;
       engine?: 'audiveris' | 'homr';

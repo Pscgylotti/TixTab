@@ -34,7 +34,7 @@ export function groupDisplay(image: PlacedImage, night = false, pdfNight = false
     const swap = image.rotation % 180;
     const w = swap ? image.height : image.width,
       h = swap ? image.width : image.height;
-    const xml = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${image.width} ${image.height}"><image x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" transform="translate(${image.width / 2} ${image.height / 2}) rotate(${image.rotation})" href="${xmlAttribute(data)}"/></svg>`;
+    const xml = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${image.width} ${image.height}"><image preserveAspectRatio="none" x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" transform="translate(${image.width / 2} ${image.height / 2}) rotate(${image.rotation})" href="${xmlAttribute(data)}"/></svg>`;
     const result = 'data:image/svg+xml;base64,' + btoa(xml);
     let cache = rotatedDisplays.get(image);
     if (!cache) rotatedDisplays.set(image, (cache = new Map()));
@@ -64,7 +64,7 @@ export function groupDisplay(image: PlacedImage, night = false, pdfNight = false
         : night
           ? 'invert(0.9) hue-rotate(180deg)'
           : '';
-      return `<image x="${child.x}" y="${child.y}" width="${child.width}" height="${child.height}" href="${xmlAttribute(groupDisplay(child, night, pdfNight))}"${filter ? ` style="filter:${filter}"` : ''}/>`;
+      return `<image preserveAspectRatio="none" x="${child.x}" y="${child.y}" width="${child.width}" height="${child.height}" href="${xmlAttribute(groupDisplay(child, night, pdfNight))}"${filter ? ` style="filter:${filter}"` : ''}/>`;
     })
     .join('')}</svg>`;
   const data = 'data:image/svg+xml;base64,' + btoa(xml);

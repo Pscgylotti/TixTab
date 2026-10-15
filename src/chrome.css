@@ -532,7 +532,7 @@
   height: 100%;
   display: block;
   pointer-events: none;
-  object-fit: contain;
+  object-fit: fill;
 }
 .object-layer.active .placed-object {
   pointer-events: auto;
@@ -1796,4 +1796,34 @@ fieldset.provider-config {
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+.object-handle.n {
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  cursor: ns-resize;
+}
+.object-handle.s {
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 50%);
+  cursor: ns-resize;
+}
+.object-handle.w {
+  left: 0;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  cursor: ew-resize;
+}
+.object-handle.e {
+  right: 0;
+  top: 50%;
+  transform: translate(50%, -50%);
+  cursor: ew-resize;
+}
+
+/* Reading layouts otherwise override placed-object sizing with contain. */
+.reading-content .placed-object img {
+  object-fit: fill;
 }

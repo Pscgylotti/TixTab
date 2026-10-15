@@ -58,3 +58,10 @@ describe('multiple object selection', () => {
     expect(images[0].x).toBe(10);
   });
 });
+
+it('stretches width independently while keeping vertical geometry and source metadata', () => {
+  const before = images[0];
+  const stretched = transformObjects(images, ['a'], before, { ...before, width: 90 });
+  expect(stretched[0]).toMatchObject({ x: 10, y: 20, width: 90, height: 40, scene: before.scene });
+  expect(stretched[1]).toBe(images[1]);
+});

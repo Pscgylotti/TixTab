@@ -1,7 +1,15 @@
 import { expect, it } from 'vitest';
-import { estimateMidi, followScore, scoreTimeline, scoreAt, timelineNotes } from './musicTransport';
+import {
+  estimateMidi,
+  followScore,
+  scoreTimeline,
+  scoreAt,
+  timelineNotes,
+  cursorNote,
+  scoreAnchors,
+} from './musicTransport';
 import { scoreMidi } from './musicMidi';
-import { validMusicScore, type MusicScore } from './musicScore';
+import { validMusicScore, correctScoreNote, type MusicScore } from './musicScore';
 import { blankPage } from './model';
 import { transformPage } from './pageOperations';
 const region = { x: 0.2, y: 0.3, width: 0.02, height: 0.03 };
@@ -52,4 +60,35 @@ it('joins recognized pages, exports corrected MIDI and keeps score geometry vali
     { action: 'crop', margins: { left: 30, right: 10, top: 30, bottom: 0 } },
   ] as const)
     expect(validMusicScore(transformPage(p, operation).score)).toBe(true);
+});
+
+it('holds the cursor at printed onsets, chooses one chord anchor and follows ties across rows', () => {
+  const a = {
+    ...score.notes[0],
+    duration: 4,
+    continuations: [{ beat: 2, duration: 2, system: 1, region: { ...region, x: 0.15 } }],
+  };
+  const chord = {
+    ...a,
+    id: 'chord',
+    sourceId: 'chord',
+    region: { ...region, x: 0.21 },
+    continuations: undefined,
+  };
+  const b = { ...score.notes[0], id: 'b', sourceId: 'b', beat: 4, region: { ...region, x: 0.83 } };
+  const s = {
+    ...score,
+    notes: [a, chord, b],
+    systems: [score.systems[0], { ...score.systems[0], y: 0.6 }],
+    duration: 8,
+  };
+  expect(validMusicScore(s)).toBe(true);
+  expect(correctScoreNote(s, 'n', { duration: 1 }).notes[0].continuations).toEqual([]);
+  const anchors = scoreAnchors(s);
+  expect(cursorNote(s, -0.1, anchors)).toBeUndefined();
+  expect(cursorNote(s, 1.99, anchors)?.region.x).toBe(0.2);
+  expect(cursorNote(s, 2, anchors)?.system).toBe(1);
+  expect(cursorNote(s, 3.99, anchors)?.region.x).toBe(0.15);
+  expect(cursorNote(s, 4, anchors)?.region.x).toBe(0.83);
+  expect(timelineNotes(scoreTimeline([{ ...blankPage(), score: s }]))).toHaveLength(3);
 });

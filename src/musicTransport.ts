@@ -27,11 +27,25 @@ export function timelineNotes(timeline: TimedScore[]) {
     )
     .sort((a, b) => a.beat - b.beat);
 }
-export function cursorNote(score: MusicScore, beat: number): ScoreNote | undefined {
-  let result = score.notes[0];
-  for (const n of score.notes) {
+/** Printed continuation anchors retain tied-note locations without retriggering audio. */
+export function scoreAnchors(score: MusicScore): ScoreNote[] {
+  return score.notes
+    .flatMap((n) => [
+      n,
+      ...(n.continuations ?? []).map((c) => ({ ...n, ...c, continuations: undefined })),
+    ])
+    .sort((a, b) => a.beat - b.beat || a.system - b.system || a.region.x - b.region.x);
+}
+export function cursorNote(
+  score: MusicScore,
+  beat: number,
+  anchors = scoreAnchors(score),
+): ScoreNote | undefined {
+  let result: ScoreNote | undefined;
+  for (const n of anchors) {
     if (n.beat > beat + 0.001) break;
-    result = n;
+    // A chord shares one onset; consistently use its first (upper/left) anchor.
+    if (!n.muted && (!result || n.beat > result.beat + 0.001)) result = n;
   }
   return result;
 }

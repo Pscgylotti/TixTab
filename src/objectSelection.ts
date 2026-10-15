@@ -43,15 +43,16 @@ export function transformObjects(
   to: ObjectBox,
 ) {
   const chosen = new Set(ids),
-    scale = to.width / from.width;
+    scale = to.width / from.width,
+    scaleY = to.height / from.height;
   return images.map((i) =>
     chosen.has(i.id)
       ? {
           ...i,
           x: to.x + (i.x - from.x) * scale,
-          y: to.y + (i.y - from.y) * scale,
+          y: to.y + (i.y - from.y) * scaleY,
           width: i.width * scale,
-          height: i.height * scale,
+          height: i.height * scaleY,
         }
       : i,
   );

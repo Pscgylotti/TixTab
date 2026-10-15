@@ -327,14 +327,14 @@ function createLocalDocumentTools({ root, backend, resolveModel, spawnProcess = 
           directory,
         );
         const musicxml = await boundedFile(path.join(directory, 'input.musicxml'), 4 * 1024 * 1024);
-        const systems = JSON.parse(
-          (await boundedFile(path.join(directory, 'input.staffs.json'), 1024 * 1024)).toString(
+        const layout = JSON.parse(
+          (await boundedFile(path.join(directory, 'input.staffs.json'), 4 * 1024 * 1024)).toString(
             'utf8',
           ),
         );
         return {
           ok: true,
-          data: { musicxml: musicxml.toString('utf8'), systems, width, height, engine: 'homr' },
+          data: { musicxml: musicxml.toString('utf8'), ...layout, width, height, engine: 'homr' },
         };
       } catch (error) {
         return {

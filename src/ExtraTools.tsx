@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { Wrench, Images } from 'lucide-react';
+import { Wrench, Images, ScanLine, ScanText, Music } from 'lucide-react';
 import type { Notebook, Page } from './model';
 import type { PDFDocumentProxy } from './pdfTypes';
 import AnchoredPopover from './AnchoredPopover';
@@ -63,6 +63,7 @@ export default function ExtraTools({
                 setLocal('correct');
               }}
             >
+              <ScanLine size={17} aria-hidden="true" />
               {t('文档矫正')}
             </button>
             <button
@@ -72,6 +73,7 @@ export default function ExtraTools({
                 setLocal('music');
               }}
             >
+              <ScanText size={17} aria-hidden="true" />
               {t('五线谱识别')}
             </button>
             <button
@@ -82,6 +84,7 @@ export default function ExtraTools({
                 setPlayer(true);
               }}
             >
+              <Music size={17} aria-hidden="true" />
               {t('五线谱播放器')}
             </button>
           </div>

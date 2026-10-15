@@ -129,7 +129,8 @@ test('recognized scores persist, correct MIDI, seek from the page and auto turn 
   for (const mode of ['单页标注', '连续页面预览', '双页预览']) {
     await page.getByRole('button', { name: mode, exact: true }).click();
     await player.getByLabel('乐谱页面', { exact: true }).selectOption({ index: 0 });
-    await player.getByLabel('播放速度', { exact: true }).fill('400');
+    await player.getByLabel('播放速度', { exact: true }).focus();
+    await page.keyboard.press('End');
     await player.getByRole('button', { name: '播放乐谱', exact: true }).click();
     await expect(player.getByLabel('乐谱页面', { exact: true })).toHaveValue(
       await player.locator('option').nth(1).getAttribute('value'),
@@ -211,4 +212,116 @@ test('homr option maps estimated coordinates and stopping a live correction leav
   await page.getByRole('button', { name: '关闭文档工具', exact: true }).click();
   await page.getByRole('button', { name: '放大', exact: true }).click();
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
+});
+
+test('tempo slider supports keyboard and wheel; extra tools all have leading icons', async ({
+  page,
+}) => {
+  await fixture(page);
+  await page.getByRole('button', { name: '额外工具', exact: true }).click();
+  for (const name of ['文档矫正', '五线谱识别', '五线谱播放器'])
+    await expect(page.getByRole('menuitem', { name, exact: true }).locator('svg')).toHaveCount(1);
+  await page.getByRole('menuitem', { name: '五线谱识别', exact: true }).click();
+  await page.getByRole('button', { name: '开始识别', exact: true }).click();
+  await expect(
+    page.locator('.local-document-dialog > .local-document-body > p[role=status]'),
+  ).toContainText('已完成');
+  await page.getByRole('button', { name: '关闭文档工具', exact: true }).click();
+  const slider = page.getByLabel('播放速度', { exact: true });
+  await slider.dispatchEvent('wheel', { deltaY: -100 });
+  await expect(slider).toHaveValue('121');
+  await slider.dispatchEvent('wheel', { deltaY: -100, shiftKey: true });
+  await expect(slider).toHaveValue('126');
+  await slider.focus();
+  await page.keyboard.press('Home');
+  await expect(slider).toHaveValue('20');
+  await slider.dispatchEvent('wheel', { deltaY: 100 });
+  await expect(slider).toHaveValue('20');
+  await page.keyboard.press('End');
+  await expect(slider).toHaveValue('400');
+  await slider.dispatchEvent('wheel', { deltaY: -100 });
+  await expect(slider).toHaveValue('400');
+});
+
+test('homr maps XML note identities rather than timing spacing, including repeats and tied row changes', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { parseMusicScore, validMusicScore } = await import('/src/musicScore.ts' as string);
+    const { cursorNote, timelineNotes, scoreTimeline } = await import(
+      '/src/musicTransport.ts' as string
+    );
+    const note = (id: string, tie = '') =>
+      `<note id="${id}"><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration>${tie}</note>`;
+    const xml = `<score-partwise><part id="P1"><measure number="1"><attributes><divisions>1</divisions></attributes><barline><repeat direction="forward"/></barline>${note('first', '<tie type="start"/>')}</measure><measure number="2"><print new-system="yes"/>${note('continuation', '<tie type="stop"/>')}<barline><repeat direction="backward"/></barline></measure></part></score-partwise>`;
+    const r = (x: number, y: number) => ({ x, y, width: 0.02, height: 0.02 });
+    const score = parseMusicScore(xml, 'homr', {
+      systems: [r(0.1, 0.2), r(0.1, 0.6)],
+      noteLocations: {
+        first: { system: 0, region: r(0.7, 0.2) },
+        continuation: { system: 1, region: r(0.15, 0.6) },
+      },
+    });
+    return {
+      valid: validMusicScore(score),
+      count: score.notes.length,
+      positions: [0, 3.9, 4, 7.9, 8, 12].map((beat) => {
+        const n = cursorNote(score, beat);
+        return [n.system, n.region.x];
+      }),
+      duration: score.duration,
+      audioNotes: timelineNotes(scoreTimeline([{ id: 'page', score }])).length,
+    };
+  });
+  expect(result).toEqual({
+    valid: true,
+    count: 2,
+    positions: [
+      [0, 0.7],
+      [0, 0.7],
+      [1, 0.15],
+      [1, 0.15],
+      [0, 0.7],
+      [1, 0.15],
+    ],
+    duration: 16,
+    audioNotes: 2,
+  });
+});
+
+test('real homr recognition retains XML note identity and uses normalized detector locations', async ({
+  page,
+}) => {
+  const directory = '.cache/document-tools/homr-layout-smoke';
+  const fixture = await Promise.all([
+    fs.readFile(directory + '/input.musicxml', 'utf8'),
+    fs.readFile(directory + '/input.staffs.json', 'utf8'),
+  ]).catch(() => null);
+  if (!fixture) {
+    test.skip();
+    return;
+  }
+  await page.goto('/');
+  const result = await page.evaluate(
+    async ({ xml, layout }) => {
+      const { parseMusicScore, validMusicScore } = await import('/src/musicScore.ts' as string);
+      const score = parseMusicScore(xml, 'homr', layout);
+      return {
+        valid: validMusicScore(score),
+        count: score.notes.length,
+        systems: score.systems.length,
+        found: score.notes.every((n) =>
+          Object.values(layout.noteLocations).some(
+            (l: any) => l.system === n.system && l.region.x === n.region.x,
+          ),
+        ),
+      };
+    },
+    { xml: fixture[0], layout: JSON.parse(fixture[1]) },
+  );
+  expect(result.valid).toBe(true);
+  expect(result.count).toBeGreaterThan(100);
+  expect(result.systems).toBe(2);
+  expect(result.found).toBe(true);
 });

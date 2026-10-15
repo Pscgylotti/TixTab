@@ -33,13 +33,13 @@ const info = {
     ),
   ),
   validation: {
-    unit: '466 tests / 92 files',
+    unit: '514 tests / 111 files',
     browser:
-      '22 release browser tests: clipboard history and memory modes, real toolbar ink/object copy/cut writes, multi-page cross-document clipboard and undo, virtualized mouse/touch/keyboard selection, thumbnail scrolling/reordering, compact controls, lazy folder review/export/restart and global floating panel',
+      '39 release browser cases: PDFium rendering/forms/images/document lifecycle, scratch paper, workspace previews/grouping/batch metadata, Markdown, image crop/stretch/rotation/night/color keys, BPM controls, score seek/page turning and real homr XML note mapping. 38 passed in the combined run; a brittle form pixel-count assertion was replaced by checked/unchecked comparison and that case passed in isolation.',
     packaged:
       'Static ASAR/build asset SHA256 and file-set verification, required backend/preload modules, native binding/icon and model exclusion; this release did not launch the installer or packaged application',
     nativeModels:
-      'Local inference code and weights are unchanged from 0.3.2; no new native inference or energy benchmarks were run. Experimental NPU and mixed OCR limitations remain.',
+      'Local UVDoc NPU and Audiveris MusicXML smoke evidence retained. This release ran homr 0.7.0 CPU inference on two sample score systems: 123 exported pitched notes mapped to page coordinates, 119 snapped to detector noteheads. Three homr adapter unit checks and three native tool lifecycle checks passed. No new energy, OCR accuracy or cross-device speed benchmark is claimed.',
     installer:
       'Compiled NSIS installer. Earlier isolated upgrade/repair/downgrade fixture evidence retained. Full installation was not rerun on this host.',
     limits:
