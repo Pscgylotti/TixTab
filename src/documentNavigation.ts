@@ -1,9 +1,9 @@
-import { Util, type PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { renderPolicy, subscribeAppearance } from './appearance';
 import type { Page, PlacedImage } from './model';
 import { readPdfTextContent } from './pdfTextContent';
 import { groupLeaves } from './objectGroup';
-import { polygonBox } from './pdfNightGeometry';
+import { polygonBox, multiply } from './pdfNightGeometry';
 import { imageCorners } from './objectRotation';
 import type { OcrAnnotation } from './ocrLayout';
 export interface TextRect {
@@ -62,7 +62,7 @@ export function readPageText(pdf: PDFDocumentProxy, sourceIndex: number) {
     let text = '';
     for (const item of content.items) {
       if (!('str' in item)) continue;
-      const matrix = Util.transform(viewport.transform, item.transform),
+      const matrix = multiply(viewport.transform, item.transform),
         height = Math.hypot(matrix[2], matrix[3]),
         ascent = content.styles[item.fontName]?.ascent ?? 0.8;
       const rect = {

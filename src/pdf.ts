@@ -1,21 +1,28 @@
-import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import worker from '../.cache/pdf-index-worker.mjs?url';
 import { uid, type Notebook } from './model';
 import { trackPerformance } from './performanceLedger';
 import { releasePdfRenderCache } from './pdfRenderCache';
 export { exportPdf, SignedPdfExportError } from './pdfExportClient';
 export type { PdfExportProgress } from './pdfExportClient';
-GlobalWorkerOptions.workerSrc = worker;
 export function destroyPdf(pdf: PDFDocumentProxy | null | undefined) {
   if (!pdf) return Promise.resolve();
   releasePdfRenderCache(pdf);
   return pdf.destroy();
 }
 export async function loadPdf(bytes: Uint8Array) {
-  return trackPerformance(
+  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
+  GlobalWorkerOptions.workerSrc = worker;
+  const pdf = await trackPerformance(
     'pdf-document',
     () => getDocument({ data: bytes.slice(), isEvalSupported: false }).promise,
   );
+  const destroy = pdf.destroy.bind(pdf);
+  pdf.destroy = () => {
+    releasePdfRenderCache(pdf);
+    return destroy();
+  };
+  return pdf;
 }
 export async function importPdf(
   bytes: Uint8Array,

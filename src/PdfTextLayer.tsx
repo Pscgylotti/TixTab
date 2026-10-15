@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { trackPerformance } from './performanceLedger';
-import { TextLayer, type PDFDocumentProxy } from 'pdfjs-dist';
+import type { TextLayer, PDFDocumentProxy } from 'pdfjs-dist';
 import { readPdfTextContent } from './pdfTextContent';
 import type { Page } from './model';
 import BitmapTextLayer from './BitmapTextLayer';
@@ -55,7 +55,10 @@ export default function PdfTextLayer({
     if (pdf && sourceIndex !== null)
       void trackPerformance('pdf-text', () =>
         pdf.getPage(sourceIndex + 1).then(async (page) => {
-          const content = await readPdfTextContent(pdf, sourceIndex, page);
+          const [content, { TextLayer }] = await Promise.all([
+            readPdfTextContent(pdf, sourceIndex, page),
+            import('pdfjs-dist'),
+          ]);
           if (cancelled) return;
           const viewport = page.getViewport({ scale: 1 });
           element.style.setProperty('--total-scale-factor', String(viewport.userUnit));

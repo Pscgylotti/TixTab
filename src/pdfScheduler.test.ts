@@ -13,7 +13,12 @@ async function fixture(powerMode = 'quality') {
     hidden: false,
     documentElement: { dataset: {} as Record<string, string> },
     createElement: () =>
-      Object.assign(new EventTarget(), { width: 0, height: 0, getContext: () => ({}) }),
+      Object.assign(new EventTarget(), {
+        width: 0,
+        height: 0,
+        dataset: {},
+        getContext: () => ({}),
+      }),
   });
   let visibility!: (visible: boolean) => void, initial!: (visible: boolean) => void;
   const snapshot = new Promise<boolean>((resolve) => {

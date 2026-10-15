@@ -21,7 +21,12 @@ afterEach(() => {
 function fixture(width = 200, height = 300) {
   vi.stubGlobal('document', {
     createElement: () =>
-      Object.assign(new EventTarget(), { width: 0, height: 0, getContext: () => ({}) }),
+      Object.assign(new EventTarget(), {
+        width: 0,
+        height: 0,
+        dataset: {},
+        getContext: () => ({}),
+      }),
   });
   const starts: number[] = [],
     pending: { resolve: () => void; reject: (error: unknown) => void }[] = [];
@@ -100,7 +105,12 @@ describe('PDF 位图共享和绘制调度', () => {
   it('keeps 150 LRU thumbnails separately from large page rasters and invalidates lost previews', async () => {
     vi.stubGlobal('document', {
       createElement: () =>
-        Object.assign(new EventTarget(), { width: 0, height: 0, getContext: () => ({}) }),
+        Object.assign(new EventTarget(), {
+          width: 0,
+          height: 0,
+          dataset: {},
+          getContext: () => ({}),
+        }),
     });
     let renders = 0;
     const pdf = {
@@ -195,7 +205,12 @@ describe('PDF 位图共享和绘制调度', () => {
   it('高清瓦片只分配局部画布，裁切变换准确；共享缓存不会把瓦片当整页预览', async () => {
     vi.stubGlobal('document', {
       createElement: () =>
-        Object.assign(new EventTarget(), { width: 0, height: 0, getContext: () => ({}) }),
+        Object.assign(new EventTarget(), {
+          width: 0,
+          height: 0,
+          dataset: {},
+          getContext: () => ({}),
+        }),
     });
     const render = vi.fn((_args: Record<string, unknown>) => ({
       promise: Promise.resolve(),
@@ -279,6 +294,7 @@ it.each(['quality', 'eco'] as const)(
         Object.assign(new EventTarget(), {
           width: 0,
           height: 0,
+          dataset: {},
           getContext: () => ({ drawImage: () => {} }),
         }),
     });
@@ -306,6 +322,7 @@ it('uses a pre-rendered half and renders only its missing half at the same scale
       Object.assign(new EventTarget(), {
         width: 0,
         height: 0,
+        dataset: {},
         getContext: () => ({
           drawImage: () => {},
           save: () => {},

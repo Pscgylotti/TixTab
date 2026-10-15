@@ -26,6 +26,20 @@ export function outline(stroke: Stroke) {
             stroke.points[0].map((v, axis) => v + ((stroke.points[1][axis] - v) * i) / 4),
           )
         : stroke.points;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  for (const p of stroke.points) {
+    minX = Math.min(minX, p[0]);
+    minY = Math.min(minY, p[1]);
+    maxX = Math.max(maxX, p[0]);
+    maxY = Math.max(maxY, p[1]);
+  }
+  // Small features need their original trajectory; larger writing keeps the
+  // familiar smoothing. The result depends on paper geometry, never later zoom.
+  const extent = stroke.points.length ? Math.hypot(maxX - minX, maxY - minY) : 0;
+  const detail = Math.max(0, Math.min(1, (extent / Math.max(0.01, stroke.size) - 2) / 6));
   const options: StrokeOptions = {
     size: stroke.size,
     thinning:
@@ -34,19 +48,22 @@ export function outline(stroke: Stroke) {
         : stroke.tool === 'pencil'
           ? 0.65
           : 0.72,
-    smoothing: 0.5,
-    streamline: 0.25,
+    smoothing: 0.5 * detail,
+    streamline: 0.25 * detail,
     simulatePressure: false,
     last: true,
   };
-  const samples = getStrokePoints(points, options);
+  // The brush width must not be used as a minimum initial travel distance:
+  // otherwise an entire miniature U can disappear before the first kept point.
+  const samples = getStrokePoints(points, { ...options, size: 0 });
   const last = samples.at(-1);
-  if (last && samples.length > 1 && last.runningLength < 3) {
+  if (last && samples.length > 1) {
     // perfect-freehand 1.2.2 skips every non-final sample within 3 units of
     // the end. On a short fine stroke this includes its start, so its start
     // cap rotates the *end* outline around the start and makes a large disk.
-    // Disable only that short-stroke tail pruning. No taper uses runningLength
-    // here; positions, pressure, smoothing and ordinary strokes stay intact.
+    // The same absolute pruning can flatten a tiny curve at the end of a long
+    // stroke. Disable it for all scales; adaptive smoothing above controls noise.
+    // No taper uses runningLength here; positions and pressure stay intact.
     last.runningLength += 3;
   }
   return getStrokeOutlinePoints(samples, options);

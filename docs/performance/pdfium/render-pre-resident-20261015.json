@@ -1,0 +1,2521 @@
+{
+  "timestamp": "2026-10-15T06:34:12.064Z",
+  "methodology": "One pass per engine/input in a fresh browser. Identical output pixel budget, sequential pages, no page raster cache, page resources released between pages. PDFium uses the current hybrid adapter (PDF.js metadata remains); raster time includes worker transport and canvas presentation. First frame includes lazy WASM initialization/document import. No repeated-run means or energy claims. Process memory is summed over this browser process tree at three checkpoints; sampled maximum is not a true peak. CPU time includes document setup and browser work.",
+  "sources": {
+    "src/pdfium.worker.ts": "bac4d4e82ddb717b107dcab8e6308fa58575a954834235e0fbffd474b7a17dbb",
+    "src/pdfiumRaster.ts": "983d1a3a038d97803dbaa84a1f58018225a3b96269331d4cc91724e5ccf619eb",
+    "src/pdfRenderCache.ts": "215f3d532a8348c29076be45f4440bb99002de22a81ce62fd9b31e7eaff94114",
+    "src/pdf.ts": "af5e4ecc636896f1d125498b614cef9e07e78dda2b53d04795931854f94f2eec",
+    "src/appearance.ts": "49a7fb4ee091a252275d55f55228fc9a2ce24b84e00ca4695b33f3f14b4bcb62"
+  },
+  "results": [
+    {
+      "dataset": "scanned-book",
+      "backend": "pdfjs",
+      "first": 40,
+      "last": 100,
+      "parseMs": 467.1000000089407,
+      "pages": 755,
+      "bytes": 113703710,
+      "frames": 61,
+      "firstFrameMs": 58.6000000089407,
+      "steadyFrameMedianMs": 35.20000000298023,
+      "renderMs": 2207.600000038743,
+      "pagesPerSecond": 27.631817357732135,
+      "megapixelsPerSecond": 16.66917013922549,
+      "cpuSeconds": 4.247329,
+      "baselineMemory": {
+        "privateBytes": 381059072,
+        "workingSetBytes": 710541312
+      },
+      "sampledMemory": [
+        {
+          "page": 40,
+          "privateBytes": 740962304,
+          "workingSetBytes": 1113640960
+        },
+        {
+          "page": 70,
+          "privateBytes": 800854016,
+          "workingSetBytes": 1175105536
+        },
+        {
+          "page": 100,
+          "privateBytes": 801652736,
+          "workingSetBytes": 1176129536
+        }
+      ],
+      "afterCloseMemory": {
+        "privateBytes": 618856448,
+        "workingSetBytes": 963215360
+      },
+      "rows": [
+        {
+          "page": 40,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 1.2000000029802322,
+          "renderMs": 58.6000000089407,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 41,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5999999940395355,
+          "renderMs": 64.30000001192093,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 42,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5999999940395355,
+          "renderMs": 35.79999999701977,
+          "wasmHeap": 0,
+          "sample": [
+            181,
+            181,
+            181,
+            255
+          ]
+        },
+        {
+          "page": 43,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 44.599999994039536,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 44,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.6000000089406967,
+          "renderMs": 39.5,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 45,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 35.29999999701977,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 46,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 1.4000000059604645,
+          "renderMs": 31.299999997019768,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 47,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 34,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 48,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 32,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 49,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 36.70000000298023,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 50,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 33.900000005960464,
+          "wasmHeap": 0,
+          "sample": [
+            252,
+            252,
+            252,
+            255
+          ]
+        },
+        {
+          "page": 51,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5999999940395355,
+          "renderMs": 33.1000000089407,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 52,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.6000000089406967,
+          "renderMs": 42.70000000298023,
+          "wasmHeap": 0,
+          "sample": [
+            175,
+            175,
+            175,
+            255
+          ]
+        },
+        {
+          "page": 53,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5999999940395355,
+          "renderMs": 38.1000000089407,
+          "wasmHeap": 0,
+          "sample": [
+            252,
+            252,
+            252,
+            255
+          ]
+        },
+        {
+          "page": 54,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 36.69999998807907,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 55,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 32.900000005960464,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 56,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 37.1000000089407,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 57,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.30000001192092896,
+          "renderMs": 41,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 58,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 41.20000000298023,
+          "wasmHeap": 0,
+          "sample": [
+            247,
+            247,
+            247,
+            255
+          ]
+        },
+        {
+          "page": 59,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 39.900000005960464,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 60,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 42.70000000298023,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 61,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 42.79999999701977,
+          "wasmHeap": 0,
+          "sample": [
+            199,
+            199,
+            199,
+            255
+          ]
+        },
+        {
+          "page": 62,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 28.5,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 63,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 26.399999991059303,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 64,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 26,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 65,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 30.600000008940697,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 66,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 47.70000000298023,
+          "wasmHeap": 0,
+          "sample": [
+            246,
+            246,
+            246,
+            255
+          ]
+        },
+        {
+          "page": 67,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 23.900000005960464,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 68,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 36,
+          "wasmHeap": 0,
+          "sample": [
+            227,
+            227,
+            227,
+            255
+          ]
+        },
+        {
+          "page": 69,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 36.099999994039536,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 70,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 31.799999997019768,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 71,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 30.099999994039536,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 72,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 33.79999999701977,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 73,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.7999999970197678,
+          "renderMs": 36.5,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 74,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 27.799999997019768,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 75,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 27.5,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 76,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 47.20000000298023,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 77,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 29.099999994039536,
+          "wasmHeap": 0,
+          "sample": [
+            181,
+            181,
+            181,
+            255
+          ]
+        },
+        {
+          "page": 78,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.20000000298023224,
+          "renderMs": 37.099999994039536,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 79,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.6000000089406967,
+          "renderMs": 38.29999999701977,
+          "wasmHeap": 0,
+          "sample": [
+            229,
+            229,
+            229,
+            255
+          ]
+        },
+        {
+          "page": 80,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 31.599999994039536,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 81,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 39.8999999910593,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 82,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 31.799999997019768,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 83,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 39.1000000089407,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 84,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 40.70000000298023,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 85,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 35.900000005960464,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 86,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 34.900000005960464,
+          "wasmHeap": 0,
+          "sample": [
+            125,
+            125,
+            125,
+            255
+          ]
+        },
+        {
+          "page": 87,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 33.79999999701977,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 88,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 33.3999999910593,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 89,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 32.099999994039536,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 90,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 50.79999999701977,
+          "wasmHeap": 0,
+          "sample": [
+            220,
+            220,
+            220,
+            255
+          ]
+        },
+        {
+          "page": 91,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 35.20000000298023,
+          "wasmHeap": 0,
+          "sample": [
+            248,
+            248,
+            248,
+            255
+          ]
+        },
+        {
+          "page": 92,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 33.20000000298023,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 93,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 32.099999994039536,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 94,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.7000000029802322,
+          "renderMs": 34.900000005960464,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 95,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 29.099999994039536,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 96,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 28,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 97,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 2.5,
+          "renderMs": 38.20000000298023,
+          "wasmHeap": 0,
+          "sample": [
+            114,
+            114,
+            114,
+            255
+          ]
+        },
+        {
+          "page": 98,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 33.30000001192093,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 99,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 34.6000000089407,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 100,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 36.400000005960464,
+          "wasmHeap": 0,
+          "sample": [
+            230,
+            230,
+            230,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "dataset": "scanned-book",
+      "backend": "pdfium",
+      "first": 40,
+      "last": 100,
+      "parseMs": 465.5,
+      "pages": 755,
+      "bytes": 113703710,
+      "frames": 61,
+      "firstFrameMs": 397.20000000298023,
+      "steadyFrameMedianMs": 18.799999997019768,
+      "renderMs": 1556.9000001102686,
+      "pagesPerSecond": 39.18042263194786,
+      "megapixelsPerSecond": 23.63598175694887,
+      "cpuSeconds": 3.4046349999999994,
+      "baselineMemory": {
+        "privateBytes": 400855040,
+        "workingSetBytes": 726507520
+      },
+      "sampledMemory": [
+        {
+          "page": 40,
+          "privateBytes": 1215463424,
+          "workingSetBytes": 1533911040
+        },
+        {
+          "page": 70,
+          "privateBytes": 1120055296,
+          "workingSetBytes": 1444618240
+        },
+        {
+          "page": 100,
+          "privateBytes": 1141248000,
+          "workingSetBytes": 1470377984
+        }
+      ],
+      "afterCloseMemory": {
+        "privateBytes": 813727744,
+        "workingSetBytes": 1148825600
+      },
+      "rows": [
+        {
+          "page": 40,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 2.699999988079071,
+          "renderMs": 397.20000000298023,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 41,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.6000000089406967,
+          "renderMs": 23.19999998807907,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 42,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5999999940395355,
+          "renderMs": 31.200000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            132,
+            132,
+            132,
+            255
+          ]
+        },
+        {
+          "page": 43,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 30.299999997019768,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 44,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 18.900000005960464,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 45,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 18.400000005960464,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 46,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 24.700000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 47,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 20.200000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 48,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5999999940395355,
+          "renderMs": 19.700000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 49,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 19.700000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 50,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 19.600000008940697,
+          "wasmHeap": 138674176,
+          "sample": [
+            253,
+            253,
+            253,
+            255
+          ]
+        },
+        {
+          "page": 51,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 19.799999997019768,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 52,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 21.700000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            240,
+            240,
+            240,
+            255
+          ]
+        },
+        {
+          "page": 53,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 19.30000001192093,
+          "wasmHeap": 138674176,
+          "sample": [
+            254,
+            254,
+            254,
+            255
+          ]
+        },
+        {
+          "page": 54,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 18.900000005960464,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 55,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 19,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 56,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 18.200000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 57,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 20,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 58,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 18.700000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            249,
+            249,
+            249,
+            255
+          ]
+        },
+        {
+          "page": 59,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5999999940395355,
+          "renderMs": 26,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 60,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 20.200000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 61,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 20.099999994039536,
+          "wasmHeap": 138674176,
+          "sample": [
+            217,
+            217,
+            217,
+            255
+          ]
+        },
+        {
+          "page": 62,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 17.80000001192093,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 63,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 15.299999997019768,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 64,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 15.300000011920929,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 65,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 18.299999997019768,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 66,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 22.900000005960464,
+          "wasmHeap": 138674176,
+          "sample": [
+            238,
+            238,
+            238,
+            255
+          ]
+        },
+        {
+          "page": 67,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 17.700000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 68,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.7999999970197678,
+          "renderMs": 17.700000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            245,
+            245,
+            245,
+            255
+          ]
+        },
+        {
+          "page": 69,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 22.900000005960464,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 70,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 19.5,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 71,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 1.1000000089406967,
+          "renderMs": 24.5,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 72,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5999999940395355,
+          "renderMs": 25.700000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 73,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 20.600000008940697,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 74,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 15,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 75,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 14.299999997019768,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 76,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 18,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 77,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 19.299999997019768,
+          "wasmHeap": 138674176,
+          "sample": [
+            185,
+            185,
+            185,
+            255
+          ]
+        },
+        {
+          "page": 78,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 22.700000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 79,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 19.100000008940697,
+          "wasmHeap": 138674176,
+          "sample": [
+            186,
+            186,
+            186,
+            255
+          ]
+        },
+        {
+          "page": 80,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 18.200000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 81,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 19.200000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 82,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 18,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 83,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.5,
+          "renderMs": 18.400000005960464,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 84,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 18.799999997019768,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 85,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 17,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 86,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 17.799999997019768,
+          "wasmHeap": 138674176,
+          "sample": [
+            181,
+            181,
+            181,
+            255
+          ]
+        },
+        {
+          "page": 87,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 16.700000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 88,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 15.899999991059303,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 89,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 17.399999991059303,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 90,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 15.800000011920929,
+          "wasmHeap": 138674176,
+          "sample": [
+            240,
+            240,
+            240,
+            255
+          ]
+        },
+        {
+          "page": 91,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.7000000029802322,
+          "renderMs": 16.200000002980232,
+          "wasmHeap": 138674176,
+          "sample": [
+            250,
+            250,
+            250,
+            255
+          ]
+        },
+        {
+          "page": 92,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 16,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 93,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 17.099999994039536,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 94,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 17,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 95,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 17.5,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 96,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 16,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 97,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 17.299999997019768,
+          "wasmHeap": 138674176,
+          "sample": [
+            115,
+            115,
+            115,
+            255
+          ]
+        },
+        {
+          "page": 98,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 20.600000008940697,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 99,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 16.900000005960464,
+          "wasmHeap": 138674176,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 100,
+          "width": 620,
+          "height": 973,
+          "scale": 1.5,
+          "pixels": 603260,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 17.5,
+          "wasmHeap": 138674176,
+          "sample": [
+            248,
+            248,
+            248,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "dataset": "vector-text",
+      "backend": "pdfjs",
+      "first": 1,
+      "last": 12,
+      "parseMs": 226.80000001192093,
+      "pages": 12,
+      "bytes": 164178,
+      "frames": 12,
+      "firstFrameMs": 37.6000000089407,
+      "steadyFrameMedianMs": 14,
+      "renderMs": 199.8000000268221,
+      "pagesPerSecond": 60.06006005199732,
+      "megapixelsPerSecond": 64.8648648561571,
+      "cpuSeconds": 0.8635870000000003,
+      "baselineMemory": {
+        "privateBytes": 381673472,
+        "workingSetBytes": 691675136
+      },
+      "sampledMemory": [
+        {
+          "page": 1,
+          "privateBytes": 445861888,
+          "workingSetBytes": 777809920
+        },
+        {
+          "page": 6,
+          "privateBytes": 481312768,
+          "workingSetBytes": 814600192
+        },
+        {
+          "page": 12,
+          "privateBytes": 494718976,
+          "workingSetBytes": 830664704
+        }
+      ],
+      "afterCloseMemory": {
+        "privateBytes": 468316160,
+        "workingSetBytes": 806899712
+      },
+      "rows": [
+        {
+          "page": 1,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.7999999970197678,
+          "renderMs": 37.6000000089407,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 2,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.7999999970197678,
+          "renderMs": 25.600000008940697,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 3,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.5,
+          "renderMs": 15.100000008940697,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 4,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.6000000089406967,
+          "renderMs": 14.200000002980232,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 5,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 1,
+          "renderMs": 15.899999991059303,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 6,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.5,
+          "renderMs": 12.299999997019768,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 7,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 15.100000008940697,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 8,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.7000000029802322,
+          "renderMs": 12.700000002980232,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 9,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 5.799999997019768,
+          "renderMs": 12.200000002980232,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 10,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.4000000059604645,
+          "renderMs": 12.699999988079071,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 11,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.20000000298023224,
+          "renderMs": 14,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 12,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 12.400000005960464,
+          "wasmHeap": 0,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "dataset": "vector-text",
+      "backend": "pdfium",
+      "first": 1,
+      "last": 12,
+      "parseMs": 233.09999999403954,
+      "pages": 12,
+      "bytes": 164178,
+      "frames": 12,
+      "firstFrameMs": 122.19999998807907,
+      "steadyFrameMedianMs": 10.200000002980232,
+      "renderMs": 242.30000001192093,
+      "pagesPerSecond": 49.52538175571445,
+      "megapixelsPerSecond": 53.487412296171605,
+      "cpuSeconds": 0.735584,
+      "baselineMemory": {
+        "privateBytes": 398413824,
+        "workingSetBytes": 724631552
+      },
+      "sampledMemory": [
+        {
+          "page": 1,
+          "privateBytes": 525914112,
+          "workingSetBytes": 850948096
+        },
+        {
+          "page": 6,
+          "privateBytes": 566734848,
+          "workingSetBytes": 892289024
+        },
+        {
+          "page": 12,
+          "privateBytes": 554999808,
+          "workingSetBytes": 882642944
+        }
+      ],
+      "afterCloseMemory": {
+        "privateBytes": 471805952,
+        "workingSetBytes": 806567936
+      },
+      "rows": [
+        {
+          "page": 1,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.800000011920929,
+          "renderMs": 122.19999998807907,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 2,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 10.200000002980232,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 3,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 12,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 4,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 9.800000011920929,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 5,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 12.5,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 6,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 9.299999997019768,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 7,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.29999999701976776,
+          "renderMs": 11.300000011920929,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 8,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.19999998807907104,
+          "renderMs": 10.200000002980232,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 9,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 14.700000002980232,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 10,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.30000001192092896,
+          "renderMs": 9,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 11,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.3999999910593033,
+          "renderMs": 11.700000002980232,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "page": 12,
+          "width": 900,
+          "height": 1200,
+          "scale": 1.5,
+          "pixels": 1080000,
+          "metadataMs": 0.7000000029802322,
+          "renderMs": 9.399999991059303,
+          "wasmHeap": 18612224,
+          "sample": [
+            255,
+            255,
+            255,
+            255
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -30,6 +30,7 @@ async function fixture() {
         Object.assign(new EventTarget(), {
           width: 0,
           height: 0,
+          dataset: {},
           getContext: () => ({ drawImage: vi.fn() }),
         }),
     }),

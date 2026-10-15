@@ -52,7 +52,9 @@ export function useDeferredZoom(
   useEffect(
     () => () => {
       s.cancel?.();
-      report();
+      // Document switching captures the live view before unmount. Reporting an
+      // old gesture here can overwrite the next document's restored zoom.
+      s.pending = null;
     },
     [],
   );

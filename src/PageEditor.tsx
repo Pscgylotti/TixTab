@@ -42,6 +42,7 @@ import {
 } from './model';
 import { finalInkPath, cullingInkBounds } from './ink';
 import { paintLiveInk, releaseLiveInk } from './liveInk';
+import { InkSampleClock } from './inkSampling';
 import type { ForegroundClip } from './foregroundViewport';
 import { useForegroundViewport } from './useForegroundViewport';
 import { CommittedInk, committedInkRatio } from './committedInk';
@@ -319,6 +320,7 @@ function PageEditor({
     eraseLast = useRef<Point | null>(null),
     drawingPointer = useRef<number | null>(null);
   const pressureMapper = useRef(getPressureMapper());
+  const sampleClock = useRef(new InkSampleClock());
   const [pendingImages, setPendingImages] = useState<string[]>([]),
     [pendingCount, setPendingCount] = useState(0);
   const penTime = useRef(-Infinity),
@@ -412,6 +414,7 @@ function PageEditor({
   };
   const paintFinish = useRef<PerformanceFinish | undefined>(undefined);
   const sample = (e: PointerEvent, rect?: DOMRect) => {
+    if (!sampleClock.current.accept(e.timeStamp, e.clientX, e.clientY, e.pressure)) return;
     const p = point(e, rect);
     if (erased.current) {
       const from = eraseLast.current ?? p,
@@ -470,6 +473,7 @@ function PageEditor({
     e.currentTarget.setPointerCapture(e.pointerId);
     if (drawingPointer.current !== null) return;
     drawingPointer.current = e.pointerId;
+    sampleClock.current.reset();
     pressureMapper.current = getPressureMapper();
     if (tool === 'eraser' || isEraser(e)) {
       erased.current = { strokes: new Set(), images: new Set(), highlights: new Map() };
@@ -478,14 +482,28 @@ function PageEditor({
     sample(e.nativeEvent);
     queueInk();
   };
+  const collect = (e: PointerEvent) => {
+    if (drawingPointer.current !== e.pointerId) return;
+    const samples = e.getCoalescedEvents?.() ?? [],
+      rect = root.current!.getBoundingClientRect();
+    for (const event of samples.length ? samples : [e]) sample(event, rect);
+    queueInk();
+  };
+  const rawCollector = useRef(collect);
+  rawCollector.current = collect;
+  useEffect(() => {
+    const element = root.current!;
+    const raw = (event: Event) => {
+      if (event instanceof PointerEvent && event.pointerType === 'pen') rawCollector.current(event);
+    };
+    element.addEventListener('pointerrawupdate', raw);
+    return () => element.removeEventListener('pointerrawupdate', raw);
+  }, []);
   const move = (e: ReactPointerEvent) => {
     if (e.pointerType === 'pen') penTime.current = performance.now();
     if (drawingPointer.current !== e.pointerId) return;
     e.stopPropagation();
-    const samples = e.nativeEvent.getCoalescedEvents?.() ?? [],
-      rect = root.current!.getBoundingClientRect();
-    for (const event of samples.length ? samples : [e.nativeEvent]) sample(event, rect);
-    queueInk();
+    collect(e.nativeEvent);
   };
   const end = (e: ReactPointerEvent, cancel = false) => {
     if (drawingPointer.current !== e.pointerId) return;

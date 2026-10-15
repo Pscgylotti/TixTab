@@ -24,7 +24,7 @@ const DetailTile = memo(function DetailTile({
   tile: PdfPixelRegion;
   priority: number;
 }) {
-  const { pdfNight } = useAppearance();
+  const { pdfNight, pdfRenderBackend } = useAppearance();
   const { host, display, recovery } = usePdfBitmapDisplay();
   const [ready, setReady] = useState(false),
     [error, setError] = useState(false);
@@ -56,6 +56,7 @@ const DetailTile = memo(function DetailTile({
     tile.height,
     priority,
     pdfNight,
+    pdfRenderBackend,
     recovery,
   ]);
   return (

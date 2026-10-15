@@ -49,7 +49,7 @@ it('retains normal-stroke geometry including sharp turns and repeated samples', 
       [50, 20, 0.7],
       [50, 20, 0.8],
       [20, 10, 0.5],
-      [90, 40, 0.4],
+      [150, 40, 0.4],
     ];
     const stroke: Stroke = { id: 'normal', tool: 'pen', color: '#123456', size, points };
     expect(outline(stroke)).toEqual(

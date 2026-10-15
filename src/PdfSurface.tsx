@@ -2,7 +2,13 @@ import { MIN_ZOOM, MAX_ZOOM } from './pageFit';
 import { performanceDelay, trackPerformance } from './performanceLedger';
 import { useAppearance, renderPolicy, pageRenderScale } from './appearance';
 import { t as tr, useLocale } from './i18n';
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { priorPdfBitmap, requestPdfBitmap, renderingCancelled } from './pdfRenderCache';
 import { usePdfBitmapDisplay } from './usePdfBitmapDisplay';
@@ -17,6 +23,7 @@ import { useNavigation } from './DocumentNavigator';
 import NativePdfPreview from './NativePdfPreview';
 import { useLiveNativeEdit } from './nativePdfDrafts';
 import { paperAppearance } from './paperAppearance';
+import type { WorkspacePosition } from './workspaceStore';
 export interface PenDiagnostic {
   type: string;
   pressure: number;
@@ -24,6 +31,7 @@ export interface PenDiagnostic {
   samples: number;
 }
 interface Props {
+  restoredPosition?: WorkspacePosition;
   page: Page;
   pdf: PDFDocumentProxy | null;
   tool: Tool;
@@ -42,6 +50,7 @@ interface Props {
   focusObjectId: string | string[] | null;
 }
 export default function PdfSurface({
+  restoredPosition,
   page,
   pdf,
   tool,
@@ -62,12 +71,16 @@ export default function PdfSurface({
   useLocale();
   const nativeLive = useLiveNativeEdit(page.id);
   const navigation = useNavigation();
-  const { pdfNight } = useAppearance(),
+  const { pdfNight, pdfRenderBackend } = useAppearance(),
     policy = renderPolicy();
   const [zoom, setZoom] = useDeferredZoom(committedZoom, commitZoom, resetView);
   const stage = useRef<HTMLDivElement>(null);
   const { host, display, recovery } = usePdfBitmapDisplay('pdf-layer');
+  useLayoutEffect(() => {
+    display.current?.retainPreview();
+  }, [zoom]);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const restored = useRef<WorkspacePosition | undefined>(undefined);
   useEffect(() => {
     const image = objectBox(
       page.images,
@@ -114,14 +127,24 @@ export default function PdfSurface({
   useEffect(() => {
     return performanceDelay('view-settle', () => setSettledZoom(zoom), policy.settleMs);
   }, [zoom, policy.settleMs]);
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (
+      restoredPosition &&
+      restored.current !== restoredPosition &&
+      restoredPosition.mode === 'single' &&
+      restoredPosition.pageId === page.id
+    ) {
+      restored.current = restoredPosition;
+      setOffset({ x: restoredPosition.x * zoom, y: restoredPosition.y * zoom });
+      return;
+    }
     setOffset({
       x: 0,
       y: fitWidth
         ? Math.max(0, (page.height * zoom - (stage.current?.clientHeight ?? 0)) / 2 + 8)
         : 0,
     });
-  }, [page.id, resetView]);
+  }, [page.id, resetView, restoredPosition]);
   useEffect(() => {
     const target = navigation?.target;
     if (target?.pageId === page.id && target.rect) {
@@ -218,6 +241,7 @@ export default function PdfSurface({
     settledZoom,
 
     pdfNight,
+    pdfRenderBackend,
     policy.basePixels,
     policy.dpr,
     policy.baseScale,
@@ -260,6 +284,9 @@ export default function PdfSurface({
   return (
     <div
       className={`surface tool-${tool}`}
+      data-view-zoom={zoom}
+      data-pan-x={offset.x}
+      data-pan-y={offset.y}
       ref={stage}
       onPointerDownCapture={(e) => {
         if (e.pointerType === 'pen') penTime.current = performance.now();

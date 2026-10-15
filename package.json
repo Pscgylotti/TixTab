@@ -36,6 +36,7 @@
     "notices": "node scripts/prepare-notices.mjs"
   },
   "dependencies": {
+    "@embedpdf/pdfium": "2.15.1",
     "@excalidraw/excalidraw": "0.18.1",
     "@huggingface/transformers": "^3.7.5",
     "@mintplex-labs/piper-tts-web": "1.0.5",

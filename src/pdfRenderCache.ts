@@ -1,5 +1,11 @@
-import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist';
-import { renderPolicy, subscribeAppearance } from './appearance';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
+import {
+  getPdfRenderBackend,
+  renderPolicy,
+  subscribeAppearance,
+  type PdfRenderBackend,
+} from './appearance';
+import { renderPdfium, releasePdfium, type PdfRasterTask } from './pdfiumRaster';
 import { applyPdfNight } from './pdfNight';
 import {
   performanceDelay,
@@ -34,13 +40,14 @@ interface Job {
   sourceIndex: number;
   scale: number;
   night: boolean;
+  backend: PdfRenderBackend;
   region?: PdfPixelRegion;
   priority: number;
   users: number;
   started: boolean;
   cancelled: boolean;
   abort: AbortController;
-  task?: RenderTask;
+  task?: PdfRasterTask;
   promise: Promise<HTMLCanvasElement>;
   resolve: (canvas: HTMLCanvasElement) => void;
   reject: (error: unknown) => void;
@@ -69,27 +76,31 @@ export const isRetiredPdfBitmap = (canvas: HTMLCanvasElement) => retiredBitmaps.
 /** Document switching must release rasters without waiting for PDF.js, React
  * alternate effects or the GC to drop their last proxy reference. */
 export function releasePdfRenderCache(pdf: PDFDocumentProxy) {
+  releasePdfium(pdf);
   for (const state of [states.get(pdf), thumbnailStates.get(pdf)]) {
     if (!state) continue;
     liveCacheStates.delete(state);
-    state.generation++;
-    for (const job of [...state.jobs.values()]) {
-      job.cancelled = true;
-      job.abort.abort();
-      if (job.started) job.task?.cancel();
-      else {
-        const at = queue.indexOf(job);
-        if (at >= 0) queue.splice(at, 1);
-        job.reject(cancelled());
-        job.finish?.('cancelled');
-        state.jobs.delete(job.key);
-      }
+    clearState(state);
+  }
+}
+function clearState(state: State) {
+  state.generation++;
+  for (const job of [...state.jobs.values()]) {
+    job.cancelled = true;
+    job.abort.abort();
+    if (job.started) job.task?.cancel();
+    else {
+      const at = queue.indexOf(job);
+      if (at >= 0) queue.splice(at, 1);
+      job.reject(cancelled());
+      job.finish?.('cancelled');
+      state.jobs.delete(job.key);
     }
-    for (const canvas of [...state.cache.values()]) {
-      invalidatePdfBitmap(canvas);
-      // A borrowed visible raster is cleared by its display after unmount.
-      if (!canvas.isConnected) canvas.width = canvas.height = 1;
-    }
+  }
+  for (const canvas of [...state.cache.values()]) {
+    invalidatePdfBitmap(canvas);
+    // A borrowed visible raster is cleared by its display after unmount.
+    if (!canvas.isConnected) canvas.width = canvas.height = 1;
   }
 }
 
@@ -275,7 +286,14 @@ function stateFor(pdf: PDFDocumentProxy, thumbnail = false) {
   liveCacheStates.add(state);
   return state;
 }
+let backend = getPdfRenderBackend();
 subscribeAppearance(() => {
+  const nextBackend = getPdfRenderBackend();
+  if (nextBackend !== backend) {
+    backend = nextBackend;
+    for (const state of liveCacheStates) clearState(state);
+    pump();
+  }
   if (!renderPolicy().minimal) return;
   for (const state of liveCacheStates) {
     for (const canvas of [...state.cache.values()]) {
@@ -442,6 +460,7 @@ function pump() {
           fullWidth = Math.ceil(viewport.width),
           fullHeight = Math.ceil(viewport.height),
           isHalf =
+            job.backend === 'pdfjs' &&
             !!targetRegion &&
             targetRegion.x === 0 &&
             targetRegion.width === fullWidth &&
@@ -481,20 +500,31 @@ function pump() {
         }
         if (original) workContext.drawImage(original, 0, 0);
         else if (ready.length !== 2) {
-          const partial = partialTiles(),
+          const partial = job.backend === 'pdfjs' && partialTiles(),
             bounds = partial && region ? completeBounds.get(page) : undefined;
           const recording = partial && !region && !completeBounds.has(page);
-          job.task = page.render({
-            canvas: raster,
-            canvasContext: rasterContext,
-            viewport,
-            // PDF.js already defaults to white. Make the opaque source contract
-            // explicit for exact bitmap GPU dimming, including detail tiles.
-            background: '#ffffff',
-            ...(region && !isHalf ? { transform: [1, 0, 0, 1, -region.x, -region.y] } : {}),
-            ...(recording ? { recordOperations: true } : {}),
-            ...(bounds ? { operationsFilter: tileFilter(bounds, region!, viewport) } : {}),
-          });
+          job.task =
+            job.backend === 'pdfium'
+              ? renderPdfium(
+                  job.pdf,
+                  job.sourceIndex,
+                  raster,
+                  fullWidth,
+                  fullHeight,
+                  region ?? { x: 0, y: 0, width: fullWidth, height: fullHeight },
+                )
+              : page.render({
+                  canvas: raster,
+                  canvasContext: rasterContext,
+                  viewport,
+                  // PDF.js already defaults to white. Make the opaque source contract
+                  // explicit for exact bitmap GPU dimming, including detail tiles.
+                  background: '#ffffff',
+                  ...(region && !isHalf ? { transform: [1, 0, 0, 1, -region.x, -region.y] } : {}),
+                  ...(recording ? { recordOperations: true } : {}),
+                  ...(bounds ? { operationsFilter: tileFilter(bounds, region!, viewport) } : {}),
+                });
+          if (job.backend === 'pdfjs') raster.dataset.pdfBackend = 'pdfjs';
           job.state.renders++;
           performanceLedger?.count('pdfPixels', work.width * work.height);
           job.task.onContinue = (next: () => void) => {
@@ -515,6 +545,7 @@ function pump() {
           }
         }
         if (job.cancelled) throw cancelled();
+        canvas.dataset.pdfBackend = job.backend;
         if (isHalf)
           workContext.drawImage(
             raster,
@@ -723,6 +754,7 @@ function requestBitmap(
       sourceIndex,
       scale: Number(scale.toFixed(3)),
       night,
+      backend: getPdfRenderBackend(),
       region: region && { ...region },
       priority,
       users: 0,

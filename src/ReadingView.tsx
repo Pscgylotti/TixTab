@@ -29,6 +29,7 @@ import { makeLayout, visibleRange, itemAt } from './virtualLayout';
 import { useScrollViewport } from './useScrollViewport';
 import { zoomReadingPoint } from './readingZoom';
 import { ScrollVelocity, inertiaStep } from './scrollInertia';
+import type { WorkspacePosition } from './workspaceStore';
 const ReadingPage = memo(function ReadingPage({
   page,
   pdf,
@@ -70,14 +71,25 @@ const ReadingPage = memo(function ReadingPage({
 }) {
   useLocale();
   const nativeLive = useLiveNativeEdit(page.id);
-  const { pdfNight } = useAppearance(),
+  const { pdfNight, pdfRenderBackend } = useAppearance(),
     policy = renderPolicy();
   const root = useRef<HTMLDivElement>(null),
     [visible, setVisible] = useState(false),
     [status, setStatus] = useState(tr('等待预览'));
   const { host, display, recovery } = usePdfBitmapDisplay('reading-pdf');
+  useLayoutEffect(() => {
+    display.current?.retainPreview();
+  }, [width]);
   const scale = width / page.width;
   const [settledWidth, setSettledWidth] = useState(width);
+  const renderScale = pageRenderScale(
+    settledWidth / page.width,
+    window.devicePixelRatio,
+    page.width,
+    page.height,
+    true,
+    policy,
+  );
   useEffect(() => {
     return performanceDelay('view-settle', () => setSettledWidth(width), policy.settleMs);
   }, [width, policy.settleMs]);
@@ -91,20 +103,16 @@ const ReadingPage = memo(function ReadingPage({
   useEffect(() => {
     let dead = false,
       cancel: (() => void) | undefined;
-    if (!visible || !pdf || page.sourceIndex === null) {
+    if (!pdf || page.sourceIndex === null) {
       display.current!.clear();
       return;
     }
+    if (!visible) {
+      display.current!.retainPreview();
+      display.current!.showPreview();
+      return;
+    }
     setStatus(tr('加载预览…'));
-    const renderScale = pageRenderScale(
-      settledWidth / page.width,
-      window.devicePixelRatio,
-      page.width,
-      page.height,
-      true,
-
-      policy,
-    );
     const lease = requestPdfBitmap(pdf, page.sourceIndex, renderScale, 1, pdfNight);
     cancel = lease.cancel;
     void trackPerformance('pdf-display', () =>
@@ -126,9 +134,10 @@ const ReadingPage = memo(function ReadingPage({
     recovery,
     page.id,
     visible,
-    settledWidth,
+    renderScale,
 
     pdfNight,
+    pdfRenderBackend,
     policy.readingPixels,
     policy.dpr,
     policy.baseScale,
@@ -223,6 +232,7 @@ const ReadingPage = memo(function ReadingPage({
   );
 });
 export default function ReadingView({
+  restoredPosition,
   pages,
   pdf,
   mode,
@@ -242,6 +252,7 @@ export default function ReadingView({
   onEdit,
   onPageChange,
 }: {
+  restoredPosition?: WorkspacePosition;
   pages: Page[];
   pdf: PDFDocumentProxy | null;
   mode: 'continuous' | 'dual';
@@ -327,15 +338,10 @@ export default function ReadingView({
     () => pages.reduce((width, page) => Math.max(width, page.width), 0),
     [pages],
   );
-  const range = visibleRange(
-    layout,
-    viewport.top - 8,
-    viewport.height,
-    renderPolicy().minimal ? 0 : Math.max(400, viewport.height),
-  );
   const observedIndex = useRef<number | null>(null),
     lastReset = useRef(resetView),
     lastMode = useRef<typeof mode | null>(null);
+  const restored = useRef<WorkspacePosition | undefined>(undefined);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
   const anchor = useRef<{ x: number; y: number; contentX: number; contentY: number } | null>(null);
@@ -349,6 +355,36 @@ export default function ReadingView({
     top: number;
     height: number;
   } | null>(null);
+  const prev = previous.current;
+  const zoomAnchor =
+    prev && prev.zoom !== zoom && prev.mode === mode && prev.pages === pages
+      ? (anchor.current ?? {
+          x: prev.width / 2,
+          y: prev.height / 2,
+          contentX: prev.left + prev.width / 2,
+          contentY: prev.top + prev.height / 2,
+        })
+      : null;
+  const zoomPosition =
+    zoomAnchor && prev
+      ? zoomReadingPoint(pages, mode, prev.index, prev.width, prev.zoom, zoom, {
+          x: zoomAnchor.contentX,
+          y: zoomAnchor.contentY,
+        })
+      : null;
+  // Virtualize using the *new* anchored scroll position in the same render.
+  // Combining a new layout with the old scrollTop can replace page 179 with
+  // page 160 for one commit, destroying every visible raster before zooming.
+  const rangeTop =
+    zoomPosition && zoomAnchor
+      ? Math.max(0, (content.current?.offsetTop ?? 0) + zoomPosition.y - zoomAnchor.y)
+      : viewport.top;
+  const range = visibleRange(
+    layout,
+    rangeTop - 8,
+    viewport.height,
+    renderPolicy().minimal ? 0 : Math.max(400, viewport.height),
+  );
   const zoomTo = (value: number, clientX: number, clientY: number) => {
     stopInertia();
     const el = root.current!,
@@ -370,21 +406,10 @@ export default function ReadingView({
   };
   useLayoutEffect(() => {
     const el = root.current!,
-      body = content.current!,
-      prev = previous.current;
-    if (prev && prev.zoom !== zoom && prev.mode === mode && prev.pages === pages) {
-      const a = anchor.current ?? {
-        x: prev.width / 2,
-        y: prev.height / 2,
-        contentX: prev.left + prev.width / 2,
-        contentY: prev.top + prev.height / 2,
-      };
-      const next = zoomReadingPoint(pages, mode, prev.index, prev.width, prev.zoom, zoom, {
-        x: a.contentX,
-        y: a.contentY,
-      });
-      el.scrollLeft = body.offsetLeft + next.x - a.x;
-      el.scrollTop = body.offsetTop + next.y - a.y;
+      body = content.current!;
+    if (zoomPosition && zoomAnchor) {
+      el.scrollLeft = body.offsetLeft + zoomPosition.x - zoomAnchor.x;
+      el.scrollTop = body.offsetTop + zoomPosition.y - zoomAnchor.y;
       measure();
     }
     anchor.current = null;
@@ -443,11 +468,17 @@ export default function ReadingView({
   }, []);
   useLayoutEffect(() => {
     const el = root.current!;
+    const restore =
+      restoredPosition &&
+      restored.current !== restoredPosition &&
+      restoredPosition.mode === mode &&
+      restoredPosition.pageId === pages[index]?.id;
     if (
       mode === 'continuous' &&
       lastMode.current === mode &&
       observedIndex.current === index &&
-      lastReset.current === resetView
+      lastReset.current === resetView &&
+      !restore
     )
       return;
     lastMode.current = mode;
@@ -458,11 +489,17 @@ export default function ReadingView({
     touches.current.clear();
     singleTouch.current = false;
     pointers.current.reset();
-    el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2);
-    if (mode === 'continuous') el.scrollTop = 8 + (layout.offsets[index] ?? 0);
-    else el.scrollTop = 0;
+    if (restore) {
+      restored.current = restoredPosition;
+      el.scrollLeft = restoredPosition.x * zoom;
+      el.scrollTop = restoredPosition.y * zoom;
+    } else {
+      el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2);
+      if (mode === 'continuous') el.scrollTop = 8 + (layout.offsets[index] ?? 0);
+      else el.scrollTop = 0;
+    }
     measure();
-  }, [index, mode, resetView, pages[index]?.id]);
+  }, [index, mode, resetView, pages[index]?.id, restoredPosition]);
   useEffect(() => {
     if (mode !== 'continuous' || !viewport.height) return;
     // A layout jump can precede the viewport state update. Never publish the old position.
@@ -543,6 +580,7 @@ export default function ReadingView({
   return (
     <div
       className={`reading-view reading-${mode} tool-${tool}`}
+      data-view-zoom={zoom}
       ref={root}
       onKeyDown={stopInertia}
       onPointerDownCapture={(e) => {

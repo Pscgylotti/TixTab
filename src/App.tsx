@@ -77,6 +77,7 @@ import {
   ListChecks,
 } from 'lucide-react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import PdfEngineSettings from './PdfEngineSettings';
 import PdfSurface from './PdfSurface';
 import PdfPrefetch from './PdfPrefetchController';
 import { setPdfViewCacheKey } from './pdfRenderCache';
@@ -101,6 +102,7 @@ import {
 import { decodeProject, download, encodeProject } from './storage';
 import {
   bootstrapWorkspace,
+  captureWorkspaceView,
   defaultView,
   deleteWorkspaceDocument,
   listWorkspace,
@@ -199,6 +201,15 @@ function savedChrome(key: string) {
     return false;
   }
 }
+function savedPenSize(highlighter = false) {
+  try {
+    const saved = Number(
+      localStorage.getItem(highlighter ? 'tixtab.highlighterSize' : 'tixtab.penSize'),
+    );
+    if (saved >= 0.5 && saved <= (highlighter ? 32 : 12)) return saved;
+  } catch {}
+  return highlighter ? 18 : 2.8;
+}
 export default function App() {
   useEffect(startClipboardCapture, []);
   const hasCopiedPage = usePageClipboard();
@@ -287,12 +298,24 @@ export default function App() {
         ? tabsRef.current.map((t) => (t.id === id ? { id, name } : t))
         : [...tabsRef.current, { id, name }],
     );
-  const [tool, setTool] = useState<Tool>('pen'),
+  const [tool, setToolState] = useState<Tool>('pen'),
     [color, setColor] = useState(savedInkColor),
-    [size, setSize] = useState(2.8),
+    [size, setSize] = useState(savedPenSize),
     [zoom, setZoomState] = useState(0.78),
     [sidebar, setSidebar] = useState(true);
   const readingObserved = useRef(false);
+  const setTool = useCallback((next: Tool) => {
+    setToolState(next);
+    setSize(savedPenSize(next === 'highlighter'));
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        tool === 'highlighter' ? 'tixtab.highlighterSize' : 'tixtab.penSize',
+        String(size),
+      );
+    } catch {}
+  }, [size, tool]);
   const [penWheel, setPenWheel] = useState<{ x: number; y: number; text: boolean } | null>(null);
   const lastBarrel = useRef(-Infinity);
   const readingPageChanged = useCallback((next: number) => {
@@ -543,6 +566,7 @@ export default function App() {
     }
   }, [message]);
   const viewRef = useRef<WorkspaceView>({ index, zoom, mode: viewMode });
+  const [restoredPosition, setRestoredPosition] = useState<WorkspaceView['position']>();
   viewRef.current = { index, zoom, mode: viewMode };
   const restoredView = useRef(false);
   useEffect(() => {
@@ -573,6 +597,7 @@ export default function App() {
         setIndex(Math.min(meta.view.index, n.pages.length - 1));
         setZoom(meta.view.zoom);
         setViewMode(meta.view.mode);
+        setRestoredPosition(meta.view.position);
       })
       .catch(() => {
         setSaveStatus(tr('\u6062\u590D\u5931\u8D25'));
@@ -615,10 +640,14 @@ export default function App() {
   const persist = useCallback((n: Notebook, id = activeRef.current, view = viewRef.current) => {
     if (!id)
       return Promise.reject(new Error(tr('\u5DE5\u4F5C\u7A7A\u95F4\u5C1A\u672A\u5C31\u7EEA')));
+    const snapshot =
+      id === activeRef.current && n === current.current
+        ? captureWorkspaceView(view, n.pages[view.index]?.id ?? '')
+        : view;
     saveQueue.current = trackPerformance('workspace-save-queue', () =>
       saveQueue.current
         .catch(() => {})
-        .then(() => saveWorkspaceDocument(id, n, view))
+        .then(() => saveWorkspaceDocument(id, n, snapshot))
         .then(() => {}),
     );
     return saveQueue.current;
@@ -1004,6 +1033,7 @@ export default function App() {
     setIndex(Math.min(view.index, next.pages.length - 1));
     setZoom(view.zoom);
     setViewMode(view.mode);
+    setRestoredPosition(view.position);
     setSelection(null);
     setFocusObjectId(null);
     setEditingId(null);
@@ -2023,8 +2053,6 @@ export default function App() {
             aria-pressed={tool === id}
             onClick={() => {
               setTool(id);
-              if (id === 'highlighter') setSize(18);
-              else if (size >= 10) setSize(2.8);
             }}
           >
             <Icon size={compact ? 16 : 20} />
@@ -2220,8 +2248,6 @@ export default function App() {
             onClose={() => setPenWheel(null)}
             onSelect={(id) => {
               setTool(id);
-              if (id === 'highlighter') setSize(18);
-              else if (size >= 10) setSize(2.8);
               setPenWheel(null);
             }}
             onText={
@@ -2726,6 +2752,7 @@ export default function App() {
               />
               {viewMode === 'single' ? (
                 <PdfSurface
+                  restoredPosition={restoredPosition}
                   page={page}
                   pdf={pdf}
                   tool={tool}
@@ -2745,6 +2772,7 @@ export default function App() {
                 />
               ) : (
                 <ReadingView
+                  restoredPosition={restoredPosition}
                   pages={notebook.pages}
                   pdf={pdf}
                   mode={viewMode}
@@ -3133,27 +3161,6 @@ export default function App() {
                     <button className="cache-manager-open" onClick={() => setDialog('caches')}>
                       {tr('磁盘缓存管理')}
                     </button>
-                    {window.surfaceDesktop?.createDesktopShortcut && (
-                      <button
-                        className="task-center-open"
-                        onClick={async () => {
-                          try {
-                            const result = await window.surfaceDesktop!.createDesktopShortcut!();
-                            notify(
-                              tr(
-                                result.ok
-                                  ? '桌面快捷方式已创建'
-                                  : '无法创建快捷方式，请运行已安装的应用或完整发布包。',
-                              ),
-                            );
-                          } catch {
-                            notify(tr('无法创建桌面快捷方式'));
-                          }
-                        }}
-                      >
-                        {tr('发送快捷方式到桌面')}
-                      </button>
-                    )}
                     <p className="appearance-note">
                       TixTab · AGPL-3.0-only ·{' '}
                       <a
@@ -3266,6 +3273,7 @@ export default function App() {
                         <option value="quality">{tr('画质优先')}</option>
                       </select>
                     </label>
+                    <PdfEngineSettings />
                     <label className="appearance-setting">
                       {tr('PDF 渲染清晰度')}
                       <select

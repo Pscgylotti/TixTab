@@ -48,6 +48,7 @@ Generated from the locked dependency tree, including development tools. Exact pa
 | @electron/osx-sign | 1.3.3 | BSD-2-Clause | https://github.com/electron/osx-sign |
 | @electron/rebuild | 4.2.1 | MIT | https://github.com/electron/rebuild |
 | @electron/universal | 2.0.3 | MIT | https://github.com/electron/universal |
+| @embedpdf/pdfium | 2.15.1 | MIT | https://github.com/embedpdf/embed-pdf-viewer |
 | @emnapi/runtime | 1.11.3 | MIT | https://github.com/toyobayashi/emnapi |
 | @esbuild/win32-x64 | 0.25.12 | MIT | https://github.com/evanw/esbuild |
 | @excalidraw/excalidraw | 0.18.1 | MIT | https://github.com/excalidraw/excalidraw |

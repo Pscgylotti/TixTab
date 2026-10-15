@@ -76,6 +76,7 @@ export default function PdfPrefetch({
     mode,
     appearance.preRender,
     appearance.pdfNight,
+    appearance.pdfRenderBackend,
     appearance.mode,
     appearance.quality,
     appearance.battery,

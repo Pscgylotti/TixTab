@@ -7,6 +7,26 @@ export interface WorkspaceView {
   index: number;
   zoom: number;
   mode: 'single' | 'continuous' | 'dual';
+  position?: WorkspacePosition;
+}
+export interface WorkspacePosition {
+  pageId: string;
+  mode: WorkspaceView['mode'];
+  x: number;
+  y: number;
+}
+/** Read only when saving, rather than re-rendering the shell on every pan. */
+export function captureWorkspaceView(view: WorkspaceView, pageId: string): WorkspaceView {
+  const root = document.querySelector<HTMLElement>(
+    view.mode === 'single' ? '.surface' : '.reading-view',
+  );
+  if (!root) return view;
+  const zoom = Number(root.dataset.viewZoom);
+  if (!Number.isFinite(zoom) || zoom <= 0) return view;
+  const x = view.mode === 'single' ? Number(root.dataset.panX) : root.scrollLeft;
+  const y = view.mode === 'single' ? Number(root.dataset.panY) : root.scrollTop;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return view;
+  return { ...view, zoom, position: { pageId, mode: view.mode, x: x / zoom, y: y / zoom } };
 }
 export interface WorkspaceDocument {
   id: string;

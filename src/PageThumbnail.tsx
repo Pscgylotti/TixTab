@@ -18,7 +18,7 @@ export default memo(function PageThumbnail({
   pdf: PDFDocumentProxy | null;
 }) {
   useLocale();
-  const { night, pdfNight, memoryMode } = useAppearance();
+  const { night, pdfNight, memoryMode, pdfRenderBackend } = useAppearance();
   const root = useRef<HTMLDivElement>(null),
     [visible, setVisible] = useState(false);
   const { host, display, recovery } = usePdfBitmapDisplay();
@@ -50,7 +50,17 @@ export default memo(function PageThumbnail({
       dead = true;
       cancel?.();
     };
-  }, [pdf, page.id, page.sourceIndex, page.width, page.height, visible, pdfNight, recovery]);
+  }, [
+    pdf,
+    page.id,
+    page.sourceIndex,
+    page.width,
+    page.height,
+    visible,
+    pdfNight,
+    recovery,
+    pdfRenderBackend,
+  ]);
   return (
     <div
       className={`page-mini page-thumbnail ${page.sourceIndex === null ? `thumbnail-${page.paper}` : ''}`}
