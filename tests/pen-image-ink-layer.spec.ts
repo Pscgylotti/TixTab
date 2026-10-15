@@ -115,6 +115,7 @@ for (const night of [false, true])
       await pen(page, 'pointerdown', start.x, start.y, true);
       await pen(page, 'pointermove', end.x, end.y, true);
       await expect(page.locator('[data-ink-marquee]')).toBeVisible();
+      await expect(target).toHaveCount(0);
       await expect(page.locator('[data-ink-marquee]')).toHaveCSS(
         'background-color',
         'rgba(0, 0, 0, 0)',
@@ -132,7 +133,7 @@ for (const night of [false, true])
       await expect(page.getByRole('dialog', { name: '原图', exact: true })).toHaveCount(0);
       await expect(page.getByRole('menu', { name: '笔侧键工具环' })).toHaveCount(0);
       // Once the barrel is released, the selected frame must still be movable.
-      await cdp.send('CSS.forcePseudoState', { nodeId, forcedPseudoClasses: [] });
+      // The forced-hover node was removed when the drag began.
       await pen(page, 'pointermove', end.x, end.y, false, 0);
       await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
       await page.mouse.down();

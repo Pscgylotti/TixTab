@@ -1,6 +1,8 @@
 import { getStrokePoints, getStrokeOutlinePoints, type StrokeOptions } from 'perfect-freehand';
 import type { Stroke } from './model';
 import type { Bounds } from './spatialIndex';
+import { stableInkSamples } from './inkSimplify';
+import { inkCurve, smoothInkPath } from './inkCurve';
 const paths = new WeakMap<Stroke, string>(),
   shapes = new WeakMap<Stroke, Path2D>(),
   bounds = new WeakMap<Stroke, Bounds>();
@@ -15,31 +17,16 @@ export function rememberInkPath(stroke: Stroke, path: string) {
   bounds.delete(stroke);
 }
 export function outline(stroke: Stroke) {
-  // perfect-freehand interpolates two-point strokes without pressure. Preserve all
-  // three coordinates ourselves so short pen flicks retain real hardware pressure.
-  const points =
-    stroke.points.length === 1
-      ? // Avoid the library's artificial [x+1,y+1] segment for a single tap.
-        [stroke.points[0], stroke.points[0], stroke.points[0]]
-      : stroke.points.length === 2
-        ? Array.from({ length: 5 }, (_, i) =>
-            stroke.points[0].map((v, axis) => v + ((stroke.points[1][axis] - v) * i) / 4),
-          )
-        : stroke.points;
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
-  for (const p of stroke.points) {
-    minX = Math.min(minX, p[0]);
-    minY = Math.min(minY, p[1]);
-    maxX = Math.max(maxX, p[0]);
-    maxY = Math.max(maxY, p[1]);
+  let points: number[][] = stableInkSamples(stroke.points, stroke.size);
+  // The library's one/two-point expansion loses pressure and adds a diagonal.
+  // Expand after simplification, which can itself produce just two endpoints.
+  if (points.length === 1) points = [points[0], points[0], points[0]];
+  else if (points.length === 2) {
+    const pair = points;
+    points = Array.from({ length: 5 }, (_, i) =>
+      pair[0].map((v, axis) => v + ((pair[1][axis] - v) * i) / 4),
+    );
   }
-  // Small features need their original trajectory; larger writing keeps the
-  // familiar smoothing. The result depends on paper geometry, never later zoom.
-  const extent = stroke.points.length ? Math.hypot(maxX - minX, maxY - minY) : 0;
-  const detail = Math.max(0, Math.min(1, (extent / Math.max(0.01, stroke.size) - 2) / 6));
   const options: StrokeOptions = {
     size: stroke.size,
     thinning:
@@ -48,39 +35,34 @@ export function outline(stroke: Stroke) {
         : stroke.tool === 'pencil'
           ? 0.65
           : 0.72,
-    smoothing: 0.5 * detail,
-    streamline: 0.25 * detail,
+    smoothing: 0.2,
+    streamline: 0.25,
     simulatePressure: false,
     last: true,
   };
   // The brush width must not be used as a minimum initial travel distance:
   // otherwise an entire miniature U can disappear before the first kept point.
-  const samples = getStrokePoints(points, { ...options, size: 0 });
+  const samples = getStrokePoints(points, { ...options, size: 0, last: true });
   const last = samples.at(-1);
   if (last && samples.length > 1) {
     // perfect-freehand 1.2.2 skips every non-final sample within 3 units of
     // the end. On a short fine stroke this includes its start, so its start
     // cap rotates the *end* outline around the start and makes a large disk.
     // The same absolute pruning can flatten a tiny curve at the end of a long
-    // stroke. Disable it for all scales; adaptive smoothing above controls noise.
+    // stroke. Disable it for all scales; causal brush-relative filtering controls noise.
     // No taper uses runningLength here; positions and pressure stay intact.
     last.runningLength += 3;
   }
   return getStrokeOutlinePoints(samples, options);
 }
 export function inkPath(stroke: Stroke) {
-  const points = outline(stroke);
-  return points.length
-    ? `M ${points.map((p) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(' L ')} Z`
-    : '';
+  return smoothInkPath(outline(stroke));
 }
 export function finalInkPath(stroke: Stroke) {
   let path = paths.get(stroke);
   if (path === undefined) {
     const points = outline(stroke);
-    path = points.length
-      ? `M ${points.map((p) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(' L ')} Z`
-      : '';
+    path = smoothInkPath(points);
     paths.set(stroke, path);
     bounds.set(stroke, geometryBounds(stroke, points));
   }
@@ -153,14 +135,7 @@ export function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, comple
       // The live stroke is rebuilt every frame: add its outline directly, at the
       // committed path's two-decimal precision, without formatting and parsing text.
       shape = new Path2D();
-      const points = outline(stroke);
-      for (let i = 0; i < points.length; i++) {
-        const x = Math.round(points[i][0] * 100) / 100,
-          y = Math.round(points[i][1] * 100) / 100;
-        if (i) shape.lineTo(x, y);
-        else shape.moveTo(x, y);
-      }
-      shape.closePath();
+      inkCurve(outline(stroke), shape);
     }
   }
   ctx.fill(shape);

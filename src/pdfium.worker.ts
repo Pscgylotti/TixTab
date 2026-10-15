@@ -1,6 +1,9 @@
 import { init, type WrappedPdfiumModule } from '@embedpdf/pdfium';
 import wasmUrl from '@embedpdf/pdfium/pdfium.wasm?url';
 import type { PdfiumRequest, PdfiumResponse } from './pdfiumProtocol';
+import { sourcePageGeometry } from './pdfiumSourceGeometry';
+import { nativeDestination, nativeOutline, nativeLinks } from './pdfiumNavigation';
+import { nativeText } from './pdfiumText';
 
 const scope = self as unknown as {
   postMessage: (data: PdfiumResponse, transfer: Transferable[]) => void;
@@ -27,7 +30,7 @@ function engine() {
   })());
 }
 
-async function run(message: Extract<PdfiumRequest, { type: 'open' | 'render' | 'release' }>) {
+async function run(message: Exclude<PdfiumRequest, { type: 'resume' | 'cancel' }>) {
   check(message.id);
   const pdfium = await engine();
   check(message.id);
@@ -57,12 +60,59 @@ async function run(message: Extract<PdfiumRequest, { type: 'open' | 'render' | '
       memory.wasmExports.free(filePointer);
       throw new Error(`PDFium document error ${pdfium.FPDF_GetLastError()}`);
     }
-    documents.set(message.documentId, { handle: documentHandle, pointer: filePointer });
-    send({ type: 'opened', id: message.id, documents: documents.size });
+    try {
+      const pages = await sourcePageGeometry(message.bytes);
+      if (pages.length !== pdfium.FPDF_GetPageCount(documentHandle))
+        throw new Error('PDF page tree mismatch');
+      check(message.id);
+      documents.set(message.documentId, { handle: documentHandle, pointer: filePointer });
+      send({ type: 'opened', id: message.id, documents: documents.size, pages });
+    } catch (error) {
+      pdfium.FPDF_CloseDocument(documentHandle);
+      memory.wasmExports.free(filePointer);
+      throw error;
+    }
     return;
   }
   const documentHandle = documents.get(message.documentId)?.handle;
   if (!documentHandle) throw new Error('PDFium document not open');
+  if (message.type === 'outline') {
+    send({ type: 'outline', id: message.id, items: nativeOutline(pdfium, documentHandle) });
+    return;
+  }
+  if (message.type === 'destination') {
+    send({
+      type: 'destination',
+      id: message.id,
+      dest: nativeDestination(
+        pdfium,
+        documentHandle,
+        pdfium.FPDF_GetNamedDestByName(documentHandle, message.name),
+      ),
+    });
+    return;
+  }
+  if (message.type === 'annotations' || message.type === 'text') {
+    const page = pdfium.FPDF_LoadPage(documentHandle, message.page);
+    if (!page) throw new Error('PDFium page unavailable');
+    try {
+      if (message.type === 'text')
+        send({
+          type: 'text',
+          id: message.id,
+          content: await nativeText(pdfium, page, () => check(message.id)),
+        });
+      else
+        send({
+          type: 'annotations',
+          id: message.id,
+          items: nativeLinks(pdfium, documentHandle, page),
+        });
+    } finally {
+      pdfium.FPDF_ClosePage(page);
+    }
+    return;
+  }
   const { region, fullWidth, fullHeight } = message;
   if (
     ![fullWidth, fullHeight, region.x, region.y, region.width, region.height].every(

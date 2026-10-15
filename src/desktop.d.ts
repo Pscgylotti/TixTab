@@ -10,6 +10,7 @@ interface Window {
     };
     imageExport?: import('./imageExport').ImageExportBridge;
     batchPdf?: import('./batchWorkspace').BatchBridge;
+    windowsAiOcr?: import('./windowsAiOcr').WindowsAiOcrBridge;
     nativeOcr?: import('./nativeCppOcr').NativeCppOcrBridge;
     pdfEditor?: import('./pdfNativeTypes').PdfEditorBridge;
     onNativePen?: (

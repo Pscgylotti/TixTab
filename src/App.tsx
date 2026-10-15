@@ -96,6 +96,7 @@ import {
   exportPdf,
   importPdf,
   loadPdf,
+  pdfDocumentBackend,
   SignedPdfExportError,
   type PdfExportProgress,
 } from './pdf';
@@ -145,6 +146,7 @@ import AppContexts from './AppContexts';
 import type { PageAction } from './pageOperations';
 const PageOperationsDialog = lazy(() => import('./PageOperationsDialog'));
 import InkColors, { savedInkColor } from './InkColors';
+import { savedInkSize, saveInkSize, sizeTool } from './inkPreferences';
 import FullscreenButton from './FullscreenButton';
 import TouchKeyboard from './TouchKeyboard';
 import RegionCapture from './RegionCapture';
@@ -200,15 +202,6 @@ function savedChrome(key: string) {
   } catch {
     return false;
   }
-}
-function savedPenSize(highlighter = false) {
-  try {
-    const saved = Number(
-      localStorage.getItem(highlighter ? 'tixtab.highlighterSize' : 'tixtab.penSize'),
-    );
-    if (saved >= 0.5 && saved <= (highlighter ? 32 : 12)) return saved;
-  } catch {}
-  return highlighter ? 18 : 2.8;
 }
 export default function App() {
   useEffect(startClipboardCapture, []);
@@ -300,21 +293,16 @@ export default function App() {
     );
   const [tool, setToolState] = useState<Tool>('pen'),
     [color, setColor] = useState(savedInkColor),
-    [size, setSize] = useState(savedPenSize),
+    [size, setSize] = useState(savedInkSize),
     [zoom, setZoomState] = useState(0.78),
     [sidebar, setSidebar] = useState(true);
   const readingObserved = useRef(false);
   const setTool = useCallback((next: Tool) => {
     setToolState(next);
-    setSize(savedPenSize(next === 'highlighter'));
+    setSize(savedInkSize(sizeTool(next)));
   }, []);
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        tool === 'highlighter' ? 'tixtab.highlighterSize' : 'tixtab.penSize',
-        String(size),
-      );
-    } catch {}
+    saveInkSize(sizeTool(tool), size);
   }, [size, tool]);
   const [penWheel, setPenWheel] = useState<{ x: number; y: number; text: boolean } | null>(null);
   const lastBarrel = useRef(-Infinity);
@@ -616,7 +604,11 @@ export default function App() {
   }, []);
   useEffect(() => {
     const source = notebook.source;
-    if (source === renderedSource.current) return;
+    if (
+      source === renderedSource.current &&
+      (!source || pdfDocumentBackend(pdfRef.current) === appearance.pdfRenderBackend)
+    )
+      return;
     let dead = false;
     void (source ? loadPdf(source) : Promise.resolve(null))
       .then((document) => {
@@ -636,7 +628,7 @@ export default function App() {
     return () => {
       dead = true;
     };
-  }, [notebook.source]);
+  }, [notebook.source, appearance.pdfRenderBackend]);
   const persist = useCallback((n: Notebook, id = activeRef.current, view = viewRef.current) => {
     if (!id)
       return Promise.reject(new Error(tr('\u5DE5\u4F5C\u7A7A\u95F4\u5C1A\u672A\u5C31\u7EEA')));
@@ -2076,17 +2068,17 @@ export default function App() {
           <i style={{ width: Math.min(12, size + 2), height: Math.min(12, size + 2) }} />
         </span>
         <input
-          aria-label={tr('笔触粗细')}
-          title={`${tr('笔触粗细')} ${size.toFixed(1)}`}
+          aria-label={tr(tool === 'eraser' ? '橡皮擦半径' : '笔触粗细')}
+          title={`${tr(tool === 'eraser' ? '橡皮擦半径' : '笔触粗细')} ${size.toFixed(1)}`}
           type="range"
-          min={tool === 'highlighter' ? 0.5 : 0}
-          max={tool === 'highlighter' ? 32 : 100}
-          step={tool === 'highlighter' ? 0.1 : 1}
-          value={tool === 'highlighter' ? size : penSizeToSlider(size)}
+          min={tool === 'eraser' ? 0.1 : tool === 'highlighter' ? 0.5 : 0}
+          max={tool === 'eraser' ? 64 : tool === 'highlighter' ? 32 : 100}
+          step={tool === 'highlighter' || tool === 'eraser' ? 0.1 : 1}
+          value={tool === 'highlighter' || tool === 'eraser' ? size : penSizeToSlider(size)}
           aria-valuetext={size.toFixed(2)}
           onChange={(e) =>
             setSize(
-              tool === 'highlighter'
+              tool === 'highlighter' || tool === 'eraser'
                 ? Number(e.target.value)
                 : penSizeFromSlider(Number(e.target.value)),
             )

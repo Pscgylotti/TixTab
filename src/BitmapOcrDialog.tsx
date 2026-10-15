@@ -1,3 +1,4 @@
+import WindowsAiOcrSettings from './WindowsAiOcrSettings';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, ScanText } from 'lucide-react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
@@ -11,6 +12,7 @@ import {
   withBitmapOcrPool,
   withBitmapNpuOcr,
   withBitmapNativeCppOcr,
+  withBitmapWindowsAiOcr,
 } from './providers';
 import { useProviderConfig } from './providerSettings';
 import { loadOcrDevice } from './nativeOcr';
@@ -24,7 +26,9 @@ function preferredBackend() {
     const type = localStorage.getItem('tixtab.bitmapOcrProvider');
     if (
       type &&
-      ['local', 'native', 'tesseract-native', 'web', 'llm', 'tesseract-npu'].includes(type)
+      ['local', 'native', 'windows-ai', 'tesseract-native', 'web', 'llm', 'tesseract-npu'].includes(
+        type,
+      )
     )
       return type;
   } catch {
@@ -241,6 +245,9 @@ export default function BitmapOcrDialog({
           abort.signal,
           scan,
         );
+      } else if (api.provider.type === 'windows-ai') {
+        setStatus(t('正在准备 Windows AI OCR 系统模型…'));
+        await withBitmapWindowsAiOcr(abort.signal, scan);
       } else if (api.provider.type === 'tesseract-native') {
         await withBitmapNativeCppOcr(
           nativeCppVariant(api.provider.model),
@@ -346,6 +353,9 @@ export default function BitmapOcrDialog({
             >
               <option value="native">PP-OCRv4 · {t('本地')}</option>
               <option value="local">Tesseract · {t('本地')}</option>
+              <option value="windows-ai" disabled={!window.surfaceDesktop?.windowsAiOcr}>
+                Windows AI OCR · NPU
+              </option>
               <option value="tesseract-native" disabled={!window.surfaceDesktop?.nativeOcr}>
                 Tesseract · C++
               </option>
@@ -354,6 +364,7 @@ export default function BitmapOcrDialog({
               <option value="llm">LLM API</option>
             </select>
           </label>
+          {!npu && api.provider.type === 'windows-ai' && <WindowsAiOcrSettings disabled={busy} />}
           {!npu && api.provider.type === 'tesseract-native' && (
             <NativeCppOcrSettings
               value={api.provider.model}
@@ -411,7 +422,13 @@ export default function BitmapOcrDialog({
                   (npu && variant === 'mixed-best') ||
                   (!npu && !['local', 'tesseract-native'].includes(api.provider.type))
                 }
-                value={nativeNpu || (npu && variant === 'mixed-best') ? 1 : concurrency}
+                value={
+                  nativeNpu ||
+                  (npu && variant === 'mixed-best') ||
+                  (!npu && !['local', 'tesseract-native'].includes(api.provider.type))
+                    ? 1
+                    : concurrency
+                }
                 onChange={(e) => {
                   const n = Number(e.target.value);
                   setConcurrency(n);

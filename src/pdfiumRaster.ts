@@ -1,6 +1,6 @@
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 import { getPdfRenderBackend, subscribeAppearance } from './appearance';
-import type { PdfiumRequest, PdfiumResponse, PdfiumRegion } from './pdfiumProtocol';
+import type { PdfiumRequest, PdfiumResponse, PdfiumRegion, PdfiumPageInfo } from './pdfiumProtocol';
 import { abortWait } from './abortWait';
 
 export interface PdfRasterTask {
@@ -67,17 +67,18 @@ class Session {
   readonly ready: Promise<void>;
   readonly pending = new Map<number, Pending>();
   closed = false;
+  pages: PdfiumPageInfo[] = [];
   private readonly lifetime = new AbortController();
-  constructor(pdf: PDFDocumentProxy) {
+  constructor(pdf: PDFDocumentProxy, owned?: Uint8Array) {
     live.add(this);
     const loadTimeout = setTimeout(
       () => this.engine.fail(new Error('PDFium document load timed out')),
       30000,
     );
     this.ready = (async () => {
-      const data = await abortWait(pdf.getData(), this.lifetime.signal);
+      const data = owned ?? (await abortWait(pdf.getData(), this.lifetime.signal));
       if (this.closed) throw cancelled();
-      const bytes = data.slice();
+      const bytes = owned ?? data.slice();
       await this.request({ type: 'open', id: ++sequence, documentId: this.documentId, bytes }, [
         bytes.buffer,
       ]);
@@ -105,6 +106,7 @@ class Session {
     if (data.type === 'error')
       pending.reject(data.error === 'cancelled' ? cancelled() : new Error(data.error));
     else {
+      if (data.type === 'opened') this.pages = data.pages;
       if (data.type === 'rendered') {
         this.engine.heapBytes = data.heapBytes;
         renders++;
@@ -123,11 +125,12 @@ class Session {
       pending.reject(error);
     }
     this.pending.clear();
+    this.pages = [];
     if (release) this.engine.release(this.documentId);
     live.delete(this);
   }
   request(
-    message: Extract<PdfiumRequest, { type: 'open' | 'render' }>,
+    message: Exclude<PdfiumRequest, { type: 'release' | 'resume' | 'cancel' }>,
     transfer: Transferable[] = [],
     signal?: AbortSignal,
     onContinue?: Pending['onContinue'],
@@ -188,6 +191,22 @@ class Session {
       onContinue,
     );
   }
+}
+export async function openPdfiumDocument(pdf: PDFDocumentProxy, bytes: Uint8Array) {
+  const session = new Session(pdf, bytes.slice());
+  sessions.set(pdf, session);
+  await session.ready;
+  return session.pages;
+}
+type Query =
+  | { type: 'outline' }
+  | { type: 'destination'; name: string }
+  | { type: 'annotations'; page: number }
+  | { type: 'text'; page: number };
+export async function queryPdfium(pdf: PDFDocumentProxy, query: Query) {
+  const session = sessionFor(pdf);
+  await session.ready;
+  return session.request({ ...query, id: ++sequence, documentId: session.documentId });
 }
 function sessionFor(pdf: PDFDocumentProxy) {
   let session = sessions.get(pdf);

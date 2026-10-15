@@ -19,7 +19,7 @@ export interface ProviderCapability {
 const types: Record<ProviderFeature, string[]> = {
   translation: ['local', 'local-native', 'local-service', 'google', 'web', 'llm'],
   formula: ['texo-native', 'texo-cpu', 'texo-gpu', 'unimumer', 'pix2text', 'web', 'llm'],
-  ocr: ['native', 'local', 'tesseract-native', 'texo', 'web', 'llm'],
+  ocr: ['native', 'local', 'windows-ai', 'tesseract-native', 'texo', 'web', 'llm'],
   speech: ['native', 'local', 'system', 'web', 'llm'],
 };
 export function providerCapabilities(): ProviderCapability[] {
@@ -37,7 +37,15 @@ export function providerCapabilities(): ProviderCapability[] {
             : 'local',
       stream: id === 'llm' && feature !== 'speech',
       cancel: true,
-      models: ['web', 'llm', 'google', 'local-service', 'pix2text', 'system'].includes(id)
+      models: [
+        'web',
+        'llm',
+        'google',
+        'local-service',
+        'pix2text',
+        'system',
+        'windows-ai',
+      ].includes(id)
         ? []
         : feature === 'translation'
           ? ['opus-en-zh', 'opus-zh-en']
@@ -166,25 +174,27 @@ async function attempt(
     capability = providerCapabilities().find((c) => c.feature === feature && c.id === type)!;
   if (!capability) throw new ProviderTaskError('invalid-input', t('后端类型无效'));
   const modelId =
-    capability.resource === 'remote'
-      ? modelName(config.model)
-      : feature === 'translation'
-        ? target === 'en'
-          ? 'opus-zh-en'
-          : 'opus-en-zh'
-        : type === 'unimumer'
-          ? 'unimumer-qwen3-vl-2b'
-          : feature === 'formula' || type === 'texo'
-            ? 'texo'
-            : feature === 'ocr'
-              ? type === 'native'
-                ? 'ppocrv4'
-                : 'tesseract'
-              : type === 'system'
-                ? 'system-offline'
-                : /[\u4e00-\u9fff]/.test(input)
-                  ? 'piper-zh'
-                  : 'piper-en';
+    type === 'windows-ai'
+      ? 'windows-ai-system-ocr'
+      : capability.resource === 'remote'
+        ? modelName(config.model)
+        : feature === 'translation'
+          ? target === 'en'
+            ? 'opus-zh-en'
+            : 'opus-en-zh'
+          : type === 'unimumer'
+            ? 'unimumer-qwen3-vl-2b'
+            : feature === 'formula' || type === 'texo'
+              ? 'texo'
+              : feature === 'ocr'
+                ? type === 'native'
+                  ? 'ppocrv4'
+                  : 'tesseract'
+                : type === 'system'
+                  ? 'system-offline'
+                  : /[\u4e00-\u9fff]/.test(input)
+                    ? 'piper-zh'
+                    : 'piper-en';
   const work = async () => {
     const start = performance.now();
     ctx.signal.throwIfAborted();
@@ -318,6 +328,24 @@ async function attempt(
       };
     }
     if (feature === 'ocr') {
+      if (type === 'windows-ai') {
+        const { withWindowsAiOcr } = await import('./windowsAiOcr');
+        const { releaseOcr } = await import('./ocrWorkerSession');
+        await activate('ocr:windows-ai', releaseOcr, false, ctx.signal);
+        releaseOcr();
+        ctx.progress(t('正在准备 Windows AI OCR 系统模型…'));
+        const result = await withWindowsAiOcr(ctx.signal, (recognize) => recognize(input, 0));
+        return {
+          ...local(),
+          ...result,
+          provider: type,
+          modelId,
+          device: 'NPU',
+          engine: 'Windows AI OCR',
+          elapsed: performance.now() - start,
+        };
+      }
+
       if (type === 'tesseract-native') {
         const { withNativeCppOcr, nativeCppVariant, nativeCppModels } =
           await import('./nativeCppOcr');
@@ -652,4 +680,20 @@ export async function withBitmapNpuOcr<T>(
       }, signal),
     signal,
   );
+}
+
+/** Keep one system recognizer for a batch, release it even on cancel/failure. */
+export async function withBitmapWindowsAiOcr<T>(
+  signal: AbortSignal,
+  work: (
+    recognize: (image: string, lane: number) => Promise<import('./bitmapOcr').BitmapRecognition>,
+  ) => Promise<T>,
+) {
+  return providerTasks.withLocalLane(async () => {
+    const { withWindowsAiOcr } = await import('./windowsAiOcr');
+    const { releaseOcr } = await import('./ocrWorkerSession');
+    await activate('bitmap:windows-ai', releaseOcr, false, signal);
+    releaseOcr();
+    return withWindowsAiOcr(signal, work);
+  }, signal);
 }

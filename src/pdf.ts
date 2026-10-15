@@ -1,28 +1,26 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import worker from '../.cache/pdf-index-worker.mjs?url';
 import { uid, type Notebook } from './model';
 import { trackPerformance } from './performanceLedger';
 import { releasePdfRenderCache } from './pdfRenderCache';
+import { getPdfRenderBackend } from './appearance';
 export { exportPdf, SignedPdfExportError } from './pdfExportClient';
 export type { PdfExportProgress } from './pdfExportClient';
+export function pdfDocumentBackend(pdf: PDFDocumentProxy | null) {
+  return (pdf as unknown as { tixtabBackend?: string } | null)?.tixtabBackend === 'pdfium'
+    ? 'pdfium'
+    : 'pdfjs';
+}
 export function destroyPdf(pdf: PDFDocumentProxy | null | undefined) {
   if (!pdf) return Promise.resolve();
   releasePdfRenderCache(pdf);
   return pdf.destroy();
 }
 export async function loadPdf(bytes: Uint8Array) {
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
-  GlobalWorkerOptions.workerSrc = worker;
-  const pdf = await trackPerformance(
-    'pdf-document',
-    () => getDocument({ data: bytes.slice(), isEvalSupported: false }).promise,
+  return trackPerformance('pdf-document', async () =>
+    getPdfRenderBackend() === 'pdfium'
+      ? (await import('./pdfiumDocument')).loadPdfiumDocument(bytes)
+      : (await import('./pdfLegacy')).loadLegacyPdf(bytes),
   );
-  const destroy = pdf.destroy.bind(pdf);
-  pdf.destroy = () => {
-    releasePdfRenderCache(pdf);
-    return destroy();
-  };
-  return pdf;
 }
 export async function importPdf(
   bytes: Uint8Array,

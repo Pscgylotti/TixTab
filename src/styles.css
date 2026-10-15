@@ -671,6 +671,17 @@ input[type='range']:not(.excalidraw *)::-webkit-slider-thumb {
 .surface.tool-eraser {
   cursor: cell;
 }
+.pdf-eraser-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  border: 1.5px solid var(--accent, #8eafff);
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: none;
+  z-index: 50;
+}
 .paper-position {
   position: absolute;
   left: 50%;

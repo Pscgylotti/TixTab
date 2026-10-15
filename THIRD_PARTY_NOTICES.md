@@ -10,6 +10,7 @@ Generated from the locked dependency tree, including development tools. Exact pa
 
 | Package | Version | License | Upstream |
 |---|---|---|---|
+| .NET runtime (optional isolated OCR helper) | 10.0.2 | MIT / upstream third-party notices; bundled in component Licenses | https://github.com/dotnet/runtime |
 | @antfu/install-pkg | 2.1.0 | MIT | https://github.com/antfu-collective/install-pkg |
 | @babel/code-frame | 7.29.7 | MIT | https://github.com/babel/babel |
 | @babel/compat-data | 7.29.7 | MIT | https://github.com/babel/babel |
@@ -218,6 +219,7 @@ Generated from the locked dependency tree, including development tools. Exact pa
 | Leptonica (bundled native OCR helper) | 1.85.0 | BSD-2-Clause | https://github.com/DanBloomberg/leptonica |
 | PyMuPDF (optional local PDF runtime) | 1.28.2 | AGPL-3.0 / separate upstream commercial license | https://github.com/pymupdf/PyMuPDF |
 | Tesseract (bundled native OCR / optional OpenVINO adapter) | 5.5.0 | Apache-2.0 upstream; TixTab adapter: AGPL-3.0-only | https://github.com/tesseract-ocr/tesseract/tree/5.5.0 |
+| Windows App SDK AI (optional isolated OCR helper) | AI 1.8.79 / Foundation 1.8.260505001 | Microsoft Windows App SDK redistributable terms; bundled in component Licenses | https://github.com/microsoft/WindowsAppSDK |
 | abbrev | 4.0.0 | ISC | https://github.com/npm/abbrev-js |
 | agent-base | 7.1.4 | MIT | https://github.com/TooTallNate/proxy-agents |
 | ajv | 8.20.0 | MIT | ajv-validator/ajv |

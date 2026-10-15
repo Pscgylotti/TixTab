@@ -1,5 +1,4 @@
 import { expect, it } from 'vitest';
-import { getStroke } from 'perfect-freehand';
 import { outline, finalInkPath, cullingInkBounds, inkBounds } from './ink';
 import type { Stroke } from './model';
 
@@ -42,7 +41,7 @@ it('short thin strokes and taps never create a cap wider than the brush pressure
         }
 });
 
-it('retains normal-stroke geometry including sharp turns and repeated samples', () => {
+it('retains endpoints, turns and raw pressure while smoothing the display outline', () => {
   for (const size of [0.5, 2, 4, 12]) {
     const points: Stroke['points'] = [
       [10, 10, 0.2],
@@ -51,16 +50,11 @@ it('retains normal-stroke geometry including sharp turns and repeated samples', 
       [20, 10, 0.5],
       [150, 40, 0.4],
     ];
-    const stroke: Stroke = { id: 'normal', tool: 'pen', color: '#123456', size, points };
-    expect(outline(stroke)).toEqual(
-      getStroke(points, {
-        size,
-        thinning: 0.72,
-        smoothing: 0.5,
-        streamline: 0.25,
-        simulatePressure: false,
-        last: true,
-      }),
-    );
+    const raw = JSON.stringify(points);
+    const shape = outline({ id: 'normal', tool: 'pen', color: '#123456', size, points });
+    expect(shape.every((p) => p.every(Number.isFinite))).toBe(true);
+    expect(Math.max(...shape.map((p) => p[0]))).toBeGreaterThanOrEqual(150);
+    expect(Math.min(...shape.map((p) => p[0]))).toBeLessThan(10);
+    expect(JSON.stringify(points)).toBe(raw);
   }
 });

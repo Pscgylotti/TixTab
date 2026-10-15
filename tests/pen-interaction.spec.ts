@@ -75,6 +75,51 @@ async function openFixture(page: Page) {
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   await page.getByRole('button', { name: '钢笔', exact: true }).click();
 }
+
+for (const view of ['单页标注', '连续页面预览', '双页预览']) {
+  test(`Alt reveals targets without mouse movement and activates once across tools: ${view}`, async ({
+    page,
+  }) => {
+    await openFixture(page);
+    await page.getByRole('button', { name: view, exact: true }).click();
+    await page.getByRole('button', { name: '适合页面', exact: true }).click();
+    await page.evaluate(() => {
+      const w = window as any;
+      w.altOpened = [];
+      w.surfaceDesktop = {
+        ...w.surfaceDesktop,
+        openDocumentUrl: async (url: string) => w.altOpened.push(url),
+      };
+    });
+    for (const tool of ['钢笔', '橡皮擦', '选文']) {
+      await page.getByRole('button', { name: tool, exact: true }).click();
+      const imagePoint = await point(page, '.paper,.reading-paper', 290, 330);
+      await page.mouse.move(imagePoint.x, imagePoint.y);
+      await page.keyboard.down('Alt');
+      const image = page.locator('[data-pen-interactive=image]').first();
+      await expect(image).toBeVisible();
+      await expect(image).toHaveClass(/pen-target-hover/);
+      const link = page
+        .locator('[data-pen-interactive=link][href="mailto:author@example.org"]')
+        .first();
+      await expect(link).toBeVisible();
+      await link.click();
+      await page.keyboard.up('Alt');
+      await expect(page.locator('.pen-interaction-active')).toHaveCount(0);
+      await expect(page.getByRole('menu', { name: '笔侧键工具环' })).toHaveCount(0);
+    }
+    expect(await page.evaluate(() => (window as any).altOpened)).toEqual(
+      Array(3).fill('mailto:author@example.org'),
+    );
+    await page.getByRole('button', { name: '对象', exact: true }).click();
+    const imagePoint = await point(page, '.paper,.reading-paper', 290, 330);
+    await page.mouse.move(imagePoint.x, imagePoint.y);
+    await page.keyboard.down('Alt');
+    await page.mouse.click(imagePoint.x, imagePoint.y);
+    await page.keyboard.up('Alt');
+    await expect(page.getByRole('dialog', { name: '原图', exact: true })).toBeVisible();
+  });
+}
 test('held side button reveals image/arXiv/email/reference targets across tools; blank contact opens ring', async ({
   page,
 }) => {

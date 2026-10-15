@@ -130,6 +130,15 @@ FunctionEnd
   Call TixTabNormalizeInstallDirectory
 !macroend
 
+!macro customInstall
+  # Only a signed identity package is registered on end-user machines. Never
+  # enable developer mode or install a development trust certificate here.
+  IfFileExists "$INSTDIR\native\windows-ai-ocr\TixTab.WindowsAI.Ocr.identity.msix" 0 tixtab_ocr_identity_done
+    nsExec::ExecToLog '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "$INSTDIR\resources\app.asar.unpacked\electron\windows-ai-register.ps1" -RuntimeDirectory "$INSTDIR\native\windows-ai-ocr"'
+    Pop $0
+  tixtab_ocr_identity_done:
+!macroend
+
 !macro customPageAfterChangeDir
   Page custom TixTabUpgradePage
   # Replace the upstream substring-based sanitizer; this also preserves legacy

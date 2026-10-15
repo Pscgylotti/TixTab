@@ -23,17 +23,18 @@
     "benchmark:compare": "node scripts/compare-workflows.mjs",
     "benchmark:build-control": "node scripts/build-performance-control.mjs",
     "test:performance-model": "node --test scripts/performance-demand.test.mjs",
-    "pack": "npm run prepare:native-ocr && npm run build && electron-builder --config electron-builder.lite.cjs --win nsis --x64",
-    "pack:portable": "npm run prepare:native-ocr && npm run build && electron-builder --config electron-builder.lite.cjs --win portable --x64",
+    "pack": "npm run prepare:native-ocr && npm run prepare:windows-ai-ocr && npm run build && electron-builder --config electron-builder.lite.cjs --win nsis --x64",
+    "pack:portable": "npm run prepare:native-ocr && npm run prepare:windows-ai-ocr && npm run build && electron-builder --config electron-builder.lite.cjs --win portable --x64",
     "model:translation": "node scripts/download-translation.mjs",
     "model:reading": "node scripts/download-reading-models.mjs",
     "model:ocr": "node scripts/download-ocr.mjs",
-    "pack:offline": "npm run prepare:native-ocr && npm run build && electron-builder --win nsis --x64",
+    "pack:offline": "npm run prepare:native-ocr && npm run prepare:windows-ai-ocr && npm run build && electron-builder --win nsis --x64",
     "format": "prettier --write src electron scripts tests *.ts *.cjs package.json .github",
     "format:check": "prettier --check src electron scripts tests *.ts *.cjs package.json .github",
     "verify:package": "node scripts/verify-package.mjs",
     "pack:release": "npm run notices && npm run pack",
-    "notices": "node scripts/prepare-notices.mjs"
+    "notices": "node scripts/prepare-notices.mjs",
+    "prepare:windows-ai-ocr": "node scripts/build-windows-ai-ocr.mjs"
   },
   "dependencies": {
     "@embedpdf/pdfium": "2.15.1",
@@ -101,6 +102,10 @@
       {
         "from": ".cache/native-ocr/runtime",
         "to": "native/ocr"
+      },
+      {
+        "from": ".cache/windows-ai-ocr/runtime",
+        "to": "native/windows-ai-ocr"
       },
       "README.md",
       {
@@ -172,7 +177,8 @@
       "electron/cache-helper.ps1",
       "electron/cache-catalog.json",
       "electron/dictation.ps1",
-      "electron/microphone.cs"
+      "electron/microphone.cs",
+      "electron/windows-ai-register.ps1"
     ],
     "win": {
       "target": [

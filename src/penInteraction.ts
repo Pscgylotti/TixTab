@@ -130,6 +130,9 @@ export function usePenInteractionTracking(
       pointerId: number | null = null;
     let pending: AbortController | undefined;
     let native: NativePenSample | null = null;
+    let alt = false,
+      mousePoint: { x: number; y: number } | null = null;
+    let mouseClickUntil = 0;
     let press: {
       event: PointerEvent;
       last: PointerEvent;
@@ -153,17 +156,27 @@ export function usePenInteractionTracking(
     const cancel = () => {
       if (press) finishPress(press.last, true);
       native = null;
+      alt = false;
       pending?.abort();
       clear();
     };
     const pointer = (event: PointerEvent) => {
-      if (event.pointerType !== 'pen') return;
+      const mouse = event.pointerType === 'mouse';
+      if (mouse) {
+        mousePoint = { x: event.clientX, y: event.clientY };
+        if (
+          (!event.altKey || event.ctrlKey || event.metaKey) &&
+          press?.event.pointerType !== 'mouse'
+        )
+          return;
+      } else if (event.pointerType !== 'pen') return;
       const element = event.target instanceof Element ? event.target : null;
       const touching = event.pressure > 0 || !!(event.buttons & 1);
-      const barrel =
-        !!(event.buttons & 2) ||
-        (event.button === 2 && event.type === 'pointerdown') ||
-        !!(native?.inRange && native.barrel);
+      const barrel = mouse
+        ? event.altKey && !event.ctrlKey && !event.metaKey
+        : !!(event.buttons & 2) ||
+          (event.button === 2 && event.type === 'pointerdown') ||
+          !!(native?.inRange && native.barrel);
       if (press && event.pointerId === press.event.pointerId) {
         press.last = event;
         if (!touching || !barrel) {
@@ -177,10 +190,20 @@ export function usePenInteractionTracking(
               6
           ) {
             press.dragging = true;
+            pending?.abort();
+            setPage(null);
             dragCallback.current?.handle('start', press.event, press.pageId);
           }
           if (press.dragging) dragCallback.current?.handle('move', event, press.pageId);
         }
+      }
+      if (press?.dragging) {
+        // A barrel drag belongs to ink selection until the tip is lifted.
+        // Neither DOM motion nor native hover reports may re-enable targets.
+        setPage(null);
+        event.preventDefault();
+        event.stopPropagation();
+        return;
       }
       if (
         !barrel ||
@@ -200,6 +223,8 @@ export function usePenInteractionTracking(
       contact = touching;
       pointerId = event.pointerId;
       if (!started) return;
+      if (mouse && event.button !== 0) return;
+      if (mouse) mouseClickUntil = performance.now() + 600;
       pending?.abort();
       pending = new AbortController();
       if (dragCallback.current?.enabled) {
@@ -212,13 +237,67 @@ export function usePenInteractionTracking(
       }
     };
     const cancelled = (event: PointerEvent) => {
-      if (event.pointerType === 'pen') cancel();
+      if (event.pointerType === 'pen' || event.pointerType === 'mouse') cancel();
+    };
+    const mouseHover = () => {
+      if (!alt || press?.dragging || document.querySelector('[aria-modal="true"],.pen-tool-wheel'))
+        return;
+      const element = mousePoint ? document.elementFromPoint(mousePoint.x, mousePoint.y) : null;
+      setPage(
+        element?.closest<HTMLElement>('[data-page-id]')?.dataset.pageId ?? fallbackPage.current,
+      );
+      if (mousePoint) hoverAt(mousePoint.x, mousePoint.y);
+    };
+    const keyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && press) {
+        cancel();
+        return;
+      }
+      if (
+        event.key !== 'Alt' ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.getModifierState('AltGraph') ||
+        (event.target instanceof Element &&
+          event.target.closest('input,textarea,select,[contenteditable="true"]'))
+      )
+        return;
+      alt = true;
+      mouseHover();
+      event.preventDefault();
+    };
+    const keyUp = (event: KeyboardEvent) => {
+      if (event.key !== 'Alt') return;
+      alt = false;
+      if (press?.event.pointerType === 'mouse') {
+        finishPress(press.last, !press.dragging);
+        pending?.abort();
+      }
+      clear();
+    };
+    const click = (event: MouseEvent) => {
+      if (
+        performance.now() <= mouseClickUntil &&
+        (event.target as Element)?.closest('.canvas-container')
+      ) {
+        mouseClickUntil = 0;
+        event.preventDefault();
+        event.stopPropagation();
+      }
     };
     const visibility = () => {
       if (document.hidden) cancel();
     };
     const unsubscribe = window.surfaceDesktop?.onNativePen?.((sample) => {
       native = sample;
+      if (press?.dragging) {
+        setPage(null);
+        return;
+      }
+      if (alt) {
+        mouseHover();
+        return;
+      }
       if (!sample.inRange || !sample.barrel) {
         clear();
         return;
@@ -241,6 +320,9 @@ export function usePenInteractionTracking(
       window.addEventListener(name, pointer, true);
     window.addEventListener('pointerout', leave, true);
     window.addEventListener('pointercancel', cancelled, true);
+    window.addEventListener('keydown', keyDown, true);
+    window.addEventListener('keyup', keyUp, true);
+    window.addEventListener('click', click, true);
     window.addEventListener('blur', cancel);
     document.addEventListener('visibilitychange', visibility);
     return () => {
@@ -250,6 +332,9 @@ export function usePenInteractionTracking(
         window.removeEventListener(name, pointer, true);
       window.removeEventListener('pointerout', leave, true);
       window.removeEventListener('pointercancel', cancelled, true);
+      window.removeEventListener('keydown', keyDown, true);
+      window.removeEventListener('keyup', keyUp, true);
+      window.removeEventListener('click', click, true);
       window.removeEventListener('blur', cancel);
       document.removeEventListener('visibilitychange', visibility);
     };

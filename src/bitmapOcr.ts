@@ -38,7 +38,7 @@ export async function inspectBitmapPages(
   for (const page of pages) {
     signal.throwIfAborted();
     if (pdf && page.sourceIndex !== null) {
-      const polygons = await getPdfImages(pdf, page.sourceIndex);
+      const polygons = await abortWait(getPdfImages(pdf, page.sourceIndex), signal);
       signal.throwIfAborted();
       inventory.pdfImages.set(page.id, polygons);
       const parsed = new Set(page.bitmapOcr?.map((b) => b.imageIndex));

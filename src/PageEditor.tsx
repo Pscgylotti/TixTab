@@ -43,6 +43,8 @@ import {
 import { finalInkPath, cullingInkBounds } from './ink';
 import { paintLiveInk, releaseLiveInk } from './liveInk';
 import { InkSampleClock } from './inkSampling';
+import { savedInkSize } from './inkPreferences';
+import { eraserPaperRadius } from './eraserRadius';
 import type { ForegroundClip } from './foregroundViewport';
 import { useForegroundViewport } from './useForegroundViewport';
 import { CommittedInk, committedInkRatio } from './committedInk';
@@ -321,6 +323,40 @@ function PageEditor({
     drawingPointer = useRef<number | null>(null);
   const pressureMapper = useRef(getPressureMapper());
   const sampleClock = useRef(new InkSampleClock());
+  const tailEraser = useRef(false),
+    eraserCursor = useRef<HTMLDivElement>(null);
+  const eraserRadiusAt = (e: PointerEvent) =>
+    eraserPaperRadius(
+      tool === 'eraser' ? size : savedInkSize('eraser'),
+      pressureMapper.current(e.pressure),
+      e.pointerType === 'pen',
+    );
+  const hideEraserCursor = () => {
+    if (eraserCursor.current) eraserCursor.current.style.display = 'none';
+  };
+  const previewEraser = (e: PointerEvent) => {
+    const circle = eraserCursor.current;
+    if (!circle) return;
+    if (e.pointerType === 'touch' || !(tool === 'eraser' || tailEraser.current || isEraser(e))) {
+      hideEraserCursor();
+      return;
+    }
+    const paperRadius = eraserRadiusAt(e);
+    const radius = paperRadius * (root.current!.getBoundingClientRect().width / page.width);
+    circle.style.display = 'block';
+    circle.style.width = circle.style.height = `${radius * 2}px`;
+    circle.style.transform = `translate(${e.clientX - radius}px,${e.clientY - radius}px)`;
+    circle.dataset.screenRadius = String(radius);
+    circle.dataset.paperRadius = String(paperRadius);
+  };
+  useEffect(() => {
+    hideEraserCursor();
+    window.addEventListener('blur', hideEraserCursor);
+    return () => {
+      window.removeEventListener('blur', hideEraserCursor);
+      hideEraserCursor();
+    };
+  }, [tool, page.id]);
   const [pendingImages, setPendingImages] = useState<string[]>([]),
     [pendingCount, setPendingCount] = useState(0);
   const penTime = useRef(-Infinity),
@@ -415,10 +451,11 @@ function PageEditor({
   const paintFinish = useRef<PerformanceFinish | undefined>(undefined);
   const sample = (e: PointerEvent, rect?: DOMRect) => {
     if (!sampleClock.current.accept(e.timeStamp, e.clientX, e.clientY, e.pressure)) return;
-    const p = point(e, rect);
+    const bounds = rect ?? root.current!.getBoundingClientRect();
+    const p = point(e, bounds);
     if (erased.current) {
       const from = eraseLast.current ?? p,
-        radius = Math.max(8, size * 2),
+        radius = eraserRadiusAt(e),
         box = sweptBounds(from, p, radius);
       for (const s of committed.current!.candidates(pageRef.current.strokes, box))
         if (!erased.current.strokes.has(s.id) && hitStroke(s, from, p, radius)) {
@@ -475,6 +512,8 @@ function PageEditor({
     drawingPointer.current = e.pointerId;
     sampleClock.current.reset();
     pressureMapper.current = getPressureMapper();
+    tailEraser.current = isEraser(e);
+    previewEraser(e.nativeEvent);
     if (tool === 'eraser' || isEraser(e)) {
       erased.current = { strokes: new Set(), images: new Set(), highlights: new Map() };
       eraseLast.current = point(e.nativeEvent);
@@ -500,6 +539,7 @@ function PageEditor({
     return () => element.removeEventListener('pointerrawupdate', raw);
   }, []);
   const move = (e: ReactPointerEvent) => {
+    previewEraser(e.nativeEvent);
     if (e.pointerType === 'pen') penTime.current = performance.now();
     if (drawingPointer.current !== e.pointerId) return;
     e.stopPropagation();
@@ -525,12 +565,23 @@ function PageEditor({
     erased.current = null;
     eraseLast.current = null;
     drawingPointer.current = null;
+    tailEraser.current = false;
+    hideEraserCursor();
     showPending([]);
     setPendingCount(0);
     queueInk();
   };
   return (
     <>
+      {createPortal(
+        <div
+          ref={eraserCursor}
+          className="pdf-eraser-cursor"
+          aria-hidden="true"
+          style={{ display: 'none' }}
+        />,
+        document.body,
+      )}
       <div
         className={`page-editor tool-${tool}`}
         ref={root}
@@ -540,6 +591,7 @@ function PageEditor({
         }}
         onPointerDown={down}
         onPointerMove={move}
+        onPointerLeave={hideEraserCursor}
         onPointerUp={(e) => end(e)}
         onPointerCancel={(e) => end(e, true)}
         onLostPointerCapture={(e) => end(e, true)}

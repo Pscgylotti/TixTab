@@ -97,6 +97,52 @@ export default function PdfOriginalImages({
     };
   }, [pdf, sourceIndex, loadImages]);
   useEffect(() => {
+    // A cold metadata index may finish after a fast mouse double-click. Resolve
+    // that gesture asynchronously instead of requiring a mounted hit overlay.
+    const paper = anchor.current?.parentElement;
+    if (!enabled || !paper || !pdf || sourceIndex === null) return;
+    let dead = false;
+    const doubleClick = (event: MouseEvent) => {
+      if (event.button !== 0 || (event.target as Element).closest('button,a')) return;
+      const bounds = paper.getBoundingClientRect();
+      const rx = (event.clientX - bounds.left) / bounds.width,
+        ry = (event.clientY - bounds.top) / bounds.height;
+      if (rx < 0 || rx > 1 || ry < 0 || ry > 1) return;
+      void Promise.all([pdf.getPage(sourceIndex + 1), getPdfImages(pdf, sourceIndex)])
+        .then(([page, polygons]) => {
+          if (dead) return;
+          const vp = page.getViewport({ scale: 1 }),
+            x = rx * vp.width,
+            y = ry * vp.height;
+          for (let i = polygons.length - 1; i >= 0; i--) {
+            const polygon = transformPolygon(polygons[i], vp.transform);
+            let inside = false;
+            for (let a = 0, b = polygon.length - 2; a < polygon.length; b = a, a += 2)
+              if (
+                polygon[a + 1] > y !== polygon[b + 1] > y &&
+                x <
+                  ((polygon[b] - polygon[a]) * (y - polygon[a + 1])) /
+                    (polygon[b + 1] - polygon[a + 1]) +
+                    polygon[a]
+              )
+                inside = !inside;
+            if (inside) {
+              selectedImageIndex.current = i;
+              setSelected(polygon);
+              break;
+            }
+          }
+        })
+        .catch(() => {});
+    };
+    const clickRoot = paper.closest('.surface,.reading-view') ?? paper;
+    clickRoot.addEventListener('dblclick', doubleClick as EventListener, true);
+    return () => {
+      dead = true;
+      clickRoot.removeEventListener('dblclick', doubleClick as EventListener, true);
+    };
+  }, [enabled, pdf, sourceIndex]);
+  useEffect(() => {
     const paper = anchor.current?.parentElement,
       root = paper?.closest('.surface,.reading-view');
     if (!enabled || !paper || !root || !images.length) return;

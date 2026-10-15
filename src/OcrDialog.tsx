@@ -1,3 +1,4 @@
+import WindowsAiOcrSettings from './WindowsAiOcrSettings';
 import TaskCenterButton from './TaskCenterButton';
 import NativeCppOcrSettings from './NativeCppOcrSettings';
 import { t as tr, useLocale } from './i18n';
@@ -96,6 +97,9 @@ export default function OcrDialog({
             >
               <option value="native">{tr('本地低功耗优先 · PP-OCRv4（实验）')}</option>
               <option value="local">{tr('本地 Tesseract · 中英文字')}</option>
+              <option value="windows-ai" disabled={!window.surfaceDesktop?.windowsAiOcr}>
+                Windows AI OCR · NPU
+              </option>
               <option value="tesseract-native" disabled={!window.surfaceDesktop?.nativeOcr}>
                 Tesseract · C++
               </option>
@@ -104,6 +108,7 @@ export default function OcrDialog({
               <option value="llm">{tr('图像 LLM API')}</option>
             </select>
           </label>
+          {provider === 'windows-ai' && <WindowsAiOcrSettings disabled={busy} />}
           {provider === 'tesseract-native' && (
             <NativeCppOcrSettings
               value={config.model}

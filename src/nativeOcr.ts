@@ -25,14 +25,25 @@ export function saveOcrDevice(device: NativeDevice) {
 export function loadOcrProvider() {
   try {
     const value = localStorage.getItem('surfacetab.ocrLocalProvider');
-    if (value === 'native' || value === 'local' || value === 'tesseract-native') return value;
+    if (
+      value === 'native' ||
+      value === 'local' ||
+      value === 'tesseract-native' ||
+      value === 'windows-ai'
+    )
+      return value;
   } catch {
     /* Session default. */
   }
   return 'native';
 }
 export function saveOcrProvider(provider: string) {
-  if (provider === 'native' || provider === 'local' || provider === 'tesseract-native')
+  if (
+    provider === 'native' ||
+    provider === 'local' ||
+    provider === 'tesseract-native' ||
+    provider === 'windows-ai'
+  )
     try {
       localStorage.setItem('surfacetab.ocrLocalProvider', provider);
     } catch {

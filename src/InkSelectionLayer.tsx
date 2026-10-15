@@ -130,7 +130,6 @@ export default function InkSelectionLayer({
         }
       }
     });
-    let mouse: number | null = null;
     const down = (e: PointerEvent) => {
       if (!drawingTool(tool)) return;
       const element = e.target instanceof Element ? e.target : null;
@@ -138,45 +137,15 @@ export default function InkSelectionLayer({
         if (!element?.closest('.ink-selection-controls')) selectInk(page.id, []);
         return;
       }
-      if (e.pointerType === 'mouse' && e.altKey && e.button === 0) {
-        e.preventDefault();
-        e.stopPropagation();
-        mouse = e.pointerId;
-        current.current.onActivate?.();
-        selectInk(page.id, []);
-        tree.current.update(current.current.page.strokes);
-        start.current = point(e.clientX, e.clientY);
-      } else if (!element.closest('.ink-selection-box') && !(e.buttons & 2)) selectInk(page.id, []);
-    };
-    const move = (e: PointerEvent) => {
-      if (mouse !== e.pointerId) return;
-      e.preventDefault();
-      e.stopPropagation();
-      pending.current = { x: e.clientX, y: e.clientY };
-      if (!frame.current)
-        frame.current = requestAnimationFrame(() => {
-          frame.current = 0;
-          if (pending.current) update(pending.current.x, pending.current.y, false);
-        });
-    };
-    const up = (e: PointerEvent) => {
-      if (mouse !== e.pointerId) return;
-      e.preventDefault();
-      e.stopPropagation();
-      mouse = null;
-      cancelAnimationFrame(frame.current);
-      frame.current = 0;
-      pending.current = null;
-      if (e.type === 'pointercancel') {
-        start.current = null;
-        setMarquee(null);
-      } else update(e.clientX, e.clientY, true);
+      // Alt gestures share the barrel-button router: taps activate PDF targets,
+      // crossing its drag threshold starts the registered ink gesture above.
+      if (e.pointerType === 'mouse' && e.altKey) return;
+      if (!element.closest('.ink-selection-box') && !(e.buttons & 2)) selectInk(page.id, []);
     };
     const cancel = () => {
       moving.current = null;
       cancelAnimationFrame(moveFrame.current);
       moveFrame.current = 0;
-      mouse = null;
       start.current = pending.current = null;
       cancelAnimationFrame(frame.current);
       frame.current = 0;
@@ -190,9 +159,6 @@ export default function InkSelectionLayer({
       }
     };
     window.addEventListener('pointerdown', down, true);
-    window.addEventListener('pointermove', move, true);
-    window.addEventListener('pointerup', up, true);
-    window.addEventListener('pointercancel', up, true);
     window.addEventListener('blur', cancel);
     window.addEventListener('keydown', key, true);
     return () => {
@@ -202,9 +168,6 @@ export default function InkSelectionLayer({
       remove();
       cancelAnimationFrame(frame.current);
       window.removeEventListener('pointerdown', down, true);
-      window.removeEventListener('pointermove', move, true);
-      window.removeEventListener('pointerup', up, true);
-      window.removeEventListener('pointercancel', up, true);
       window.removeEventListener('blur', cancel);
       window.removeEventListener('keydown', key, true);
       if (selectedInk(page.id).length) selectInk(page.id, []);

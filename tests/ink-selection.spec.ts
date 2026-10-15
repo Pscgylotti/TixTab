@@ -91,6 +91,7 @@ for (const view of ['单页标注', '连续页面预览', '双页预览']) {
     await expect(page.getByRole('menu', { name: '笔侧键工具环' })).toHaveCount(0);
     await pen(page, 'pointermove', end, true);
     await expect(page.locator('[data-ink-marquee]')).toBeVisible();
+    await expect(page.locator('.pen-interaction-active,.pen-target-hover')).toHaveCount(0);
     await expect(page.locator('[data-ink-marquee]')).toHaveCSS(
       'background-color',
       'rgba(0, 0, 0, 0)',
@@ -163,6 +164,15 @@ test('Alt+mouse selects ink; normal drawing and cancel preserve content; expande
   await expect(page.locator('.ink-selection-box')).toHaveAttribute('data-selected-strokes', '2');
   await page.keyboard.press('Escape');
   await expect(page.locator('.ink-selection-box')).toHaveCount(0);
+  await page.keyboard.down('Alt');
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(end.x, end.y, { steps: 3 });
+  await expect(page.locator('[data-ink-marquee]')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-ink-marquee]')).toHaveCount(0);
+  await page.mouse.up();
+  await page.keyboard.up('Alt');
   await pen(page, 'pointerdown', start, true);
   await pen(page, 'pointermove', end, true);
   await pen(page, 'pointercancel', end, false);

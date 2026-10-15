@@ -142,6 +142,22 @@ app.whenReady().then(() => {
     },
   });
   app.once('before-quit', () => void nativeOcr.dispose());
+  const windowsAiOcr = require('./windows-ai-ocr.cjs').createWindowsAiOcr({
+    executable: app.isPackaged
+      ? path.join(process.resourcesPath, '../native/windows-ai-ocr/TixTab.WindowsAI.Ocr.exe')
+      : path.resolve(__dirname, '../.cache/windows-ai-ocr/runtime/TixTab.WindowsAI.Ocr.exe'),
+    workingRoot: path.join(app.getPath('userData'), 'windows-ai-ocr-jobs'),
+    registerScript: path
+      .join(__dirname, 'windows-ai-register.ps1')
+      .replace('app.asar', 'app.asar.unpacked'),
+  });
+  app.once('before-quit', () => void windowsAiOcr.dispose());
+  ipcMain.handle('ocr:windows-ai', (event, request) =>
+    providerSender(event)
+      ? windowsAiOcr.run(event.sender, request)
+      : { ok: false, error: 'untrusted' },
+  );
+
   ipcMain.handle('ocr:native', (event, request) =>
     providerSender(event)
       ? nativeOcr.run(event.sender, request)

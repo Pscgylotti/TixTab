@@ -49,3 +49,5 @@ docs/performance/**/*
 docs/maintenance/**/*
 !docs/maintenance/**/
 !docs/maintenance/**/*.md
+
+/native/windows-ai-ocr/obj/

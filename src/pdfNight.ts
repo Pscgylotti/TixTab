@@ -18,8 +18,14 @@ export function getPdfImages(pdf: PDFDocumentProxy, index: number) {
     pages.set(index, promise);
   }
   if (!promise) {
-    promise = trackPerformance('pdf-images', () =>
-      pdf.getPage(index + 1).then(async (p) => {
+    promise = trackPerformance('pdf-images', async () => {
+      const custom = (
+        pdf as PDFDocumentProxy & {
+          tixtabImageIndex?: (index: number) => Promise<ImagePolygon[]>;
+        }
+      ).tixtabImageIndex;
+      if (custom) return custom(index);
+      return pdf.getPage(index + 1).then(async (p) => {
         const { OPS } = await import('pdfjs-dist');
         // The pinned worker extension returns transforms and image occurrences
         // only: no image decoder, pixels, font data or renderer object cache.
@@ -49,8 +55,8 @@ export function getPdfImages(pdf: PDFDocumentProxy, index: number) {
         } finally {
           p.cleanup?.();
         }
-      }),
-    );
+      });
+    });
     pages.set(index, promise);
     if (pages.size > (renderPolicy().minimal ? 2 : 128)) pages.delete(pages.keys().next().value!);
     promise.catch(() => pages!.delete(index));
