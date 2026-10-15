@@ -1,5 +1,4 @@
 import { expect, it, vi } from 'vitest';
-vi.mock('pdfjs-dist', () => ({ Util: { transform: (_: number[], matrix: number[]) => matrix } }));
 import {
   detectedUrls,
   findText,
@@ -10,6 +9,66 @@ import {
 } from './documentNavigation';
 import { blankPage } from './model';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { PdfViewport } from './pdfViewport';
+it.each([0, 90, 180, 270])(
+  'keeps rotated arXiv substring bounds and search aligned at page rotation %s',
+  async (rotation) => {
+    const str = 'arXiv:2212.05032v3 [cs.CV] 28 Feb',
+      viewport = new PdfViewport(
+        { view: [20, 30, 620, 830], rotation, userUnit: 2, objectNumber: 1 },
+        { scale: 1 },
+      );
+    const pdf = {
+      getPage: async () => ({
+        getViewport: () => viewport,
+        getTextContent: async () => ({
+          items: [
+            {
+              str,
+              transform: [0, 12, -12, 0, 60, 100],
+              width: str.length * 6,
+              height: 12,
+              fontName: 'f',
+            },
+          ],
+          styles: { f: { ascent: 0.8 } },
+        }),
+      }),
+    } as unknown as PDFDocumentProxy;
+    const content = await readPageText(pdf, 0),
+      link = detectedUrls(content)[0],
+      rect = link.rects[0],
+      expected = viewport.convertToViewportRectangle([50.4, 100, 62.4, 208]),
+      x = Math.min(expected[0], expected[2]),
+      y = Math.min(expected[1], expected[3]);
+    expect(link.url).toBe('https://arxiv.org/abs/2212.05032v3');
+    expect(rect.x).toBeCloseTo(x);
+    expect(rect.y).toBeCloseTo(y);
+    expect(rect.width).toBeCloseTo(Math.abs(expected[2] - expected[0]));
+    expect(rect.height).toBeCloseTo(Math.abs(expected[3] - expected[1]));
+    expect(findText(content, 'arXiv:2212.05032v3', 'page')[0].rects).toEqual(link.rects);
+  },
+);
+
+it('joins adjacent rotated fragments along their baseline without adding spaces inside identifiers', async () => {
+  const pdf = {
+    getPage: async () => ({
+      getViewport: () => ({ transform: [1, 0, 0, -1, 0, 800], scale: 1, userUnit: 1 }),
+      getTextContent: async () => ({
+        items: [
+          { str: 'arXiv:', transform: [0, 12, -12, 0, 60, 100], width: 36, fontName: 'f' },
+          { str: '2212.05032v3', transform: [0, 12, -12, 0, 60, 136], width: 66, fontName: 'f' },
+          { str: '[cs.CV]', transform: [0, 12, -12, 0, 60, 208], width: 42, fontName: 'f' },
+        ],
+        styles: { f: { ascent: 0.8 } },
+      }),
+    }),
+  } as unknown as PDFDocumentProxy;
+  const content = await readPageText(pdf, 0);
+  expect(content.text).toBe('arXiv:2212.05032v3 [cs.CV]');
+  expect(detectedUrls(content)[0].rects).toHaveLength(2);
+  expect(detectedUrls(content)[0].rects.every((r) => r.width < r.height)).toBe(true);
+});
 it('searches literal punctuation and phrases across line breaks without changing Unicode offsets', () => {
   const text = 'İ prefix a+b\nNEXT end a+b';
   const content = {

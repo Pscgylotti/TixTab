@@ -3,7 +3,8 @@ import { renderPolicy, subscribeAppearance } from './appearance';
 import type { Page, PlacedImage } from './model';
 import { readPdfTextContent } from './pdfTextContent';
 import { groupLeaves } from './objectGroup';
-import { polygonBox, multiply } from './pdfNightGeometry';
+import { polygonBox } from './pdfNightGeometry';
+import { pdfTextQuad, sliceTextQuad, textRunGap } from './pdfTextGeometry';
 import { imageCorners } from './objectRotation';
 import type { OcrAnnotation } from './ocrLayout';
 export interface TextRect {
@@ -23,6 +24,7 @@ interface TextPart {
   start: number;
   end: number;
   rect: TextRect;
+  quad?: number[];
   whole?: boolean;
 }
 export interface PageText {
@@ -62,29 +64,16 @@ export function readPageText(pdf: PDFDocumentProxy, sourceIndex: number) {
     let text = '';
     for (const item of content.items) {
       if (!('str' in item)) continue;
-      const matrix = multiply(viewport.transform, item.transform),
-        height = Math.hypot(matrix[2], matrix[3]),
-        ascent = content.styles[item.fontName]?.ascent ?? 0.8;
-      const rect = {
-          x: matrix[4],
-          y: matrix[5] - height * ascent,
-          width: Math.abs(item.width * viewport.scale),
-          height,
-        },
-        previous = parts.at(-1)?.rect;
-      if (
-        previous &&
-        !/\s$/.test(text) &&
-        !/^\s/.test(item.str) &&
-        (Math.abs(rect.y - previous.y) > Math.max(height, previous.height) * 0.5 ||
-          rect.x - previous.x - previous.width > height * 0.18)
-      )
+      const quad = pdfTextQuad(item, content.styles[item.fontName], viewport),
+        rect = polygonBox(quad),
+        previous = parts.at(-1)?.quad;
+      if (previous && !/\s$/.test(text) && !/^\s/.test(item.str) && textRunGap(previous, quad))
         text += ' ';
-      parts.push({ start: text.length, end: text.length + item.str.length, rect });
+      parts.push({ start: text.length, end: text.length + item.str.length, rect, quad });
       text += item.str + (item.hasEOL ? '\n' : '');
     }
     if (cache.get(sourceIndex) === request) {
-      owner.weights.set(sourceIndex, text.length * 2 + parts.length * 80);
+      owner.weights.set(sourceIndex, text.length * 2 + parts.length * 160);
       let retained = [...owner.weights.values()].reduce((a, b) => a + b, 0);
       while (retained > (renderPolicy().minimal ? 256000 : 8_000_000) && cache.size) {
         const oldest = cache.keys().next().value!;
@@ -171,6 +160,7 @@ function textRects(content: PageText, start: number, end: number) {
       const count = Math.max(1, p.end - p.start),
         left = Math.max(start, p.start) - p.start,
         right = Math.min(end, p.end) - p.start;
+      if (p.quad) return polygonBox(sliceTextQuad(p.quad, left / count, right / count));
       return {
         ...p.rect,
         x: p.rect.x + (p.rect.width * left) / count,

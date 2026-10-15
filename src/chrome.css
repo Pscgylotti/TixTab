@@ -14,17 +14,11 @@
   transform-origin: 0 0;
   user-select: text;
   z-index: 5;
-  --min-font-size: 1;
-  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
-  --min-font-size-inv: calc(1 / var(--min-font-size));
 }
 .pdf-native-text {
   position: absolute;
   inset: 0;
   transform-origin: 0 0;
-  --min-font-size: 1;
-  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
-  --min-font-size-inv: calc(1 / var(--min-font-size));
 }
 .textLayer :is(span, br) {
   color: transparent;
@@ -32,11 +26,8 @@
   white-space: pre;
   cursor: text;
   transform-origin: 0 0;
-}
-:is(.textLayer, .pdf-native-text) > :not(.markedContent),
-:is(.textLayer, .pdf-native-text) .markedContent span:not(.markedContent) {
-  font-size: calc(var(--text-scale-factor) * var(--font-height));
-  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+  z-index: 1;
+  --rotate: 0deg;
 }
 .textLayer .markedContent {
   display: contents;
@@ -769,13 +760,6 @@
   }
 }
 
-:is(.textLayer, .pdf-native-text) > :not(.markedContent),
-:is(.textLayer, .pdf-native-text) .markedContent span:not(.markedContent) {
-  z-index: 1;
-  --font-height: 0;
-  --scale-x: 1;
-  --rotate: 0deg;
-}
 .textLayer {
   text-align: initial;
   caret-color: CanvasText;
@@ -1203,23 +1187,6 @@
   min-width: 4ch;
   text-align: right;
   font-variant-numeric: tabular-nums;
-}
-
-:is(.textLayer, .pdf-native-text)[data-main-rotation='90'] {
-  transform: rotate(90deg) translateY(-100%);
-}
-:is(.textLayer, .pdf-native-text)[data-main-rotation='180'] {
-  transform: rotate(180deg) translate(-100%, -100%);
-}
-:is(.textLayer, .pdf-native-text)[data-main-rotation='270'] {
-  transform: rotate(270deg) translateX(-100%);
-}
-.hiddenCanvasElement {
-  position: absolute;
-  left: 0;
-  top: 0;
-  visibility: hidden;
-  pointer-events: none;
 }
 
 .reading-content img {

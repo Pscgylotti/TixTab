@@ -12,7 +12,7 @@ subscribeAppearance(() => {
   if (renderPolicy().minimal) documents = new WeakMap();
 });
 
-/** Share default PDF.js extraction only. Consumers must treat the returned text
+/** Share the document engine's text extraction. Consumers must treat the returned text
  * as read-only; each visible text layer still owns its DOM and layout. Limits
  * estimate retained source data, not exact JavaScript heap allocation. */
 export function readPdfTextContent(pdf: PDFDocumentProxy, index: number, page?: PDFPageProxy) {

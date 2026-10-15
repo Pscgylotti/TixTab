@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { trackPerformance } from './performanceLedger';
-import type { TextLayer, PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { readPdfTextContent } from './pdfTextContent';
+import { renderPdfTextDom } from './pdfTextDom';
 import type { Page } from './model';
 import BitmapTextLayer from './BitmapTextLayer';
 import {
@@ -45,8 +46,7 @@ export default function PdfTextLayer({
     };
   }, []);
   useEffect(() => {
-    let cancelled = false,
-      layer: TextLayer | undefined;
+    let cancelled = false;
     const element = nativeRoot.current!;
     selecting.current = null;
     hidePreview();
@@ -55,43 +55,16 @@ export default function PdfTextLayer({
     if (pdf && sourceIndex !== null)
       void trackPerformance('pdf-text', () =>
         pdf.getPage(sourceIndex + 1).then(async (page) => {
-          const [content, { TextLayer }] = await Promise.all([
-            readPdfTextContent(pdf, sourceIndex, page),
-            import('pdfjs-dist'),
-          ]);
+          const content = await readPdfTextContent(pdf, sourceIndex, page);
           if (cancelled) return;
           const viewport = page.getViewport({ scale: 1 });
-          element.style.setProperty('--total-scale-factor', String(viewport.userUnit));
-          layer = new TextLayer({ textContentSource: content, container: element, viewport });
-          await layer.render();
-          if (cancelled) return;
-          // The DOM's language-dependent fallback font can differ from canvas.
-          // Measure actual layout widths before applying horizontal corrections.
-          const minimum = Number(element.style.getPropertyValue('--min-font-size')) || 1;
-          const corrections: [HTMLElement, number][] = [];
-          let index = 0;
-          for (const item of content.items) {
-            if (!('str' in item)) continue;
-            const span = layer.textDivs[index++];
-            if (!span?.style.getPropertyValue('--scale-x') || !item.str) continue;
-            const measured = parseFloat(getComputedStyle(span).width) / minimum;
-            if (measured > 0)
-              corrections.push([
-                span,
-                (content.styles[item.fontName].vertical ? item.height : item.width) / measured,
-              ]);
-          }
-          for (const [span, scale] of corrections)
-            span.style.setProperty('--scale-x', String(scale));
-          const dimensions = viewport.rawDims as { pageWidth: number; pageHeight: number };
-          element.style.width = `${dimensions.pageWidth * viewport.userUnit}px`;
-          element.style.height = `${dimensions.pageHeight * viewport.userUnit}px`;
+          renderPdfTextDom(element, content, viewport);
           invalidateTextLayout(root.current!);
         }),
       ).catch(() => {});
     return () => {
       cancelled = true;
-      layer?.cancel();
+      element.replaceChildren();
     };
   }, [pdf, sourceIndex]);
   return (
@@ -99,7 +72,6 @@ export default function PdfTextLayer({
       <div
         className="textLayer"
         ref={root}
-        style={{ '--total-scale-factor': 1, '--scale-factor': 1 } as React.CSSProperties}
         onPointerDown={(e) => {
           hidePreview();
           if (e.pointerType === 'touch' || e.button !== 0 || e.buttons & 34) return;

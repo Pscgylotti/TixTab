@@ -59,6 +59,7 @@ test('native page geometry/text/navigation agree with PDF.js without opening a s
       const { inspectBitmapPages } = await import('/src/bitmapOcr.ts');
       const { setPdfRenderBackend } = await import('/src/appearance.ts');
       const { getPdfiumStats } = await import('/src/pdfiumRaster.ts');
+      const { renderPdfTextDom } = await import('/src/pdfTextDom.ts');
       const reference = await loadLegacyPdf(new Uint8Array(bytes));
       setPdfRenderBackend('pdfium');
       const native = await loadPdfiumDocument(new Uint8Array(bytes)),
@@ -79,6 +80,15 @@ test('native page geometry/text/navigation agree with PDF.js without opening a s
         }
         const at = await a.getTextContent(),
           bt = await b.getTextContent();
+        const root = document.createElement('div');
+        root.className = 'textLayer';
+        document.body.append(root);
+        try {
+          renderPdfTextDom(root, at, a.getViewport({ scale: 1 }));
+          if (!root.querySelector('.pdf-text-run')) throw Error('selectable text missing');
+        } finally {
+          root.remove();
+        }
         const ai = at.items.filter((v: any) => 'str' in v),
           bi = bt.items.filter((v: any) => 'str' in v);
         text.push({
