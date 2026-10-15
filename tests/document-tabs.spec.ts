@@ -23,6 +23,65 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await idle(page);
 });
+test('tab menu reveals inactive PDFs without loading them; paths survive reload and old tabs can associate an original', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    (window as any).__revealed = [];
+    (window as any).surfaceDesktop = {
+      onFullscreen: () => () => {},
+      getPdfFilePath: (file: File) => `C:/Papers/${file.name}`,
+      revealPdf: async (request: any) => {
+        (window as any).__revealed.push(request.path || 'picker');
+        return { ok: true, path: request.path || 'C:/Recovered/Alpha.pdf' };
+      },
+    };
+  });
+  await page.reload();
+  await idle(page);
+  await page
+    .locator('input[type=file]')
+    .first()
+    .setInputFiles(await fixture('Alpha'));
+  await idle(page);
+  await page
+    .locator('input[type=file]')
+    .first()
+    .setInputFiles(await fixture('Beta'));
+  await idle(page);
+  const revealAlpha = async () => {
+    await page.getByRole('tab', { name: 'Alpha', exact: true }).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: '在文件夹中显示', exact: true }).click();
+  };
+  await revealAlpha();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__revealed))
+    .toEqual(['C:/Papers/Alpha.pdf']);
+  await expect(page.getByRole('tab', { name: 'Beta', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  expect((await stored(page, 'Alpha')).sourcePath).toBe('C:/Papers/Alpha.pdf');
+  await page.reload();
+  await idle(page);
+  await revealAlpha();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__revealed))
+    .toEqual(['C:/Papers/Alpha.pdf']);
+  await page.evaluate(async () => {
+    const store = await import('/src/workspaceStore.ts' as string);
+    const meta = (await store.listWorkspace()).documents.find((d: any) => d.name === 'Alpha');
+    await store.updateWorkspaceDocument(meta.id, { sourcePath: undefined });
+  });
+  await revealAlpha();
+  await expect
+    .poll(async () => (await stored(page, 'Alpha')).sourcePath)
+    .toBe('C:/Recovered/Alpha.pdf');
+  await page.getByRole('button', { name: '新建文档标签', exact: true }).click();
+  await idle(page);
+  await page.getByRole('tab', { selected: true }).click({ button: 'right' });
+  await expect(page.getByRole('menuitem', { name: '在文件夹中显示', exact: true })).toBeDisabled();
+});
 
 test('多文件拖入、标签切换保存视图和标注，关闭保留文档，重新打开与重启恢复', async ({ page }) => {
   await page.getByLabel('文档名称', { exact: true }).fill('initial');

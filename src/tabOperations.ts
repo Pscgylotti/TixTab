@@ -1,4 +1,4 @@
-export type DocumentTab = { id: string; name: string };
+export type DocumentTab = { id: string; name: string; hasPdf?: boolean };
 export type CloseTabsMode = 'current' | 'others' | 'right';
 export function tabsToClose(tabs: readonly DocumentTab[], id: string, mode: CloseTabsMode) {
   const at = tabs.findIndex((tab) => tab.id === id);

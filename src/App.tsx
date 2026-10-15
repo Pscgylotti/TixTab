@@ -283,11 +283,11 @@ export default function App() {
       localStorage.setItem('surfacetab.tabs', JSON.stringify(next.map((t) => t.id)));
     } catch {}
   };
-  const ensureTab = (id: string, name: string) =>
+  const ensureTab = (id: string, name: string, hasPdf: boolean) =>
     setDocumentTabs(
       tabsRef.current.some((t) => t.id === id)
-        ? tabsRef.current.map((t) => (t.id === id ? { id, name } : t))
-        : [...tabsRef.current, { id, name }],
+        ? tabsRef.current.map((t) => (t.id === id ? { id, name, hasPdf } : t))
+        : [...tabsRef.current, { id, name, hasPdf }],
     );
   const [tool, setToolState] = useState<Tool>('pen'),
     [color, setColor] = useState(savedInkColor),
@@ -563,9 +563,9 @@ export default function App() {
         const restoredTabs = savedTabs()
           .map((id) => entries.find((d) => d.id === id))
           .filter((d): d is typeof meta => !!d)
-          .map((d) => ({ id: d.id, name: d.name }));
+          .map((d) => ({ id: d.id, name: d.name, hasPdf: d.hasPdf }));
         if (!restoredTabs.some((t) => t.id === meta.id))
-          restoredTabs.push({ id: meta.id, name: n.name });
+          restoredTabs.push({ id: meta.id, name: n.name, hasPdf: !!n.source });
         const doc = n.source ? await loadPdf(n.source) : null;
         if (dead) {
           void destroyPdf(doc);
@@ -1004,7 +1004,7 @@ export default function App() {
     view = defaultView,
   ) => {
     const old = pdfRef.current;
-    ensureTab(id, next.batch?.title || next.name);
+    ensureTab(id, next.batch?.title || next.name, !!next.source);
     viewRef.current = { ...view };
     history.current = [];
     future.current = [];
@@ -1295,6 +1295,39 @@ export default function App() {
         : (await loadWorkspaceDocument(id, false)).notebook;
     download(encodeProject(n), `${n.name}.tixtab`, 'application/json');
   };
+  const revealDocument = async (id: string) => {
+    try {
+      // Read only tab metadata: revealing an inactive document must not load
+      // its PDF, start a renderer or change the active reading position.
+      const meta =
+        id === activeRef.current
+          ? current.current
+          : (await listWorkspace()).documents.find((d) => d.id === id);
+      if (!meta) return;
+      if (meta.batch) {
+        const manifest = await loadBatchManifest(meta.batch.id);
+        if (!manifest) throw Error('missing');
+        await batchRequest({
+          action: 'reveal',
+          folderId: manifest.folderId,
+          fileId: meta.batch.itemId,
+        });
+        return;
+      }
+      const result = await window.surfaceDesktop?.revealPdf?.({ path: meta.sourcePath });
+      if (!result || result.cancelled) return;
+      if (!result.ok || !result.path) throw Error(result.error || 'reveal');
+      if (meta.sourcePath !== result.path) {
+        await updateWorkspaceDocument(id, { sourcePath: result.path });
+        if (id === activeRef.current) {
+          current.current = { ...current.current, sourcePath: result.path };
+          setNotebook(current.current);
+        }
+      }
+    } catch {
+      notify(tr('无法定位原始 PDF，文件可能已移动或删除。'));
+    }
+  };
   const openFiles = (files: File[]) =>
     documentOperation(async () => {
       const supported = files.filter((f) => /\.(pdf|tixtab)$/i.test(f.name));
@@ -1314,6 +1347,7 @@ export default function App() {
           if (/\.pdf$/i.test(f.name)) {
             const imported = await importPdf(new Uint8Array(await f.arrayBuffer()), f.name);
             next = imported.notebook;
+            next.sourcePath = window.surfaceDesktop?.getPdfFilePath?.(f) || undefined;
             doc = imported.pdf;
           } else {
             next = decodeProject(await f.text());
@@ -1354,7 +1388,7 @@ export default function App() {
         return;
       }
       const imported = await importPdf(new Uint8Array(attachment.bytes), attachment.filename);
-      const next = { ...imported.notebook, zotero: source },
+      const next = { ...imported.notebook, zotero: source, sourcePath: attachment.path },
         id = isEmptyStarterNotebook(current.current) ? activeRef.current : uid();
       try {
         await persist(next, id, defaultView);
@@ -2375,6 +2409,7 @@ export default function App() {
           disabled={busy || !ready}
           onSelect={(id) => reportOperation(() => switchDocument(id))}
           onClose={(id, mode) => reportOperation(() => closeTabs(id, mode))}
+          onReveal={window.surfaceDesktop?.revealPdf ? (id) => void revealDocument(id) : undefined}
           onReorder={(id, slot) => {
             if (!ready || operation.current || busyRef.current) return;
             setDocumentTabs(reorderDocumentTab(tabsRef.current, id, slot));

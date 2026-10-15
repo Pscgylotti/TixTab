@@ -68,6 +68,7 @@ app.whenReady().then(() => {
   if (!singleInstance) return;
   Menu.setApplicationMenu(null);
   const batchPdf = require('./batch-pdf.cjs').createBatchPdf({
+    showItemInFolder: (file) => shell.showItemInFolder(file),
     grantFile: path.join(app.getPath('userData'), 'batch-folders.json'),
     chooseDirectory: async (owner, output) => {
       const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(owner), {
@@ -256,6 +257,20 @@ app.whenReady().then(() => {
       ? createDesktopShortcut({ app, shell })
       : { ok: false, error: 'untrusted' },
   );
+  ipcMain.handle('document:reveal-pdf', async (event, request) => {
+    if (!providerSender(event)) return { ok: false, error: 'untrusted' };
+    return require('./document-location.cjs').revealPdf(request, {
+      showItemInFolder: (file) => shell.showItemInFolder(file),
+      chooseFile: async () => {
+        const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
+          title: '选择此文档对应的原始 PDF',
+          properties: ['openFile'],
+          filters: [{ name: 'PDF', extensions: ['pdf'] }],
+        });
+        return result.canceled ? null : result.filePaths[0];
+      },
+    });
+  });
   ipcMain.handle('document:open-url', async (event, value) => {
     if (!providerSender(event) || typeof value !== 'string' || value.length > 8192) return false;
     try {

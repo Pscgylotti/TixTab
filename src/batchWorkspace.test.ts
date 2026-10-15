@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -17,6 +17,7 @@ it('indexes only PDFs recursively, persists folder grants and exports without ov
   await writeFile(join(input, 'nested', 'third.pdf'), bytes);
   await writeFile(join(input, 'ignore.txt'), 'ignored');
   const options = {
+    showItemInFolder: vi.fn(),
     grantFile: join(root, 'grants.json'),
     chooseDirectory: async (_owner: unknown, exporting: boolean) => (exporting ? output : input),
   };
@@ -30,6 +31,13 @@ it('indexes only PDFs recursively, persists folder grants and exports without ov
       'paper10.pdf',
     ]);
     const { id: folderId, files } = chosen.folder;
+    expect(await service.run(owner, { action: 'reveal', folderId, fileId: files[1].id })).toEqual({
+      ok: true,
+    });
+    expect(options.showItemInFolder).toHaveBeenCalledWith(join(input, 'paper2.PDF'));
+    expect(
+      (await service.run(owner, { action: 'reveal', folderId, fileId: '../ignore.txt' })).ok,
+    ).toBe(false);
     expect(
       (await service.run(owner, { action: 'read', folderId, fileId: files[1].id })).bytes,
     ).toEqual(bytes);

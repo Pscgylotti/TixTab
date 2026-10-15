@@ -18,11 +18,17 @@ test('one folder tab lazily reads PDFs, restores edits, searches/jumps and expor
     (encoded) => {
       (window as any).__batchReads = [];
       (window as any).__batchWrites = [];
+      (window as any).__batchReveals = [];
       (window as any).surfaceDesktop = {
         onFullscreen: () => () => {},
         toggleFullscreen: async () => false,
+        revealPdf: async () => ({ ok: false }),
         batchPdf: {
           run: async (request: any) => {
+            if (request.action === 'reveal') {
+              (window as any).__batchReveals.push(request);
+              return { ok: true };
+            }
             if (request.action === 'choose')
               return {
                 ok: true,
@@ -64,6 +70,12 @@ test('one folder tab lazily reads PDFs, restores edits, searches/jumps and expor
   await page.getByRole('button', { name: '连续批注', exact: true }).click();
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   const panel = page.getByRole('region', { name: '连续批注', exact: true });
+  await page.getByRole('tab', { name: 'Paper folder', exact: true }).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '在文件夹中显示', exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__batchReveals))
+    .toEqual([{ action: 'reveal', folderId: 'folder-capability', fileId: 'a' }]);
+  expect(await page.evaluate(() => (window as any).__batchReads)).toEqual(['a']);
   await expect(panel).toHaveCSS('position', 'fixed');
   expect((await panel.boundingBox())!.width).toBeLessThanOrEqual(272);
   expect(await panel.evaluate((element) => element.parentElement === document.body)).toBe(true);

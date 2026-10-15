@@ -1,7 +1,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { randomUUID, createHash } = require('node:crypto');
-function createBatchPdf({ chooseDirectory, grantFile }) {
+function createBatchPdf({ chooseDirectory, grantFile, showItemInFolder }) {
   const roots = new Map(),
     indexes = new Map(),
     exports = new Map();
@@ -77,7 +77,7 @@ function createBatchPdf({ chooseDirectory, grantFile }) {
           await save();
           return { ok: true, folder: await scan(id) };
         }
-        if (request?.action === 'read') {
+        if (request?.action === 'read' || request?.action === 'reveal') {
           if (!roots.has(request.folderId)) throw Error('folder-unavailable');
           if (!indexes.has(request.folderId)) await scan(request.folderId);
           const relative = indexes.get(request.folderId).get(request.fileId);
@@ -86,6 +86,12 @@ function createBatchPdf({ chooseDirectory, grantFile }) {
           const file = await fs.realpath(path.join(root, relative));
           if (!file.startsWith(root + path.sep) || !/\.pdf$/i.test(file))
             throw Error('file-unavailable');
+          if (request.action === 'reveal') {
+            if (!(await fs.stat(file)).isFile() || !showItemInFolder)
+              throw Error('file-unavailable');
+            showItemInFolder(file);
+            return { ok: true };
+          }
           if ((await fs.stat(file)).size > 256 * 1024 * 1024) throw Error('file-too-large');
           const bytes = await fs.readFile(file);
           if (!bytes.subarray(0, 1024).includes(Buffer.from('%PDF-'))) throw Error('invalid-pdf');

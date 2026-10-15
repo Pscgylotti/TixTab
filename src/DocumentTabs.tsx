@@ -5,7 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { File, X, PanelRightClose, XCircle } from 'lucide-react';
+import { File, X, PanelRightClose, XCircle, FolderOpen } from 'lucide-react';
 import { t, useLocale } from './i18n';
 import AnchoredPopover from './AnchoredPopover';
 import { tabsToClose, type DocumentTab, type CloseTabsMode } from './tabOperations';
@@ -27,6 +27,7 @@ export default function DocumentTabs({
   onSelect,
   onClose,
   onReorder,
+  onReveal,
   children,
 }: {
   tabs: DocumentTab[];
@@ -35,6 +36,7 @@ export default function DocumentTabs({
   onSelect: (id: string) => void;
   onClose: (id: string, mode: CloseTabsMode) => void;
   onReorder: (id: string, slot: number) => void;
+  onReveal?: (id: string) => void;
   children: ReactNode;
 }) {
   useLocale();
@@ -305,6 +307,18 @@ export default function DocumentTabs({
               buttons[next]?.focus();
             }}
           >
+            <button
+              role="menuitem"
+              disabled={!onReveal || anchorTab.hasPdf === false}
+              onClick={() => {
+                const id = menu.id;
+                setMenu(null);
+                onReveal?.(id);
+              }}
+            >
+              <FolderOpen size={16} />
+              {t('在文件夹中显示')}
+            </button>
             {(
               [
                 ['current', '关闭当前标签', X],

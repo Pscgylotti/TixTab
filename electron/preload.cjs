@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer, webFrame } = require('electron');
+const { contextBridge, ipcRenderer, webFrame, webUtils } = require('electron');
 contextBridge.exposeInMainWorld('surfaceDesktop', {
   setUiScale: (value) => {
     if (typeof value !== 'number' || !Number.isFinite(value) || value < 0.5 || value > 4)
@@ -21,6 +21,14 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
   },
   createDesktopShortcut: () => ipcRenderer.invoke('app:desktop-shortcut'),
   openDocumentUrl: (url) => ipcRenderer.invoke('document:open-url', url),
+  getPdfFilePath: (file) => {
+    try {
+      return webUtils.getPathForFile(file);
+    } catch {
+      return '';
+    }
+  },
+  revealPdf: (request) => ipcRenderer.invoke('document:reveal-pdf', request),
   editCommand: (command) => ipcRenderer.invoke('edit:command', command),
   editKey: (key, select) => ipcRenderer.invoke('edit:key', key, select),
   openClipboardHistory: () => ipcRenderer.invoke('edit:clipboard-history'),

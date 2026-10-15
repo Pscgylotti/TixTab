@@ -1333,6 +1333,8 @@
   "强度调节仅对提供此能力的笔生效；需在系统中开启笔的触觉信号。": "Intensity applies only to pens that support it. Enable pen tactile signals in Windows settings.",
   "最多暂存 256 项 PDF 编辑，请先应用已有修改。": "At most 256 PDF edits can be staged. Apply the existing edits first.",
   "标签页操作": "Tab actions",
+  "在文件夹中显示": "Show in folder",
+  "无法定位原始 PDF，文件可能已移动或删除。": "Cannot locate the original PDF. It may have been moved or deleted.",
   "关闭当前标签": "Close tab",
   "关闭其它标签": "Close other tabs",
   "关闭右侧所有标签": "Close tabs to the right",

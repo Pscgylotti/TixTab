@@ -18,6 +18,13 @@ interface Window {
     ) => () => void;
     createDesktopShortcut?: () => Promise<{ ok: boolean; error?: string; path?: string }>;
     openDocumentUrl?: (url: string) => Promise<boolean>;
+    getPdfFilePath?: (file: File) => string;
+    revealPdf?: (request: { path?: string }) => Promise<{
+      ok: boolean;
+      path?: string;
+      cancelled?: boolean;
+      error?: string;
+    }>;
     editKey?: (key: import('./keyboardSelection').EditKey, select: boolean) => Promise<boolean>;
     openClipboardHistory?: () => Promise<boolean>;
     clipboardShelf?: import('./clipboardShelf').ClipboardShelfBridge;

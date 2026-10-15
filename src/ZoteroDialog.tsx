@@ -22,7 +22,12 @@ import {
 import ZoteroTree, { type CollectionPage } from './ZoteroTree';
 import './zotero.css';
 type Rows<T> = { rows: T[]; more: boolean };
-export type ZoteroPdf = { bytes: Uint8Array; filename: string; source: ZoteroSource };
+export type ZoteroPdf = {
+  bytes: Uint8Array;
+  filename: string;
+  source: ZoteroSource;
+  path?: string;
+};
 export default function ZoteroDialog({
   current,
   onOpen,

@@ -112,6 +112,8 @@ export interface Notebook {
   version: 1;
   name: string;
   source: Uint8Array | null;
+  /** Local workspace association; omitted from portable project exports. */
+  sourcePath?: string;
   pages: Page[];
   scene?: Record<string, unknown>;
   zotero?: ZoteroSource;
@@ -230,6 +232,11 @@ export function validNotebook(value: unknown): value is Notebook {
   )
     return false;
   if (n.zotero !== undefined && !validZoteroSource(n.zotero)) return false;
+  if (
+    n.sourcePath !== undefined &&
+    (typeof n.sourcePath !== 'string' || n.sourcePath.length > 32767)
+  )
+    return false;
   return (
     n.version === 1 &&
     typeof n.name === 'string' &&

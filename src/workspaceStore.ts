@@ -42,6 +42,8 @@ export interface WorkspaceDocument {
   bookmarks?: Notebook['bookmarks'];
   batch?: Notebook['batch'];
   documentName?: string;
+  sourcePath?: string;
+  hasPdf?: boolean;
   archiveFor?: string;
 }
 export interface WorkspaceFolder {
@@ -150,6 +152,8 @@ async function saveWorkspaceDocumentImpl(
       name: notebook.batch?.title || notebook.name,
       documentName: notebook.batch ? notebook.name : undefined,
       batch: notebook.batch,
+      sourcePath: notebook.sourcePath,
+      hasPdf: !!notebook.source,
       archiveFor: archiveFor ?? old?.archiveFor,
       createdAt: old?.createdAt ?? now,
       updatedAt: previous === notebook ? (old?.updatedAt ?? now) : now,
@@ -193,6 +197,7 @@ export async function loadWorkspaceDocument(id: string, track = true) {
     version: 1,
     name: meta.documentName || meta.name,
     batch: meta.batch,
+    sourcePath: meta.sourcePath,
     source: source.source,
     pages: meta.pageIds.map((id) => pages.get(id)!),
     scene: meta.scene,
@@ -222,7 +227,7 @@ export async function bootstrapWorkspace() {
 }
 export async function updateWorkspaceDocument(
   id: string,
-  change: Partial<Pick<WorkspaceDocument, 'name' | 'folderId' | 'pinned'>>,
+  change: Partial<Pick<WorkspaceDocument, 'name' | 'folderId' | 'pinned' | 'sourcePath'>>,
 ) {
   const db = await database(),
     tx = db.transaction('documents', 'readwrite'),

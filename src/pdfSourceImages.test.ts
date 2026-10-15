@@ -6,6 +6,40 @@ import { polygonBox } from './pdfNightGeometry';
 async function index(doc: PDFDocument) {
   return sourceImages(await PDFDocument.load(await doc.save()));
 }
+it('ignores dense vector coordinates while preserving signed fractional image transforms and cancellation', async () => {
+  const doc = await PDFDocument.create(),
+    page = doc.addPage([400, 600]);
+  const image = doc.context.register(
+    doc.context.stream(new Uint8Array([1, 2, 3]), {
+      Type: 'XObject',
+      Subtype: 'Image',
+      Width: 1,
+      Height: 1,
+      ColorSpace: 'DeviceRGB',
+      BitsPerComponent: 8,
+    }),
+  );
+  page.node.set(PDFName.of('Resources'), doc.context.obj({ XObject: { I: image } }));
+  page.node.addContentStream(
+    doc.context.register(
+      doc.context.flateStream(
+        '0.125 -2.75 3.5 .5 6 7 c\n'.repeat(20000) + 'q +10.25 0 0 -20.5 -.125 +40.25 cm /I Do Q',
+      ),
+    ),
+  );
+  const parsed = await PDFDocument.load(await doc.save());
+  const result = await sourceImages(parsed);
+  expect(result.images[0]).toHaveLength(1);
+  expect(result.images[0][0].polygon).toEqual([
+    -0.125, 40.25, 10.125, 40.25, 10.125, 19.75, -0.125, 19.75,
+  ]);
+  let checks = 0;
+  await expect(
+    sourceImages(parsed, () => {
+      if (++checks > 1) throw Error('cancelled');
+    }),
+  ).rejects.toThrow('cancelled');
+});
 it('keeps drawing state across streams, recurses inherited form resources and excludes stencil masks', async () => {
   const doc = await PDFDocument.create(),
     page = doc.addPage([400, 600]);

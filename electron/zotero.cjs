@@ -223,6 +223,7 @@ function createZotero({ fetch = globalThis.fetch, shell, clipboard }) {
           if (!bytes.subarray(0, 1024).includes(Buffer.from('%PDF-'))) throw failure('not-pdf');
           result = {
             bytes: new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength),
+            path: resolved,
             filename: /\.pdf$/i.test(attachment.filename) ? attachment.filename : 'attachment.pdf',
             source: {
               library: p.slice(1),

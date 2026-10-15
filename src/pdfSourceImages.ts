@@ -26,6 +26,7 @@ export interface SourceImage {
   inline?: { stream: SourceRef; start: number; end: number; dict: string };
 }
 const identity = [1, 0, 0, 1, 0, 0];
+const operatorDecoder = new TextDecoder('latin1');
 const name = PDFName.of;
 const get = (d: PDFDict, key: string) => d.lookup(name(key));
 const num = (d: PDFDict, key: string, fallback = 0) => {
@@ -38,6 +39,28 @@ const array = (d: PDFDict, key: string, fallback: number[]) => {
 };
 const white = (n: number) => [0, 9, 10, 12, 13, 32].includes(n);
 const delimiter = (n: number) => white(n) || [40, 41, 60, 62, 91, 93, 123, 125, 47, 37].includes(n);
+// Coordinates in vector paths dominate some PDFs. Keep numeric operands as
+// primitives instead of allocating a PDFNumber object for every coordinate.
+function numericOperand(bytes: ReturnType<typeof ByteStream.of>) {
+  const sign = bytes.peek() === 45 ? -1 : 1;
+  if (bytes.peek() === 45 || bytes.peek() === 43) bytes.next();
+  let value = 0,
+    fraction = 0;
+  while (!bytes.done()) {
+    const c = bytes.peek();
+    if (c >= 48 && c <= 57) {
+      bytes.next();
+      if (fraction) {
+        value += (c - 48) * fraction;
+        fraction /= 10;
+      } else value = value * 10 + c - 48;
+    } else if (c === 46 && !fraction) {
+      bytes.next();
+      fraction = 0.1;
+    } else break;
+  }
+  return sign * value;
+}
 const keys: Record<string, string> = {
   W: 'Width',
   H: 'Height',
@@ -84,7 +107,8 @@ export async function sourceImages(doc: PDFDocument, check = () => {}) {
   for (const page of doc.getPages()) {
     const images: SourceImage[] = [];
     let safe = true,
-      operations = 0;
+      operations = 0,
+      deadline = performance.now() + 12;
     const add = (
       dict: PDFDict,
       matrix: number[],
@@ -127,7 +151,7 @@ export async function sourceImages(doc: PDFDocument, check = () => {}) {
             bytes as unknown as Parameters<typeof PDFObjectParser.forByteStream>[0],
             doc.context,
           );
-        let operands: PDFObject[] = [];
+        let operands: (PDFObject | number)[] = [];
         while (!bytes.done()) {
           while (!bytes.done()) {
             if (white(bytes.peek())) bytes.next();
@@ -138,13 +162,22 @@ export async function sourceImages(doc: PDFDocument, check = () => {}) {
           if (bytes.done()) break;
           if (++operations > 1_000_000) throw new Error('PDF content operation limit');
           if (operations % 2048 === 0) {
-            await new Promise<void>((r) => setTimeout(r, 0));
+            // Yield by elapsed work, not token count: vector PDFs can contain
+            // millions of tiny operands, each fixed timer adding OS latency.
+            if (performance.now() >= deadline) {
+              await new Promise<void>((r) => setTimeout(r, 0));
+              deadline = performance.now() + 12;
+            }
             check();
           }
           const start = bytes.offset(),
             c = bytes.peek();
           if ([47, 40, 60, 91, 43, 45, 46].includes(c) || (c >= 48 && c <= 57)) {
-            operands.push(parser.parseObject());
+            operands.push(
+              c === 43 || c === 45 || c === 46 || (c >= 48 && c <= 57)
+                ? numericOperand(bytes)
+                : parser.parseObject(),
+            );
             if (operands.length > 4096) throw new Error('PDF operand limit');
             continue;
           }
@@ -154,7 +187,7 @@ export async function sourceImages(doc: PDFDocument, check = () => {}) {
             operands = [];
             continue;
           }
-          const op = new TextDecoder('latin1').decode(data.subarray(start, bytes.offset()));
+          const op = operatorDecoder.decode(data.subarray(start, bytes.offset()));
           if (op === 'q') stack.push(matrix);
           else if (op === 'Q') matrix = stack.pop() ?? matrix;
           else if (op === 'cm' && operands.length >= 6)
