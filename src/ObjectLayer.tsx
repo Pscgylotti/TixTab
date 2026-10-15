@@ -228,7 +228,7 @@ export default function ObjectLayer({
         {visible.map((i) => (
           <div
             key={i.id}
-            className={`placed-object ${selected.includes(i.id) ? 'chosen' : ''}`}
+            className={`placed-object ${selected.includes(i.id) ? 'chosen' : ''}${i.scratchPage ? ' scratch-pdf-page' : ''}`}
             data-object-id={i.id}
             aria-label={
               i.group

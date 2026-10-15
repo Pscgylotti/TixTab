@@ -3,6 +3,8 @@ import { objectBox } from './objectSelection';
 import { rememberClipboard } from './clipboardShelf';
 
 export const OBJECT_MIME = 'application/x-tixtab-objects+json';
+export const containsScratchPage = (image: PlacedImage): boolean =>
+  !!image.scratchPage || !!image.group?.objects.some(containsScratchPage);
 const MAX_BYTES = 50_000_000;
 interface ObjectClipboard {
   type: 'tixtab-objects';
@@ -12,6 +14,8 @@ interface ObjectClipboard {
 }
 export function encodeObjects(page: Page, ids: readonly string[]) {
   const chosen = new Set(ids);
+  if (page.images.some((i) => chosen.has(i.id) && containsScratchPage(i)))
+    throw Error('草稿纸中的 PDF 页面不能复制或剪切');
   return JSON.stringify({
     type: 'tixtab-objects',
     version: 1,
@@ -34,6 +38,7 @@ export function decodeObjects(raw: string): ObjectClipboard | null {
       value.objects.some(
         (i) =>
           !i ||
+          containsScratchPage(i) ||
           typeof i.id !== 'string' ||
           [i.x, i.y, i.width, i.height].some((n) => !Number.isFinite(n) || Math.abs(n) > 100_000) ||
           (i.latex !== undefined && (typeof i.latex !== 'string' || i.latex.length > 100_000)),

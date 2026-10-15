@@ -1,3 +1,4 @@
+import { editablePages } from './scratchPaper';
 import { newNotebook, uid, validNotebook, type Notebook, type Page } from './model';
 import { restore } from './storage';
 import { deleteFormulaDrafts } from './formulaDraft';
@@ -8,12 +9,15 @@ export interface WorkspaceView {
   zoom: number;
   mode: 'single' | 'continuous' | 'dual';
   position?: WorkspacePosition;
+  scratch?: { enabled: boolean; hiddenPdf: boolean; returnView?: Omit<WorkspaceView, 'scratch'> };
 }
 export interface WorkspacePosition {
   pageId: string;
   mode: WorkspaceView['mode'];
   x: number;
   y: number;
+  freeX?: number;
+  freeY?: number;
 }
 /** Read only when saving, rather than re-rendering the shell on every pan. */
 export function captureWorkspaceView(view: WorkspaceView, pageId: string): WorkspaceView {
@@ -26,7 +30,19 @@ export function captureWorkspaceView(view: WorkspaceView, pageId: string): Works
   const x = view.mode === 'single' ? Number(root.dataset.panX) : root.scrollLeft;
   const y = view.mode === 'single' ? Number(root.dataset.panY) : root.scrollTop;
   if (!Number.isFinite(x) || !Number.isFinite(y)) return view;
-  return { ...view, zoom, position: { pageId, mode: view.mode, x: x / zoom, y: y / zoom } };
+  return {
+    ...view,
+    zoom,
+    position: {
+      pageId,
+      mode: view.mode,
+      x: x / zoom,
+      y: y / zoom,
+      ...(view.scratch?.enabled && view.mode !== 'single'
+        ? { freeX: Number(root.dataset.freeX) || 0, freeY: Number(root.dataset.freeY) || 0 }
+        : {}),
+    },
+  };
 }
 export interface WorkspaceDocument {
   id: string;
@@ -36,6 +52,13 @@ export interface WorkspaceDocument {
   createdAt: number;
   updatedAt: number;
   pageIds: string[];
+  scratchPapers?: {
+    id: string;
+    name: string;
+    pageId: string;
+    view: NonNullable<Notebook['scratchPapers']>[number]['view'];
+  }[];
+  activeScratchId?: string;
   view: WorkspaceView;
   scene?: Record<string, unknown>;
   zotero?: Notebook['zotero'];
@@ -133,16 +156,19 @@ async function saveWorkspaceDocumentImpl(
     const store = tx.objectStore('documents'),
       old = await request<WorkspaceDocument | undefined>(store.get(id));
     const previous = saved?.id === id ? saved.notebook : undefined,
-      oldPages = new Map(previous?.pages.map((p) => [p.id, p]));
+      oldPages = new Map(previous ? editablePages(previous).map((p) => [p.id, p]) : []);
     const pageIds = notebook.pages.map((p) => p.id),
-      present = new Set(pageIds);
+      present = new Set(editablePages(notebook).map((p) => p.id));
     let pageWrites = 0;
-    for (const page of notebook.pages)
+    for (const page of editablePages(notebook))
       if (oldPages.get(page.id) !== page) {
         tx.objectStore('pages').put({ documentId: id, pageId: page.id, page });
         pageWrites++;
       }
-    for (const pageId of old?.pageIds ?? [])
+    for (const pageId of [
+      ...(old?.pageIds ?? []),
+      ...(old?.scratchPapers ?? []).map((p) => p.pageId),
+    ])
       if (!present.has(pageId)) tx.objectStore('pages').delete([id, pageId]);
     const sourceWrites = !old || !previous || previous.source !== notebook.source ? 1 : 0;
     if (sourceWrites) tx.objectStore('sources').put({ documentId: id, source: notebook.source });
@@ -160,6 +186,8 @@ async function saveWorkspaceDocumentImpl(
       folderId: folderId === undefined ? (old?.folderId ?? null) : folderId,
       pinned: old?.pinned ?? false,
       pageIds,
+      scratchPapers: notebook.scratchPapers?.map(({ page, ...p }) => ({ ...p, pageId: page.id })),
+      activeScratchId: notebook.activeScratchId,
       view: { ...view },
       scene: notebook.scene,
       zotero: notebook.zotero,
@@ -200,6 +228,11 @@ export async function loadWorkspaceDocument(id: string, track = true) {
     sourcePath: meta.sourcePath,
     source: source.source,
     pages: meta.pageIds.map((id) => pages.get(id)!),
+    scratchPapers: meta.scratchPapers?.map(({ pageId, ...p }) => ({
+      ...p,
+      page: pages.get(pageId)!,
+    })),
+    activeScratchId: meta.activeScratchId,
     scene: meta.scene,
     zotero: meta.zotero,
     bookmarks: meta.bookmarks,

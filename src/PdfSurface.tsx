@@ -31,6 +31,8 @@ export interface PenDiagnostic {
   samples: number;
 }
 interface Props {
+  freeView?: boolean;
+  editableActive?: boolean;
   restoredPosition?: WorkspacePosition;
   page: Page;
   pdf: PDFDocumentProxy | null;
@@ -51,6 +53,8 @@ interface Props {
 }
 export default function PdfSurface({
   restoredPosition,
+  freeView = false,
+  editableActive = true,
   page,
   pdf,
   tool,
@@ -86,7 +90,7 @@ export default function PdfSurface({
       page.images,
       Array.isArray(focusObjectId) ? focusObjectId : focusObjectId ? [focusObjectId] : [],
     );
-    if (image)
+    if (image && !freeView)
       setOffset({
         x: (page.width / 2 - image.x - image.width / 2) * zoom,
         y: (page.height / 2 - image.y - image.height / 2) * zoom,
@@ -345,6 +349,7 @@ export default function PdfSurface({
             priority={0}
           />
           <PageEditor
+            active={editableActive}
             page={page}
             pdf={pdf}
             tool={tool}

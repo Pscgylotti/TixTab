@@ -1,3 +1,4 @@
+import type { ScratchPaper } from './scratchPaper';
 import { validOcr, type OcrAnnotation } from './ocrLayout';
 import { validNativeEdits, type NativePdfEdit } from './pdfNativeTypes';
 export type Tool =
@@ -34,6 +35,8 @@ export interface PlacedImage {
   macros?: Record<string, string>;
   scene?: Record<string, unknown>;
   ocr?: OcrAnnotation;
+  /** A detached page snapshot on scratch paper; intentionally cannot be copied. */
+  scratchPage?: boolean;
   /** Immediate editable children in local coordinates; groups may contain other groups. */
   group?: { width: number; height: number; objects: PlacedImage[] };
 }
@@ -115,6 +118,8 @@ export interface Notebook {
   /** Local workspace association; omitted from portable project exports. */
   sourcePath?: string;
   pages: Page[];
+  scratchPapers?: ScratchPaper[];
+  activeScratchId?: string;
   scene?: Record<string, unknown>;
   zotero?: ZoteroSource;
   bookmarks?: { id: string; pageId: string; title: string }[];
@@ -142,6 +147,7 @@ export function isEmptyStarterNotebook(n: Notebook) {
     n.name === '未命名笔记' &&
     n.source === null &&
     !n.scene &&
+    !n.scratchPapers?.length &&
     !n.zotero &&
     n.pages.length === 1 &&
     p.sourceIndex === null &&
@@ -237,6 +243,33 @@ export function validNotebook(value: unknown): value is Notebook {
     (typeof n.sourcePath !== 'string' || n.sourcePath.length > 32767)
   )
     return false;
+  if (
+    n.scratchPapers !== undefined &&
+    (!Array.isArray(n.scratchPapers) ||
+      n.scratchPapers.length > 10 ||
+      new Set(n.scratchPapers.map((p) => p?.id)).size !== n.scratchPapers.length ||
+      n.scratchPapers.some(
+        (p) =>
+          !p ||
+          typeof p.id !== 'string' ||
+          typeof p.name !== 'string' ||
+          p.name.length > 80 ||
+          !p.page ||
+          p.page.sourceIndex !== null ||
+          !p.view ||
+          ![p.view.x, p.view.y, p.view.zoom].every(Number.isFinite) ||
+          p.view.zoom < 0.08 ||
+          p.view.zoom > 8 ||
+          !validNotebook({ version: 1, name: 'scratch', source: null, pages: [p.page] }),
+      ))
+  )
+    return false;
+  if (
+    n.activeScratchId !== undefined &&
+    (typeof n.activeScratchId !== 'string' ||
+      !n.scratchPapers?.some((p) => p.id === n.activeScratchId))
+  )
+    return false;
   return (
     n.version === 1 &&
     typeof n.name === 'string' &&
@@ -291,6 +324,7 @@ export function validNotebook(value: unknown): value is Notebook {
           (i) =>
             typeof i.id === 'string' &&
             ['sketch', 'formula', 'image', 'text'].includes(i.kind) &&
+            (i.scratchPage === undefined || typeof i.scratchPage === 'boolean') &&
             (i.rotation === undefined || [0, 90, 180, 270].includes(i.rotation)) &&
             (i.kind !== 'text' || validTextBox(i.textBox)) &&
             (i.macros === undefined || validMacroSnapshot(i.macros)) &&

@@ -1,3 +1,16 @@
+import ScratchLiveInk from './ScratchLiveInk';
+import ScratchPanel from './ScratchPanel';
+import ScratchSurface from './ScratchSurface';
+import { ScratchInkContext } from './ScratchInkContext';
+import {
+  newScratchPaper,
+  editablePages,
+  replaceEditablePage,
+  scratchInsertionAnchor,
+  visiblePaperHits,
+  splitScratchStroke,
+  type ScratchPaper,
+} from './scratchPaper';
 import { usePenHaptics } from './usePenHaptics';
 import { performanceDelay, trackPerformance } from './performanceLedger';
 import {
@@ -325,6 +338,16 @@ export default function App() {
       pageNumber: number;
       documentId: string;
     } | null>(null);
+  const [scratchMode, setScratchMode] = useState(false),
+    [scratchHiddenPdf, setScratchHiddenPdf] = useState(false),
+    [scratchFocus, setScratchFocus] = useState(false);
+  const scratchLive = useRef<import('react').ComponentRef<typeof ScratchLiveInk>>(null);
+  const scratchEnabled = useRef(false);
+  scratchEnabled.current = scratchMode;
+  const scratchReturn = useRef<WorkspaceView | null>(null);
+  const activeScratch =
+    notebook.scratchPapers?.find((p) => p.id === notebook.activeScratchId) ??
+    notebook.scratchPapers?.[0];
   const [focusObjectId, setFocusObjectId] = useState<string | string[] | null>(null);
   const [capturing, setCapturing] = useState(false),
     [ocrImage, setOcrImage] = useState<string | null>(null);
@@ -476,7 +499,7 @@ export default function App() {
       lastBarrel.current = performance.now();
       const documentId = activeRef.current;
       const paper = (event.target as Element).closest<HTMLElement>('.paper,.reading-paper');
-      const targetPage = current.current.pages.find((p) => p.id === pageId);
+      const targetPage = editablePages(current.current).find((p) => p.id === pageId);
       if (paper && targetPage) {
         const rect = paper.getBoundingClientRect();
         pasteAnchor.current = {
@@ -510,14 +533,16 @@ export default function App() {
       },
     },
   );
+  const centerAnchor = scratchMode ? scratchInsertionAnchor(notebook) : null;
   const insertionPage =
-    viewMode === 'dual' &&
+    (centerAnchor && editablePages(notebook).find((p) => p.id === centerAnchor.pageId)) ||
+    (viewMode === 'dual' &&
     pasteAnchor.current?.documentId === activeId &&
     pasteAnchor.current.pageId === notebook.pages[index + 1]?.id
       ? notebook.pages[index + 1]
-      : page;
+      : page);
   const editingPage =
-    notebook.pages.find((p) => p.images.some((i) => i.id === editingId)) ?? insertionPage;
+    editablePages(notebook).find((p) => p.images.some((i) => i.id === editingId)) ?? insertionPage;
   const editingImage = editingPage.images.find((i) => i.id === editingId);
   const editObject = useCallback((p: Page, id: string) => {
     setEditingId(id);
@@ -553,7 +578,16 @@ export default function App() {
   }, [message]);
   const viewRef = useRef<WorkspaceView>({ index, zoom, mode: viewMode });
   const [restoredPosition, setRestoredPosition] = useState<WorkspaceView['position']>();
-  viewRef.current = { index, zoom, mode: viewMode };
+  viewRef.current = {
+    index,
+    zoom,
+    mode: viewMode,
+    scratch: {
+      enabled: scratchMode,
+      hiddenPdf: scratchHiddenPdf,
+      returnView: scratchReturn.current ?? undefined,
+    },
+  };
   const restoredView = useRef(false);
   useEffect(() => {
     let dead = false;
@@ -584,6 +618,9 @@ export default function App() {
         setZoom(meta.view.zoom);
         setViewMode(meta.view.mode);
         setRestoredPosition(meta.view.position);
+        setScratchMode(!!meta.view.scratch?.enabled && !!n.scratchPapers?.length);
+        setScratchHiddenPdf(!!meta.view.scratch?.hiddenPdf);
+        scratchReturn.current = meta.view.scratch?.returnView ?? null;
       })
       .catch(() => {
         setSaveStatus(tr('\u6062\u590D\u5931\u8D25'));
@@ -626,10 +663,25 @@ export default function App() {
   const persist = useCallback((n: Notebook, id = activeRef.current, view = viewRef.current) => {
     if (!id)
       return Promise.reject(new Error(tr('\u5DE5\u4F5C\u7A7A\u95F4\u5C1A\u672A\u5C31\u7EEA')));
+    const visibleSnapshot=id===activeRef.current && n===current.current;
+    if (visibleSnapshot) {
+      const el = document.querySelector<HTMLElement>('.scratch-viewport');
+      const selected = current.current.activeScratchId ?? current.current.scratchPapers?.[0]?.id;
+      if (el && selected) {
+        const view = {
+          x: Number(el.dataset.scratchX),
+          y: Number(el.dataset.scratchY),
+          zoom: Number(el.dataset.scratchZoom),
+        };
+        if (Object.values(view).every(Number.isFinite))
+          n = {
+            ...n,
+            scratchPapers: n.scratchPapers?.map((p) => (p.id === selected ? { ...p, view } : p)),
+          };
+      }
+    }
     const snapshot =
-      id === activeRef.current && n === current.current
-        ? captureWorkspaceView(view, n.pages[view.index]?.id ?? '')
-        : view;
+      visibleSnapshot ? captureWorkspaceView(view, n.pages[view.index]?.id ?? '') : view;
     saveQueue.current = trackPerformance('workspace-save-queue', () =>
       saveQueue.current
         .catch(() => {})
@@ -655,7 +707,7 @@ export default function App() {
       () => {
         if (operation.current) return;
         unsavedContent.current = false;
-        void persist(notebook, activeId, { index, zoom, mode: viewMode })
+        void persist(notebook, activeId, { ...viewRef.current })
           .then(() => setSaveStatus(tr('\u5DF2\u81EA\u52A8\u4FDD\u5B58')))
           .catch(() =>
             setSaveStatus(
@@ -665,7 +717,18 @@ export default function App() {
       },
       unsavedContent.current ? 450 : 2000,
     );
-  }, [notebook, ready, activeId, index, zoom, viewMode, busy, persist]);
+  }, [
+    notebook,
+    ready,
+    activeId,
+    index,
+    zoom,
+    viewMode,
+    busy,
+    persist,
+    scratchMode,
+    scratchHiddenPdf,
+  ]);
   useEffect(() => {
     const hidden = () => {
       if (document.visibilityState === 'hidden' && ready && !operation.current)
@@ -725,13 +788,124 @@ export default function App() {
     notify,
   });
   const updatePage = useCallback(
-    (p: Page) =>
-      commit({
-        ...current.current,
-        pages: current.current.pages.map((x) => (x.id === p.id ? p : x)),
-      }),
+    (p: Page) => commit(replaceEditablePage(current.current, p)),
     [commit],
   );
+  const createScratch = () => {
+    const n = current.current,
+      paper = newScratchPaper(n.scratchPapers ?? []);
+    commit({ ...n, scratchPapers: [...(n.scratchPapers ?? []), paper], activeScratchId: paper.id });
+  };
+  const toggleScratch = () => {
+    if (!scratchMode) {
+      const { scratch, ...normalView } = captureWorkspaceView(viewRef.current, page.id);
+      scratchReturn.current = normalView;
+      if (!current.current.scratchPapers?.length) createScratch();
+      setScratchMode(true);
+      setScratchFocus(false);
+    } else {
+      setScratchMode(false);
+      setScratchHiddenPdf(false);
+      setScratchFocus(false);
+      const prior = scratchReturn.current;
+      if (prior && prior.mode === viewRef.current.mode) {
+        setZoomState(prior.zoom);
+        setRestoredPosition(prior.position ? { ...prior.position } : undefined);
+      } else setRestoredPosition(undefined);
+      setResetView((v) => v + 1);
+    }
+  };
+  const updateScratch = (id: string, change: Partial<ScratchPaper>, history = true) => {
+    const n = current.current;
+    if (!n.scratchPapers?.some((p) => p.id === id)) return;
+    const next = {
+      ...n,
+      scratchPapers: n.scratchPapers?.map((p) => (p.id === id ? { ...p, ...change } : p)),
+    };
+    if (history) commit(next);
+    else {
+      current.current = next;
+      setNotebook(next);
+    }
+  };
+  const routeScratchInk: NonNullable<
+    import('react').ContextType<typeof ScratchInkContext>
+  >['commit'] = (origin, stroke, rect) => {
+    const n = current.current,
+      pieces = splitScratchStroke(origin, stroke, rect, visiblePaperHits(n));
+    let next = n;
+    for (const [id, strokes] of pieces) {
+      const p = editablePages(next).find((p) => p.id === id);
+      if (p) next = replaceEditablePage(next, { ...p, strokes: [...p.strokes, ...strokes] });
+    }
+    if (next !== n) commit(next);
+  };
+  const dropPageOnScratch = (at: number, x: number, y: number) => {
+    const target = document.querySelector<HTMLElement>('.scratch-paper');
+    const viewport = document.querySelector('.canvas-container')?.getBoundingClientRect();
+    if (
+      !scratchEnabled.current ||
+      !target ||
+      !viewport ||
+      x < viewport.left ||
+      x > viewport.right ||
+      y < viewport.top ||
+      y > viewport.bottom
+    )
+      return false;
+    const n = current.current,
+      scratch = n.scratchPapers?.find((p) => p.id === target.dataset.scratchId);
+    const source = n.pages[at],
+      r = target.getBoundingClientRect();
+    if (!scratch || !source) return false;
+    const documentId = activeRef.current;
+    reportOperation(() =>
+      documentOperation(async () => {
+        const { capturePage } = await import('./capturePage');
+        const data = await capturePage(source, pdfRef.current, {
+          x: 0,
+          y: 0,
+          width: source.width,
+          height: source.height,
+        });
+        if (documentId !== activeRef.current) return;
+        const now = current.current,
+          sheet = now.scratchPapers?.find((p) => p.id === scratch.id);
+        if (!sheet) return;
+        const w = source.width,
+          h = source.height;
+        const image = {
+          id: uid(),
+          kind: 'image' as const,
+          data,
+          width: w,
+          height: h,
+          x: Math.max(
+            0,
+            Math.min(sheet.page.width - w, ((x - r.left) * sheet.page.width) / r.width - w / 2),
+          ),
+          y: Math.max(
+            0,
+            Math.min(sheet.page.height - h, ((y - r.top) * sheet.page.height) / r.height - h / 2),
+          ),
+          scratchPage: true,
+        };
+        // Put copied pages below the single scratch handwriting layer.
+        const layer = sheet.page.inkLayer ?? sheet.page.images.length;
+        const page = {
+          ...sheet.page,
+          images: [...sheet.page.images.slice(0, layer), image, ...sheet.page.images.slice(layer)],
+          inkLayer: layer + 1,
+        };
+        commit(replaceEditablePage(now, page));
+        setScratchFocus(true);
+        setTool('object');
+        setFocusObjectId(image.id);
+        notify(tr('已将页面复制到草稿纸，可移动、缩放和调整层级。'));
+      }),
+    );
+    return true;
+  };
   const undo = () => {
     const activePageId = currentPageId.current;
     const prev = history.current.pop();
@@ -1003,6 +1177,10 @@ export default function App() {
     doc: PDFDocumentProxy | null,
     view = defaultView,
   ) => {
+    setScratchMode(!!view.scratch?.enabled && !!next.scratchPapers?.length);
+    setScratchHiddenPdf(!!view.scratch?.hiddenPdf);
+    scratchReturn.current = view.scratch?.returnView ?? null;
+    setScratchFocus(false);
     const old = pdfRef.current;
     ensureTab(id, next.batch?.title || next.name, !!next.source);
     viewRef.current = { ...view };
@@ -1400,9 +1578,10 @@ export default function App() {
     });
   const addImages = (images: ImportedImage[], anchor: DropAnchor) => {
     const notebook = current.current;
+    if (scratchEnabled.current) anchor = scratchInsertionAnchor(notebook) ?? anchor;
     const at = notebook.pages.findIndex((page) => page.id === anchor.pageId);
-    if (at < 0) throw Error(tr('目标页面已不存在。'));
-    const page = notebook.pages[at];
+    const page = editablePages(notebook).find((p) => p.id === anchor.pageId);
+    if (!page) throw Error(tr('目标页面已不存在。'));
     const objects = images.map((image, i) => {
       const width = Math.min(
         image.width / 2,
@@ -1429,16 +1608,15 @@ export default function App() {
       };
     });
     if (!objects.length) return;
-    commit({
-      ...notebook,
-      pages: notebook.pages.map((p) => (p.id === page.id ? appendPageImages(p, objects) : p)),
-    });
+    commit(replaceEditablePage(notebook, appendPageImages(page, objects)));
     if (
-      viewRef.current.mode !== 'dual' ||
-      at < viewRef.current.index ||
-      at > viewRef.current.index + 1
+      !scratchEnabled.current &&
+      (viewRef.current.mode !== 'dual' ||
+        at < viewRef.current.index ||
+        at > viewRef.current.index + 1)
     )
       setIndex(at);
+    if (scratchEnabled.current) setScratchFocus(at < 0);
     setTool('object');
     setFocusObjectId(objects.at(-1)!.id);
   };
@@ -1567,32 +1745,32 @@ export default function App() {
           return !!viewport && r.bottom > viewport.top && r.top < viewport.bottom;
         });
       const anchor =
-        pasteAnchor.current?.documentId === activeRef.current &&
+        (scratchEnabled.current ? scratchInsertionAnchor(current.current) : null) ??
+        (pasteAnchor.current?.documentId === activeRef.current &&
         (pasteAnchor.current.pageId === page.id ||
           anchorVisible ||
           (viewRef.current.mode === 'dual' &&
             pasteAnchor.current.pageId === current.current.pages[viewRef.current.index + 1]?.id))
           ? pasteAnchor.current
-          : { pageId: page.id };
+          : { pageId: page.id });
       setSelection(null);
       reportOperation(() =>
         documentOperation(async () => {
           if (ink) {
             const notebook = current.current;
             const at = notebook.pages.findIndex((p) => p.id === anchor.pageId);
-            if (at < 0) throw Error(tr('目标页面已不存在。'));
-            const page = notebook.pages[at];
+            const page = editablePages(notebook).find((p) => p.id === anchor.pageId);
+            if (!page) throw Error(tr('目标页面已不存在。'));
             const strokes = placeInk(ink, page, anchor);
-            commit({
-              ...notebook,
-              pages: notebook.pages.map((p) =>
-                p.id === page.id ? { ...p, strokes: [...p.strokes, ...strokes] } : p,
-              ),
-            });
+            if (scratchEnabled.current) setScratchFocus(at < 0);
+            commit(
+              replaceEditablePage(notebook, { ...page, strokes: [...page.strokes, ...strokes] }),
+            );
             if (
-              viewRef.current.mode !== 'dual' ||
-              at < viewRef.current.index ||
-              at > viewRef.current.index + 1
+              !scratchEnabled.current &&
+              (viewRef.current.mode !== 'dual' ||
+                at < viewRef.current.index ||
+                at > viewRef.current.index + 1)
             )
               setIndex(at);
             if (!drawingTool(tool)) setTool('pen');
@@ -1605,23 +1783,25 @@ export default function App() {
           } else if (objects) {
             const notebook = current.current;
             const at = notebook.pages.findIndex((p) => p.id === anchor.pageId);
-            if (at < 0) throw Error(tr('目标页面已不存在。'));
-            const page = notebook.pages[at];
+            const page = editablePages(notebook).find((p) => p.id === anchor.pageId);
+            if (!page) throw Error(tr('目标页面已不存在。'));
             const key = `${activeRef.current}:${page.id}:${objects.objects.map((i) => i.id).join(',')}:${'x' in anchor ? anchor.x : ''}:${'y' in anchor ? anchor.y : ''}`;
             const count =
               objectPasteSequence.current.key === key ? objectPasteSequence.current.count + 1 : 1;
             objectPasteSequence.current = { key, count };
-            const placed = placeClipboardObjects(objects, page, anchor, count * 16);
-            commit({
-              ...notebook,
-              pages: notebook.pages.map((p) =>
-                p.id === page.id ? appendPageImages(p, placed) : p,
-              ),
-            });
+            const placed = placeClipboardObjects(
+              objects,
+              page,
+              anchor,
+              scratchEnabled.current ? 0 : count * 16,
+            );
+            if (scratchEnabled.current) setScratchFocus(at < 0);
+            commit(replaceEditablePage(notebook, appendPageImages(page, placed)));
             if (
-              viewRef.current.mode !== 'dual' ||
-              at < viewRef.current.index ||
-              at > viewRef.current.index + 1
+              !scratchEnabled.current &&
+              (viewRef.current.mode !== 'dual' ||
+                at < viewRef.current.index ||
+                at > viewRef.current.index + 1)
             )
               setIndex(at);
             setTool('object');
@@ -1838,8 +2018,24 @@ export default function App() {
           id: uid(),
           data,
           displayData,
-          x: (editingPage.width - width) / 2,
-          y: Math.max(20, (editingPage.height - height) / 2),
+          x: Math.max(
+            0,
+            Math.min(
+              editingPage.width - width,
+              ((scratchMode ? scratchInsertionAnchor(current.current)?.x : undefined) ??
+                editingPage.width / 2) -
+                width / 2,
+            ),
+          ),
+          y: Math.max(
+            0,
+            Math.min(
+              editingPage.height - height,
+              ((scratchMode ? scratchInsertionAnchor(current.current)?.y : undefined) ??
+                editingPage.height / 2) -
+                height / 2,
+            ),
+          ),
           width,
           height,
           kind,
@@ -1853,13 +2049,16 @@ export default function App() {
         ? editingPage.images.map((i) => (i.id === editingImage.id ? image : i))
         : [...editingPage.images, image],
     };
-    commit({
-      ...current.current,
-      ...(!editingImage ? { scene: undefined } : {}),
-      pages: current.current.pages.map((x) => (x.id === editingPage.id ? p : x)),
-    });
+    commit(
+      replaceEditablePage(
+        { ...current.current, ...(!editingImage ? { scene: undefined } : {}) },
+        p,
+      ),
+    );
     setDialog(null);
     setEditingId(null);
+    if (scratchEnabled.current)
+      setScratchFocus(!current.current.pages.some((p) => p.id === editingPage.id));
     setFocusObjectId(image.id);
     setTool('object');
     notify(
@@ -1970,10 +2169,37 @@ export default function App() {
           <span>{tr('文本框')}</span>
         </button>
         <div />
-        <button aria-label={tr('加页')} title={tr('加页')} onClick={addPage}>
-          <FilePlus2 size={19} />
-          <span>{tr('加页')}</span>
-        </button>
+        <ScratchPanel
+          papers={notebook.scratchPapers ?? []}
+          selected={notebook.activeScratchId}
+          enabled={scratchMode}
+          hiddenPdf={scratchHiddenPdf}
+          disabled={busy || !ready}
+          onToggle={toggleScratch}
+          onCreate={createScratch}
+          onSelect={(id) => {
+            commit({ ...current.current, activeScratchId: id });
+            setScratchFocus(true);
+          }}
+          onRename={(id, name) => updateScratch(id, { name })}
+          onColor={(color) => {
+            if (activeScratch)
+              updateScratch(activeScratch.id, {
+                page: { ...activeScratch.page, paperColor: color },
+              });
+          }}
+          onClear={() => {
+            if (activeScratch)
+              updateScratch(activeScratch.id, {
+                page: { ...activeScratch.page, strokes: [], images: [], inkLayer: 0 },
+              });
+          }}
+          onHide={() => {
+            if (!scratchHiddenPdf)
+              setRestoredPosition(captureWorkspaceView(viewRef.current, page.id).position);
+            setScratchHiddenPdf((v) => !v);
+          }}
+        />
         <div />
         <button
           aria-label={tr('便签')}
@@ -2237,9 +2463,10 @@ export default function App() {
             '.paper,.reading-paper',
           );
           if (element) {
+            if (scratchEnabled.current) setScratchFocus(!!element.closest('.scratch-viewport'));
             const id = element.closest<HTMLElement>('[data-page-id]')?.dataset.pageId;
             const p =
-              current.current.pages.find((p) => p.id === id) ||
+              editablePages(current.current).find((p) => p.id === id) ||
               current.current.pages[viewRef.current.index];
             const rect = element.getBoundingClientRect();
             if (p)
@@ -2524,6 +2751,7 @@ export default function App() {
                     index={index}
                     onSelect={(i) => navigation.go(notebook.pages[i].id)}
                     onMove={movePage}
+                    onDropOnScratch={scratchMode ? dropPageOnScratch : undefined}
                     onDuplicate={duplicatePage}
                     onCopyPage={copyPageToClipboard}
                     onPastePage={pasteCopiedPage}
@@ -2756,98 +2984,132 @@ export default function App() {
               <div className="toolbar-divider" />
               {!toolbarCollapsed && renderInkControls()}
             </div>
-            <div className="canvas-container">
-              {notebook.batch && batchManifest?.id === notebook.batch.id && (
-                <BatchPanel
-                  manifest={batchManifest}
-                  currentId={notebook.batch.itemId}
-                  busy={busy}
-                  onJump={jumpBatch}
-                  onExport={exportBatch}
-                />
-              )}
-              <PdfPrefetch
-                pdf={pdf}
-                pages={notebook.pages}
-                index={index}
-                mode={viewMode}
-                zoom={zoom}
-              />
-              {viewMode === 'single' ? (
-                <PdfSurface
-                  restoredPosition={restoredPosition}
-                  page={page}
-                  pdf={pdf}
-                  tool={tool}
-                  color={color}
-                  size={size}
-
-                  zoom={zoom}
-                  resetView={resetView}
-                  fitWidth={fitActive.current && fitMode.current === 'width'}
-                  setZoom={setZoom}
-                  onChange={updatePage}
-                  onDiagnostic={reportPenDiagnostic}
-                  onRender={setRenderStatus}
-                  onContext={selectedText}
-                  focusObjectId={focusObjectId}
-                  onEditObject={(id) => editObject(page, id)}
-                />
-              ) : (
-                <ReadingView
-                  restoredPosition={restoredPosition}
-                  pages={notebook.pages}
-                  pdf={pdf}
-                  mode={viewMode}
-                  index={index}
-                  tool={tool}
-                  zoom={zoom}
-                  setZoom={setZoom}
-                  resetView={resetView}
-
-                  color={color}
-                  size={size}
-                  onChange={updatePage}
-                  onDiagnostic={reportPenDiagnostic}
-                  onContext={selectedText}
-                  onEditObject={editObject}
-                  focusObjectId={focusObjectId}
-                  onEdit={editReadingPage}
-                  onPageChange={readingPageChanged}
-                />
-              )}
-              {capturing && (
-                <RegionCapture
-                  onCapture={capture}
-                  onClose={() => setCapturing(false)}
-                  onBitmapOcr={() => {
-                    setCapturing(false);
-                    setBitmapOcrOpen(true);
-                  }}
-                />
-              )}
-              {viewMode === 'single' &&
-                !notebook.source &&
-                page.strokes.length === 0 &&
-                page.images.length === 0 &&
-                index === 0 && (
-                  <div className="welcome-note">
-                    <span className="eyebrow">A SPACE FOR YOUR THOUGHTS</span>
-                    <h1>{tr('思考，从这一笔开始。')}</h1>
-                    <p>
-                      {tr('拿起笔，自由书写。')}
-                      <br />
-                      {tr('或打开一份 PDF，让想法落在纸上。')}
-                    </p>
-                    <button onClick={() => file.current?.click()}>
-                      {tr('打开 PDF')}
-                      <MoveUpRight size={15} />
-                    </button>
-                    <span className="welcome-foot">{tr('灵感无需等待，笔记自动保存。')}</span>
-                  </div>
+            <ScratchInkContext.Provider
+              value={
+                scratchMode
+                  ? {
+                      commit: routeScratchInk,
+                      preview: (p, s, r) => scratchLive.current?.preview(p, s, r),
+                    }
+                  : null
+              }
+            >
+              <div className={`canvas-container${scratchMode ? ' scratch-mode' : ''}`}>
+                {scratchMode && <ScratchLiveInk ref={scratchLive} />}
+                {scratchMode && activeScratch && (
+                  <ScratchSurface
+                    key={activeScratch.id}
+                    paper={activeScratch}
+                    tool={tool}
+                    color={color}
+                    size={size}
+                    active={scratchFocus}
+                    focusObjectId={focusObjectId}
+                    onActivate={() => setScratchFocus(true)}
+                    onChange={updatePage}
+                    onView={(view) => updateScratch(activeScratch.id, { view }, false)}
+                    onEditObject={editObject}
+                    onDiagnostic={reportPenDiagnostic}
+                  />
                 )}
-              {!bottomCollapsed && bottomControls}
-            </div>
+                {notebook.batch && batchManifest?.id === notebook.batch.id && (
+                  <BatchPanel
+                    manifest={batchManifest}
+                    currentId={notebook.batch.itemId}
+                    busy={busy}
+                    onJump={jumpBatch}
+                    onExport={exportBatch}
+                  />
+                )}
+                <PdfPrefetch
+                  pdf={scratchMode && scratchHiddenPdf ? null : pdf}
+                  pages={notebook.pages}
+                  index={index}
+                  mode={viewMode}
+                  zoom={zoom}
+                />
+                {!(scratchMode && scratchHiddenPdf) &&
+                  (viewMode === 'single' ? (
+                    <PdfSurface
+                      freeView={scratchMode}
+                      editableActive={!scratchMode || !scratchFocus}
+                      restoredPosition={restoredPosition}
+                      page={page}
+                      pdf={pdf}
+                      tool={tool}
+                      color={color}
+                      size={size}
+
+                      zoom={zoom}
+                      resetView={resetView}
+                      fitWidth={fitActive.current && fitMode.current === 'width'}
+                      setZoom={setZoom}
+                      onChange={updatePage}
+                      onDiagnostic={reportPenDiagnostic}
+                      onRender={setRenderStatus}
+                      onContext={selectedText}
+                      focusObjectId={focusObjectId}
+                      onEditObject={(id) => editObject(page, id)}
+                    />
+                  ) : (
+                    <ReadingView
+                      freeView={scratchMode}
+                      editableActive={!scratchMode || !scratchFocus}
+                      restoredPosition={restoredPosition}
+                      pages={notebook.pages}
+                      pdf={pdf}
+                      mode={viewMode}
+                      index={index}
+                      tool={tool}
+                      zoom={zoom}
+                      setZoom={setZoom}
+                      resetView={resetView}
+
+                      color={color}
+                      size={size}
+                      onChange={updatePage}
+                      onDiagnostic={reportPenDiagnostic}
+                      onContext={selectedText}
+                      onEditObject={editObject}
+                      focusObjectId={focusObjectId}
+                      onEdit={editReadingPage}
+                      onPageChange={readingPageChanged}
+                    />
+                  ))}
+                {capturing && (
+                  <RegionCapture
+                    onCapture={capture}
+                    onClose={() => setCapturing(false)}
+                    onBitmapOcr={() => {
+                      setCapturing(false);
+                      setBitmapOcrOpen(true);
+                    }}
+                  />
+                )}
+                {!scratchMode &&
+                  viewMode === 'single' &&
+                  !notebook.source &&
+                  page.strokes.length === 0 &&
+                  page.images.length === 0 &&
+                  index === 0 && (
+                    <div className="welcome-note">
+                      <span className="eyebrow">A SPACE FOR YOUR THOUGHTS</span>
+                      <h1>{tr('思考，从这一笔开始。')}</h1>
+                      <p>
+                        {tr('拿起笔，自由书写。')}
+                        <br />
+                        {tr('或打开一份 PDF，让想法落在纸上。')}
+                      </p>
+                      <button onClick={() => file.current?.click()}>
+                        {tr('打开 PDF')}
+                        <MoveUpRight size={15} />
+                      </button>
+                      <span className="welcome-foot">{tr('灵感无需等待，笔记自动保存。')}</span>
+                    </div>
+                  )}
+                {!bottomCollapsed && bottomControls}
+              </div>
+            </ScratchInkContext.Provider>
             <footer className={`statusbar ${bottomCollapsed ? 'tools-collapsed' : ''}`}>
               <button
                 className="icon-button bottom-tools-toggle"

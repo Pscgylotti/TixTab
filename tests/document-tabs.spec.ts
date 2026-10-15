@@ -119,7 +119,7 @@ test('多文件拖入、标签切换保存视图和标注，关闭保留文档�
   await page.getByRole('button', { name: '下一页', exact: true }).click();
   await page.getByRole('button', { name: '放大', exact: true }).click();
   const zoom = await page.locator('.zoom-dock>span').textContent();
-  await page.getByRole('button', { name: '加页', exact: true }).click();
+  await page.getByRole('button', { name: '插入空白页', exact: true }).click();
   await page
     .getByRole('dialog', { name: '插入空白页', exact: true })
     .getByRole('button', { name: '插入页面', exact: true })

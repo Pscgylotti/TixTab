@@ -231,6 +231,8 @@ const ReadingPage = memo(function ReadingPage({
   );
 });
 export default function ReadingView({
+  freeView = false,
+  editableActive = true,
   restoredPosition,
   pages,
   pdf,
@@ -251,6 +253,8 @@ export default function ReadingView({
   onEdit,
   onPageChange,
 }: {
+  freeView?: boolean;
+  editableActive?: boolean;
   restoredPosition?: WorkspacePosition;
   pages: Page[];
   pdf: PDFDocumentProxy | null;
@@ -272,6 +276,12 @@ export default function ReadingView({
   onPageChange: (i: number) => void;
 }) {
   useLocale();
+  const seamless = freeView && mode === 'continuous',
+    pageInset = seamless ? 0 : 8;
+  const [freeOffset, setFreeOffset] = useState({ x: 0, y: 0 });
+  const freeState = useRef({ enabled: freeView, offset: freeOffset });
+  freeState.current = { enabled: freeView, offset: freeOffset };
+  useLayoutEffect(() => setFreeOffset({ x: 0, y: 0 }), [resetView, freeView]);
   const [zoom, setZoom] = useDeferredZoom(committedZoom, commitZoom, resetView);
   const root = useRef<HTMLDivElement>(null),
     content = useRef<HTMLDivElement>(null),
@@ -298,7 +308,7 @@ export default function ReadingView({
   };
   const startInertia = (speed: { x: number; y: number }) => {
     stopInertia();
-    if (mode !== 'continuous' || Math.hypot(speed.x, speed.y) < 0.12) return;
+    if (freeView || mode !== 'continuous' || Math.hypot(speed.x, speed.y) < 0.12) return;
     let previous = performance.now();
     const tick = (time: number) => {
       const el = root.current;
@@ -328,10 +338,10 @@ export default function ReadingView({
   const layout = useMemo(
     () =>
       makeLayout(
-        pages.map((page) => page.height * zoom + 25),
-        8,
+        pages.map((page) => page.height * zoom + (seamless ? 0 : 25)),
+        pageInset,
       ),
-    [pages, zoom],
+    [pages, zoom, seamless],
   );
   const widest = useMemo(
     () => pages.reduce((width, page) => Math.max(width, page.width), 0),
@@ -353,23 +363,39 @@ export default function ReadingView({
     left: number;
     top: number;
     height: number;
+    seamless: boolean;
+    reset: number;
   } | null>(null);
   const prev = previous.current;
   const zoomAnchor =
-    prev && prev.zoom !== zoom && prev.mode === mode && prev.pages === pages
+    prev &&
+    prev.zoom !== zoom &&
+    prev.mode === mode &&
+    prev.pages === pages &&
+    prev.seamless === seamless &&
+    prev.reset === resetView
       ? (anchor.current ?? {
           x: prev.width / 2,
           y: prev.height / 2,
-          contentX: prev.left + prev.width / 2,
-          contentY: prev.top + prev.height / 2,
+          contentX: prev.left + prev.width / 2 - (freeView ? freeOffset.x : 0),
+          contentY: prev.top + prev.height / 2 - (freeView ? freeOffset.y : 0),
         })
       : null;
   const zoomPosition =
     zoomAnchor && prev
-      ? zoomReadingPoint(pages, mode, prev.index, prev.width, prev.zoom, zoom, {
-          x: zoomAnchor.contentX,
-          y: zoomAnchor.contentY,
-        })
+      ? zoomReadingPoint(
+          pages,
+          mode,
+          prev.index,
+          prev.width,
+          prev.zoom,
+          zoom,
+          {
+            x: zoomAnchor.contentX,
+            y: zoomAnchor.contentY,
+          },
+          seamless,
+        )
       : null;
   // Virtualize using the *new* anchored scroll position in the same render.
   // Combining a new layout with the old scrollTop can replace page 179 with
@@ -377,10 +403,10 @@ export default function ReadingView({
   const rangeTop =
     zoomPosition && zoomAnchor
       ? Math.max(0, (content.current?.offsetTop ?? 0) + zoomPosition.y - zoomAnchor.y)
-      : viewport.top;
+      : viewport.top - (freeView ? freeOffset.y : 0);
   const range = visibleRange(
     layout,
-    rangeTop - 8,
+    rangeTop - pageInset,
     viewport.height,
     renderPolicy().minimal ? 0 : Math.max(400, viewport.height),
   );
@@ -397,8 +423,16 @@ export default function ReadingView({
       anchor.current = {
         x,
         y,
-        contentX: el.scrollLeft + x - body.offsetLeft,
-        contentY: el.scrollTop + y - body.offsetTop,
+        contentX:
+          el.scrollLeft +
+          x -
+          body.offsetLeft -
+          (freeState.current.enabled ? freeState.current.offset.x : 0),
+        contentY:
+          el.scrollTop +
+          y -
+          body.offsetTop -
+          (freeState.current.enabled ? freeState.current.offset.y : 0),
       };
     zoomRef.current = next;
     setZoom(next);
@@ -407,9 +441,16 @@ export default function ReadingView({
     const el = root.current!,
       body = content.current!;
     if (zoomPosition && zoomAnchor) {
-      el.scrollLeft = body.offsetLeft + zoomPosition.x - zoomAnchor.x;
-      el.scrollTop = body.offsetTop + zoomPosition.y - zoomAnchor.y;
-      measure();
+      if (freeState.current.enabled) {
+        setFreeOffset({
+          x: zoomAnchor.x - body.offsetLeft - zoomPosition.x + el.scrollLeft,
+          y: zoomAnchor.y - body.offsetTop - zoomPosition.y + el.scrollTop,
+        });
+      } else {
+        el.scrollLeft = body.offsetLeft + zoomPosition.x - zoomAnchor.x;
+        el.scrollTop = body.offsetTop + zoomPosition.y - zoomAnchor.y;
+        measure();
+      }
     }
     anchor.current = null;
     previous.current = {
@@ -421,6 +462,8 @@ export default function ReadingView({
       left: el.scrollLeft,
       top: el.scrollTop,
       height: el.clientHeight,
+      seamless,
+      reset: resetView,
     };
   });
   const flush = () => {
@@ -433,6 +476,8 @@ export default function ReadingView({
     if (anchor.current) {
       anchor.current.x += delta.dx;
       anchor.current.y += delta.dy;
+    } else if (freeState.current.enabled) {
+      setFreeOffset((o) => ({ x: o.x + delta.dx, y: o.y + delta.dy }));
     } else {
       el.scrollLeft -= delta.dx;
       el.scrollTop -= delta.dy;
@@ -445,6 +490,9 @@ export default function ReadingView({
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         zoomTo(zoomRef.current * Math.exp(-e.deltaY * 0.008), e.clientX, e.clientY);
+      } else if (freeState.current.enabled) {
+        e.preventDefault();
+        setFreeOffset((o) => ({ x: o.x - e.deltaX, y: o.y - e.deltaY }));
       }
     };
     const visibility = () => {
@@ -492,9 +540,11 @@ export default function ReadingView({
       restored.current = restoredPosition;
       el.scrollLeft = restoredPosition.x * zoom;
       el.scrollTop = restoredPosition.y * zoom;
+      if (freeView)
+        setFreeOffset({ x: restoredPosition.freeX ?? 0, y: restoredPosition.freeY ?? 0 });
     } else {
       el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2);
-      if (mode === 'continuous') el.scrollTop = 8 + (layout.offsets[index] ?? 0);
+      if (mode === 'continuous') el.scrollTop = pageInset + (layout.offsets[index] ?? 0);
       else el.scrollTop = 0;
     }
     measure();
@@ -513,13 +563,28 @@ export default function ReadingView({
       ) || 0;
     const next = itemAt(
       layout,
-      Math.max(0, viewport.top - 8 + Math.max(1, viewport.height - inset) * 0.4),
+      Math.max(
+        0,
+        viewport.top -
+          pageInset -
+          (freeView ? freeOffset.y : 0) +
+          Math.max(1, viewport.height - inset) * 0.4,
+      ),
     );
     if (next !== observedIndex.current) {
       observedIndex.current = next;
       onPageChange(next);
     }
-  }, [viewport.top, viewport.height, layout, mode, onPageChange]);
+  }, [
+    viewport.top,
+    viewport.height,
+    layout,
+    mode,
+    onPageChange,
+    freeView,
+    freeOffset.y,
+    pageInset,
+  ]);
   const down = (e: ReactPointerEvent) => {
     stopInertia();
     if (
@@ -578,8 +643,10 @@ export default function ReadingView({
     endIndex = mode === 'dual' ? index + 2 : range.end;
   return (
     <div
-      className={`reading-view reading-${mode} tool-${tool}`}
+      className={`reading-view reading-${mode} tool-${tool}${seamless ? ' reading-seamless' : ''}`}
       data-view-zoom={zoom}
+      data-free-x={freeOffset.x}
+      data-free-y={freeOffset.y}
       ref={root}
       onKeyDown={stopInertia}
       onPointerDownCapture={(e) => {
@@ -601,10 +668,13 @@ export default function ReadingView({
         style={
           mode === 'continuous'
             ? {
+                transform: freeView ? `translate(${freeOffset.x}px,${freeOffset.y}px)` : undefined,
                 width: widest * zoom + 16,
-                height: `calc(${8 + layout.total + 8}px + var(--page-controls-inset,0px))`,
+                height: `calc(${pageInset + layout.total + pageInset}px + var(--page-controls-inset,0px))`,
               }
-            : undefined
+            : freeView
+              ? { transform: `translate(${freeOffset.x}px,${freeOffset.y}px)` }
+              : undefined
         }
       >
         {pages.slice(start, endIndex).map((page, i) => (
@@ -621,11 +691,11 @@ export default function ReadingView({
             onContext={onContext}
             onEditObject={onEditObject}
             focusObjectId={focusObjectId}
-            active={activePageId === page.id}
+            active={editableActive && activePageId === page.id}
             onActivate={setActivePageId}
 
             width={page.width * zoom}
-            top={mode === 'continuous' ? 8 + layout.offsets[start + i] : undefined}
+            top={mode === 'continuous' ? pageInset + layout.offsets[start + i] : undefined}
             onEdit={onEdit}
             viewport={root}
           />

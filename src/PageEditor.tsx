@@ -1,6 +1,8 @@
+import { ScratchInkContext } from './ScratchInkContext';
 import {
   memo,
   useMemo,
+  useContext,
   useEffect,
   useRef,
   useState,
@@ -23,7 +25,7 @@ import {
   Ungroup,
 } from 'lucide-react';
 import { createObjectGroup, mergePageObjects, ungroupPageObject } from './objectGroup';
-import { copyObjects, pasteObjectsFromButton } from './objectClipboard';
+import { copyObjects, pasteObjectsFromButton, containsScratchPage } from './objectClipboard';
 import type { ObjectOrder } from './objectSelection';
 import { inkLayerIndex, reorderPageLayers, removePageImages } from './pageLayers';
 import { t as tr, useLocale } from './i18n';
@@ -77,6 +79,7 @@ interface Props {
   onActivate?: () => void;
   reading?: boolean;
   viewKey?: string | number;
+  forceClip?: boolean;
 }
 const StaticInk = memo(function StaticInk({ page, clip }: { page: Page; clip: ForegroundClip }) {
   const index = useRef<SpatialIndex<Stroke> | null>(null);
@@ -145,8 +148,10 @@ function PageEditor({
   onActivate,
   reading = false,
   viewKey,
+  forceClip = false,
 }: Props) {
   useLocale();
+  const routeStroke = useContext(ScratchInkContext);
   const { memoryMode } = useAppearance();
   const [dpr, setDpr] = useState(window.devicePixelRatio);
   useEffect(() => {
@@ -166,7 +171,7 @@ function PageEditor({
     page.width,
     page.height,
     viewKey,
-    clipsForeground(page, vectorInk),
+    forceClip || clipsForeground(page, vectorInk),
   );
   const [selected, setSelected] = useState<string[]>([]);
   const [inkSelected, setInkSelected] = useState(false);
@@ -253,7 +258,13 @@ function PageEditor({
         setSelected((current) => current.filter((id) => !ids.includes(id)));
       }
     } catch {
-      setClipboardError(tr('复制失败，所选对象已保留。'));
+      setClipboardError(
+        tr(
+          originalPage.images.some((i) => ids.includes(i.id) && containsScratchPage(i))
+            ? '草稿纸中的 PDF 页面不能复制或剪切'
+            : '复制失败，所选对象已保留。',
+        ),
+      );
     } finally {
       clipboardBusy.current = false;
     }
@@ -431,16 +442,27 @@ function PageEditor({
         const strokes = stroke.current
           ? [stroke.current]
           : [...(pending?.highlights.values() ?? [])];
-        if (strokes.length && root.current && viewport.current)
-          paintLiveInk(
-            canvas,
+        if (routeStroke && root.current && stroke.current) {
+          routeStroke.preview(
             pageRef.current,
-            strokes,
+            stroke.current,
             root.current.getBoundingClientRect(),
-            viewport.current.getBoundingClientRect(),
-            window.devicePixelRatio,
           );
-        else releaseLiveInk(canvas);
+          releaseLiveInk(canvas);
+        } else {
+          if (routeStroke && root.current)
+            routeStroke.preview(pageRef.current, null, root.current.getBoundingClientRect());
+          if (strokes.length && root.current && viewport.current)
+            paintLiveInk(
+              canvas,
+              pageRef.current,
+              strokes,
+              root.current.getBoundingClientRect(),
+              viewport.current.getBoundingClientRect(),
+              window.devicePixelRatio,
+            );
+          else releaseLiveInk(canvas);
+        }
         finish?.();
       } catch (error) {
         finish?.(performanceOutcome(error));
@@ -551,9 +573,12 @@ function PageEditor({
     if (!cancel && erased.current) sample(e.nativeEvent);
     if (!cancel) {
       // Pointer-up pressure is zero; keep the last contact pressure to avoid an artificial taper.
-      if (stroke.current)
-        onChange({ ...pageRef.current, strokes: [...pageRef.current.strokes, stroke.current] });
-      else if (erased.current && (erased.current.strokes.size || erased.current.images.size)) {
+      if (stroke.current) {
+        if (routeStroke && root.current)
+          routeStroke.commit(pageRef.current, stroke.current, root.current.getBoundingClientRect());
+        else
+          onChange({ ...pageRef.current, strokes: [...pageRef.current.strokes, stroke.current] });
+      } else if (erased.current && (erased.current.strokes.size || erased.current.images.size)) {
         const pending = erased.current;
         onChange({
           ...removePageImages(pageRef.current, [...pending.images]),
@@ -747,6 +772,9 @@ function PageEditor({
               <>
                 <button
                   aria-label={tr('剪切选中对象')}
+                  disabled={page.images.some(
+                    (i) => selected.includes(i.id) && containsScratchPage(i),
+                  )}
                   title={`${tr('剪切选中对象')} (Ctrl+X)`}
                   onClick={() => void copySelected(true)}
                 >
@@ -754,6 +782,9 @@ function PageEditor({
                 </button>
                 <button
                   aria-label={tr('复制选中对象')}
+                  disabled={page.images.some(
+                    (i) => selected.includes(i.id) && containsScratchPage(i),
+                  )}
                   title={`${tr('复制选中对象')} (Ctrl+C)`}
                   onClick={() => void copySelected()}
                 >

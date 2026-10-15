@@ -9,28 +9,33 @@ export function zoomReadingPoint(
   from: number,
   to: number,
   point: { x: number; y: number },
+  seamless = false,
 ) {
   const ratio = to / from;
   if (mode === 'continuous') {
+    const heading = seamless ? 0 : 25,
+      inset = seamless ? 0 : 8;
     const oldLayout = makeLayout(
-        pages.map((p) => p.height * from + 25),
-        8,
+        pages.map((p) => p.height * from + heading),
+        inset,
       ),
       newLayout = makeLayout(
-        pages.map((p) => p.height * to + 25),
-        8,
+        pages.map((p) => p.height * to + heading),
+        inset,
       );
-    const i = itemAt(oldLayout, point.y - 8),
-      local = point.y - 8 - oldLayout.offsets[i];
+    const i = itemAt(oldLayout, point.y - inset),
+      local = point.y - inset - oldLayout.offsets[i];
     const widest = pages.reduce((w, p) => Math.max(w, p.width), 0),
       oldWidth = Math.max(viewportWidth, widest * from + 16),
       newWidth = Math.max(viewportWidth, widest * to + 16);
     return {
       x: newWidth / 2 + (point.x - oldWidth / 2) * ratio,
       y:
-        point.y < 8
+        point.y < inset
           ? point.y
-          : 8 + newLayout.offsets[i] + (local <= 25 ? local : 25 + (local - 25) * ratio),
+          : inset +
+            newLayout.offsets[i] +
+            (local <= heading ? local : heading + (local - heading) * ratio),
     };
   }
   const spread = pages.slice(index, index + 2),

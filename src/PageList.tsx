@@ -37,6 +37,7 @@ export default function PageList({
   onSelectionChange,
   onExitSelection,
   onCopyPages,
+  onDropOnScratch,
 }: {
   pages: Page[];
   pdf: PDFDocumentProxy | null;
@@ -56,11 +57,14 @@ export default function PageList({
   onSelectionChange?: (ids: string[]) => void;
   onExitSelection?: () => void;
   onCopyPages?: (indices: number[]) => void;
+  onDropOnScratch?: (index: number, x: number, y: number) => boolean;
 }) {
   useLocale();
   const root = useRef<HTMLDivElement>(null),
     timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined),
     suppressClick = useRef(0);
+  const [ghost, setGhost] = useState<{ index: number; x: number; y: number } | null>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
   const [cursor, setCursor] = useState(index);
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
   const pageIds = useMemo(() => pages.map((page) => page.id), [pages]);
@@ -145,6 +149,7 @@ export default function PageList({
     if (pointer !== undefined && root.current?.hasPointerCapture(pointer))
       root.current.releasePointerCapture(pointer);
     setDrag(null);
+    setGhost(null);
   };
   useEffect(() => {
     const cancel = () => {
@@ -317,6 +322,11 @@ export default function PageList({
       e.preventDefault();
       c.moved = true;
       setMenu(null);
+      if (onDropOnScratch) {
+        setGhost((old) => old ?? { index: c.from, x: e.clientX, y: e.clientY });
+        if (ghostRef.current)
+          ghostRef.current.style.transform = `translate(${e.clientX + 14}px,${e.clientY + 16}px) rotate(-2deg)`;
+      }
       c.lastY = e.clientY;
       dragTarget();
       if (!autoFrame.current) autoFrame.current = requestAnimationFrame(autoScroll);
@@ -346,7 +356,8 @@ export default function PageList({
     }
     if (!cancel && c.held && c.moved) {
       const destination = insertionDestination(c.from, c.to);
-      if (c.from !== destination) onMove(c.from, destination);
+      if (!onDropOnScratch?.(c.from, e.clientX, e.clientY) && c.from !== destination)
+        onMove(c.from, destination);
     }
     const coast = !cancel && !c.held && c.moved && e.pointerType === 'touch';
     cleanup();
@@ -354,281 +365,304 @@ export default function PageList({
     else velocity.current.reset();
   };
   return (
-    <div
-      className={`page-list${selectionMode ? ' page-list-selecting' : ''}`}
-      role={selectionMode ? 'listbox' : undefined}
-      aria-label={selectionMode ? tr('选择页面') : undefined}
-      aria-multiselectable={selectionMode ? true : undefined}
-      tabIndex={selectionMode ? 0 : undefined}
-      onKeyDown={(event) => {
-        if (
-          selectionMode &&
-          [
-            'ArrowUp',
-            'ArrowDown',
-            'ArrowLeft',
-            'ArrowRight',
-            'Enter',
-            ' ',
-            'Escape',
-            'Home',
-            'End',
-          ].includes(event.key)
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-          if (event.key === 'Escape') {
-            onExitSelection?.();
-            return;
-          }
-          const at = Math.min(cursor, pages.length - 1);
-          if (event.key === 'Enter' || event.key === ' ') {
-            keyboardRange.current = null;
-            onSelectionChange?.(
-              pageSelectionRange(pageIds, selectedIds, at, at, !selected.has(pages[at].id)),
-            );
-            return;
-          }
-          const next =
-            event.key === 'Home'
-              ? 0
-              : event.key === 'End'
-                ? pages.length - 1
-                : Math.max(
-                    0,
-                    Math.min(
-                      pages.length - 1,
-                      at + (['ArrowDown', 'ArrowRight'].includes(event.key) ? 1 : -1),
-                    ),
-                  );
-          if (event.shiftKey) {
-            keyboardRange.current ||= { base: [...selectedIds], anchor: at };
-            onSelectionChange?.(
-              pageSelectionRange(
-                pageIds,
-                keyboardRange.current.base,
-                keyboardRange.current.anchor,
-                next,
-              ),
-            );
-          } else keyboardRange.current = null;
-          setCursor(next);
-          const el = root.current!,
-            top = layout.offsets[next] + 4,
-            bottom = layout.offsets[next + 1] + 4;
-          if (top < el.scrollTop) el.scrollTop = top;
-          else if (bottom > el.scrollTop + el.clientHeight) el.scrollTop = bottom - el.clientHeight;
-          el.focus({ preventScroll: true });
-          measure();
-          return;
-        }
-        if (selectionMode && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-          event.preventDefault();
-          event.stopPropagation();
-          keyboardRange.current = null;
-          onSelectionChange?.(pageIds);
-          return;
-        }
-        if (
-          !(event.ctrlKey || event.metaKey) ||
-          event.altKey ||
-          event.shiftKey ||
-          !['c', 'v'].includes(event.key.toLowerCase())
-        )
-          return;
-        event.preventDefault();
-        event.stopPropagation();
-        const value = (event.target as HTMLElement)
-          .closest('[data-page-index]')
-          ?.getAttribute('data-page-index');
-        const at = value === null || value === undefined ? index : Number(value);
-        if (!Number.isInteger(at) || !pages[at]) return;
-        if (event.key.toLowerCase() === 'c') {
-          if (selectionMode)
-            onCopyPages?.(pages.flatMap((p, i) => (selected.has(p.id) ? [i] : [])));
-          else onCopyPage?.(at);
-        } else if (hasCopiedPage) onPastePage?.(at);
-      }}
-      ref={root}
-      onPointerDownCapture={(e) => {
-        if (contact.current && contact.current.id !== e.pointerId) {
-          stopKinetic();
-          cleanup();
-        } else if (!contact.current) stopKinetic();
-      }}
-      onWheel={stopKinetic}
-      onPointerMove={move}
-      onPointerUp={(e) => end(e)}
-      onPointerCancel={(e) => end(e, true)}
-      onLostPointerCapture={(e) => end(e, true)}
-    >
-      <div className="virtual-thumbnail-layout" style={{ height: layout.total }}>
-        {drag && (
+    <>
+      {ghost &&
+        pages[ghost.index] &&
+        createPortal(
           <div
-            className="page-insertion-line"
-            data-insertion-index={drag.to}
+            ref={ghostRef}
+            className="scratch-page-drag-preview"
             aria-hidden="true"
-            style={{ top: Math.max(0, Math.min(layout.total - 2, layout.offsets[drag.to])) }}
-          />
+            style={{ transform: `translate(${ghost.x + 14}px,${ghost.y + 16}px) rotate(-2deg)` }}
+          >
+            <PageThumbnail page={pages[ghost.index]} pdf={pdf} />
+            <span>复制到草稿纸</span>
+          </div>,
+          document.body,
         )}
-        {pages.slice(range.start, range.end).map((p, n) => {
-          const i = range.start + n;
-          return (
-            <div
-              className="page-list-item"
-              key={p.id}
-              style={{
-                position: 'absolute',
-                top: layout.offsets[i],
-                left: 0,
-                right: 0,
-                height: layout.offsets[i + 1] - layout.offsets[i],
-              }}
-            >
-              <button
-                className={`page-card ${(selectionMode ? selected.has(p.id) : i === index) ? 'selected' : ''} ${drag?.from === i ? 'dragging' : ''}`}
-                role={selectionMode ? 'option' : undefined}
-                aria-selected={selectionMode ? selected.has(p.id) : undefined}
-                data-selection-cursor={selectionMode && cursor === i ? true : undefined}
-                tabIndex={selectionMode ? -1 : undefined}
-                aria-label={tr('第 {0} 页', i + 1)}
-                data-page-index={i}
-                draggable={false}
-                onPointerDown={(e) => down(e, i)}
-                onClick={() => {
-                  if (performance.now() <= suppressClick.current) return;
-                  if (selectionMode) {
-                    setCursor(i);
-                    onSelectionChange?.(
-                      pageSelectionRange(pageIds, selectedIds, i, i, !selected.has(p.id)),
+      <div
+        className={`page-list${selectionMode ? ' page-list-selecting' : ''}`}
+        role={selectionMode ? 'listbox' : undefined}
+        aria-label={selectionMode ? tr('选择页面') : undefined}
+        aria-multiselectable={selectionMode ? true : undefined}
+        tabIndex={selectionMode ? 0 : undefined}
+        onKeyDown={(event) => {
+          if (
+            selectionMode &&
+            [
+              'ArrowUp',
+              'ArrowDown',
+              'ArrowLeft',
+              'ArrowRight',
+              'Enter',
+              ' ',
+              'Escape',
+              'Home',
+              'End',
+            ].includes(event.key)
+          ) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.key === 'Escape') {
+              onExitSelection?.();
+              return;
+            }
+            const at = Math.min(cursor, pages.length - 1);
+            if (event.key === 'Enter' || event.key === ' ') {
+              keyboardRange.current = null;
+              onSelectionChange?.(
+                pageSelectionRange(pageIds, selectedIds, at, at, !selected.has(pages[at].id)),
+              );
+              return;
+            }
+            const next =
+              event.key === 'Home'
+                ? 0
+                : event.key === 'End'
+                  ? pages.length - 1
+                  : Math.max(
+                      0,
+                      Math.min(
+                        pages.length - 1,
+                        at + (['ArrowDown', 'ArrowRight'].includes(event.key) ? 1 : -1),
+                      ),
                     );
-                  } else onSelect(i);
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  cleanup();
-                  setMenu(i);
+            if (event.shiftKey) {
+              keyboardRange.current ||= { base: [...selectedIds], anchor: at };
+              onSelectionChange?.(
+                pageSelectionRange(
+                  pageIds,
+                  keyboardRange.current.base,
+                  keyboardRange.current.anchor,
+                  next,
+                ),
+              );
+            } else keyboardRange.current = null;
+            setCursor(next);
+            const el = root.current!,
+              top = layout.offsets[next] + 4,
+              bottom = layout.offsets[next + 1] + 4;
+            if (top < el.scrollTop) el.scrollTop = top;
+            else if (bottom > el.scrollTop + el.clientHeight)
+              el.scrollTop = bottom - el.clientHeight;
+            el.focus({ preventScroll: true });
+            measure();
+            return;
+          }
+          if (
+            selectionMode &&
+            (event.ctrlKey || event.metaKey) &&
+            event.key.toLowerCase() === 'a'
+          ) {
+            event.preventDefault();
+            event.stopPropagation();
+            keyboardRange.current = null;
+            onSelectionChange?.(pageIds);
+            return;
+          }
+          if (
+            !(event.ctrlKey || event.metaKey) ||
+            event.altKey ||
+            event.shiftKey ||
+            !['c', 'v'].includes(event.key.toLowerCase())
+          )
+            return;
+          event.preventDefault();
+          event.stopPropagation();
+          const value = (event.target as HTMLElement)
+            .closest('[data-page-index]')
+            ?.getAttribute('data-page-index');
+          const at = value === null || value === undefined ? index : Number(value);
+          if (!Number.isInteger(at) || !pages[at]) return;
+          if (event.key.toLowerCase() === 'c') {
+            if (selectionMode)
+              onCopyPages?.(pages.flatMap((p, i) => (selected.has(p.id) ? [i] : [])));
+            else onCopyPage?.(at);
+          } else if (hasCopiedPage) onPastePage?.(at);
+        }}
+        ref={root}
+        onPointerDownCapture={(e) => {
+          if (contact.current && contact.current.id !== e.pointerId) {
+            stopKinetic();
+            cleanup();
+          } else if (!contact.current) stopKinetic();
+        }}
+        onWheel={stopKinetic}
+        onPointerMove={move}
+        onPointerUp={(e) => end(e)}
+        onPointerCancel={(e) => end(e, true)}
+        onLostPointerCapture={(e) => end(e, true)}
+      >
+        <div className="virtual-thumbnail-layout" style={{ height: layout.total }}>
+          {drag && (
+            <div
+              className="page-insertion-line"
+              data-insertion-index={drag.to}
+              aria-hidden="true"
+              style={{ top: Math.max(0, Math.min(layout.total - 2, layout.offsets[drag.to])) }}
+            />
+          )}
+          {pages.slice(range.start, range.end).map((p, n) => {
+            const i = range.start + n;
+            return (
+              <div
+                className="page-list-item"
+                key={p.id}
+                style={{
+                  position: 'absolute',
+                  top: layout.offsets[i],
+                  left: 0,
+                  right: 0,
+                  height: layout.offsets[i + 1] - layout.offsets[i],
                 }}
               >
-                <PageThumbnail page={p} pdf={pdf} />
-                {selectionMode && (
-                  <span
-                    className={`page-selection-check${selected.has(p.id) ? ' checked' : ''}`}
-                    aria-hidden="true"
-                  >
-                    {selected.has(p.id) && <Check size={12} />}
-                  </span>
-                )}
-                <div className="page-caption">
-                  <span>{String(i + 1).padStart(2, '0')}</span>
-                  <span>
-                    {p.sourceIndex === null ? tr('空白页') : tr('原稿 {0}', p.sourceIndex + 1)}
-                  </span>
-                  {i === index && <span className="selected-dot" />}
-                </div>
-              </button>
-              {menu === i &&
-                createPortal(
-                  <div
-                    className="page-actions-menu"
-                    style={menuPosition}
-                    role="menu"
-                    aria-label={tr('管理第 {0} 页', i + 1)}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    <button role="menuitem" disabled={!i} onClick={() => onMove(i, i - 1)}>
-                      {tr('上移')}
-                    </button>
-                    <button
-                      role="menuitem"
-                      disabled={i === pages.length - 1}
-                      onClick={() => onMove(i, i + 1)}
+                <button
+                  className={`page-card ${(selectionMode ? selected.has(p.id) : i === index) ? 'selected' : ''} ${drag?.from === i ? 'dragging' : ''}`}
+                  role={selectionMode ? 'option' : undefined}
+                  aria-selected={selectionMode ? selected.has(p.id) : undefined}
+                  data-selection-cursor={selectionMode && cursor === i ? true : undefined}
+                  tabIndex={selectionMode ? -1 : undefined}
+                  aria-label={tr('第 {0} 页', i + 1)}
+                  data-page-index={i}
+                  draggable={false}
+                  onPointerDown={(e) => down(e, i)}
+                  onClick={() => {
+                    if (performance.now() <= suppressClick.current) return;
+                    if (selectionMode) {
+                      setCursor(i);
+                      onSelectionChange?.(
+                        pageSelectionRange(pageIds, selectedIds, i, i, !selected.has(p.id)),
+                      );
+                    } else onSelect(i);
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    cleanup();
+                    setMenu(i);
+                  }}
+                >
+                  <PageThumbnail page={p} pdf={pdf} />
+                  {selectionMode && (
+                    <span
+                      className={`page-selection-check${selected.has(p.id) ? ' checked' : ''}`}
+                      aria-hidden="true"
                     >
-                      {tr('下移')}
-                    </button>
-                    <button
-                      role="menuitem"
-                      disabled={pages.length === 1}
-                      onClick={(event) => {
-                        setMenu(null);
-                        onDelete(i, event.currentTarget.getBoundingClientRect());
-                      }}
+                      {selected.has(p.id) && <Check size={12} />}
+                    </span>
+                  )}
+                  <div className="page-caption">
+                    <span>{String(i + 1).padStart(2, '0')}</span>
+                    <span>
+                      {p.sourceIndex === null ? tr('空白页') : tr('原稿 {0}', p.sourceIndex + 1)}
+                    </span>
+                    {i === index && <span className="selected-dot" />}
+                  </div>
+                </button>
+                {menu === i &&
+                  createPortal(
+                    <div
+                      className="page-actions-menu"
+                      style={menuPosition}
+                      role="menu"
+                      aria-label={tr('管理第 {0} 页', i + 1)}
+                      onPointerDown={(e) => e.stopPropagation()}
                     >
-                      {tr('删除')}
-                    </button>
-                    <button
-                      role="menuitem"
-                      onClick={() => {
-                        setMenu(null);
-                        onDuplicate(i);
-                      }}
-                    >
-                      {tr('复制页面')}
-                    </button>
-                    {onCopyPage && (
+                      <button role="menuitem" disabled={!i} onClick={() => onMove(i, i - 1)}>
+                        {tr('上移')}
+                      </button>
+                      <button
+                        role="menuitem"
+                        disabled={i === pages.length - 1}
+                        onClick={() => onMove(i, i + 1)}
+                      >
+                        {tr('下移')}
+                      </button>
+                      <button
+                        role="menuitem"
+                        disabled={pages.length === 1}
+                        onClick={(event) => {
+                          setMenu(null);
+                          onDelete(i, event.currentTarget.getBoundingClientRect());
+                        }}
+                      >
+                        {tr('删除')}
+                      </button>
                       <button
                         role="menuitem"
                         onClick={() => {
                           setMenu(null);
-                          if (selectionMode && selected.has(p.id))
-                            onCopyPages?.(pages.flatMap((p, i) => (selected.has(p.id) ? [i] : [])));
-                          else onCopyPage(i);
+                          onDuplicate(i);
                         }}
                       >
-                        {tr('复制页面到剪贴板')}
+                        {tr('复制页面')}
                       </button>
-                    )}
-                    {onPastePage && (
-                      <button
-                        role="menuitem"
-                        disabled={!hasCopiedPage}
-                        onClick={() => {
-                          setMenu(null);
-                          onPastePage(i);
-                        }}
-                      >
-                        {tr('粘贴页面')}
-                      </button>
-                    )}
-                    {onClearClipboard && (
-                      <button
-                        role="menuitem"
-                        disabled={!hasCopiedPage}
-                        onClick={() => {
-                          setMenu(null);
-                          onClearClipboard();
-                        }}
-                      >
-                        {tr('清除页面剪贴板')}
-                      </button>
-                    )}
-                    {onEditPages &&
-                      (['rotate', 'crop', 'split'] as const).map((action) => (
+                      {onCopyPage && (
                         <button
-                          key={action}
                           role="menuitem"
                           onClick={() => {
                             setMenu(null);
-                            onEditPages(action, i);
+                            if (selectionMode && selected.has(p.id))
+                              onCopyPages?.(
+                                pages.flatMap((p, i) => (selected.has(p.id) ? [i] : [])),
+                              );
+                            else onCopyPage(i);
                           }}
                         >
-                          {tr(
-                            { rotate: '旋转页面', crop: '裁剪页面', split: '拆分 / 提取 PDF' }[
-                              action
-                            ],
-                          )}
+                          {tr('复制页面到剪贴板')}
                         </button>
-                      ))}
-                    <button role="menuitem" onClick={() => setMenu(null)}>
-                      {tr('关闭')}
-                    </button>
-                  </div>,
-                  document.body,
-                )}
-            </div>
-          );
-        })}
+                      )}
+                      {onPastePage && (
+                        <button
+                          role="menuitem"
+                          disabled={!hasCopiedPage}
+                          onClick={() => {
+                            setMenu(null);
+                            onPastePage(i);
+                          }}
+                        >
+                          {tr('粘贴页面')}
+                        </button>
+                      )}
+                      {onClearClipboard && (
+                        <button
+                          role="menuitem"
+                          disabled={!hasCopiedPage}
+                          onClick={() => {
+                            setMenu(null);
+                            onClearClipboard();
+                          }}
+                        >
+                          {tr('清除页面剪贴板')}
+                        </button>
+                      )}
+                      {onEditPages &&
+                        (['rotate', 'crop', 'split'] as const).map((action) => (
+                          <button
+                            key={action}
+                            role="menuitem"
+                            onClick={() => {
+                              setMenu(null);
+                              onEditPages(action, i);
+                            }}
+                          >
+                            {tr(
+                              { rotate: '旋转页面', crop: '裁剪页面', split: '拆分 / 提取 PDF' }[
+                                action
+                              ],
+                            )}
+                          </button>
+                        ))}
+                      <button role="menuitem" onClick={() => setMenu(null)}>
+                        {tr('关闭')}
+                      </button>
+                    </div>,
+                    document.body,
+                  )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
