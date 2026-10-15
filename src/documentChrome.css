@@ -4,12 +4,16 @@
   align-items: center;
   gap: 4px;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
   padding: 2px 12px;
   border-bottom: 1px solid var(--border);
   background: var(--surface-tabs);
   min-height: 40px;
   user-select: none;
+}
+.document-tabs::-webkit-scrollbar,
+.status-tools::-webkit-scrollbar {
+  display: none;
 }
 .document-tab {
   position: relative;
@@ -145,7 +149,7 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 .status-tools :is(.insert-dock, .zoom-dock, .page-navigation) {
   position: static;
