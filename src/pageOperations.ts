@@ -61,6 +61,19 @@ export function transformPage(page: Page, operation: PageOperation): Page {
       ...(a ? { rotation: (((image.rotation ?? 0) + a) % 360) as 0 | 90 | 180 | 270 } : {}),
     };
   });
+  const nextWidth = a % 180 ? h : w * (1 - (crop.left + crop.right) / 100),
+    nextHeight = a % 180 ? w : h * (1 - (crop.top + crop.bottom) / 100);
+  const scoreBox = (r: { x: number; y: number; width: number; height: number }) => {
+    const b = box({ x: r.x * w, y: r.y * h, width: r.width * w, height: r.height * h });
+    const x = Math.max(0, Math.min(0.999, b.x / nextWidth)),
+      y = Math.max(0, Math.min(0.999, b.y / nextHeight));
+    return {
+      x,
+      y,
+      width: Math.min(1 - x, Math.max(0.001, b.width / nextWidth)),
+      height: Math.min(1 - y, Math.max(0.001, b.height / nextHeight)),
+    };
+  };
   return {
     ...page,
     width: a % 180 ? h : w * (1 - (crop.left + crop.right) / 100),
@@ -71,6 +84,14 @@ export function transformPage(page: Page, operation: PageOperation): Page {
     })),
     images,
     reviews: page.reviews?.map((n) => ({ ...n, region: box(n.region) })),
+    score: page.score
+      ? {
+          ...page.score,
+          positioning: 'estimated',
+          systems: page.score.systems.map((r) => scoreBox(r)),
+          notes: page.score.notes.map((n) => ({ ...n, region: scoreBox(n.region) })),
+        }
+      : undefined,
     nativeRevision: uid(),
   };
 }

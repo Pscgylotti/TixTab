@@ -14,6 +14,8 @@ const features = {
   ocr: '文字 OCR',
   speech: '朗读',
   dictation: '语音输入',
+  document: '文档矫正',
+  music: '五线谱识别',
 };
 const errors: Record<string, string> = {
   cancelled: '已取消',

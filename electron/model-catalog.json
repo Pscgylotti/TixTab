@@ -728,6 +728,72 @@
         }
       ],
       "bytes": 256760297
+    },
+    {
+      "id": "uvdoc",
+      "name": "UVDoc · OpenVINO",
+      "feature": "document",
+      "revision": "3bcf535371727d11e783101f79a504c68848aae3",
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/PaddlePaddle/UVDoc_onnx",
+      "device": "CPU / GPU / NPU · shared OpenVINO runtime",
+      "files": [
+        {
+          "path": "uvdoc/inference.onnx",
+          "bytes": 31684150,
+          "sha256": "54cab30dc2cf347b4f3d6971c833b1c3d84f5ef17280f1f6d15796bff20e63d6",
+          "url": "https://huggingface.co/PaddlePaddle/UVDoc_onnx/resolve/3bcf535371727d11e783101f79a504c68848aae3/inference.onnx"
+        }
+      ],
+      "bytes": 31684150
+    },
+    {
+      "id": "audiveris",
+      "name": "Audiveris 5.11.0",
+      "feature": "music",
+      "revision": "5.11.0",
+      "license": "AGPL-3.0",
+      "source": "https://github.com/Audiveris/audiveris",
+      "device": "CPU · bundled Java runtime",
+      "files": [
+        {
+          "path": "audiveris/Audiveris.msi",
+          "bytes": 85062430,
+          "sha256": "5f1b4e96a12c53c7da426814b76e599363c4181e291855996e0a6878dda95f71",
+          "url": "https://github.com/Audiveris/audiveris/releases/download/5.11.0/Audiveris-5.11.0-windowsConsole-x86_64.msi"
+        }
+      ],
+      "bytes": 85062430
+    },
+    {
+      "id": "homr",
+      "name": "homr 0.7.0",
+      "feature": "music",
+      "revision": "0.7.0",
+      "license": "AGPL-3.0",
+      "source": "https://github.com/liebharc/homr",
+      "device": "CPU · ONNX",
+      "files": [
+        {
+          "path": "homr/segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f.zip",
+          "bytes": 53214519,
+          "sha256": "1d4277354a8397a6830ef1279232e6d989c2d254b7451525e53ff3d3754b1f70",
+          "url": "https://github.com/liebharc/homr/releases/download/onnx_checkpoints/segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f.zip"
+        },
+        {
+          "path": "homr/encoder_pytorch_model_396-f6feedb42ff90087d898b0941a55d040fa6b2903.zip",
+          "bytes": 48277621,
+          "sha256": "9d9bc44da68c1180c85173d739edb2d703d90c0dbbdfadc9ebf6636685a5489b",
+          "url": "https://github.com/liebharc/homr/releases/download/onnx_checkpoints/encoder_pytorch_model_396-f6feedb42ff90087d898b0941a55d040fa6b2903.zip"
+        },
+        {
+          "path": "homr/decoder_pytorch_model_396-f6feedb42ff90087d898b0941a55d040fa6b2903.zip",
+          "bytes": 38770614,
+          "sha256": "0a2f023e1ecf41f5f969f2ed4ef80c050ce29a4996c6655056cf36c6104677e8",
+          "url": "https://github.com/liebharc/homr/releases/download/onnx_checkpoints/decoder_pytorch_model_396-f6feedb42ff90087d898b0941a55d040fa6b2903.zip"
+        }
+      ],
+      "bytes": 140262754
     }
   ]
 }

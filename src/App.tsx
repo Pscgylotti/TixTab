@@ -663,7 +663,7 @@ export default function App() {
   const persist = useCallback((n: Notebook, id = activeRef.current, view = viewRef.current) => {
     if (!id)
       return Promise.reject(new Error(tr('\u5DE5\u4F5C\u7A7A\u95F4\u5C1A\u672A\u5C31\u7EEA')));
-    const visibleSnapshot=id===activeRef.current && n===current.current;
+    const visibleSnapshot = id === activeRef.current && n === current.current;
     if (visibleSnapshot) {
       const el = document.querySelector<HTMLElement>('.scratch-viewport');
       const selected = current.current.activeScratchId ?? current.current.scratchPapers?.[0]?.id;
@@ -680,12 +680,14 @@ export default function App() {
           };
       }
     }
-    const snapshot =
-      visibleSnapshot ? captureWorkspaceView(view, n.pages[view.index]?.id ?? '') : view;
+    const snapshot = visibleSnapshot
+      ? captureWorkspaceView(view, n.pages[view.index]?.id ?? '')
+      : view;
+    const previewPdf = renderedSource.current === n.source ? pdfRef.current : undefined;
     saveQueue.current = trackPerformance('workspace-save-queue', () =>
       saveQueue.current
         .catch(() => {})
-        .then(() => saveWorkspaceDocument(id, n, snapshot))
+        .then(() => saveWorkspaceDocument(id, n, snapshot, undefined, undefined, previewPdf))
         .then(() => {}),
     );
     return saveQueue.current;
@@ -868,6 +870,12 @@ export default function App() {
           width: source.width,
           height: source.height,
         });
+        const nightData = await capturePage(
+          source,
+          pdfRef.current,
+          { x: 0, y: 0, width: source.width, height: source.height },
+          { night: true },
+        );
         if (documentId !== activeRef.current) return;
         const now = current.current,
           sheet = now.scratchPapers?.find((p) => p.id === scratch.id);
@@ -889,6 +897,7 @@ export default function App() {
             Math.min(sheet.page.height - h, ((y - r.top) * sheet.page.height) / r.height - h / 2),
           ),
           scratchPage: true,
+          nightData,
         };
         // Put copied pages below the single scratch handwriting layer.
         const layer = sheet.page.inkLayer ?? sheet.page.images.length;
@@ -2850,6 +2859,7 @@ export default function App() {
                   disabled={busy || !ready}
                   onClick={() => {
                     void persist(current.current)
+                      .then(() => batchSaves.current)
                       .then(() => setWorkspaceOpen(true))
                       .catch(() => notify(tr('保存失败，请先保存工程后再管理工作空间')));
                   }}
@@ -2892,7 +2902,28 @@ export default function App() {
                     </button>
                   </div>
                 )}
-                <ExtraTools notebook={notebook} pdf={pdf} index={index} disabled={busy || !ready} />
+                <ExtraTools
+                  key={activeId}
+                  notebook={notebook}
+                  pdf={pdf}
+                  index={index}
+                  disabled={busy || !ready}
+                  onApply={(pages) => {
+                    const replacements = new Map(pages.map((p) => [p.id, p]));
+                    commit({
+                      ...current.current,
+                      pages: current.current.pages.map((p) => replacements.get(p.id) ?? p),
+                    });
+                  }}
+                  onNavigate={(at) => {
+                    if (
+                      viewRef.current.mode === 'dual' &&
+                      Math.floor(viewRef.current.index / 2) === Math.floor(at / 2)
+                    )
+                      return;
+                    setIndex(at);
+                  }}
+                />
                 <button
                   className="icon-button"
                   aria-label={tr('打开 ChatGPT 聊天')}

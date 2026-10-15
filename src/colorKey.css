@@ -1,0 +1,65 @@
+.color-key-dialog {
+  width: min(700px, 94vw);
+  max-height: 90dvh;
+  overflow: auto;
+  padding: 16px;
+}
+.color-key-dialog header,
+.color-key-dialog footer,
+.color-key-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.color-key-dialog p {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+.color-key-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.color-key-images figure {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background-color: var(--surface);
+  background-image: repeating-conic-gradient(#8799b320 0% 25%, transparent 0% 50%);
+  background-size: 16px 16px;
+  text-align: center;
+}
+.color-key-images figcaption {
+  font-size: var(--fs-sm);
+  background: var(--surface);
+  padding: 6px;
+}
+.color-key-images img {
+  max-width: 100%;
+  max-height: 32vh;
+  width: auto;
+  height: auto;
+  vertical-align: middle;
+}
+.color-key-images figure:first-child img {
+  cursor: crosshair;
+}
+.color-key-controls {
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+.color-key-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.color-key-controls input[type='color'] {
+  width: 40px;
+}
+.color-key-controls output {
+  width: 3ch;
+  text-align: right;
+}

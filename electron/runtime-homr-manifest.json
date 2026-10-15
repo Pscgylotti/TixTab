@@ -1,0 +1,12 @@
+{
+  "version": "3.12.15",
+  "revision": "20261009",
+  "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261009/cpython-3.12.15%2B20261009-x86_64-pc-windows-msvc-install_only_stripped.tar.gz",
+  "mirrors": [
+    "https://registry.npmmirror.com/-/binary/python-build-standalone/20261009/cpython-3.12.15%2B20261009-x86_64-pc-windows-msvc-install_only_stripped.tar.gz"
+  ],
+  "bytes": 22011208,
+  "sha256": "11ed9f8a6ac64fb1b5a55e40e305a6744a3f77a70863c8f8197a6e4349abc64a",
+  "source": "https://github.com/astral-sh/python-build-standalone",
+  "license": "Python and bundled component licenses are retained in the downloaded distribution."
+}

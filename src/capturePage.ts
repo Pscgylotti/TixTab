@@ -1,10 +1,11 @@
 import type { PDFDocumentProxy } from './pdfTypes';
-import type { Page } from './model';
+import { isPicture, type Page } from './model';
 import { drawStrokes } from './ink';
 import { pageLayers } from './pageLayers';
 import { recognitionImageSize } from './recognitionImageSize';
 import { groupLeaves } from './objectGroup';
 import { drawPlacedImage } from './objectRotation';
+import { applyPdfNight, applyNightPolygons } from './pdfNight';
 import { drawPaperPattern } from './paperAppearance';
 export interface PageRegion {
   x: number;
@@ -12,8 +13,17 @@ export interface PageRegion {
   width: number;
   height: number;
 }
-export async function capturePage(page: Page, pdf: PDFDocumentProxy | null, region: PageRegion) {
-  const { width, height, scale } = recognitionImageSize(region.width, region.height, 2.5),
+export async function capturePage(
+  page: Page,
+  pdf: PDFDocumentProxy | null,
+  region: PageRegion,
+  options: { scale?: number; night?: boolean; ink?: boolean } = {},
+) {
+  const { width, height, scale } = recognitionImageSize(
+      region.width,
+      region.height,
+      options.scale ?? 2.5,
+    ),
     c = document.createElement('canvas');
   c.width = width;
   c.height = height;
@@ -28,18 +38,40 @@ export async function capturePage(page: Page, pdf: PDFDocumentProxy | null, regi
         viewport: p.getViewport({ scale }),
         transform: [1, 0, 0, 1, -region.x * scale, -region.y * scale],
       }).promise;
+      if (options.night) {
+        const transform = [...p.getViewport({ scale }).transform];
+        transform[4] -= region.x * scale;
+        transform[5] -= region.y * scale;
+        await applyPdfNight(c, pdf, page.sourceIndex, transform, true);
+      }
+    } else if (options.night) {
+      await applyNightPolygons(c, [], true);
     }
     ctx.setTransform(scale, 0, 0, scale, -region.x * scale, -region.y * scale);
     if (page.sourceIndex === null) drawPaperPattern(ctx, page, region);
     for (const image of pageLayers(page).flatMap((i) => (i ? groupLeaves(i) : [i]))) {
       if (!image) {
+        if (options.ink === false) continue;
+        ctx.filter = options.night ? 'invert(0.9) hue-rotate(180deg)' : 'none';
         drawStrokes(ctx, page.strokes);
+        ctx.filter = 'none';
         continue;
       }
       const i = new Image();
-      i.src = image.displayData ?? image.data;
+      i.src =
+        options.night && image.scratchPage && image.nightData
+          ? image.nightData
+          : (image.displayData ?? image.data);
       await i.decode();
+      ctx.filter = options.night
+        ? isPicture(image)
+          ? image.scratchPage && image.nightData
+            ? 'none'
+            : 'brightness(0.62)'
+          : 'invert(0.9) hue-rotate(180deg)'
+        : 'none';
       drawPlacedImage(ctx, i, image);
+      ctx.filter = 'none';
     }
     return c.toDataURL('image/png');
   } finally {

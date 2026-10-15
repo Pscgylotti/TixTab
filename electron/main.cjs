@@ -328,7 +328,7 @@ app.whenReady().then(() => {
   ipcMain.handle('runtimes:run', (event, request) => {
     if (
       !providerSender(event) ||
-      !['openvino', 'speech', 'pdf'].includes(request?.id) ||
+      !['openvino', 'speech', 'pdf', 'homr'].includes(request?.id) ||
       !['status', 'install', 'cancel', 'diagnostics', 'sources', 'configure-sources'].includes(
         request?.action,
       )
@@ -387,6 +387,33 @@ app.whenReady().then(() => {
     runtime: path.join(app.getPath('home'), '.surfacetab/pdf-runtime'),
     backend,
     temporary: path.join(app.getPath('temp'), 'tixtab-pdf-editor'),
+  });
+  const documentTools = require('./local-document-tools.cjs').createLocalDocumentTools({
+    root: path.join(app.getPath('home'), '.surfacetab'),
+    backend,
+    resolveModel: (name) =>
+      modelLibrary
+        .resolve(name)
+        .then(
+          (file) =>
+            file ||
+            (existsSync(path.join(root, 'models', name)) ? path.join(root, 'models', name) : null),
+        ),
+  });
+  app.once('before-quit', () => documentTools.dispose());
+  const documentToolOwners = new WeakSet();
+  ipcMain.handle('document:local-tools', (event, request) => {
+    if (!providerSender(event)) return { ok: false, error: 'untrusted' };
+    if (!documentToolOwners.has(event.sender)) {
+      documentToolOwners.add(event.sender);
+      const cancel = () => documentTools.cancel(event.sender);
+      event.sender.once('destroyed', cancel);
+      event.sender.on('render-process-gone', cancel);
+      event.sender.on('did-start-navigation', (_event, _url, _inPlace, mainFrame) => {
+        if (mainFrame) cancel();
+      });
+    }
+    return documentTools.run(event.sender, request);
   });
   const pdfOwners = new WeakSet();
   app.once('before-quit', () => pdfEditor.dispose());
@@ -626,17 +653,22 @@ app.whenReady().then(() => {
     window.setFullScreen(active);
     return active;
   });
-  session.defaultSession.setPermissionRequestHandler((wc, permission, callback) =>
+  const { audioPermission } = require('./local-media-permission.cjs');
+  session.defaultSession.setPermissionRequestHandler((wc, permission, callback, details) =>
     callback(
-      ['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission) &&
-        trusted(wc.getURL()),
+      trusted(wc.getURL()) &&
+        trusted(details?.requestingUrl || wc.getURL()) &&
+        (['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission) ||
+          audioPermission(permission, details)),
     ),
   );
   session.defaultSession.setPermissionCheckHandler(
-    (wc, permission) =>
-      ['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission) &&
+    (wc, permission, _origin, details) =>
       !!wc &&
-      trusted(wc.getURL()),
+      trusted(wc.getURL()) &&
+      trusted(details?.requestingUrl || wc.getURL()) &&
+      (['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission) ||
+        audioPermission(permission, details, true)),
   );
   const win = new BrowserWindow({
     width: 1440,

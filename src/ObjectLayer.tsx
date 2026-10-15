@@ -252,7 +252,11 @@ export default function ObjectLayer({
           >
             <img
               src={groupDisplay(i, night, pdfNight)}
-              style={i.group ? { filter: 'none' } : undefined}
+              style={
+                i.group || (pdfNight && i.scratchPage)
+                  ? { filter: i.group || i.nightData ? 'none' : 'invert(0.9) hue-rotate(180deg)' }
+                  : undefined
+              }
               data-night-ink={!isPicture(i)}
               alt={
                 i.kind === 'text'

@@ -1,0 +1,58 @@
+.text-markdown {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.text-markdown > :first-child {
+  margin-top: 0;
+}
+.text-markdown > :last-child {
+  margin-bottom: 0;
+}
+.text-markdown p {
+  margin: 0.5em 0;
+}
+.text-markdown :is(h1, h2, h3, h4, h5, h6) {
+  line-height: 1.25;
+  margin: 0.7em 0 0.35em;
+}
+.text-markdown ul,
+.text-markdown ol {
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+.text-markdown li > p {
+  margin: 0;
+}
+.text-markdown blockquote {
+  margin: 0.6em 0;
+  padding: 0.2em 0.7em;
+  border-left: 3px solid currentColor;
+  opacity: 0.8;
+}
+.text-markdown code {
+  font-family: Consolas, monospace;
+  font-size: 0.9em;
+}
+.text-markdown pre {
+  padding: 0.6em;
+  background: #8799b31a;
+  border-radius: 5px;
+  white-space: pre-wrap;
+}
+.text-markdown table {
+  border-collapse: collapse;
+  max-width: 100%;
+  margin: 0.5em 0;
+}
+.text-markdown :is(th, td) {
+  border: 1px solid #8799b3;
+  padding: 0.25em 0.5em;
+}
+.text-markdown .markdown-link {
+  text-decoration: underline;
+}
+.text-markdown hr {
+  border: 0;
+  border-top: 1px solid currentColor;
+}

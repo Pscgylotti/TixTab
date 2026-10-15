@@ -1,7 +1,6 @@
 import { t as tr, useLocale } from './i18n';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import {
-  BookOpen,
   FolderPlus,
   Pin,
   Plus,
@@ -57,6 +56,94 @@ export default function WorkspaceManager({
     id: string;
     name: string;
   } | null>(null);
+  const contact = useRef<{
+    pointerId: number;
+    id: string;
+    x: number;
+    y: number;
+    held: boolean;
+    dragging: boolean;
+    element: HTMLElement;
+    timer?: ReturnType<typeof setTimeout>;
+  } | null>(null);
+  const suppressed = useRef(0);
+  const [drag, setDrag] = useState<{ id: string; x: number; y: number; target?: string } | null>(
+    null,
+  );
+  const cancelDrag = () => {
+    const c = contact.current;
+    contact.current = null;
+    clearTimeout(c?.timer);
+    if (c?.element.hasPointerCapture(c.pointerId)) c.element.releasePointerCapture(c.pointerId);
+    setDrag(null);
+  };
+  useEffect(() => {
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') cancelDrag();
+    };
+    window.addEventListener('blur', cancelDrag);
+    window.addEventListener('keydown', escape);
+    return () => {
+      const c = contact.current;
+      contact.current = null;
+      clearTimeout(c?.timer);
+      window.removeEventListener('blur', cancelDrag);
+      window.removeEventListener('keydown', escape);
+    };
+  }, []);
+  const dragDown = (e: ReactPointerEvent<HTMLElement>, id: string) => {
+    if (busy || e.button !== 0) return;
+    cancelDrag();
+    const c = {
+      pointerId: e.pointerId,
+      id,
+      x: e.clientX,
+      y: e.clientY,
+      held: e.pointerType === 'mouse',
+      dragging: false,
+      element: e.currentTarget,
+      timer: undefined as ReturnType<typeof setTimeout> | undefined,
+    };
+    contact.current = c;
+    if (!c.held)
+      c.timer = setTimeout(() => {
+        c.held = true;
+        c.element.setPointerCapture(c.pointerId);
+      }, 450);
+  };
+  const dragMove = (e: ReactPointerEvent<HTMLElement>) => {
+    const c = contact.current;
+    if (!c || c.pointerId !== e.pointerId) return;
+    if (Math.hypot(e.clientX - c.x, e.clientY - c.y) < 7 && !c.dragging) return;
+    if (!c.held) {
+      cancelDrag();
+      return;
+    }
+    c.dragging = true;
+    c.element.setPointerCapture(c.pointerId);
+    e.preventDefault();
+    suppressed.current = performance.now() + 800;
+    const target = document
+      .elementFromPoint(e.clientX, e.clientY)
+      ?.closest<HTMLElement>('[data-workspace-group]')?.dataset.workspaceGroup;
+    setDrag({ id: c.id, x: e.clientX, y: e.clientY, target });
+  };
+  const dragEnd = (e: ReactPointerEvent<HTMLElement>, cancelled = false) => {
+    const c = contact.current;
+    if (!c || c.pointerId !== e.pointerId) return;
+    const target = document
+      .elementFromPoint(e.clientX, e.clientY)
+      ?.closest<HTMLElement>('[data-workspace-group]')?.dataset.workspaceGroup;
+    if (c.dragging) {
+      suppressed.current = performance.now() + 800;
+      e.preventDefault();
+      if (!cancelled && target && (target === 'unfiled' || folders.some((f) => f.id === target)))
+        void run(() =>
+          updateWorkspaceDocument(c.id, { folderId: target === 'unfiled' ? null : target }),
+        );
+    }
+    cancelDrag();
+  };
   const [deleting, setDeleting] = useState<WorkspaceDocument | null>(null);
   const refresh = async () => {
     const data = await listWorkspace();
@@ -142,6 +229,15 @@ export default function WorkspaceManager({
             </button>
           </div>
         </header>
+        {drag && (
+          <div
+            className="workspace-drag-preview"
+            style={{ left: drag.x + 14, top: drag.y + 12 }}
+            aria-hidden="true"
+          >
+            {documents.find((d) => d.id === drag.id)?.name}
+          </div>
+        )}
         <div className="workspace-library-body">
           <nav aria-label={tr('文档分组')}>
             <button className={folder === 'all' ? 'active' : ''} onClick={() => setFolder('all')}>
@@ -149,13 +245,18 @@ export default function WorkspaceManager({
               <span>{documents.length}</span>
             </button>
             <button
-              className={folder === 'unfiled' ? 'active' : ''}
+              className={`${folder === 'unfiled' ? 'active' : ''} ${drag?.target === 'unfiled' ? 'drop-target' : ''}`}
+              data-workspace-group="unfiled"
               onClick={() => setFolder('unfiled')}
             >
               {tr('未分组')}
             </button>
             {folders.map((f) => (
-              <div className="workspace-folder" key={f.id}>
+              <div
+                className={`workspace-folder ${drag?.target === f.id ? 'drop-target' : ''}`}
+                data-workspace-group={f.id}
+                key={f.id}
+              >
                 <button className={folder === f.id ? 'active' : ''} onClick={() => setFolder(f.id)}>
                   {f.name}
                 </button>
@@ -257,18 +358,54 @@ export default function WorkspaceManager({
               {filtered.map((d) => (
                 <article
                   key={d.id}
-                  className={`workspace-document ${d.id === activeId ? 'active' : ''}`}
+                  className={`workspace-document ${d.id === activeId ? 'active' : ''} ${drag?.id === d.id ? 'dragging' : ''}`}
                   data-document-id={d.id}
                 >
                   <button
                     className="workspace-open"
                     aria-label={tr('打开文档 {0}', d.name)}
                     disabled={busy}
-                    onClick={() => void run(() => onOpen(d.id))}
+                    onClick={() => {
+                      if (performance.now() > suppressed.current) void run(() => onOpen(d.id));
+                    }}
+                    onPointerDown={(e) => dragDown(e, d.id)}
+                    onPointerMove={dragMove}
+                    onPointerUp={(e) => dragEnd(e)}
+                    onPointerCancel={(e) => dragEnd(e, true)}
+                    onLostPointerCapture={(e) => dragEnd(e, true)}
+                    onContextMenu={(e) => {
+                      if (contact.current?.held) e.preventDefault();
+                    }}
                   >
-                    <BookOpen size={22} />
+                    <span className="workspace-preview" aria-hidden="true">
+                      {d.preview && (
+                        <img
+                          src={d.preview}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          draggable={false}
+                        />
+                      )}
+                    </span>
                     <span>
                       <strong>{d.name}</strong>
+                      {d.batch && (
+                        <span className="workspace-batch-badge">
+                          {tr('连续批注组')}
+                          {d.batchInfo ? ` · ${tr('{0} 份文档', d.batchInfo.total)}` : ''}
+                        </span>
+                      )}
+                      {d.batchInfo && (
+                        <small>
+                          {tr(
+                            '当前 {0}/{1} · 已编辑 {2} 份',
+                            d.batchInfo.current,
+                            d.batchInfo.total,
+                            d.batchInfo.edited,
+                          )}
+                        </small>
+                      )}
                       <small>
                         {tr(
                           '{0} 页 · {1}',

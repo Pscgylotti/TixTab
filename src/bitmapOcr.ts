@@ -7,6 +7,7 @@ import { normalizeOcr, type OcrAnnotation, type OcrLine } from './ocrLayout';
 import { runBitmapJobs } from './bitmapOcrPool';
 import { recognitionImageSize } from './recognitionImageSize';
 import { abortWait } from './abortWait';
+import { hiddenSourceBitmap } from './correctedBitmap';
 export interface BitmapRecognition {
   text?: string;
   lines?: OcrLine[];
@@ -43,6 +44,7 @@ export async function inspectBitmapPages(
       inventory.pdfImages.set(page.id, polygons);
       const parsed = new Set(page.bitmapOcr?.map((b) => b.imageIndex));
       for (const [i, polygon] of polygons.entries()) {
+        if (hiddenSourceBitmap(page, i)) continue;
         const box = polygonBox(polygon);
         if (box.width <= 0 || box.height <= 0) continue;
         inventory.total++;
@@ -126,6 +128,7 @@ export async function scanBitmapPages(
           (await abortWait(getPdfImages(pdf, page.sourceIndex), signal));
         const parsed = new Set(page.bitmapOcr?.map((b) => b.imageIndex));
         for (const [imageIndex, polygon] of polygons.entries()) {
+          if (hiddenSourceBitmap(page, imageIndex)) continue;
           if (!options.replace && parsed.has(imageIndex)) continue;
           const projected = transformPolygon(polygon, viewport.transform),
             box = polygonBox(projected);

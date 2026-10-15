@@ -72,7 +72,11 @@ export default memo(function PageThumbnail({
                 key={`object:${i.id}`}
                 data-night-ink={!isPicture(i)}
                 href={groupDisplay(i, night, pdfNight)}
-                style={i.group ? { filter: 'none' } : undefined}
+                style={
+                  i.group || (pdfNight && i.scratchPage)
+                    ? { filter: i.group || i.nightData ? 'none' : 'invert(0.9) hue-rotate(180deg)' }
+                    : undefined
+                }
                 x={i.x}
                 y={i.y}
                 width={i.width}

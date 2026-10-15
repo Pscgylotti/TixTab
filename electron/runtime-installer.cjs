@@ -28,6 +28,12 @@ function createRuntimeInstaller({
       requirements: 'requirements-pdf.txt',
       imports: 'import pymupdf',
     },
+    homr: {
+      directory: 'homr-runtime',
+      requirements: 'requirements-homr.txt',
+      imports: "import importlib.util; assert importlib.util.find_spec('homr')",
+      python: require('./runtime-homr-manifest.json'),
+    },
     openvino: {
       directory: 'openvino-runtime',
       requirements: 'requirements-ocr.txt',
@@ -186,7 +192,11 @@ function createRuntimeInstaller({
       const python = await safe(pythonFor(id));
       if (!existsSync(python)) return { installed: false, devices: [] };
       const pins = await requirements(profiles[id].requirements);
-      const code = `${profiles[id].imports}; import json,struct,sys; from importlib.metadata import version; pins=json.loads(${JSON.stringify(JSON.stringify(pins))}); assert sys.version_info[:2]==(3,10) and struct.calcsize('P')==8; assert all(version(k)==v for k,v in pins.items()); print(json.dumps({'installed':True,'devices':${id === 'pdf' ? '[]' : 'openvino.Core().available_devices'}}))`;
+      const pythonVersion = (profiles[id].python || runtimeManifest).version
+        .split('.')
+        .slice(0, 2)
+        .join(',');
+      const code = `${profiles[id].imports}; import json,struct,sys; from importlib.metadata import version; pins=json.loads(${JSON.stringify(JSON.stringify(pins))}); assert sys.version_info[:2]==(${pythonVersion}) and struct.calcsize('P')==8; assert all(version(k)==v for k,v in pins.items()); print(json.dumps({'installed':True,'devices':${['openvino', 'speech'].includes(id) ? 'openvino.Core().available_devices' : '[]'}}))`;
       const output = await command(python, ['-c', code], current, 60000);
       return JSON.parse(output.trim().split('\n').at(-1));
     } catch {
@@ -194,7 +204,7 @@ function createRuntimeInstaller({
     }
   }
   async function managedPython(current) {
-    const manifest = runtimeManifest;
+    const manifest = profiles[current.id].python || runtimeManifest;
     const base = await safe(path.join(root, 'python', manifest.version + '-' + manifest.revision));
     const executable = path.join(base, 'python', 'python.exe');
     if (existsSync(executable)) return executable;

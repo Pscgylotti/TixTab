@@ -162,7 +162,10 @@
           "pdf_editor.py",
           "requirements-pdf.txt",
           "install_dependencies.py",
-          "python-sources.json"
+          "python-sources.json",
+          "document_correct.py",
+          "homr_runner.py",
+          "requirements-homr.txt"
         ]
       },
       "LICENSE",
@@ -176,7 +179,8 @@
       "electron/cache-catalog.json",
       "electron/dictation.ps1",
       "electron/microphone.cs",
-      "electron/windows-ai-register.ps1"
+      "electron/windows-ai-register.ps1",
+      "electron/extract-audiveris.ps1"
     ],
     "win": {
       "target": [

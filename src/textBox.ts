@@ -6,6 +6,8 @@ const namespace = 'http://www.w3.org/2000/svg';
 /** Vector preview, with a bounded PNG for the existing background PDF exporter. */
 export async function textBoxImage(box: TextBox): Promise<ImportedImage> {
   if (!validTextBox(box) || !box.content.trim()) throw Error('text-invalid');
+  if (box.format === 'markdown')
+    return (await import('./markdownTextImage')).markdownTextImage(box);
   const fontSize = box.fontSize * 2,
     padding = 16,
     maxWidth = 840;

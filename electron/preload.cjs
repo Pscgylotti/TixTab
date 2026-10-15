@@ -45,6 +45,7 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
   windowsAiOcr: { run: (request) => ipcRenderer.invoke('ocr:windows-ai', request) },
   nativeOcr: { run: (request) => ipcRenderer.invoke('ocr:native', request) },
   pdfEditor: { run: (request) => ipcRenderer.invoke('pdf-editor:run', request) },
+  documentTools: { run: (request) => ipcRenderer.invoke('document:local-tools', request) },
   runtimes: {
     run: (request) => ipcRenderer.invoke('runtimes:run', request),
     onProgress: (callback) => {

@@ -1,3 +1,5 @@
+import type { PDFDocumentProxy } from './pdfTypes';
+import { workspacePreview } from './workspacePreview';
 import { editablePages } from './scratchPaper';
 import { newNotebook, uid, validNotebook, type Notebook, type Page } from './model';
 import { restore } from './storage';
@@ -52,6 +54,8 @@ export interface WorkspaceDocument {
   createdAt: number;
   updatedAt: number;
   pageIds: string[];
+  /** Small first-page raster generated during saving. Older workspaces omit it. */
+  preview?: string;
   scratchPapers?: {
     id: string;
     name: string;
@@ -64,6 +68,7 @@ export interface WorkspaceDocument {
   zotero?: Notebook['zotero'];
   bookmarks?: Notebook['bookmarks'];
   batch?: Notebook['batch'];
+  batchInfo?: { total: number; current: number; edited: number };
   documentName?: string;
   sourcePath?: string;
   hasPdf?: boolean;
@@ -128,6 +133,23 @@ export async function listWorkspace() {
     request<WorkspaceFolder[]>(tx.objectStore('folders').getAll()),
   ]);
   const visible = documents.filter((document) => !document.archiveFor);
+  // The small persisted manifest already owns group counts; never open its PDFs here.
+  if (visible.some((d) => d.batch)) {
+    const { loadBatchManifest } = await import('./batchWorkspace');
+    await Promise.all(
+      visible
+        .filter((d) => d.batch)
+        .map(async (d) => {
+          const manifest = await loadBatchManifest(d.batch!.id);
+          if (manifest)
+            d.batchInfo = {
+              total: manifest.items.length,
+              current: Math.max(0, manifest.items.findIndex((i) => i.id === d.batch!.itemId) + 1),
+              edited: manifest.items.filter((i) => i.edited).length,
+            };
+        }),
+    );
+  }
   visible.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt);
   return { documents: visible, folders };
 }
@@ -137,9 +159,10 @@ export function saveWorkspaceDocument(
   view = defaultView,
   folderId?: string | null,
   archiveFor?: string,
+  pdf?: PDFDocumentProxy | null,
 ) {
   return trackPerformance('workspace-transaction', () =>
-    saveWorkspaceDocumentImpl(id, notebook, view, folderId, archiveFor),
+    saveWorkspaceDocumentImpl(id, notebook, view, folderId, archiveFor, pdf),
   );
 }
 async function saveWorkspaceDocumentImpl(
@@ -148,7 +171,10 @@ async function saveWorkspaceDocumentImpl(
   view = defaultView,
   folderId?: string | null,
   archiveFor?: string,
+  pdf?: PDFDocumentProxy | null,
 ) {
+  // Raster work must finish before opening the IndexedDB transaction.
+  const preview = await workspacePreview(notebook.pages[0], pdf);
   const db = await database(),
     tx = db.transaction(['documents', 'pages', 'sources', 'preferences'], 'readwrite'),
     done = finished(tx);
@@ -186,6 +212,7 @@ async function saveWorkspaceDocumentImpl(
       folderId: folderId === undefined ? (old?.folderId ?? null) : folderId,
       pinned: old?.pinned ?? false,
       pageIds,
+      preview: preview ?? (old?.pageIds[0] === pageIds[0] ? old.preview : undefined),
       scratchPapers: notebook.scratchPapers?.map(({ page, ...p }) => ({ ...p, pageId: page.id })),
       activeScratchId: notebook.activeScratchId,
       view: { ...view },

@@ -1,0 +1,103 @@
+.music-player {
+  position: fixed;
+  width: 320px;
+  max-width: 96vw;
+  z-index: 7000;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 8px 32px #0004;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  padding: 8px 12px;
+}
+.music-player header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: grab;
+  touch-action: none;
+}
+.music-player header small {
+  margin-left: auto;
+}
+.music-player button {
+  padding: 5px 7px;
+  min-height: 28px;
+}
+.music-player input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.music-player-controls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+}
+.music-player-controls label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-sm);
+}
+.music-player-controls input[type='number'] {
+  width: 60px;
+}
+.music-player-controls input[type='range'] {
+  width: 65px;
+}
+.music-player select {
+  min-width: 0;
+  max-width: 100%;
+  font-size: var(--fs-sm);
+}
+.music-note-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+}
+.music-note-editor select {
+  width: 100%;
+}
+.music-note-editor input[type='number'] {
+  width: 65px;
+}
+.music-note-editor label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.music-player p,
+.music-player small {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+.music-score-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 14000;
+  pointer-events: none;
+}
+.music-score-layer rect {
+  pointer-events: all;
+  cursor: pointer;
+}
+.music-score-layer rect:hover {
+  fill: #4775db35;
+}
+
+.music-instrument-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: var(--fs-sm);
+}
+.music-instrument-control select {
+  flex: 1;
+}

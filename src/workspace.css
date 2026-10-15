@@ -254,3 +254,121 @@
 [data-night='true'] .workspace-manager ::-webkit-scrollbar-corner {
   background: var(--surface);
 }
+
+.workspace-preview {
+  width: 44px;
+  height: 58px;
+  flex: 0 0 44px;
+  margin-right: 10px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--library-input);
+  border: 1px solid var(--library-border);
+}
+.workspace-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.workspace-open {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+}
+.workspace-document.dragging {
+  opacity: 0.45;
+}
+.workspace-library-body .drop-target {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--accent-soft);
+  border-radius: var(--r-md);
+}
+.workspace-drag-preview {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 10px 14px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 8px 24px #0003;
+}
+
+/* First page forms the left edge; actions share the remaining card space. */
+.workspace-document {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  min-height: 116px;
+}
+.workspace-document .workspace-open {
+  min-height: 116px;
+  padding: 14px 144px 42px 104px;
+  align-items: center;
+  border-radius: inherit;
+}
+.workspace-document .workspace-preview {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 88px;
+  height: 116px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.workspace-preview img {
+  object-fit: cover;
+  object-position: top;
+  mask-image:
+    linear-gradient(to right, #000 72%, transparent),
+    linear-gradient(to bottom, #000 88%, transparent);
+  mask-composite: intersect;
+}
+.workspace-document-actions {
+  position: static;
+  margin-top: -40px;
+  height: 40px;
+  padding: 0 8px 5px 104px;
+}
+.workspace-document-actions select {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  bottom: auto;
+  margin: 0;
+  max-width: 130px;
+  padding: 4px 7px;
+  min-height: 28px;
+}
+.workspace-open strong {
+  white-space: nowrap;
+}
+@media (max-width: 650px) {
+  .workspace-document .workspace-open {
+    padding-right: 118px;
+    padding-left: 100px;
+  }
+  .workspace-document-actions select {
+    max-width: 110px;
+  }
+}
+
+.workspace-batch-badge {
+  display: inline-block;
+  color: var(--accent-text);
+  font-size: var(--fs-sm);
+  margin-top: 4px;
+}
+.workspace-document:has(.workspace-batch-badge) .workspace-open {
+  padding-top: 8px;
+  padding-bottom: 36px;
+}

@@ -1,6 +1,7 @@
 import type { ScratchPaper } from './scratchPaper';
 import { validOcr, type OcrAnnotation } from './ocrLayout';
 import { validNativeEdits, type NativePdfEdit } from './pdfNativeTypes';
+import { validMusicScore, type MusicScore } from './musicScore';
 export type Tool =
   | 'pen'
   | 'ballpoint'
@@ -37,10 +38,15 @@ export interface PlacedImage {
   ocr?: OcrAnnotation;
   /** A detached page snapshot on scratch paper; intentionally cannot be copied. */
   scratchPage?: boolean;
+  /** Display-only night version of a detached PDF snapshot; original pixels remain in data. */
+  nightData?: string;
+  colorKey?: { original: string; color: string; tolerance: number };
+  correction?: { model: string; sourceImageIndex?: number };
   /** Immediate editable children in local coordinates; groups may contain other groups. */
   group?: { width: number; height: number; objects: PlacedImage[] };
 }
 export interface TextBox {
+  format?: 'plain' | 'markdown';
   content: string;
   fontSize: number;
   color: string;
@@ -50,6 +56,7 @@ export function validTextBox(value: unknown): value is TextBox {
   if (!value || typeof value !== 'object') return false;
   const box = value as TextBox;
   return (
+    (box.format === undefined || ['plain', 'markdown'].includes(box.format)) &&
     typeof box.content === 'string' &&
     box.content.length <= 10_000 &&
     Number.isFinite(box.fontSize) &&
@@ -107,6 +114,7 @@ export interface Page {
   /** Revision changes native content without losing stable notebook page identity. */
   nativeRevision?: string;
   pdfEdits?: NativePdfEdit[];
+  score?: MusicScore;
   /** Nonvisual OCR metadata for source PDF bitmaps, in page coordinates. */
   bitmapOcr?: { imageIndex: number; polygon: number[]; result: OcrAnnotation }[];
 }
@@ -306,6 +314,7 @@ export function validNotebook(value: unknown): value is Notebook {
         (p.reviews === undefined || validReviews(p.reviews)) &&
         (p.nativeRevision === undefined || typeof p.nativeRevision === 'string') &&
         (p.pdfEdits === undefined || validNativeEdits(p.pdfEdits)) &&
+        (p.score === undefined || validMusicScore(p.score)) &&
         (p.bitmapOcr === undefined ||
           (Array.isArray(p.bitmapOcr) &&
             p.bitmapOcr.length <= 4096 &&
@@ -325,6 +334,22 @@ export function validNotebook(value: unknown): value is Notebook {
             typeof i.id === 'string' &&
             ['sketch', 'formula', 'image', 'text'].includes(i.kind) &&
             (i.scratchPage === undefined || typeof i.scratchPage === 'boolean') &&
+            (i.nightData === undefined ||
+              (i.scratchPage === true && /^data:image\/png;base64,/.test(i.nightData))) &&
+            (i.correction === undefined ||
+              (i.correction &&
+                typeof i.correction.model === 'string' &&
+                i.correction.model.length <= 100 &&
+                (i.correction.sourceImageIndex === undefined ||
+                  (Number.isInteger(i.correction.sourceImageIndex) &&
+                    i.correction.sourceImageIndex >= 0)))) &&
+            (i.colorKey === undefined ||
+              (i.colorKey &&
+                /^data:image\/png;base64,/.test(i.colorKey.original) &&
+                /^#[0-9a-f]{6}$/i.test(i.colorKey.color) &&
+                Number.isInteger(i.colorKey.tolerance) &&
+                i.colorKey.tolerance >= 0 &&
+                i.colorKey.tolerance <= 255)) &&
             (i.rotation === undefined || [0, 90, 180, 270].includes(i.rotation)) &&
             (i.kind !== 'text' || validTextBox(i.textBox)) &&
             (i.macros === undefined || validMacroSnapshot(i.macros)) &&

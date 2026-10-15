@@ -5,6 +5,7 @@ import { inspectBitmapPages } from './bitmapOcr';
 import { bitmapPdfDecoder } from './bitmapPdfDecoder';
 import { canvasPng } from './imageDownload';
 import { polygonBox } from './pdfNightGeometry';
+import { hiddenSourceBitmap } from './correctedBitmap';
 export interface ImageExportBridge {
   run: (request: {
     action: 'choose' | 'write' | 'finish';
@@ -139,6 +140,7 @@ export async function exportBitmapImages(
       let image = 0;
       const polygons = inventory.pdfImages.get(page.id) ?? [];
       for (let i = 0; i < polygons.length; i++) {
+        if(hiddenSourceBitmap(page,i))continue;
         const box = polygonBox(polygons[i]);
         if (box.width <= 0 || box.height <= 0) continue;
         await save(`page-${indices[n] + 1}-image-${++image}.png`, () =>

@@ -12,6 +12,8 @@ export function trimSourceHistory(history: Notebook[], current: Notebook, limit:
       const image = pending.pop()!;
       result.push(image.data);
       if (image.displayData) result.push(image.displayData);
+      if (image.nightData) result.push(image.nightData);
+      if (image.colorKey) result.push(image.colorKey.original);
       if (image.group) pending.push(...image.group.objects);
     }
     return result;

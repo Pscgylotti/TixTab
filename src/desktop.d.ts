@@ -13,6 +13,7 @@ interface Window {
     windowsAiOcr?: import('./windowsAiOcr').WindowsAiOcrBridge;
     nativeOcr?: import('./nativeCppOcr').NativeCppOcrBridge;
     pdfEditor?: import('./pdfNativeTypes').PdfEditorBridge;
+    documentTools?: import('./localDocumentTools').LocalDocumentToolsBridge;
     onNativePen?: (
       callback: (sample: import('./penInteraction').NativePenSample) => void,
     ) => () => void;

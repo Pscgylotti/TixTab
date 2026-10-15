@@ -21,19 +21,24 @@ export function groupLeaves(image: PlacedImage): PlacedImage[] {
 const urls = new WeakMap<NonNullable<PlacedImage['group']>, Map<string, string>>();
 const xmlAttribute = (value: string) =>
   value.replace(/[&"<>]/g, (c) => ({ '&': '&amp;', '"': '&quot;', '<': '&lt;', '>': '&gt;' })[c]!);
-const rotatedDisplays = new WeakMap<PlacedImage, string>();
+const rotatedDisplays = new WeakMap<PlacedImage, Map<string, string>>();
 export function groupDisplay(image: PlacedImage, night = false, pdfNight = false): string {
   if (!image.group) {
-    const data = image.displayData ?? image.data;
+    const data =
+      pdfNight && image.scratchPage && image.nightData
+        ? image.nightData
+        : (image.displayData ?? image.data);
     if (!image.rotation) return data;
-    const cached = rotatedDisplays.get(image);
+    const cached = rotatedDisplays.get(image)?.get(data);
     if (cached) return cached;
     const swap = image.rotation % 180;
     const w = swap ? image.height : image.width,
       h = swap ? image.width : image.height;
     const xml = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${image.width} ${image.height}"><image x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" transform="translate(${image.width / 2} ${image.height / 2}) rotate(${image.rotation})" href="${xmlAttribute(data)}"/></svg>`;
     const result = 'data:image/svg+xml;base64,' + btoa(xml);
-    rotatedDisplays.set(image, result);
+    let cache = rotatedDisplays.get(image);
+    if (!cache) rotatedDisplays.set(image, (cache = new Map()));
+    cache.set(data, result);
     return result;
   }
   const group = image.group,
@@ -50,12 +55,16 @@ export function groupDisplay(image: PlacedImage, night = false, pdfNight = false
     .map((child) => {
       const filter = isPicture(child)
         ? pdfNight
-          ? 'brightness(0.62)'
+          ? child.scratchPage
+            ? child.nightData
+              ? ''
+              : 'invert(0.9) hue-rotate(180deg)'
+            : 'brightness(0.62)'
           : ''
         : night
           ? 'invert(0.9) hue-rotate(180deg)'
           : '';
-      return `<image x="${child.x}" y="${child.y}" width="${child.width}" height="${child.height}" href="${xmlAttribute(groupDisplay(child))}"${filter ? ` style="filter:${filter}"` : ''}/>`;
+      return `<image x="${child.x}" y="${child.y}" width="${child.width}" height="${child.height}" href="${xmlAttribute(groupDisplay(child, night, pdfNight))}"${filter ? ` style="filter:${filter}"` : ''}/>`;
     })
     .join('')}</svg>`;
   const data = 'data:image/svg+xml;base64,' + btoa(xml);

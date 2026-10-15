@@ -1,3 +1,5 @@
+import LocalImagePickerLayer from './LocalImagePickerLayer';
+import MusicScoreLayer from './MusicScoreLayer';
 import { ScratchInkContext } from './ScratchInkContext';
 import {
   memo,
@@ -61,6 +63,7 @@ import InkSelectionLayer from './InkSelectionLayer';
 import ReviewLayer from './ReviewLayer';
 import { useAppearance } from './appearance';
 import { lazy, Suspense } from 'react';
+const ColorKeyDialog = lazy(() => import('./ColorKeyDialog'));
 const NativePdfLayer = lazy(() => import('./NativePdfLayer'));
 interface Props {
   page: Page;
@@ -596,8 +599,24 @@ function PageEditor({
     setPendingCount(0);
     queueInk();
   };
+  const [colorKeyImage, setColorKeyImage] = useState<PlacedImage | null>(null);
   return (
     <>
+      {colorKeyImage && (
+        <Suspense fallback={null}>
+          <ColorKeyDialog
+            image={colorKeyImage}
+            onClose={() => setColorKeyImage(null)}
+            onApply={(image) => {
+              onChange({
+                ...page,
+                images: page.images.map((i) => (i.id === image.id ? image : i)),
+              });
+              setColorKeyImage(null);
+            }}
+          />
+        </Suspense>
+      )}
       {createPortal(
         <div
           ref={eraserCursor}
@@ -626,6 +645,8 @@ function PageEditor({
           onContext(e.clientX, e.clientY);
         }}
       >
+        <LocalImagePickerLayer page={page} pdf={pdf} />
+        <MusicScoreLayer page={page} />
         <ObjectLayer
           page={page}
           index={imageIndex.current}
@@ -744,6 +765,17 @@ function PageEditor({
                 {tr('编辑')}
               </button>
             )}
+            {selectedImage &&
+              isPicture(selectedImage) &&
+              !selectedImage.group &&
+              !selectedImage.scratchPage && (
+                <button
+                  aria-label={tr('设置透明色')}
+                  onClick={() => setColorKeyImage(selectedImage)}
+                >
+                  {tr('透明色')}
+                </button>
+              )}
             {selected.length > 1 && (
               <button
                 disabled={groupBusy}
