@@ -1,14 +1,15 @@
 import { PDFDocument, PDFName, PDFNumber, ParseSpeeds } from 'pdf-lib';
 import type { PdfiumPageInfo } from './pdfiumProtocol';
+import { nativeImageSupport } from './pdfiumImageSupport';
 /** The public PDFium ABI does not expose /UserUnit. Read dictionary attributes
  * in this Worker with the existing export library, then discard its object graph.
  * No image decoding, text extraction or second persistent document is created. */
-export async function sourcePageGeometry(bytes: Uint8Array): Promise<PdfiumPageInfo[]> {
+export async function sourcePageGeometry(bytes: Uint8Array, check = () => {}) {
   const doc = await PDFDocument.load(bytes, {
     updateMetadata: false,
     parseSpeed: ParseSpeeds.Fastest,
   });
-  return doc.getPages().map((page) => {
+  const pages: PdfiumPageInfo[] = doc.getPages().map((page) => {
     const media = page.getMediaBox(),
       crop = page.getCropBox();
     const box = (r: typeof media) => [
@@ -35,4 +36,5 @@ export async function sourcePageGeometry(bytes: Uint8Array): Promise<PdfiumPageI
       objectNumber: page.ref.objectNumber,
     };
   });
+  return { pages, imageSupport: await nativeImageSupport(doc, check) };
 }

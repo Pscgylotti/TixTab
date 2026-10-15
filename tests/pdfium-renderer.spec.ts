@@ -117,7 +117,7 @@ test('real PDFium renders cropped/rotated pages, consistent tiles and night colo
   });
 });
 
-test('PDFium UI works in all views with PDF.js text and image interactions, and can switch back', async ({
+test('PDFium UI works in all views with native text and image interactions, and can switch back', async ({
   page,
 }) => {
   await page.addInitScript(() => localStorage.setItem('tixtab.pdfRenderBackend', 'pdfium'));

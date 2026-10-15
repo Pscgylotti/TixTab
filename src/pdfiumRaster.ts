@@ -37,8 +37,8 @@ class Engine {
     this.routes.clear();
     this.releases.clear();
   }
-  constructor() {
-    initializations++;
+  constructor(readonly isolated = false) {
+    if (!isolated) initializations++;
     const failed = () => this.fail();
     this.worker.onerror = failed;
     this.worker.onmessageerror = failed;
@@ -52,7 +52,7 @@ class Engine {
       if (data.type === 'opened') this.documents = data.documents;
       const session = this.routes.get(data.id);
       if (session) session.receive(data);
-      else if (data.type === 'rendered') data.bitmap.close();
+      else if (data.type === 'rendered' || data.type === 'original-image') data.bitmap?.close();
     };
   }
   release(documentId: number) {
@@ -62,14 +62,19 @@ class Engine {
   }
 }
 class Session {
-  readonly engine = (resident ??= new Engine());
   readonly documentId = ++sequence;
   readonly ready: Promise<void>;
   readonly pending = new Map<number, Pending>();
   closed = false;
   pages: PdfiumPageInfo[] = [];
+  imageSupport: boolean[] = [];
   private readonly lifetime = new AbortController();
-  constructor(pdf: PDFDocumentProxy, owned?: Uint8Array) {
+  constructor(
+    pdf: PDFDocumentProxy,
+    owned?: Uint8Array,
+    readonly engine = (resident ??= new Engine()),
+    imageSupport?: boolean[],
+  ) {
     live.add(this);
     const loadTimeout = setTimeout(
       () => this.engine.fail(new Error('PDFium document load timed out')),
@@ -78,10 +83,13 @@ class Session {
     this.ready = (async () => {
       const data = owned ?? (await abortWait(pdf.getData(), this.lifetime.signal));
       if (this.closed) throw cancelled();
-      const bytes = owned ?? data.slice();
-      await this.request({ type: 'open', id: ++sequence, documentId: this.documentId, bytes }, [
-        bytes.buffer,
-      ]);
+      // getData returns owned bytes. The isolated decoder can transfer that
+      // result directly rather than cloning the entire file a second time.
+      const bytes = owned ?? (this.engine.isolated ? data : data.slice());
+      await this.request(
+        { type: 'open', id: ++sequence, documentId: this.documentId, bytes, imageSupport },
+        [bytes.buffer],
+      );
     })().finally(() => clearTimeout(loadTimeout));
     void this.ready.catch(() => this.close());
   }
@@ -97,7 +105,7 @@ class Session {
       return;
     }
     if (!pending) {
-      if (data.type === 'rendered') data.bitmap.close();
+      if (data.type === 'rendered' || data.type === 'original-image') data.bitmap?.close();
       return;
     }
     this.pending.delete(data.id);
@@ -106,7 +114,10 @@ class Session {
     if (data.type === 'error')
       pending.reject(data.error === 'cancelled' ? cancelled() : new Error(data.error));
     else {
-      if (data.type === 'opened') this.pages = data.pages;
+      if (data.type === 'opened') {
+        this.pages = data.pages;
+        this.imageSupport = data.imageSupport ?? [];
+      }
       if (data.type === 'rendered') {
         this.engine.heapBytes = data.heapBytes;
         renders++;
@@ -120,14 +131,22 @@ class Session {
     this.lifetime.abort();
     for (const [id, pending] of this.pending) {
       this.engine.routes.delete(id);
-      if (release) this.engine.worker.postMessage({ type: 'cancel', id } satisfies PdfiumRequest);
+      if (release && !this.engine.isolated) {
+        try {
+          this.engine.worker.postMessage({ type: 'cancel', id } satisfies PdfiumRequest);
+        } catch {}
+      }
       pending.dispose();
       pending.reject(error);
     }
     this.pending.clear();
     this.pages = [];
-    if (release) this.engine.release(this.documentId);
+    this.imageSupport = [];
     live.delete(this);
+    if (release) {
+      if (this.engine.isolated) this.engine.fail(error);
+      else this.engine.release(this.documentId);
+    }
   }
   request(
     message: Exclude<PdfiumRequest, { type: 'release' | 'resume' | 'cancel' }>,
@@ -202,7 +221,8 @@ type Query =
   | { type: 'outline' }
   | { type: 'destination'; name: string }
   | { type: 'annotations'; page: number }
-  | { type: 'text'; page: number };
+  | { type: 'text'; page: number }
+  | { type: 'images'; page: number };
 export async function queryPdfium(pdf: PDFDocumentProxy, query: Query) {
   const session = sessionFor(pdf);
   await session.ready;
@@ -226,12 +246,65 @@ subscribeAppearance(() => {
 export function getPdfiumStats() {
   return {
     workers: resident ? 1 : 0,
+    decoderWorkers: [...live].filter((s) => s.engine.isolated).length,
     documents: resident?.documents ?? 0,
     sessions: live.size,
     initializations,
     pending: (resident?.routes.size ?? 0) + (resident?.releases.size ?? 0),
     heapBytes: resident?.heapBytes ?? 0,
     renders,
+  };
+}
+
+/** A batch owns one decoder heap. Reader engine residency is unaffected, and
+ * stopping never waits for a synchronous native image decoder to acknowledge. */
+export function createPdfiumImageDecoder(
+  pdf: PDFDocumentProxy,
+  signal: AbortSignal,
+  maxPixels = 4_000_000,
+) {
+  const owner = sessions.get(pdf);
+  const hints =
+    owner && !owner.closed && owner.imageSupport.length === pdf.numPages
+      ? [...owner.imageSupport]
+      : undefined;
+  const session = new Session(pdf, undefined, new Engine(true), hints);
+  const abort = () => session.close();
+  signal.addEventListener('abort', abort, { once: true });
+  if (signal.aborted) abort();
+  return {
+    async draw(page: number, image: number, canvas: HTMLCanvasElement) {
+      await abortWait(session.ready, signal);
+      signal.throwIfAborted();
+      const reply = await session.request(
+        {
+          type: 'original-image',
+          id: ++sequence,
+          documentId: session.documentId,
+          page,
+          image,
+          maxPixels,
+        },
+        [],
+        signal,
+      );
+      if (reply.type !== 'original-image') throw new Error('PDFium image unavailable');
+      const bitmap = reply.bitmap;
+      if (!bitmap) return false;
+      try {
+        signal.throwIfAborted();
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        canvas.getContext('2d')!.drawImage(bitmap, 0, 0);
+        return true;
+      } finally {
+        bitmap.close();
+      }
+    },
+    close() {
+      signal.removeEventListener('abort', abort);
+      session.close();
+    },
   };
 }
 export function renderPdfium(

@@ -9,8 +9,7 @@ type DecodedImage = {
   data?: Uint8Array | Uint8ClampedArray;
 };
 
-/** PDF.js has already applied PDF image color spaces and soft masks. Reuse its
- * decoded source pixels, rather than taking a screenshot of the page raster. */
+/** Source pixels, color conversion and masks; never a screenshot of page overlays. */
 export async function drawPdfOriginalImage(
   pdf: PDFDocumentProxy,
   pageIndex: number,
@@ -18,7 +17,29 @@ export async function drawPdfOriginalImage(
   output: HTMLCanvasElement,
   signal: AbortSignal,
   maxPixels = 64_000_000,
-) {
+): Promise<boolean> {
+  if ((pdf as unknown as { tixtabBackend?: string }).tixtabBackend === 'pdfium') {
+    const { createPdfiumImageDecoder } = await import('./pdfiumRaster');
+    const decoder = createPdfiumImageDecoder(pdf, signal, maxPixels);
+    try {
+      return await decoder.draw(pageIndex, imageIndex, output);
+    } catch (error) {
+      signal.throwIfAborted();
+      if (!(error instanceof Error) || error.message !== 'PDFium image compatibility required')
+        throw error;
+    } finally {
+      decoder.close();
+    }
+    // Compatibility pixels also belong to a short-lived worker. Do not load
+    // a full operator list or decoded images into the reader's legacy index.
+    const { bitmapPdfLegacyDecoder } = await import('./bitmapPdfLegacyDecoder');
+    const compatibility = bitmapPdfLegacyDecoder(pdf, signal, maxPixels);
+    try {
+      return await compatibility.draw(pageIndex, imageIndex, output);
+    } finally {
+      await compatibility.close();
+    }
+  }
   const page = await pdf.getPage(pageIndex + 1),
     ops = await page.getOperatorList(),
     { OPS } = await import('pdfjs-dist');

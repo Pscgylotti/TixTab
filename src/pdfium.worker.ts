@@ -4,13 +4,14 @@ import type { PdfiumRequest, PdfiumResponse } from './pdfiumProtocol';
 import { sourcePageGeometry } from './pdfiumSourceGeometry';
 import { nativeDestination, nativeOutline, nativeLinks } from './pdfiumNavigation';
 import { nativeText } from './pdfiumText';
+import { nativeImages, nativeOriginalImage } from './pdfiumImages';
 
 const scope = self as unknown as {
   postMessage: (data: PdfiumResponse, transfer: Transferable[]) => void;
   onmessage: (event: MessageEvent<PdfiumRequest>) => void;
 };
 let library: Promise<WrappedPdfiumModule> | undefined;
-const documents = new Map<number, { handle: number; pointer: number }>();
+const documents = new Map<number, { handle: number; pointer: number; imageSupport: boolean[] }>();
 let queue = Promise.resolve();
 const jobs = new Set<number>(),
   cancelled = new Set<number>();
@@ -61,12 +62,23 @@ async function run(message: Exclude<PdfiumRequest, { type: 'resume' | 'cancel' }
       throw new Error(`PDFium document error ${pdfium.FPDF_GetLastError()}`);
     }
     try {
-      const pages = await sourcePageGeometry(message.bytes);
-      if (pages.length !== pdfium.FPDF_GetPageCount(documentHandle))
-        throw new Error('PDF page tree mismatch');
+      const pageCount = pdfium.FPDF_GetPageCount(documentHandle);
+      const hints = message.imageSupport;
+      const reuse =
+        !!hints && hints.length === pageCount && hints.every((v) => typeof v === 'boolean');
+      // Isolated image decoders reuse preflight from the immutable reader
+      // document; do not build another pdf-lib graph or scan all content again.
+      const { pages, imageSupport } = reuse
+        ? { pages: [], imageSupport: hints! }
+        : await sourcePageGeometry(message.bytes, () => check(message.id));
+      if (!reuse && pages.length !== pageCount) throw new Error('PDF page tree mismatch');
       check(message.id);
-      documents.set(message.documentId, { handle: documentHandle, pointer: filePointer });
-      send({ type: 'opened', id: message.id, documents: documents.size, pages });
+      documents.set(message.documentId, {
+        handle: documentHandle,
+        pointer: filePointer,
+        imageSupport,
+      });
+      send({ type: 'opened', id: message.id, documents: documents.size, pages, imageSupport });
     } catch (error) {
       pdfium.FPDF_CloseDocument(documentHandle);
       memory.wasmExports.free(filePointer);
@@ -76,6 +88,41 @@ async function run(message: Exclude<PdfiumRequest, { type: 'resume' | 'cancel' }
   }
   const documentHandle = documents.get(message.documentId)?.handle;
   if (!documentHandle) throw new Error('PDFium document not open');
+  if (message.type === 'images' || message.type === 'original-image') {
+    if (!documents.get(message.documentId)!.imageSupport[message.page])
+      throw new Error('PDFium image compatibility required');
+    const page = pdfium.FPDF_LoadPage(documentHandle, message.page);
+    if (!page) throw new Error('PDFium page unavailable');
+    try {
+      const images = await nativeImages(pdfium, page, () => check(message.id));
+      if (message.type === 'images')
+        send({ type: 'images', id: message.id, polygons: images.map((image) => image.polygon) });
+      else {
+        if (
+          !Number.isSafeInteger(message.image) ||
+          !(message.maxPixels > 0 && message.maxPixels <= 64_000_000)
+        )
+          throw new Error('PDFium image size limit');
+        const image = images[message.image],
+          bitmap = image
+            ? nativeOriginalImage(pdfium, documentHandle, page, image, message.maxPixels)
+            : null;
+        try {
+          check(message.id);
+          send(
+            { type: 'original-image', id: message.id, bitmap, heapBytes: memory.HEAPU8.byteLength },
+            bitmap ? [bitmap] : [],
+          );
+        } catch (error) {
+          bitmap?.close();
+          throw error;
+        }
+      }
+    } finally {
+      pdfium.FPDF_ClosePage(page);
+    }
+    return;
+  }
   if (message.type === 'outline') {
     send({ type: 'outline', id: message.id, items: nativeOutline(pdfium, documentHandle) });
     return;

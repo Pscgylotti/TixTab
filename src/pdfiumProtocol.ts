@@ -18,12 +18,21 @@ export interface PdfiumOutline {
   items: PdfiumOutline[];
 }
 export type PdfiumRequest =
-  | { type: 'open'; id: number; documentId: number; bytes: Uint8Array }
+  | { type: 'open'; id: number; documentId: number; bytes: Uint8Array; imageSupport?: boolean[] }
   | { type: 'release'; id: number; documentId: number }
   | { type: 'outline'; id: number; documentId: number }
   | { type: 'destination'; id: number; documentId: number; name: string }
   | { type: 'annotations'; id: number; documentId: number; page: number }
   | { type: 'text'; id: number; documentId: number; page: number }
+  | { type: 'images'; id: number; documentId: number; page: number }
+  | {
+      type: 'original-image';
+      id: number;
+      documentId: number;
+      page: number;
+      image: number;
+      maxPixels: number;
+    }
   | {
       type: 'render';
       id: number;
@@ -36,10 +45,18 @@ export type PdfiumRequest =
   | { type: 'cancel'; id: number }
   | { type: 'resume'; id: number };
 export type PdfiumResponse =
-  | { type: 'opened'; id: number; documents: number; pages: PdfiumPageInfo[] }
+  | {
+      type: 'opened';
+      id: number;
+      documents: number;
+      pages: PdfiumPageInfo[];
+      imageSupport?: boolean[];
+    }
   | { type: 'outline'; id: number; items: PdfiumOutline[] }
   | { type: 'destination'; id: number; dest: unknown[] | null }
   | { type: 'text'; id: number; content: TextContent }
+  | { type: 'images'; id: number; polygons: number[][] }
+  | { type: 'original-image'; id: number; bitmap: ImageBitmap | null; heapBytes: number }
   | {
       type: 'annotations';
       id: number;

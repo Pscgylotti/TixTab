@@ -1,79 +1,82 @@
-import type { PDFDocumentProxy, PDFDocumentLoadingTask, PDFWorker } from 'pdfjs-dist';
-import { drawPdfOriginalImage } from './pdfOriginalImage';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { abortWait } from './abortWait';
-/** OCR owns a short-lived PDF worker, so image caches cannot accumulate in the
- * reader's document. Serialize decode/cleanup, while OCR lanes remain parallel. */
+
+/** Decoding is isolated from the resident reading engine, serialized before
+ * parallel OCR lanes, and the entire decoder heap is released on close/stop. */
 export function bitmapPdfDecoder(
   source: PDFDocumentProxy,
   signal: AbortSignal,
   maxPixels = 4_000_000,
 ) {
-  let task: PDFDocumentLoadingTask | undefined, owned: PDFDocumentProxy | undefined;
-  let worker: PDFWorker | undefined, destroying: Promise<void> | undefined;
+  type Decoder = {
+    draw: (page: number, image: number, canvas: HTMLCanvasElement) => Promise<boolean>;
+    close: () => void | Promise<void>;
+  };
+  let decoder: Decoder | undefined,
+    closed = false,
+    compatibility = (source as unknown as { tixtabBackend?: string }).tixtabBackend !== 'pdfium';
   let queue: Promise<unknown> = Promise.resolve();
-  const destroy = () => (destroying ??= task?.destroy().catch(() => {}) ?? Promise.resolve());
   const abort = () => {
-    // PDFDocumentLoadingTask.destroy waits for transport acknowledgement. A
-    // stuck operator/image task must not keep Stop waiting for that handshake.
-    void destroy();
-    worker?.destroy();
+    closed = true;
+    void decoder?.close();
   };
   signal.addEventListener('abort', abort, { once: true });
+  const create = async () => {
+    if (compatibility) {
+      const { bitmapPdfLegacyDecoder } = await import('./bitmapPdfLegacyDecoder');
+      return bitmapPdfLegacyDecoder(source, signal, maxPixels);
+    }
+    const { createPdfiumImageDecoder } = await import('./pdfiumRaster');
+    return createPdfiumImageDecoder(source, signal, maxPixels);
+  };
   return {
     draw(page: number, image: number, canvas: HTMLCanvasElement) {
       const job = queue.then(async () => {
         signal.throwIfAborted();
-        if (!owned) {
-          const { getDocument, PDFWorker } = await import('pdfjs-dist');
-          const bytes = await abortWait(source.getData(), signal);
-          signal.throwIfAborted();
-          worker = new PDFWorker();
-          task = getDocument({
-            data: bytes,
-            worker,
-            isEvalSupported: false,
-            disableFontFace: true,
-            maxImageSize: 64_000_000,
-            canvasMaxAreaInBytes: maxPixels * 4,
-          });
-          owned = await abortWait(task.promise, signal);
-          signal.throwIfAborted();
+        if (closed) throw new Error('PDF image decoder closed');
+        if (!decoder) {
+          const candidate = await create();
+          if (closed || signal.aborted) {
+            await candidate.close();
+            signal.throwIfAborted();
+            throw new Error('PDF image decoder closed');
+          }
+          decoder = candidate;
         }
         try {
-          return await abortWait(
-            drawPdfOriginalImage(owned, page, image, canvas, signal, maxPixels),
-            signal,
-          );
-        } finally {
-          if (!signal.aborted) await abortWait(owned.cleanup(), signal);
+          return await abortWait(decoder.draw(page, image, canvas), signal);
+        } catch (error) {
+          signal.throwIfAborted();
+          if (
+            compatibility ||
+            !(error instanceof Error) ||
+            error.message !== 'PDFium image compatibility required'
+          )
+            throw error;
+          await decoder.close();
+          decoder = undefined;
+          compatibility = true;
+          const candidate = await create();
+          if (closed || signal.aborted) {
+            await candidate.close();
+            signal.throwIfAborted();
+            throw new Error('PDF image decoder closed');
+          }
+          decoder = candidate;
+          return abortWait(decoder.draw(page, image, canvas), signal);
         }
       });
       queue = job.catch(() => {});
       return job;
     },
     async close() {
+      closed = true;
       signal.removeEventListener('abort', abort);
+      // Terminating the native worker rejects pending requests immediately.
+      await decoder?.close();
       await queue;
-      try {
-        // Successful teardown gets a short grace period. Cancellation already
-        // terminated our dedicated worker and never waits for its acknowledgement.
-        if (signal.aborted) void destroy();
-        else {
-          let timer: ReturnType<typeof setTimeout> | undefined;
-          try {
-            await Promise.race([destroy(), new Promise<void>((r) => (timer = setTimeout(r, 500)))]);
-          } finally {
-            clearTimeout(timer);
-          }
-        }
-      } finally {
-        worker?.destroy();
-        worker = undefined;
-        owned = undefined;
-        task = undefined;
-        destroying = undefined;
-        queue = Promise.resolve();
-      }
+      decoder = undefined;
+      queue = Promise.resolve();
     },
   };
 }

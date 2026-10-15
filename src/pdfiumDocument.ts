@@ -26,12 +26,19 @@ export async function loadPdfiumDocument(input: Uint8Array): Promise<PDFDocument
   const document = {
     numPages: 0,
     tixtabBackend: 'pdfium',
-    // Keep the custom metadata-only index until native image enumeration has
-    // proven identical occurrence/mask ordering for saved OCR annotations.
     tixtabImageIndex: async (index: number) => {
-      const legacyDocument = await fallback();
-      const { getPdfImages } = await import('./pdfNight');
-      return getPdfImages(legacyDocument, index);
+      alive();
+      try {
+        const result = await queryPdfium(document, { type: 'images', page: index });
+        if (result.type !== 'images') throw new Error('PDF image index unavailable');
+        return result.polygons;
+      } catch (error) {
+        if (!(error instanceof Error) || error.message !== 'PDFium image compatibility required')
+          throw error;
+        const legacyDocument = await fallback();
+        const { getPdfImages } = await import('./pdfNight');
+        return getPdfImages(legacyDocument, index);
+      }
     },
     getData: async () => {
       alive();
@@ -63,20 +70,11 @@ export async function loadPdfiumDocument(input: Uint8Array): Promise<PDFDocument
           if (reply.type !== 'text') throw new Error('PDF text unavailable');
           return reply.content;
         },
-        getOperatorList: async () => (await compatibility()).getOperatorList(),
         getAnnotations: async () => {
           alive();
           const reply = await queryPdfium(document, { type: 'annotations', page: number - 1 });
           if (reply.type !== 'annotations') throw new Error('PDF links unavailable');
           return reply.items;
-        },
-        get objs() {
-          if (!legacyPage) throw new Error('PDF image data not loaded');
-          return legacyPage.objs;
-        },
-        get commonObjs() {
-          if (!legacyPage) throw new Error('PDF font data not loaded');
-          return legacyPage.commonObjs;
         },
         get recordedBBoxes() {
           return legacyPage?.recordedBBoxes ?? null;
