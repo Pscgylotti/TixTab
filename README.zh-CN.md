@@ -6,7 +6,7 @@
 
 ## 快速开始
 
-1. 运行安装包 `TixTab-0.3.4-lite-setup-x64.exe`，安装后从桌面或开始菜单启动。基础 PDF 功能不需要预装 Node.js 或 Python。安装器支持升级已有安装，完成页可选择创建桌面快捷方式。
+1. 运行安装包 `TixTab-0.3.5-lite-setup-x64.exe`，安装后从桌面或开始菜单启动。基础 PDF 功能不需要预装 Node.js 或 Python。安装器支持升级已有安装，完成页可选择创建桌面快捷方式。
 2. 打开 PDF，或拖入后选择新标签页打开、插入全部/指定页；拖入图片/SVG 可插为对象。
 3. 需要本地 AI 时，进入 **设置 → 本地模型管理**，下载所需模型；点击 **自动安装**，准备独立 Python 和加速/语音运行时。
 4. 设置中可切换中英文界面；悬浮键盘包含英文、离线中文拼音、LaTeX 与语音四种模式。紧凑布局内置 Ctrl、Tab 和 Esc，先点 Ctrl 再点 A/X/C/V/Z/Y 即可编辑；语音支持中英文、实时波形和本地引擎，识别文字插入当前光标处。
@@ -73,6 +73,7 @@ npm start
 
 - [Pscgylotti](https://github.com/Pscgylotti) — 项目发起人与维护者。
 - OpenAI [Codex](https://developers.openai.com/codex/) — AI 编程助手，参与功能实现、问题修复、测试与文档整理。
+- Anthropic [Claude](https://claude.ai/) — AI 编程助手，参与 PDF 对象编辑功能实现与审计。
 
 ## 许可
 

@@ -1,6 +1,6 @@
 {
   "name": "tixtab",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "description": "Pen-first PDF reading and annotation workspace",
   "type": "module",
@@ -83,7 +83,7 @@
     "electronDist": "node_modules/electron/dist",
     "npmRebuild": false,
     "directories": {
-      "output": "release/0.3.4"
+      "output": "release/0.3.5"
     },
     "files": [
       "dist/**/*",

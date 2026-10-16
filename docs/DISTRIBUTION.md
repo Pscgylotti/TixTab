@@ -1,12 +1,12 @@
 # Distribution and licenses / 发布与许可
 
-TixTab application code is licensed under **AGPL-3.0-only**; see the root LICENSE. Copyright © 2026 TixTab contributors. Preserve the license and notices when redistributing. Modified distributions must meet AGPL source-availability obligations, including applicable network-use obligations. Corresponding source for v0.3.0: https://github.com/Pscgylotti/TixTab/tree/v0.3.0.
+TixTab application code is licensed under **AGPL-3.0-only**; see the root LICENSE. Copyright © 2026 TixTab contributors. Preserve the license and notices when redistributing. Modified distributions must meet AGPL source-availability obligations, including applicable network-use obligations. Corresponding source for v0.3.5: https://github.com/Pscgylotti/TixTab/tree/v0.3.5.
 
 TixTab 应用代码采用 **AGPL-3.0-only**。再分发须保留许可、版权及第三方声明，并按 AGPL 提供相应源码；修改版本及适用的网络使用场景也须履行协议义务。第三方组件和模型保留各自协议，不能仅凭应用协议判断模型可否商用。
 
 ## Public distribution
 
-- **The primary 0.3.0 artifact is a lite x64 installer; portable builds remain optional.** Neither variant contains neural model weights or Piper phonemizer WASM/data files. Models are optional downloads from their pinned upstream sources; read the model terms before downloading or redistributing them.
+- **The primary public artifact is a lite x64 installer; portable builds remain optional.** Neither variant contains neural model weights or Piper phonemizer WASM/data files. Models are optional downloads from their pinned upstream sources; read the model terms before downloading or redistributing them.
 - The existing full/offline local prototype is not part of this public release. In particular, `zh_CN-huayan-x_low` reports an **Unknown** dataset license in its model card. This release does not claim permission to redistribute that voice.
 - Texo / FormulaNet: upstream AGPL-3.0 attribution retained; see https://github.com/alephpi/Texo and the model catalog.
 - SenseVoice weights: **FunASR Model Open Source License Agreement 1.1**, not simply the Apache license of its inference code. See SENSEVOICE-MODEL-LICENSE.txt. Whisper weights and Sherpa inference code have separate notices in this directory.

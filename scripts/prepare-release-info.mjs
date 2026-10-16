@@ -33,18 +33,26 @@ const info = {
     ),
   ),
   validation: {
-    unit: '514 tests / 111 files',
+    unit: '554 tests / 116 files',
     browser:
-      '39 release browser cases: PDFium rendering/forms/images/document lifecycle, scratch paper, workspace previews/grouping/batch metadata, Markdown, image crop/stretch/rotation/night/color keys, BPM controls, score seek/page turning and real homr XML note mapping. 38 passed in the combined run; a brittle form pixel-count assertion was replaced by checked/unchecked comparison and that case passed in isolation.',
+      '23 release browser cases passed: PDFium native object selection/transforms/styles/live previews, native text editing and undo, page rotate/crop, review editing and keyboard policy, cross-sheet erasing in three views with pen-tail/cancel/unmount buffer release, scratch OCR, original image copy/touch/keyboard navigation and standalone translation/quick actions.',
     packaged:
       'Static ASAR/build asset SHA256 and file-set verification, required backend/preload modules, native binding/icon and model exclusion; this release did not launch the installer or packaged application',
     nativeModels:
-      'Local UVDoc NPU and Audiveris MusicXML smoke evidence retained. This release ran homr 0.7.0 CPU inference on two sample score systems: 123 exported pitched notes mapped to page coordinates, 119 snapped to detector noteheads. Three homr adapter unit checks and three native tool lifecycle checks passed. No new energy, OCR accuracy or cross-device speed benchmark is claimed.',
+      '13 native PDF editor tests and 15 Hy-MT2/shared worker/request lifecycle tests passed. Earlier real Hy-MT2 llama.cpp CPU/Vulkan and OpenVINO CPU/GPU smoke evidence retained; local OpenVINO NPU initialization failed and is not claimed to work. Previous UVDoc/Audiveris/homr evidence retained. No new energy or cross-device speed benchmark is claimed.',
     installer:
       'Compiled NSIS installer. Earlier isolated upgrade/repair/downgrade fixture evidence retained. Full installation was not rerun on this host.',
     limits:
       'Synthetic pen input is not real hardware validation. Resource measurements are not battery-life measurements. Recognition may be inaccurate.',
   },
+  contributors: [
+    { name: 'Pscgylotti', role: 'Project creator and maintainer' },
+    { name: 'Codex (OpenAI)', role: 'AI coding assistant' },
+    {
+      name: 'Claude (Anthropic)',
+      role: 'AI coding assistant; PDF object editing implementation and auditing',
+    },
+  ],
 };
 await writeFile(join(directory, 'BUILD-INFO.json'), JSON.stringify(info, null, 2) + '\n');
 const lines = await Promise.all(

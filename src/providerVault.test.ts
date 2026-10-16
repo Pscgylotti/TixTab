@@ -150,3 +150,21 @@ it('all supported profiles can reach their allowed field sizes and still reopen'
     expect((await reopened.read('chat')).data.profiles.llm.pdfInput).toBe('text');
     expect((await reopened.read('chat')).data.profiles.llm.key).toHaveLength(8192);
   }));
+
+it('persists both Hy-MT2 translation selections without losing other provider profiles', async () =>
+  fixture(async (file) => {
+    const safeStorage = crypto();
+    let vault = createProviderVault({ file, safeStorage });
+    for (const type of ['hymt2', 'hymt2-openvino'] as const) {
+      await vault.write('translation', {
+        selected: type,
+        profiles: { ...record('kept-key').profiles, [type]: defaultProfile('translation', type) },
+      });
+      vault = createProviderVault({ file, safeStorage });
+      const saved = await vault.read('translation');
+      expect(saved.status).toBe('encrypted');
+      expect(saved.data.selected).toBe(type);
+      expect(saved.data.profiles.web.key).toBe('kept-key');
+      expect(saved.data.profiles[type]).toEqual(defaultProfile('translation', type));
+    }
+  }));
