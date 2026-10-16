@@ -58,6 +58,7 @@ import {
   Plus,
   Minus,
   Trash2,
+  Ellipsis,
   Eraser,
   Languages,
   ChevronLeft,
@@ -3257,7 +3258,7 @@ export default function App() {
                     setPageQuickAnchor(event.currentTarget.getBoundingClientRect())
                   }
                 >
-                  <Trash2 size={13} />
+                  <Ellipsis size={17} />
                   {tr('页面操作')}
                 </button>
                 <button
