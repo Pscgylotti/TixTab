@@ -54,7 +54,14 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
       return () => ipcRenderer.removeListener('runtimes:progress', listener);
     },
   },
-  dictation: { run: (request) => ipcRenderer.invoke('dictation:run', request) },
+  dictation: {
+    run: (request) => ipcRenderer.invoke('dictation:run', request),
+    onProgress: (callback) => {
+      const listener = (_event, value) => callback(value);
+      ipcRenderer.on('dictation:progress', listener);
+      return () => ipcRenderer.removeListener('dictation:progress', listener);
+    },
+  },
   chatgpt: { run: (request) => ipcRenderer.invoke('chatgpt:run', request) },
   zotero: {
     run: (request) => ipcRenderer.invoke('zotero:run', request),
@@ -97,6 +104,15 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
   },
   startNativeTexo: () => ipcRenderer.invoke('texo:start-native'),
   toggleFullscreen: () => ipcRenderer.invoke('window:fullscreen'),
+  fullscreenState: (active) => ipcRenderer.invoke('window:fullscreen-state', active),
+  penTailVoice: {
+    configure: (enabled) => ipcRenderer.invoke('pen:tail-voice-configure', enabled),
+    onPress: (callback) => {
+      const listener = () => callback();
+      ipcRenderer.on('pen:tail-voice', listener);
+      return () => ipcRenderer.removeListener('pen:tail-voice', listener);
+    },
+  },
   onFullscreen: (callback) => {
     const listener = (_event, active) => callback(active);
     ipcRenderer.on('window:fullscreen-changed', listener);

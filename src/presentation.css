@@ -1,0 +1,47 @@
+/* Leave the editor's layout intact so its position survives presentation. */
+body.presentation-active > :not(.presentation-view) {
+  visibility: hidden;
+}
+.presentation-view {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  background: var(--bg-canvas);
+  outline: none;
+  touch-action: none;
+  user-select: none;
+  overflow: hidden;
+  --page-controls-inset: 0px;
+}
+.presentation-stage {
+  position: absolute;
+  inset: 0;
+}
+.presentation-stage > .surface,
+.presentation-stage > .reading-view {
+  cursor: default;
+}
+.presentation-view :is(.paper, .reading-paper) * {
+  pointer-events: none !important;
+}
+.presentation-view .reading-view {
+  scrollbar-width: none;
+}
+.presentation-view .reading-view::-webkit-scrollbar {
+  display: none;
+}
+.presentation-view .reading-page-heading {
+  display: none;
+}
+.presentation-view .reading-pages {
+  padding: 8px;
+}
+.presentation-view .reading-dual .reading-pages {
+  align-items: center;
+}
+.presentation-view .paper-position {
+  top: 50%;
+}
+.presentation-view :is(.object-inspector, .selection-flyout, .pdf-eraser-cursor, .pdf-ink-cursor) {
+  display: none;
+}

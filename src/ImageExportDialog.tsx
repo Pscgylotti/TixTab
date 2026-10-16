@@ -6,16 +6,19 @@ import { t, useLocale } from './i18n';
 import { scopePages } from './pageOperations';
 import { chooseImageDirectory, exportBitmapImages, type ImageExportProgress } from './imageExport';
 import { inspectBitmapPages } from './bitmapOcr';
+import { useBackgroundPanel } from './useBackgroundPanel';
 export default function ImageExportDialog({
   notebook,
   pdf,
   index,
   onClose,
+  onVisibility,
 }: {
   notebook: Notebook;
   pdf: PDFDocumentProxy | null;
   index: number;
   onClose: () => void;
+  onVisibility?: (hidden: boolean) => void;
 }) {
   useLocale();
   const [scope, setScope] = useState('current'),
@@ -31,6 +34,16 @@ export default function ImageExportDialog({
     error: '',
   });
   const [countRetry, setCountRetry] = useState(0);
+  const panel = useBackgroundPanel({
+    title: t('提取图片'),
+    busy,
+    status,
+    done: progress ? progress.saved + progress.skipped : 0,
+    total: progress?.total,
+    cancel: () => controller.current?.abort(),
+    onClose,
+    onVisibility,
+  });
   useEffect(() => {
     const abort = new AbortController();
     setCount({ total: null, error: '' });
@@ -72,7 +85,10 @@ export default function ImageExportDialog({
     };
   }, []);
   const close = () => {
-    controller.current?.abort();
+    if (controller.current) {
+      panel.hide();
+      return;
+    }
     onClose();
   };
   const start = async () => {
@@ -118,7 +134,7 @@ export default function ImageExportDialog({
   };
   return (
     <div
-      className="modal-scrim"
+      className={`modal-scrim${panel.hidden ? ' background-hidden' : ''}`}
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === 'Escape') close();
@@ -127,7 +143,7 @@ export default function ImageExportDialog({
       <section
         className="modal image-export-modal"
         role="dialog"
-        aria-modal="true"
+        aria-modal={panel.hidden ? undefined : true}
         aria-label={t('提取图片')}
       >
         <header>

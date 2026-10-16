@@ -75,19 +75,18 @@ test('source preferences save, runtime progress survives closing the panel, and 
   await expect(setup).toContainText('下载源已保存。');
   await setup.getByRole('button', { name: '自动安装', exact: true }).nth(2).click();
   await page.getByRole('button', { name: '关闭模型管理', exact: true }).click();
-  await page
-    .getByRole('alertdialog', { name: '关闭安装面板' })
-    .getByRole('button', { name: '后台继续安装' })
-    .click();
+  await expect(page.getByRole('alertdialog', { name: '关闭安装面板' })).toHaveCount(0);
+  await expect(page.getByLabel('后台任务', { exact: true })).toContainText('运行时安装');
   expect(
     await page.evaluate(() => (window as any).runtimeCalls.some((r: any) => r.action === 'cancel')),
   ).toBe(false);
+  await page.getByRole('button', { name: '设置', exact: true }).click();
   await page.getByRole('button', { name: '本地模型管理', exact: true }).click();
   await expect(setup).toContainText('当前源：清华镜像');
   await setup.getByRole('button', { name: '查看安装日志' }).click();
   await expect(setup.getByLabel('安装日志')).toContainText('Downloading PyMuPDF');
   await page.getByRole('button', { name: '关闭模型管理', exact: true }).click();
-  await page.getByRole('button', { name: '取消安装并关闭' }).click();
+  await page.getByRole('button', { name: '停止任务 pdf · 运行时安装', exact: true }).click();
   await expect
     .poll(() =>
       page.evaluate(

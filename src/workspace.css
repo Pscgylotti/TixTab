@@ -310,7 +310,7 @@
 }
 .workspace-document .workspace-open {
   min-height: 116px;
-  padding: 14px 144px 42px 104px;
+  padding: 14px 176px 42px 104px;
   align-items: center;
   border-radius: inherit;
 }
@@ -339,14 +339,16 @@
   height: 40px;
   padding: 0 8px 5px 104px;
 }
-.workspace-document-actions select {
+.workspace-manager .workspace-document-actions select {
   position: absolute;
   top: 8px;
   right: 8px;
   bottom: auto;
   margin: 0;
-  max-width: 130px;
-  padding: 4px 7px;
+  width: max-content;
+  min-width: 112px;
+  max-width: 160px;
+  padding: 4px 32px 4px 12px;
   min-height: 28px;
 }
 .workspace-open strong {
@@ -354,11 +356,11 @@
 }
 @media (max-width: 650px) {
   .workspace-document .workspace-open {
-    padding-right: 118px;
+    padding-right: 150px;
     padding-left: 100px;
   }
-  .workspace-document-actions select {
-    max-width: 110px;
+  .workspace-manager .workspace-document-actions select {
+    max-width: 132px;
   }
 }
 

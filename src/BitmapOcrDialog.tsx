@@ -20,6 +20,7 @@ import { ProviderAdvanced } from './ProviderAdvanced';
 import NativeCppOcrSettings from './NativeCppOcrSettings';
 import { nativeCppVariant } from './nativeCppOcr';
 import './bitmapOcr.css';
+import { useBackgroundPanel } from './useBackgroundPanel';
 const emptyTiming = { totalMs: 0, layoutMs: 0, inferenceMs: 0, compileMs: 0, serviceMs: 0 };
 function preferredBackend() {
   try {
@@ -41,11 +42,13 @@ export default function BitmapOcrDialog({
   pdf,
   onApply,
   onClose,
+  onVisibility,
 }: {
   pages: Page[];
   pdf: PDFDocumentProxy | null;
-  onApply: (pages: Page[]) => void;
+  onApply: (pages: Page[]) => void | Promise<void>;
   onClose: () => void;
+  onVisibility?: (hidden: boolean) => void;
 }) {
   useLocale();
   const api = useProviderConfig('ocr', 'local');
@@ -92,15 +95,24 @@ export default function BitmapOcrDialog({
     setStatus(t('正在停止并保留已完成结果…'));
     controller.current.abort();
   };
+  const panel = useBackgroundPanel({
+    title: t('解析位图'),
+    busy,
+    status,
+    done: count,
+    total: runTotal ?? counts.total,
+    cancel: stop,
+    onClose,
+    onVisibility,
+  });
   const close = () => {
     if (controller.current) {
-      closing.current = true;
-      stop();
+      panel.hide();
     } else onClose();
   };
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (!panel.hidden && e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
         close();
@@ -108,7 +120,7 @@ export default function BitmapOcrDialog({
     };
     addEventListener('keydown', key, true);
     return () => removeEventListener('keydown', key, true);
-  }, [onClose]);
+  }, [onClose, panel.hidden]);
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -268,21 +280,26 @@ export default function BitmapOcrDialog({
             : providerFailureStatus(error, !npu && ['web', 'llm'].includes(api.provider.type)),
         );
     } finally {
-      if (alive.current) {
-        if (completed.size) onApply([...completed.values()]);
-        setBusy(false);
-        setStopping(false);
-        if (closing.current) onClose();
+      try {
+        if (alive.current && completed.size) await onApply([...completed.values()]);
+      } catch {
+        if (alive.current) setStatus(t('识别结果保存失败，请重试。'));
+      } finally {
+        controller.current = null;
+        if (alive.current) {
+          setBusy(false);
+          setStopping(false);
+          if (closing.current) onClose();
+        }
       }
-      controller.current = null;
     }
   };
   return (
-    <div className="modal-scrim">
+    <div className={`modal-scrim${panel.hidden ? ' background-hidden' : ''}`}>
       <section
         className="modal bitmap-ocr-modal"
         role="dialog"
-        aria-modal="true"
+        aria-modal={panel.hidden ? undefined : true}
         aria-label={t('解析位图')}
       >
         <header>

@@ -159,17 +159,24 @@ export function isEmptyStarterNotebook(n: Notebook) {
   return (
     n.name === '未命名笔记' &&
     n.source === null &&
+    !n.sourcePath &&
+    !n.batch &&
+    !n.bookmarks?.length &&
     !n.scene &&
     !n.scratchPapers?.length &&
     !n.zotero &&
     n.pages.length === 1 &&
     p.sourceIndex === null &&
     p.paper === 'dots' &&
+    p.paperColor === undefined &&
     p.width === 595.28 &&
     p.height === 841.89 &&
     !p.strokes.length &&
     !p.images.length &&
-    !p.reviews?.length
+    !p.reviews?.length &&
+    !p.pdfEdits?.length &&
+    !p.bitmapOcr?.length &&
+    !p.score
   );
 }
 export const isEraser = (e: { pointerType: string; buttons: number; button: number }) =>

@@ -109,6 +109,7 @@ import {
 } from './model';
 import {
   destroyPdf,
+  retainPdf,
   exportPdf,
   importPdf,
   loadPdf,
@@ -121,6 +122,7 @@ import {
   captureWorkspaceView,
   defaultView,
   deleteWorkspaceDocument,
+  discardWorkspaceDraft,
   listWorkspace,
   loadWorkspaceDocument,
   saveWorkspaceDocument,
@@ -164,6 +166,12 @@ const PageOperationsDialog = lazy(() => import('./PageOperationsDialog'));
 import InkColors, { savedInkColor } from './InkColors';
 import { savedInkSize, saveInkSize, sizeTool } from './inkPreferences';
 import FullscreenButton from './FullscreenButton';
+import PresentationView from './PresentationView';
+import { presentationFullscreen } from './presentationFullscreen';
+import BackgroundTaskDock from './BackgroundTaskDock';
+import { mergeBackgroundPages } from './backgroundPageResults';
+import { useBackgroundPanel } from './useBackgroundPanel';
+import { usePenTailVoice, setPenTailVoice } from './penTailVoice';
 import TouchKeyboard from './TouchKeyboard';
 import RegionCapture from './RegionCapture';
 const BitmapOcrDialog = lazy(() => import('./BitmapOcrDialog'));
@@ -239,6 +247,9 @@ export default function App() {
     };
   }, []);
   const locale = useLocale();
+  const tailVoiceEnabled = usePenTailVoice();
+  const [voiceRequest, setVoiceRequest] = useState(0);
+  const [tailVoiceStatus, setTailVoiceStatus] = useState('');
   const writingHand = useWritingHand();
   const appearance = useAppearance();
   useEffect(() => {
@@ -249,6 +260,12 @@ export default function App() {
   }, [appearance.memoryMode]);
   const [blankPageAnchor, setBlankPageAnchor] = useState<DOMRect | null>(null);
   const [pageQuickAnchor, setPageQuickAnchor] = useState<DOMRect | null>(null);
+  const [presentation, setPresentation] = useState<{
+    fullscreen: Promise<() => Promise<void>>;
+    view: WorkspaceView;
+  } | null>(null);
+  const presenting = useRef(false);
+  const presentationClosing = useRef(false);
   const [translationPanel, setTranslationPanel] = useState<'open' | 'closed' | null>(null);
   const [translationAnchor] = useState<SelectionInfo>(() => ({
     text: '',
@@ -330,6 +347,7 @@ export default function App() {
   const [penWheel, setPenWheel] = useState<{ x: number; y: number; text: boolean } | null>(null);
   const lastBarrel = useRef(-Infinity);
   const readingPageChanged = useCallback((next: number) => {
+    if (presenting.current) return;
     readingObserved.current = true;
     setIndex(next);
   }, []);
@@ -350,6 +368,41 @@ export default function App() {
       pageNumber: number;
       documentId: string;
     } | null>(null);
+  useEffect(() => {
+    const bridge = window.surfaceDesktop?.penTailVoice;
+    let alive = true;
+    void bridge
+      ?.configure(tailVoiceEnabled)
+      .then((result) => {
+        if (alive)
+          setTailVoiceStatus(
+            result.ok ? '' : tr('尾键接管不可用，请检查设备与 Windows 笔快捷键设置。'),
+          );
+      })
+      .catch(() => {
+        if (alive) setTailVoiceStatus(tr('尾键接管不可用，请检查设备与 Windows 笔快捷键设置。'));
+      });
+    const press = () => {
+      if (!tailVoiceEnabled) return;
+      window.dispatchEvent(new Event('tixtab-exit-presentation'));
+      setChatOpen(true);
+      setVoiceRequest((v) => v + 1);
+      setDialog((value) => (value === 'settings' || value === 'help' ? null : value));
+    };
+    const off = bridge?.onPress(press);
+    const key = (event: KeyboardEvent) => {
+      if (event.key === 'F20' && !event.repeat && tailVoiceEnabled) {
+        event.preventDefault();
+        press();
+      }
+    };
+    window.addEventListener('keydown', key, true);
+    return () => {
+      alive = false;
+      off?.();
+      window.removeEventListener('keydown', key, true);
+    };
+  }, [tailVoiceEnabled, locale]);
   const [scratchMode, setScratchMode] = useState(false),
     [scratchHiddenPdf, setScratchHiddenPdf] = useState(false),
     [scratchFocus, setScratchFocus] = useState(false);
@@ -380,6 +433,30 @@ export default function App() {
     [ocrImage, setOcrImage] = useState<string | null>(null);
   const [recognizingCapture, setRecognizingCapture] = useState(false);
   const [bitmapOcrOpen, setBitmapOcrOpen] = useState(false);
+  const [bitmapOcrBackground, setBitmapOcrBackground] = useState(false);
+  const [modelBackground, setModelBackground] = useState(false);
+  type ToolDocument = {
+    id: string;
+    notebook: Notebook;
+    pdf: PDFDocumentProxy | null;
+    index: number;
+    release: () => void;
+  };
+  const [backgroundTools, setBackgroundTools] = useState<ToolDocument[]>([]);
+  const toolDocuments = useRef(backgroundTools);
+  toolDocuments.current = backgroundTools;
+  const [bitmapDocument, setBitmapDocument] = useState<ToolDocument | null>(null);
+  const bitmapDocumentRef = useRef(bitmapDocument);
+  bitmapDocumentRef.current = bitmapDocument;
+  const bitmapInBackground = useRef(bitmapOcrBackground);
+  bitmapInBackground.current = bitmapOcrBackground;
+  useEffect(
+    () => () => {
+      for (const entry of toolDocuments.current) entry.release();
+    },
+    [],
+  );
+  useEffect(() => () => bitmapDocumentRef.current?.release(), []);
   const [pageOperation, setPageOperation] = useState<{ action: PageAction; index: number } | null>(
     null,
   );
@@ -465,6 +542,27 @@ export default function App() {
   busyRef.current = busy;
   const [exportProgress, setExportProgress] = useState<PdfExportProgress | null>(null),
     exportAbort = useRef<AbortController | null>(null);
+  const exportPanel = useBackgroundPanel({
+    title: tr('正在导出 PDF'),
+    busy: !!exportProgress,
+    status: exportProgress
+      ? tr(
+          {
+            preparing: '准备导出数据…',
+            loading: '读取源 PDF…',
+            structure: '整理页面与文档结构…',
+            annotations: '写入标注…',
+            saving: '保存 PDF…',
+          }[exportProgress.stage],
+        )
+      : tr('任务已结束'),
+    done: exportProgress?.stage === 'annotations' ? exportProgress.completed : 0,
+    total: exportProgress?.stage === 'annotations' ? exportProgress.total : 0,
+    cancel: () => exportAbort.current?.abort(),
+    onClose: () => {},
+  });
+  const exportHidden = useRef(exportPanel.hidden);
+  exportHidden.current = exportPanel.hidden;
   useEffect(
     () => () => {
       exportAbort.current?.abort();
@@ -473,7 +571,7 @@ export default function App() {
     [],
   );
   useEffect(() => {
-    if (!exportProgress) return;
+    if (!exportProgress || exportPanel.hidden) return;
     const cancel = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -483,7 +581,7 @@ export default function App() {
     };
     window.addEventListener('keydown', cancel, true);
     return () => window.removeEventListener('keydown', cancel, true);
-  }, [!!exportProgress]);
+  }, [!!exportProgress, exportPanel.hidden]);
   const history = useRef<Notebook[]>([]),
     future = useRef<Notebook[]>([]),
     file = useRef<HTMLInputElement>(null),
@@ -805,6 +903,62 @@ export default function App() {
     },
     [appearance.memoryMode, appearance.mode, appearance.battery],
   );
+  const applyToolResults = async (
+    id: string,
+    pages: Page[],
+    ocr = false,
+    bases: Page[] = [],
+    origin?: Notebook,
+  ) => {
+    const matches = (notebook: Notebook) =>
+      !origin?.batch || notebook.batch?.itemId === origin.batch.itemId;
+    if (activeRef.current === id && matches(current.current)) {
+      commit(mergeBackgroundPages(current.current, pages, ocr, bases));
+      return;
+    }
+    saveQueue.current = saveQueue.current
+      .catch(() => {})
+      .then(async () => {
+        if (activeRef.current === id && matches(current.current)) {
+          commit(mergeBackgroundPages(current.current, pages, ocr, bases));
+          return;
+        }
+        let destination = id;
+        let restored = await loadWorkspaceDocument(destination, false);
+        let manifest: BatchManifest | null = null;
+        if (!matches(restored.notebook) && origin?.batch) {
+          manifest = (await loadBatchManifest(origin.batch.id)) ?? null;
+          const item = manifest?.items.find((value) => value.id === origin.batch!.itemId);
+          if (!item) throw Error('Missing background task document');
+          destination = item.storageId;
+          restored = await loadWorkspaceDocument(destination, false);
+        }
+        const next = mergeBackgroundPages(restored.notebook, pages, ocr, bases);
+        await saveWorkspaceDocument(
+          destination,
+          next,
+          restored.meta.view,
+          undefined,
+          restored.meta.archiveFor,
+          undefined,
+          false,
+        );
+        if (manifest && origin?.batch) {
+          const updated = {
+            ...manifest,
+            items: manifest.items.map((item) =>
+              item.id === origin.batch!.itemId ? { ...item, edited: true } : item,
+            ),
+          };
+          if (batchRef.current?.id === manifest.id) await storeBatch(updated);
+          else await saveBatchManifest(updated);
+        }
+        setBackgroundTools((old) =>
+          old.map((entry) => (entry.id === id ? { ...entry, notebook: next } : entry)),
+        );
+      });
+    await saveQueue.current;
+  };
   const selectNavigationPage = useCallback((next: number) => {
     readingObserved.current = false;
     setIndex(next);
@@ -1002,6 +1156,7 @@ export default function App() {
   }, []);
   const fit = useCallback(
     (mode: 'page' | 'width' = fitMode.current) => {
+      if (presenting.current) return;
       const viewport = measurePageViewport();
       if (!viewport) return;
       fitActive.current = true;
@@ -1162,7 +1317,7 @@ export default function App() {
         document.querySelector('[aria-modal="true"]') ||
         dialog ||
         ocrImage ||
-        bitmapOcrOpen ||
+        (bitmapOcrOpen && !bitmapOcrBackground) ||
         workspaceOpen ||
         zoteroOpen ||
         pendingDrop ||
@@ -1209,7 +1364,17 @@ export default function App() {
     };
     window.addEventListener('keydown', keydown);
     return () => window.removeEventListener('keydown', keydown);
-  }, [dialog, viewMode, ocrImage, bitmapOcrOpen, workspaceOpen, zoteroOpen, pendingDrop, busy]);
+  }, [
+    dialog,
+    viewMode,
+    ocrImage,
+    bitmapOcrOpen,
+    bitmapOcrBackground,
+    workspaceOpen,
+    zoteroOpen,
+    pendingDrop,
+    busy,
+  ]);
   const activate = (
     id: string,
     next: Notebook,
@@ -1221,6 +1386,7 @@ export default function App() {
     scratchReturn.current = view.scratch?.returnView ?? null;
     setScratchFocus(false);
     const old = pdfRef.current;
+    setVoiceRequest(0);
     ensureTab(id, next.batch?.title || next.name, !!next.source);
     viewRef.current = { ...view };
     history.current = [];
@@ -1242,7 +1408,7 @@ export default function App() {
     setEditingId(null);
     setCapturing(false);
     setOcrImage(null);
-    setBitmapOcrOpen(false);
+    if (!bitmapInBackground.current) setBitmapOcrOpen(false);
     setDialog(null);
     setResetView((v) => v + 1);
     if (old && old !== doc) void destroyPdf(old);
@@ -1467,6 +1633,7 @@ export default function App() {
         }
       }
       setDocumentTabs(remaining);
+      await Promise.all([...closing].map(discardWorkspaceDraft));
     });
   const createDocument = (folderId: string | null) =>
     documentOperation(async () => {
@@ -1752,7 +1919,7 @@ export default function App() {
         workspaceOpen ||
         zoteroOpen ||
         ocrImage ||
-        bitmapOcrOpen ||
+        (bitmapOcrOpen && !bitmapOcrBackground) ||
         document.querySelector('[aria-modal="true"]') ||
         target?.closest('input,textarea,select,[contenteditable="true"],[role="textbox"]')
       )
@@ -1858,7 +2025,17 @@ export default function App() {
     };
     window.addEventListener('paste', paste);
     return () => window.removeEventListener('paste', paste);
-  }, [ready, dialog, pendingDrop, workspaceOpen, zoteroOpen, ocrImage, bitmapOcrOpen, tool]);
+  }, [
+    ready,
+    dialog,
+    pendingDrop,
+    workspaceOpen,
+    zoteroOpen,
+    ocrImage,
+    bitmapOcrOpen,
+    bitmapOcrBackground,
+    tool,
+  ]);
   useEffect(() => {
     let depth = 0;
     const isFiles = (e: DragEvent) => e.dataTransfer?.types.includes('Files');
@@ -2114,7 +2291,6 @@ export default function App() {
     const controller = new AbortController(),
       snapshot = current.current;
     exportAbort.current = controller;
-    setBusy(true);
     setDialog(null);
     setExportProgress({ stage: 'preparing' });
     try {
@@ -2128,8 +2304,7 @@ export default function App() {
       });
       if (controller.signal.aborted || exportAbort.current !== controller) return;
       download(bytes.buffer, tr('{0}-标注.pdf', snapshot.name), 'application/pdf');
-      setDialog(null);
-      notify(tr('已导出 PDF，保留源页面与标注'));
+      if (!exportHidden.current) notify(tr('已导出 PDF，保留源页面与标注'));
     } catch (error) {
       if (exportAbort.current !== controller) return;
       if (error instanceof Error && error.name === 'AbortError') notify(tr('已取消 PDF 导出'));
@@ -2139,7 +2314,6 @@ export default function App() {
       if (exportAbort.current === controller) {
         exportAbort.current = null;
         setExportProgress(null);
-        setBusy(false);
       }
     }
   };
@@ -2639,6 +2813,7 @@ export default function App() {
           />
         )}
         <TouchKeyboard chatOpen={chatOpen} onModels={() => setDialog('models')} />
+        <BackgroundTaskDock />
         {pendingDrop && (
           <Suspense fallback={null}>
             <PdfDropDialog
@@ -3023,28 +3198,47 @@ export default function App() {
                     </button>
                   </div>
                 )}
-                <ExtraTools
-                  key={activeId}
-                  notebook={notebook}
-                  pdf={pdf}
-                  index={index}
-                  disabled={busy || !ready}
-                  onApply={(pages) => {
-                    const replacements = new Map(pages.map((p) => [p.id, p]));
-                    commit({
-                      ...current.current,
-                      pages: current.current.pages.map((p) => replacements.get(p.id) ?? p),
-                    });
-                  }}
-                  onNavigate={(at) => {
-                    if (
-                      viewRef.current.mode === 'dual' &&
-                      Math.floor(viewRef.current.index / 2) === Math.floor(at / 2)
-                    )
-                      return;
-                    setIndex(at);
-                  }}
-                />
+                {[
+                  ...backgroundTools.filter((entry) => entry.id !== activeId),
+                  { id: activeId, notebook, pdf, index },
+                ].map((entry) => (
+                  <div
+                    key={entry.id}
+                    style={{ display: entry.id === activeId ? 'contents' : 'none' }}
+                  >
+                    <ExtraTools
+                      notebook={entry.notebook}
+                      pdf={entry.pdf}
+                      index={entry.index}
+                      disabled={busy || !ready}
+                      onApply={(pages, bases, origin) =>
+                        applyToolResults(entry.id, pages, false, bases, origin)
+                      }
+                      onBackground={(hidden) => {
+                        if (hidden)
+                          setBackgroundTools((old) =>
+                            old.some((item) => item.id === entry.id)
+                              ? old
+                              : [...old, { ...entry, release: retainPdf(entry.pdf) }],
+                          );
+                        else if (entry.id !== activeRef.current) switchDocument(entry.id);
+                      }}
+                      onJobClose={() => {
+                        toolDocuments.current.find((item) => item.id === entry.id)?.release();
+                        setBackgroundTools((old) => old.filter((item) => item.id !== entry.id));
+                      }}
+                      onNavigate={(at) => {
+                        if (presenting.current || entry.id !== activeRef.current) return;
+                        if (
+                          viewRef.current.mode === 'dual' &&
+                          Math.floor(viewRef.current.index / 2) === Math.floor(at / 2)
+                        )
+                          return;
+                        setIndex(at);
+                      }}
+                    />
+                  </div>
+                ))}
                 <button
                   className="icon-button"
                   aria-label={tr('打开 ChatGPT 聊天')}
@@ -3323,6 +3517,13 @@ export default function App() {
                 </span>
                 <span className="status-separator" />
                 <button
+                  className="icon-button help-button"
+                  aria-label={tr('使用帮助')}
+                  onClick={() => setDialog('help')}
+                >
+                  <CircleHelp size={15} />
+                </button>
+                <button
                   className="delete-button"
                   aria-label={tr('页面快捷操作')}
                   title={tr('页面快捷操作')}
@@ -3336,10 +3537,17 @@ export default function App() {
                 </button>
                 <button
                   className="icon-button"
-                  aria-label={tr('使用帮助')}
-                  onClick={() => setDialog('help')}
+                  aria-label={tr('展示全屏')}
+                  disabled={busy || !ready}
+                  title={tr('展示全屏（双击退出）')}
+                  onClick={() => {
+                    setPageQuickAnchor(null);
+                    const view = captureWorkspaceView(viewRef.current, page.id);
+                    presenting.current = true;
+                    setPresentation({ fullscreen: presentationFullscreen(), view });
+                  }}
                 >
-                  <CircleHelp size={15} />
+                  <Maximize size={17} />
                 </button>
               </div>
             </footer>
@@ -3347,6 +3555,7 @@ export default function App() {
           {chatOpen && (
             <Suspense fallback={null}>
               <ChatPanel
+                voiceRequest={voiceRequest}
                 viewMode={viewMode}
                 onModels={() => setDialog('models')}
                 onSvgInsert={(image) => {
@@ -3366,7 +3575,10 @@ export default function App() {
                 pdf={pdf}
                 index={index}
                 selection={chatSelection?.documentId === activeId ? chatSelection : null}
-                onClose={() => setChatOpen(false)}
+                onClose={() => {
+                  setChatOpen(false);
+                  setVoiceRequest(0);
+                }}
                 onNavigate={(id) => {
                   const at = notebook.pages.findIndex((p) => p.id === id);
                   if (at >= 0) setIndex(at);
@@ -3418,13 +3630,16 @@ export default function App() {
             }}
           />
         )}
-        {(busy || !ready) &&
+        {(busy || !ready || exportProgress) &&
           (exportProgress ? (
-            <div className="busy-overlay pdf-export-overlay">
+            <div
+              className={`busy-overlay pdf-export-overlay${exportPanel.hidden ? ' background-hidden' : ''}`}
+              style={exportPanel.hidden ? { display: 'none' } : undefined}
+            >
               <section
                 className="modal pdf-export-progress"
                 role="dialog"
-                aria-modal="true"
+                aria-modal={exportPanel.hidden ? undefined : true}
                 aria-label={tr('PDF 导出进度')}
               >
                 <h2>{tr('正在导出 PDF')}</h2>
@@ -3465,6 +3680,7 @@ export default function App() {
                   </>
                 )}
                 <button onClick={() => exportAbort.current?.abort()}>{tr('取消导出')}</button>
+                <button onClick={exportPanel.hide}>{tr('后台继续')}</button>
               </section>
             </div>
           ) : (
@@ -3482,7 +3698,19 @@ export default function App() {
           }
         >
           {dialog === 'tasks' && <TaskCenter onClose={() => setDialog('settings')} />}
-          {dialog === 'models' && <ModelManager onClose={() => setDialog('settings')} />}
+          {(dialog === 'models' || modelBackground) && (
+            <ModelManager
+              visible={dialog === 'models'}
+              onClose={() => {
+                setModelBackground(false);
+                setDialog(modelBackground ? null : 'settings');
+              }}
+              onVisibility={(hidden) => {
+                setModelBackground(hidden);
+                setDialog(hidden ? null : 'models');
+              }}
+            />
+          )}
           {dialog === 'caches' && <CacheManager onClose={() => setDialog('settings')} />}
           {zoteroOpen && (
             <ZoteroDialog
@@ -3513,17 +3741,45 @@ export default function App() {
           )}
           {bitmapOcrOpen && (
             <BitmapOcrDialog
-              key={activeId}
-              pages={notebook.pages}
-              pdf={pdf}
-              onClose={() => setBitmapOcrOpen(false)}
-              onApply={(pages) => {
-                const replacements = new Map(pages.map((p) => [p.id, p]));
-                commit({
-                  ...current.current,
-                  pages: current.current.pages.map((p) => replacements.get(p.id) ?? p),
-                });
+              key={bitmapDocument?.id ?? activeId}
+              pages={
+                bitmapDocument && bitmapDocument.id !== activeId
+                  ? bitmapDocument.notebook.pages
+                  : notebook.pages
+              }
+              pdf={bitmapDocument?.pdf ?? pdf}
+              onClose={() => {
+                bitmapDocumentRef.current?.release();
+                setBitmapDocument(null);
+                setBitmapOcrOpen(false);
+                setBitmapOcrBackground(false);
               }}
+              onVisibility={(hidden) => {
+                setBitmapOcrBackground(hidden);
+                if (hidden && !bitmapDocumentRef.current)
+                  setBitmapDocument({
+                    id: activeId,
+                    notebook,
+                    pdf,
+                    index,
+                    release: retainPdf(pdf),
+                  });
+                else if (
+                  !hidden &&
+                  bitmapDocumentRef.current?.id &&
+                  bitmapDocumentRef.current.id !== activeRef.current
+                )
+                  switchDocument(bitmapDocumentRef.current.id);
+              }}
+              onApply={(pages) =>
+                applyToolResults(
+                  bitmapDocument?.id ?? activeId,
+                  pages,
+                  true,
+                  [],
+                  bitmapDocument?.notebook ?? notebook,
+                )
+              }
             />
           )}
           {ocrImage && recognizingCapture && (
@@ -3643,6 +3899,31 @@ export default function App() {
                     <button className="model-manager-open" onClick={() => setDialog('models')}>
                       {tr('本地模型管理')}
                     </button>
+                    <label className="appearance-setting">
+                      <span>
+                        <input
+                          type="checkbox"
+                          aria-label={tr('Surface Pen 尾键语音助手')}
+                          checked={tailVoiceEnabled}
+                          disabled={
+                            !window.surfaceDesktop?.penTailVoice ||
+                            !window.surfaceDesktop?.dictation
+                          }
+                          onChange={(event) => setPenTailVoice(event.target.checked)}
+                        />{' '}
+                        {tr('Surface Pen 尾键语音助手')}
+                      </span>
+                    </label>
+                    <p className="appearance-note">
+                      {tr(
+                        '仅在 TixTab 前台接管尾键：按一次打开聊天并听写，再按一次结束识别并发送。关闭后恢复系统快捷行为。',
+                      )}
+                    </p>
+                    {tailVoiceStatus && (
+                      <p className="appearance-note" role="status">
+                        {tailVoiceStatus}
+                      </p>
+                    )}
                     <button className="cache-manager-open" onClick={() => setDialog('caches')}>
                       {tr('磁盘缓存管理')}
                     </button>
@@ -3891,6 +4172,38 @@ export default function App() {
               }}
             />
           </Suspense>
+        )}
+        {presentation && (
+          <PresentationView
+            pages={notebook.pages}
+            pdf={pdf}
+            mode={viewMode}
+            start={presentation.view.index}
+            fullscreen={presentation.fullscreen}
+            onClose={() => {
+              if (presentationClosing.current) return;
+              presentationClosing.current = true;
+              void (async () => {
+                try {
+                  const release = await presentation.fullscreen;
+                  await release();
+                } catch {
+                  // Restore the editor even if the host fullscreen request failed.
+                }
+                // Restore after the host has resized back to its editor bounds.
+                await new Promise<void>((resolve) =>
+                  requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+                );
+                setIndex(presentation.view.index);
+                setZoomState(presentation.view.zoom);
+                setRestoredPosition(presentation.view.position);
+                setResetView((v) => v + 1);
+                presenting.current = false;
+                presentationClosing.current = false;
+                setPresentation(null);
+              })();
+            }}
+          />
         )}
       </div>
     </AppContexts>

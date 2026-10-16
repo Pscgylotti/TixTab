@@ -21,6 +21,7 @@ export default function FullscreenButton({ className = '' }: { className?: strin
   useEffect(() => {
     const changed = () => setActive(!!document.fullscreenElement);
     const key = (e: KeyboardEvent) => {
+      if (document.body.classList.contains('presentation-active')) return;
       if (e.key === 'F11' || (e.key === 'Escape' && window.surfaceDesktop && active)) {
         e.preventDefault();
         void toggle();

@@ -21,6 +21,7 @@ export interface TaskSnapshot {
   workElapsed?: number;
   fallback: boolean;
   error?: TaskErrorCode;
+  status?: string;
 }
 export class ProviderTaskError extends Error {
   constructor(
@@ -188,7 +189,10 @@ export function createTaskScheduler() {
     const context: TaskContext = {
       signal,
       progress: (text) => {
-        if (!finished && !signal.aborted) options.onProgress?.(text);
+        if (!finished && !signal.aborted) {
+          update(id, { status: text.slice(0, 300) });
+          options.onProgress?.(text);
+        }
       },
       partial: (text) => {
         if (!finished && !signal.aborted) options.onPartial?.(text);

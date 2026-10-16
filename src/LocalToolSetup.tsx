@@ -7,9 +7,11 @@ import { localToolErrors, runLocalDocumentTool } from './localDocumentTools';
 export default function LocalToolSetup({
   engine,
   onBusy,
+  onCancel,
 }: {
   engine: LocalToolEngine;
   onBusy: (busy: boolean) => void;
+  onCancel?: (cancel: (() => void) | null) => void;
 }) {
   const runtime = engine === 'uvdoc' ? 'openvino' : engine === 'homr' ? 'homr' : null;
   const state = useRuntimeInstall();
@@ -19,6 +21,15 @@ export default function LocalToolSetup({
     [progress, setProgress] = useState(0);
   const owner = useRef<AbortController | null>(null),
     alive = useRef(true);
+  useEffect(() => {
+    onCancel?.(() => {
+      if (!owner.current) return;
+      owner.current.abort();
+      void window.surfaceDesktop?.models?.cancel();
+      if (runtime) void window.surfaceDesktop?.runtimes?.run({ id: runtime, action: 'cancel' });
+    });
+    return () => onCancel?.(null);
+  }, [engine]);
   useEffect(() => {
     alive.current = true;
     const a = new AbortController();

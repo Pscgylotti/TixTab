@@ -1,7 +1,14 @@
 import type { PDFDocumentProxy } from './pdfTypes';
 import { workspacePreview } from './workspacePreview';
 import { editablePages } from './scratchPaper';
-import { newNotebook, uid, validNotebook, type Notebook, type Page } from './model';
+import {
+  isEmptyStarterNotebook,
+  newNotebook,
+  uid,
+  validNotebook,
+  type Notebook,
+  type Page,
+} from './model';
 import { restore } from './storage';
 import { deleteFormulaDrafts } from './formulaDraft';
 import { performanceLedger, trackPerformance } from './performanceLedger';
@@ -83,6 +90,10 @@ let connection: Promise<IDBDatabase> | undefined;
 // Only keep the active document's immutable references. Sources are stored once,
 // and unchanged pages never go through structured cloning on a pen autosave.
 let saved: { id: string; notebook: Notebook } | undefined;
+// Untouched tabs exist only in this session. Keep their chosen group/view until
+// the first edit, without persisting pages, sources or preview bitmaps.
+const drafts = new Map<string, { meta: WorkspaceDocument; notebook: Notebook }>();
+let activeDraft: string | undefined;
 const request = <T>(r: IDBRequest<T>) =>
   new Promise<T>((resolve, reject) => {
     r.onsuccess = () => resolve(r.result);
@@ -160,9 +171,10 @@ export function saveWorkspaceDocument(
   folderId?: string | null,
   archiveFor?: string,
   pdf?: PDFDocumentProxy | null,
+  activate = true,
 ) {
   return trackPerformance('workspace-transaction', () =>
-    saveWorkspaceDocumentImpl(id, notebook, view, folderId, archiveFor, pdf),
+    saveWorkspaceDocumentImpl(id, notebook, view, folderId, archiveFor, pdf, activate),
   );
 }
 async function saveWorkspaceDocumentImpl(
@@ -172,7 +184,37 @@ async function saveWorkspaceDocumentImpl(
   folderId?: string | null,
   archiveFor?: string,
   pdf?: PDFDocumentProxy | null,
+  activate = true,
 ) {
+  if (!archiveFor && isEmptyStarterNotebook(notebook)) {
+    const draft = drafts.get(id);
+    const existing = draft
+      ? undefined
+      : await request<WorkspaceDocument | undefined>(
+          (await database()).transaction('documents').objectStore('documents').get(id),
+        );
+    // A previously saved document stays saved even after undo/clear returns it
+    // to a blank page. Never hide or remove existing user records.
+    if (!existing) {
+      const now = Date.now();
+      drafts.set(id, {
+        notebook,
+        meta: {
+          id,
+          name: notebook.name,
+          folderId: folderId === undefined ? (draft?.meta.folderId ?? null) : folderId,
+          pinned: false,
+          createdAt: draft?.meta.createdAt ?? now,
+          updatedAt: now,
+          pageIds: notebook.pages.map((p) => p.id),
+          view: { ...view },
+          hasPdf: false,
+        },
+      });
+      activeDraft = id;
+      return { pageWrites: 0, sourceWrites: 0 };
+    }
+  }
   // Raster work must finish before opening the IndexedDB transaction.
   const preview = await workspacePreview(notebook.pages[0], pdf);
   const db = await database(),
@@ -209,7 +251,10 @@ async function saveWorkspaceDocumentImpl(
       archiveFor: archiveFor ?? old?.archiveFor,
       createdAt: old?.createdAt ?? now,
       updatedAt: previous === notebook ? (old?.updatedAt ?? now) : now,
-      folderId: folderId === undefined ? (old?.folderId ?? null) : folderId,
+      folderId:
+        folderId === undefined
+          ? (old?.folderId ?? drafts.get(id)?.meta.folderId ?? null)
+          : folderId,
       pinned: old?.pinned ?? false,
       pageIds,
       preview: preview ?? (old?.pageIds[0] === pageIds[0] ? old.preview : undefined),
@@ -221,11 +266,16 @@ async function saveWorkspaceDocumentImpl(
       bookmarks: notebook.bookmarks,
     };
     store.put(record);
-    if (!archiveFor && !old?.archiveFor) tx.objectStore('preferences').put(id, 'activeDocument');
+    if (activate && !archiveFor && !old?.archiveFor)
+      tx.objectStore('preferences').put(id, 'activeDocument');
     await done;
     performanceLedger?.count('workspacePageWrites', pageWrites);
     performanceLedger?.count('workspaceSourceWrites', sourceWrites);
-    if (!archiveFor && !old?.archiveFor) saved = { id, notebook };
+    if (activate && !archiveFor && !old?.archiveFor) {
+      saved = { id, notebook };
+      drafts.delete(id);
+      activeDraft = undefined;
+    }
     return { pageWrites, sourceWrites };
   } catch (error) {
     try {
@@ -236,6 +286,11 @@ async function saveWorkspaceDocumentImpl(
   }
 }
 export async function loadWorkspaceDocument(id: string, track = true) {
+  const draft = drafts.get(id);
+  if (draft) {
+    if (track) activeDraft = id;
+    return draft;
+  }
   const db = await database(),
     tx = db.transaction(['documents', 'pages', 'sources'], 'readonly');
   const metaPromise = request<WorkspaceDocument | undefined>(tx.objectStore('documents').get(id));
@@ -269,10 +324,20 @@ export async function loadWorkspaceDocument(id: string, track = true) {
     (notebook.pages.some((p) => p.sourceIndex !== null) && !(notebook.source instanceof Uint8Array))
   )
     throw new Error('文档数据无法恢复');
-  if (track) saved = { id, notebook };
+  if (track) {
+    saved = { id, notebook };
+    activeDraft = undefined;
+  }
   return { meta, notebook };
 }
-export async function bootstrapWorkspace() {
+let bootstrapping: ReturnType<typeof bootstrapWorkspaceImpl> | undefined;
+export function bootstrapWorkspace() {
+  return (bootstrapping ??= bootstrapWorkspaceImpl().finally(() => {
+    bootstrapping = undefined;
+  }));
+}
+async function bootstrapWorkspaceImpl() {
+  if (activeDraft && drafts.has(activeDraft)) return loadWorkspaceDocument(activeDraft);
   const db = await database(),
     active = await request<string | undefined>(
       db.transaction('preferences').objectStore('preferences').get('activeDocument'),
@@ -334,8 +399,12 @@ export async function deleteWorkspaceFolder(id: string) {
     if (doc.folderId === id) tx.objectStore('documents').put({ ...doc, folderId: null });
   tx.objectStore('folders').delete(id);
   await done;
+  for (const draft of drafts.values())
+    if (draft.meta.folderId === id) draft.meta = { ...draft.meta, folderId: null };
 }
 export async function deleteWorkspaceDocument(id: string) {
+  drafts.delete(id);
+  if (activeDraft === id) activeDraft = undefined;
   const db = await database(),
     tx = db.transaction(['documents', 'pages', 'sources'], 'readwrite'),
     done = finished(tx);
@@ -356,4 +425,9 @@ export async function deleteWorkspaceDocument(id: string) {
   if (saved?.id === id) saved = undefined;
   for (const documentId of removing) await deleteFormulaDrafts(documentId);
   await (await import('./batchWorkspace')).deleteBatchManifest(id);
+}
+export async function discardWorkspaceDraft(id: string) {
+  if (!drafts.delete(id)) return;
+  if (activeDraft === id) activeDraft = undefined;
+  await deleteFormulaDrafts(id);
 }

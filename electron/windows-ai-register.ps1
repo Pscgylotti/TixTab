@@ -1,6 +1,6 @@
-param([switch]$Unregister, [string]$RuntimeDirectory)
+param([switch]$Unregister, [string]$RuntimeDirectory, [ValidateSet('TixTab.WindowsAI.Ocr','TixTab.WindowsAI.Speech')][string]$ComponentName='TixTab.WindowsAI.Ocr')
 $ErrorActionPreference = 'Stop'
-$componentName = 'TixTab.WindowsAI.Ocr'
+$componentName = $ComponentName
 if ($Unregister) {
   Get-AppxPackage -Name $componentName | Remove-AppxPackage
   exit
@@ -8,7 +8,7 @@ if ($Unregister) {
 if (-not $RuntimeDirectory) { $RuntimeDirectory = Join-Path $PSScriptRoot '../.cache/windows-ai-ocr/runtime' }
 $componentRoot = (Resolve-Path -LiteralPath $RuntimeDirectory).Path
 $componentManifest = Join-Path $componentRoot 'AppxManifest.xml'
-$identityPackage = Join-Path $componentRoot 'TixTab.WindowsAI.Ocr.identity.msix'
+$identityPackage = Join-Path $componentRoot "$componentName.identity.msix"
 if (Test-Path -LiteralPath $identityPackage) {
   # Production: signed identity package, normal current-user installation.
   Add-AppxPackage -Path $identityPackage -ExternalLocation $componentRoot

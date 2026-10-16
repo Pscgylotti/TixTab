@@ -231,6 +231,7 @@ const ReadingPage = memo(function ReadingPage({
   );
 });
 export default function ReadingView({
+  presentation = false,
   freeView = false,
   editableActive = true,
   restoredPosition,
@@ -253,6 +254,7 @@ export default function ReadingView({
   onEdit,
   onPageChange,
 }: {
+  presentation?: boolean;
   freeView?: boolean;
   editableActive?: boolean;
   restoredPosition?: WorkspacePosition;
@@ -276,7 +278,7 @@ export default function ReadingView({
   onPageChange: (i: number) => void;
 }) {
   useLocale();
-  const seamless = freeView && mode === 'continuous',
+  const seamless = (freeView || presentation) && mode === 'continuous',
     pageInset = seamless ? 0 : 8;
   const [freeOffset, setFreeOffset] = useState({ x: 0, y: 0 });
   const freeState = useRef({ enabled: freeView, offset: freeOffset });

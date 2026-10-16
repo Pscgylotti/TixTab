@@ -4,7 +4,7 @@ import { useRuntimeInstall, cancelRuntime } from './runtimeInstall';
 import type { RuntimeId } from './runtimeBridge';
 import { t, useLocale } from './i18n';
 import './runtimeInstall.css';
-export function useRuntimeClose(onClose: () => void, id?: RuntimeId) {
+export function useRuntimeClose(onClose: () => void, id?: RuntimeId, onBackground?: () => void) {
   useLocale();
   const state = useRuntimeInstall(),
     [pending, setPending] = useState(false),
@@ -15,7 +15,12 @@ export function useRuntimeClose(onClose: () => void, id?: RuntimeId) {
     root.current?.querySelector<HTMLButtonElement>('button')?.focus();
     return () => prior?.focus();
   }, [pending]);
-  const close = () => (state.active && (!id || state.active === id) ? setPending(true) : onClose());
+  const close = () =>
+    state.active && (!id || state.active === id)
+      ? onBackground
+        ? onBackground()
+        : setPending(true)
+      : onClose();
   const confirmation = pending
     ? createPortal(
         <div

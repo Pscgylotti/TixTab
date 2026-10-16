@@ -102,8 +102,27 @@ for (const name of [
   'pen-haptics-native.cjs',
   'runtime-sources.cjs',
   'runtime-log.cjs',
+  'windows-speech.cjs',
+  'pen-tail-voice.cjs',
 ])
   assert.ok(entries.includes('/electron/' + name), 'Desktop companion missing: ' + name);
+for (const file of [
+  'TixTab.WindowsAI.Speech.exe',
+  'AppxManifest.xml',
+  'onnxruntime.dll',
+  'Microsoft.Windows.AI.MachineLearning.dll',
+  'Licenses/microsoft.windowsappsdk.ml.txt',
+  'Licenses/windows-ml-third-party.txt',
+  'Licenses/microsoft.windowsappsdk.ai.txt',
+  'Licenses/microsoft.windowsappsdk.foundation.txt',
+  'Licenses/dotnet.txt',
+  'Licenses/dotnet-third-party.txt',
+])
+  assert.deepEqual(
+    readFileSync(join(dirname(dirname(archive)), 'native/windows-ai-speech', file)),
+    readFileSync(join('.cache/windows-ai-speech/runtime', file)),
+    'Native Windows speech companion differs: ' + file,
+  );
 for (const name of [
   'pdf_editor.py',
   'requirements-pdf.txt',

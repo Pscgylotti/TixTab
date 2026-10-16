@@ -85,7 +85,7 @@ test('Markdown text preview inserts sharp editable formatted content and persist
   await expect(page.getByLabel('文本框字号', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Markdown', exact: true })).toHaveClass(/active/);
   const source =
-    '# Title\n\nA **bold** phrase and *italic* 中文.\n\n1. first\n2. second\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n```js\nconst x = 1;\n```\n\n<script>window.badMarkdown=true</script>\n![remote](https://invalid.example/no.png)';
+    '# Title\n\nA **bold** phrase and *italic* 中文.\n\n~~deleted **bold deletion**~~\n\n1. first\n2. second\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n```js\nconst x = 1;\n```\n\n<script>window.badMarkdown=true</script>\n![remote](https://invalid.example/no.png)';
   await page.getByLabel('文本框内容', { exact: true }).fill(source);
   await page.getByRole('button', { name: '预览', exact: true }).click();
   await page.evaluate(async () => {
@@ -98,7 +98,11 @@ test('Markdown text preview inserts sharp editable formatted content and persist
     'invert(0.9) hue-rotate(180deg)',
   );
   await expect(page.locator('.text-box-preview h1')).toHaveText('Title');
-  await expect(page.locator('.text-box-preview strong')).toHaveText('bold');
+  await expect(page.locator('.text-box-preview strong').first()).toHaveText('bold');
+  await expect(page.locator('.text-box-preview del')).toHaveCSS(
+    'text-decoration-line',
+    'line-through',
+  );
   await expect(page.locator('.text-box-preview img')).toHaveCount(0);
   await page.getByRole('button', { name: '插入当前页', exact: true }).click();
   await expect(page.getByLabel('文本框对象', { exact: true })).toHaveCount(1);
@@ -106,6 +110,7 @@ test('Markdown text preview inserts sharp editable formatted content and persist
     .locator('.placed-object img')
     .evaluate((el: HTMLImageElement) => atob(el.src.split(',')[1]));
   expect(xml).toContain('<text');
+  expect(xml).toContain('text-decoration="line-through"');
   expect(xml).not.toContain('<script');
   expect(xml).not.toContain('**bold**');
   expect(await page.evaluate(() => (window as any).badMarkdown)).toBeUndefined();

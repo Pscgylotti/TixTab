@@ -14,13 +14,17 @@ export default function ExtraTools({
   disabled,
   onApply,
   onNavigate,
+  onBackground,
+  onJobClose,
 }: {
   notebook: Notebook;
   pdf: PDFDocumentProxy | null;
   index: number;
   disabled: boolean;
-  onApply: (pages: Page[]) => void;
+  onApply: (pages: Page[], bases: Page[], origin: Notebook) => void | Promise<void>;
   onNavigate: (index: number) => void;
+  onBackground?: (hidden: boolean) => void;
+  onJobClose?: () => void;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null),
     [images, setImages] = useState(false),
@@ -98,7 +102,11 @@ export default function ExtraTools({
             pdf={pdf}
             index={index}
             onApply={onApply}
-            onClose={() => setLocal(null)}
+            onClose={() => {
+              setLocal(null);
+              onJobClose?.();
+            }}
+            onVisibility={onBackground}
             onRecognized={() => setPlayer(true)}
           />
         </Suspense>
@@ -107,7 +115,9 @@ export default function ExtraTools({
         <Suspense fallback={null}>
           <MusicPlayer
             notebook={notebook}
-            onApply={onApply}
+            onApply={(pages) => {
+              void onApply(pages, notebook.pages, notebook);
+            }}
             onNavigate={onNavigate}
             onClose={() => setPlayer(false)}
           />
@@ -119,7 +129,11 @@ export default function ExtraTools({
             notebook={notebook}
             pdf={pdf}
             index={index}
-            onClose={() => setImages(false)}
+            onClose={() => {
+              setImages(false);
+              onJobClose?.();
+            }}
+            onVisibility={onBackground}
           />
         </Suspense>
       )}

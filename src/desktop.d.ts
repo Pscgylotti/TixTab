@@ -34,9 +34,10 @@ interface Window {
     ) => Promise<boolean>;
     runtimes?: import('./runtimeBridge').RuntimeBridge;
     dictation?: {
+      onProgress?: (callback: (progress: { stage: string; value: number }) => void) => () => void;
       run: (
         request: Record<string, unknown>,
-      ) => Promise<{ ok: boolean; data?: any; error?: string }>;
+      ) => Promise<{ ok: boolean; data?: any; error?: string; hresult?: string }>;
     };
     chatgpt?: import('./chatgpt').ChatBridge;
     zotero?: import('./zotero').ZoteroBridge;
@@ -60,6 +61,11 @@ interface Window {
     onPower?: (callback: (active: boolean) => void) => () => void;
     startNativeTexo: () => Promise<{ available: boolean }>;
     toggleFullscreen: () => Promise<boolean>;
+    fullscreenState?: (active?: boolean) => Promise<boolean>;
+    penTailVoice?: {
+      configure: (enabled: boolean) => Promise<{ ok: boolean; error?: string }>;
+      onPress: (callback: () => void) => () => void;
+    };
     onFullscreen: (callback: (active: boolean) => void) => () => void;
   };
 }

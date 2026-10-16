@@ -7,6 +7,7 @@ import './modelLibrary.css';
 import RuntimeSetup from './RuntimeSetup';
 import ModelConfirmation from './ModelConfirmation';
 import { useRuntimeClose } from './useRuntimeClose';
+import { useBackgroundPanel } from './useBackgroundPanel';
 const size = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MiB`;
 const features = {
   formula: '公式',
@@ -25,10 +26,17 @@ const errors: Record<string, string> = {
   unsafe: '模型目录不可用，请检查是否包含符号链接。',
   failed: '模型操作失败，请检查网络与磁盘后重试。',
 };
-export default function ModelManager({ onClose }: { onClose: () => void }) {
+export default function ModelManager({
+  onClose,
+  onVisibility,
+  visible = true,
+}: {
+  onClose: () => void;
+  onVisibility?: (hidden: boolean) => void;
+  visible?: boolean;
+}) {
   useLocale();
   const bridge = window.surfaceDesktop?.models;
-  const { close, confirmation } = useRuntimeClose(onClose);
   const [states, setStates] = useState<ModelState[]>([]),
     [progress, setProgress] = useState<ModelProgress | null>(null),
     [busy, setBusy] = useState(false),
@@ -36,6 +44,34 @@ export default function ModelManager({ onClose }: { onClose: () => void }) {
     [pending, setPending] = useState<{ id: string; action: ModelAction } | null>(null);
   const mounted = useRef(true),
     running = useRef(false);
+  const panel = useBackgroundPanel({
+    title: t('模型下载与管理'),
+    busy,
+    status:
+      message ||
+      t(
+        progress?.action === 'verify'
+          ? '正在校验…'
+          : progress?.action === 'remove'
+            ? '正在删除…'
+            : '正在下载…',
+      ),
+    done: progress?.done,
+    total: progress?.total,
+    cancel: () => {
+      void bridge?.cancel();
+    },
+    onClose,
+    onVisibility,
+  });
+  const { close, confirmation } = useRuntimeClose(
+    () => (busy ? panel.hide() : onClose()),
+    undefined,
+    panel.hide,
+  );
+  useEffect(() => {
+    if (visible) panel.open();
+  }, [visible]);
   useEffect(() => {
     mounted.current = true;
     if (bridge) {
@@ -84,11 +120,11 @@ export default function ModelManager({ onClose }: { onClose: () => void }) {
   }
   const chosen = pending && catalog.models.find((m) => m.id === pending.id);
   return (
-    <div className="modal-scrim">
+    <div className={`modal-scrim${panel.hidden ? ' background-hidden' : ''}`}>
       <section
         className="modal model-manager"
         role="dialog"
-        aria-modal="true"
+        aria-modal={panel.hidden ? undefined : true}
         aria-label={t('本地模型管理')}
         inert={!!pending}
       >

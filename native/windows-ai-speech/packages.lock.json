@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0-windows10.0.26100": {
+      "Microsoft.WindowsAppSDK.AI": {
+        "type": "Direct",
+        "requested": "[2.2.6-experimental, )",
+        "resolved": "2.2.6-experimental",
+        "contentHash": "+pu9PGyjukksbDq8AKB8Vojl3KoKnjLC8flThUmsfT/JLxBZ5iYnRyTApR694nRJLoAopuSzL5XQvTYxp/Wq9Q==",
+        "dependencies": {
+          "Microsoft.WindowsAppSDK.Base": "2.0.5-experimental2",
+          "Microsoft.WindowsAppSDK.Foundation": "2.1.1-experimental"
+        }
+      },
+      "Microsoft.WindowsAppSDK.Foundation": {
+        "type": "Direct",
+        "requested": "[2.1.1-experimental, )",
+        "resolved": "2.1.1-experimental",
+        "contentHash": "6L/g56NrjJAH+/us/DioF79XruOtYc2b3G+N2d4TyYemgIQcKhIMIG/EWbXF78Tb0tRJv7EmYvU36Xb7B8aj9Q==",
+        "dependencies": {
+          "Microsoft.WindowsAppSDK.Base": "2.0.5-experimental2",
+          "Microsoft.WindowsAppSDK.InteractiveExperiences": "2.0.16-experimental"
+        }
+      },
+      "Microsoft.WindowsAppSDK.ML": {
+        "type": "Direct",
+        "requested": "[2.1.75-experimental, )",
+        "resolved": "2.1.75-experimental",
+        "contentHash": "B/CE03okx5HR6WG+9CESoFtpf4usPpYzGbMYB/zny0ffNyrMJU+EYD7dEgr+1t7kE4s0bYKQX0XIVHKGY0Y/JA==",
+        "dependencies": {
+          "Microsoft.Windows.AI.MachineLearning": "[2.1.75-experimental, 3.0.0)",
+          "Microsoft.WindowsAppSDK.Base": "2.0.5-experimental2",
+          "Microsoft.WindowsAppSDK.Foundation": "2.1.1-experimental"
+        }
+      },
+      "Microsoft.Windows.AI.MachineLearning": {
+        "type": "Transitive",
+        "resolved": "2.1.75-experimental",
+        "contentHash": "wfLVeKXtEBDWTpgd8eAXtt8rPurXWupqxJMMmIDhMw7/i8wP8FdotSaK1y+Rm8kjw4k//V5xHhH3Fx9qNOp77A==",
+        "dependencies": {
+          "System.Numerics.Tensors": "9.0.0"
+        }
+      },
+      "Microsoft.Windows.SDK.BuildTools": {
+        "type": "Transitive",
+        "resolved": "10.0.26100.4654",
+        "contentHash": "2mgcOlj/t2RfSyyw+pVESfO+Tk1RkfQzto9Vrq42M1lUQIfQEwbi8QLha9GXWIOj+TFzeHIEJckIoF25mgiM8A=="
+      },
+      "Microsoft.Windows.SDK.BuildTools.MSIX": {
+        "type": "Transitive",
+        "resolved": "1.7.251221100",
+        "contentHash": "f4aIZJ0NUth2403oxrpR+9rxVzZVI6dabqB21u8ncnk8eJAKCs9m77E4iYAnvP1YwrRe4axz3f8+yUcttNSfEA=="
+      },
+      "Microsoft.WindowsAppSDK.Base": {
+        "type": "Transitive",
+        "resolved": "2.0.5-experimental2",
+        "contentHash": "1ZLLuK+S830P9U55xbDLiRUHlGD4r2kMtI34A6jJ9OF7pBzkqpBkfsVwGWare6BJ1616VNutez86sJtzFFGwng==",
+        "dependencies": {
+          "Microsoft.Windows.SDK.BuildTools": "10.0.26100.4654",
+          "Microsoft.Windows.SDK.BuildTools.MSIX": "1.7.251221100"
+        }
+      },
+      "Microsoft.WindowsAppSDK.InteractiveExperiences": {
+        "type": "Transitive",
+        "resolved": "2.0.16-experimental",
+        "contentHash": "+mGWXAm+anQWVMYnwrw7IukI2YaZvLwfQcdRPNg4KdozMon5MGCStvMub59P55+nFa+woMMqSBdm8th2UryG5w==",
+        "dependencies": {
+          "Microsoft.WindowsAppSDK.Base": "2.0.3-experimental1"
+        }
+      },
+      "System.Numerics.Tensors": {
+        "type": "Transitive",
+        "resolved": "9.0.0",
+        "contentHash": "hyJB4UlpAi19Xr9AXzu2NuagKC4lPfHObNMEAA0HmqFz2rX7wKgzeYzO/jM/eBHDhnUGFFEjk5cOoJaxqg5J4A=="
+      }
+    },
+    "net10.0-windows10.0.26100/win-x64": {
+      "Microsoft.WindowsAppSDK.Foundation": {
+        "type": "Direct",
+        "requested": "[2.1.1-experimental, )",
+        "resolved": "2.1.1-experimental",
+        "contentHash": "6L/g56NrjJAH+/us/DioF79XruOtYc2b3G+N2d4TyYemgIQcKhIMIG/EWbXF78Tb0tRJv7EmYvU36Xb7B8aj9Q==",
+        "dependencies": {
+          "Microsoft.WindowsAppSDK.Base": "2.0.5-experimental2",
+          "Microsoft.WindowsAppSDK.InteractiveExperiences": "2.0.16-experimental"
+        }
+      },
+      "Microsoft.Windows.AI.MachineLearning": {
+        "type": "Transitive",
+        "resolved": "2.1.75-experimental",
+        "contentHash": "wfLVeKXtEBDWTpgd8eAXtt8rPurXWupqxJMMmIDhMw7/i8wP8FdotSaK1y+Rm8kjw4k//V5xHhH3Fx9qNOp77A==",
+        "dependencies": {
+          "System.Numerics.Tensors": "9.0.0"
+        }
+      }
+    }
+  }
+}

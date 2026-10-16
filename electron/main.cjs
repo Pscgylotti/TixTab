@@ -27,6 +27,8 @@ const { createCacheManager } = require('./cache-manager.cjs');
 const { createZotero } = require('./zotero.cjs');
 const { createDictation } = require('./dictation.cjs');
 const { createNeuralDictation } = require('./neural-dictation.cjs');
+const { createWindowsSpeech, createSystemSpeechRouter } = require('./windows-speech.cjs');
+const { createPenTailVoice } = require('./pen-tail-voice.cjs');
 const { createRuntimeInstaller } = require('./runtime-installer.cjs');
 const { createPdfEditor } = require('./pdf-editor.cjs');
 const { createImageExport } = require('./image-export.cjs');
@@ -430,6 +432,25 @@ app.whenReady().then(() => {
     }
     return pdfEditor.run(owner, request);
   });
+  const legacyDictation = createDictation({
+    helper: path.join(
+      __dirname.replace(/app\.asar(?=[\\/]|$)/, 'app.asar.unpacked'),
+      'dictation.ps1',
+    ),
+  });
+  const nativeWindowsSpeech = createWindowsSpeech({
+    executable: app.isPackaged
+      ? path.join(process.resourcesPath, '../native/windows-ai-speech/TixTab.WindowsAI.Speech.exe')
+      : path.resolve(__dirname, '../.cache/windows-ai-speech/runtime/TixTab.WindowsAI.Speech.exe'),
+    registerScript: path.join(
+      __dirname.replace(/app\.asar(?=[\\/]|$)/, 'app.asar.unpacked'),
+      'windows-ai-register.ps1',
+    ),
+    microphones: (owner) => legacyDictation.run(owner, { action: 'microphones' }),
+    onProgress: (owner, value) => {
+      if (!owner.isDestroyed() && trusted(owner.getURL())) owner.send('dictation:progress', value);
+    },
+  });
   const dictation = createNeuralDictation({
     backend,
     runtimeInstaller,
@@ -437,12 +458,7 @@ app.whenReady().then(() => {
     modelRoot,
     bundled: path.join(root, 'models'),
     models: modelLibrary,
-    system: createDictation({
-      helper: path.join(
-        __dirname.replace(/app\.asar(?=[\\/]|$)/, 'app.asar.unpacked'),
-        'dictation.ps1',
-      ),
-    }),
+    system: createSystemSpeechRouter(legacyDictation, nativeWindowsSpeech),
   });
   app.once('before-quit', () => dictation.dispose());
   const dictationOwners = new WeakSet();
@@ -456,8 +472,36 @@ app.whenReady().then(() => {
       owner.on('render-process-gone', cancel);
       owner.on('did-start-navigation', () => cancel());
     }
+    if (request?.action === 'windows-cancel') {
+      nativeWindowsSpeech.cancel(owner);
+      return { ok: true };
+    }
+    if (['windows-status', 'windows-prepare', 'windows-register'].includes(request?.action))
+      return nativeWindowsSpeech.run(owner, { ...request, action: request.action.slice(8) });
     return dictation.run(owner, request);
   });
+  const tailOwners = new Set();
+  const tailVoice = createPenTailVoice(() => {
+    for (const owner of tailOwners)
+      if (!owner.isDestroyed() && trusted(owner.getURL())) {
+        owner.send('pen:tail-voice');
+        break;
+      }
+  });
+  ipcMain.handle('pen:tail-voice-configure', (event, enabled) => {
+    if (!providerSender(event) || typeof enabled !== 'boolean')
+      return { ok: false, error: 'invalid' };
+    const owner = event.sender;
+    if (enabled && !tailOwners.has(owner)) {
+      tailOwners.add(owner);
+      owner.once('destroyed', () => {
+        tailOwners.delete(owner);
+        tailVoice.configure(tailOwners.size > 0);
+      });
+    } else if (!enabled) tailOwners.delete(owner);
+    return tailVoice.configure(tailOwners.size > 0);
+  });
+  app.once('before-quit', () => tailVoice.dispose());
   const chatOwners = new WeakSet();
   app.once('before-quit', () => chatgpt.dispose());
   ipcMain.handle('chatgpt:run', async (event, request) => {
@@ -652,6 +696,13 @@ app.whenReady().then(() => {
     const active = !window.isFullScreen();
     window.setFullScreen(active);
     return active;
+  });
+  ipcMain.handle('window:fullscreen-state', (event, active) => {
+    if (!trusted(event.sender.getURL())) return false;
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) return false;
+    if (typeof active === 'boolean') window.setFullScreen(active);
+    return window.isFullScreen();
   });
   const { audioPermission } = require('./local-media-permission.cjs');
   session.defaultSession.setPermissionRequestHandler((wc, permission, callback, details) =>

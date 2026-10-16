@@ -31,6 +31,7 @@ export interface PenDiagnostic {
   samples: number;
 }
 interface Props {
+  centerWhenFits?: boolean;
   freeView?: boolean;
   editableActive?: boolean;
   restoredPosition?: WorkspacePosition;
@@ -52,6 +53,7 @@ interface Props {
   focusObjectId: string | string[] | null;
 }
 export default function PdfSurface({
+  centerWhenFits = false,
   restoredPosition,
   freeView = false,
   editableActive = true,
@@ -100,6 +102,10 @@ export default function PdfSurface({
   offsetRef.current = offset;
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
+  useLayoutEffect(() => {
+    if (centerWhenFits && page.width * zoom <= (stage.current?.clientWidth ?? 0))
+      setOffset((o) => (o.x === 0 ? o : { ...o, x: 0 }));
+  }, [centerWhenFits, page.width, zoom, offset.x]);
   const penTime = useRef(-Infinity);
   const pointers = useRef(new PanZoomPointers()),
     transformFrame = useRef(0);

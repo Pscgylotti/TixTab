@@ -189,14 +189,14 @@ function createNeuralDictation({
         try {
           const engine = r.engine || 'system';
           if (
-            !['system', ...ENGINES].includes(engine) ||
+            !['system', 'windows-ai', 'windows-sdk', ...ENGINES].includes(engine) ||
             !['zh-CN', 'en-US'].includes(r.language) ||
             (r.device && !DEVICES.includes(r.device)) ||
             !validMicrophone(r.microphone)
           )
             return { ok: false, error: 'invalid' };
           if (setup || (job && !job.done)) return { ok: false, error: 'busy' };
-          if (engine === 'system') {
+          if (['system', 'windows-ai', 'windows-sdk'].includes(engine)) {
             killWorker();
             job = { owner, system: true, done: false };
             const result = await system.run(owner, r);

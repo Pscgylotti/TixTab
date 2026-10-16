@@ -1,13 +1,25 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { mkdir, mkdtemp, rm, rename, copyFile, readFile, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  rm,
+  rename,
+  copyFile,
+  readFile,
+  writeFile,
+  access,
+} from 'node:fs/promises';
 import sharp from 'sharp';
 import os from 'node:os';
 const root = fileURLToPath(new URL('../', import.meta.url));
+const speech = process.argv.includes('--speech');
+const directory = speech ? 'windows-ai-speech' : 'windows-ai-ocr';
+const component = speech ? 'Speech' : 'Ocr';
 if (process.platform !== 'win32') throw Error('Windows AI OCR requires a Windows build host.');
 // Build only. Never installs an SDK runtime, registers identity or launches TixTab.
-const cache = path.resolve(root, '.cache/windows-ai-ocr');
+const cache = path.resolve(root, '.cache', directory);
 if (!cache.startsWith(path.resolve(root) + path.sep)) throw Error('Invalid build output');
 await mkdir(cache, { recursive: true });
 const staging = await mkdtemp(path.join(cache, 'publish-'));
@@ -15,7 +27,7 @@ const child = spawn(
   'dotnet',
   [
     'publish',
-    path.join(root, 'native/windows-ai-ocr/TixTab.WindowsAI.Ocr.csproj'),
+    path.join(root, 'native', directory, `TixTab.WindowsAI.${component}.csproj`),
     '-c',
     'Release',
     '-o',
@@ -43,7 +55,7 @@ if (code !== 0) {
   process.exitCode = code ?? 1;
 } else {
   await copyFile(
-    path.join(root, 'native/windows-ai-ocr/AppxManifest.xml'),
+    path.join(root, 'native', directory, 'AppxManifest.xml'),
     path.join(staging, 'AppxManifest.xml'),
   );
   const packageVersion = JSON.parse(
@@ -54,19 +66,30 @@ if (code !== 0) {
   await writeFile(
     manifest,
     (await readFile(manifest, 'utf8')).replace(
-      'Version="0.3.3.0"',
+      /Version="\d+\.\d+\.\d+\.\d+"/,
       `Version="${packageVersion}.0"`,
     ),
   );
   const nuget = process.env.NUGET_PACKAGES || path.join(os.homedir(), '.nuget/packages');
   await mkdir(path.join(staging, 'Licenses'));
   for (const [name, version] of [
-    ['microsoft.windowsappsdk.ai', '1.8.79'],
-    ['microsoft.windowsappsdk.foundation', '1.8.260505001'],
+    ['microsoft.windowsappsdk.ai', speech ? '2.2.6-experimental' : '1.8.79'],
+    ['microsoft.windowsappsdk.foundation', speech ? '2.1.1-experimental' : '1.8.260505001'],
+    ...(speech ? [['microsoft.windowsappsdk.ml', '2.1.75-experimental']] : []),
   ])
     await copyFile(
       path.join(nuget, name, version, 'license.txt'),
       path.join(staging, 'Licenses', name + '.txt'),
+    );
+  if (speech)
+    await copyFile(
+      path.join(
+        nuget,
+        'microsoft.windowsappsdk.ml',
+        '2.1.75-experimental',
+        'ThirdPartyNotices.txt',
+      ),
+      path.join(staging, 'Licenses', 'windows-ml-third-party.txt'),
     );
   const dotnetRoot = path.dirname(
     execFileSync('where.exe', ['dotnet'], { encoding: 'utf8', windowsHide: true })
@@ -95,8 +118,31 @@ if (code !== 0) {
   // Both resolved paths are fixed children of this repository's build cache.
   if (path.dirname(runtime) !== cache || path.dirname(staging) !== cache)
     throw Error('Invalid build output');
-  await rm(runtime, { recursive: true, force: true });
-  await rename(staging, runtime);
+  // Swap whole directories so a running companion cannot leave a half-deleted runtime.
+  const retired = path.join(cache, 'runtime-retired-' + Date.now());
+  let moved = false;
+  try {
+    await access(runtime);
+    await rename(runtime, retired);
+    moved = true;
+  } catch (error) {
+    if (error.code !== 'ENOENT')
+      throw Error('The native companion is still in use. Build output is preserved at ' + staging, {
+        cause: error,
+      });
+  }
+  try {
+    await rename(staging, runtime);
+  } catch (error) {
+    if (moved) await rename(retired, runtime);
+    throw error;
+  }
+  if (moved) {
+    if (path.dirname(retired) !== cache) throw Error('Invalid retired runtime output');
+    await rm(retired, { recursive: true, force: true }).catch(() => {
+      console.warn('A running native companion retains the previous build at ' + retired);
+    });
+  }
   const certificate = process.env.TIXTAB_WINDOWS_AI_CERT_SHA1;
   if (certificate) {
     if (!/^[a-fA-F0-9]{40}$/.test(certificate))
@@ -116,7 +162,7 @@ if (code !== 0) {
           path.join(runtime, 'Assets', name + '.png'),
           path.join(identity, 'Assets', name + '.png'),
         );
-      const pack = path.join(runtime, 'TixTab.WindowsAI.Ocr.identity.msix');
+      const pack = path.join(runtime, `TixTab.WindowsAI.${component}.identity.msix`);
       for (const [exe, args] of [
         ['makeappx.exe', ['pack', '/o', '/nv', '/d', identity, '/p', pack]],
         ['signtool.exe', ['sign', '/fd', 'SHA256', '/sha1', certificate, pack]],

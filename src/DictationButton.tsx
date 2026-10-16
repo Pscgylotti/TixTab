@@ -5,7 +5,14 @@ import { t, useLocale } from './i18n';
 import type { ModelState } from './modelLibrary';
 import { runtimeStages, runtimeErrors } from './RuntimeSetup';
 import type { RuntimeProgress } from './runtimeBridge';
-const engines = ['sensevoice-small', 'whisper-small', 'system'] as const;
+import { backgroundTasks } from './backgroundTasks';
+const engines = [
+  'sensevoice-small',
+  'whisper-small',
+  'system',
+  'windows-ai',
+  'windows-sdk',
+] as const;
 // Chat and floating keyboards share one native recorder, including portal windows.
 const recorders = new WeakMap<object, symbol>();
 type Engine = (typeof engines)[number];
@@ -13,6 +20,8 @@ const names: Record<Engine, string> = {
   'sensevoice-small': 'SenseVoiceSmall INT8',
   'whisper-small': 'Whisper small INT8',
   system: 'Windows',
+  'windows-ai': 'Windows AI Speech（本地，实验性）',
+  'windows-sdk': 'Windows SDK Speech（可能联网）',
 };
 function saved(key: string, fallback: string) {
   try {
@@ -38,6 +47,20 @@ const errors: Record<string, string> = {
   timeout: '语音识别超时，请重试或切换到 CPU。',
   busy: '语音引擎正在处理上一项任务，请稍候。',
   setup: '运行时安装失败，请检查网络后重试。',
+  'windows-ai-unavailable': 'Windows AI 语音不可用，请检查系统版本、系统模型和组件身份。',
+  'windows-ai-identity':
+    'Windows 语音组件缺少身份或麦克风权限，请注册组件并检查 Windows 隐私设置。',
+  'windows-ai-registration-failed': '组件注册失败，请检查签名或现有开发者模式设置。',
+  'model-not-ready': 'Windows 语音模型尚未就绪，请在语音设置中准备系统模型。',
+  'windows-ai-model-prepare': 'Windows 系统语音模型准备失败。',
+  'windows-ai-state-DisabledByUser': '系统语音模型已被禁用，请在 Windows 设置的 AI 组件中启用。',
+  'windows-ai-state-CapabilityMissing': '语音组件缺少系统 AI 权限，请重新注册组件权限。',
+  'windows-ai-state-OSUpdateNeeded': '此语音模型需要更新 Windows 后才能使用。',
+  'windows-ai-state-NotCompatibleWithSystemHardware':
+    '当前硬件或驱动不兼容 Windows AI 语音，请使用其它语音引擎。',
+  'windows-ai-state-NotSupportedOnCurrentSystem':
+    '当前系统不支持 Windows AI 语音，请使用其它语音引擎。',
+  'speech-privacy': 'Windows SDK 听写未就绪，请检查在线语音识别与麦克风隐私设置。',
 };
 export default function DictationButton({
   disabled,
@@ -45,12 +68,16 @@ export default function DictationButton({
   onStatus,
   onModels,
   hostDocument = document,
+  toggleRequest = 0,
+  onShortcutFinished,
 }: {
   disabled: boolean;
   onText: (text: string) => void;
   onStatus: (text: string) => void;
   onModels?: () => void;
   hostDocument?: Document;
+  toggleRequest?: number;
+  onShortcutFinished?: () => void;
 }) {
   const locale = useLocale(),
     [language, setLanguage] = useState<'zh-CN' | 'en-US'>(() =>
@@ -95,6 +122,13 @@ export default function DictationButton({
   const bridge = window.surfaceDesktop?.dictation,
     models = window.surfaceDesktop?.models;
   const recorder = useRef(Symbol('dictation'));
+  const shortcut = useRef({ seen: 0, send: false, heard: false });
+  const shortcutFinished = useRef(onShortcutFinished);
+  const windowsPreparation = useRef<string | null>(null);
+  const [windowsProgress, setWindowsProgress] = useState<{ stage: string; value: number } | null>(
+    null,
+  );
+  shortcutFinished.current = onShortcutFinished;
   const release = () => {
     if (bridge && recorders.get(bridge) === recorder.current) recorders.delete(bridge);
   };
@@ -109,6 +143,7 @@ export default function DictationButton({
   const cancel = () => {
     if (!running.current) return;
     generation.current++;
+    shortcut.current.send = false;
     running.current = false;
     stopping.current = false;
     setListening(false);
@@ -135,8 +170,33 @@ export default function DictationButton({
       release();
       if (busyRef.current === 'setup') void bridge?.run({ action: 'cancel-setup' });
       if (busyRef.current === 'download') void models?.cancel();
+      if (busyRef.current === 'windows') void bridge?.run({ action: 'windows-cancel' });
+      if (windowsPreparation.current)
+        backgroundTasks.finish(windowsPreparation.current, t('已取消'));
     };
   }, []);
+  useEffect(
+    () =>
+      bridge?.onProgress?.((progress) => {
+        if (!windowsPreparation.current) return;
+        const stages: Record<string, string> = {
+          Installing: '正在下载系统语音模型…',
+          Caching: '正在准备系统语音模型…',
+          Loading: '正在加载系统语音模型…',
+        };
+        const text = t(stages[progress.stage] || '正在准备系统语音模型…');
+        if (mounted.current) {
+          setWindowsProgress(progress);
+          setMessage(text + ` ${Math.round(progress.value * 100)}%`);
+        }
+        backgroundTasks.update(windowsPreparation.current, {
+          status: text,
+          done: progress.value,
+          total: 1,
+        });
+      }),
+    [bridge],
+  );
   useEffect(() => {
     const hidden = () => {
       if (hostDocument.hidden) cancel();
@@ -201,12 +261,15 @@ export default function DictationButton({
     }
     recorders.set(bridge, recorder.current);
     running.current = true;
+    shortcut.current.send = false;
+    shortcut.current.heard = false;
     stopping.current = false;
     setListening(true);
     setFinishing(false);
     setLevels(Array(20).fill(0));
     setActiveInput('');
     const token = ++generation.current;
+    let success = false;
     statusCallback.current(t('正在加载语音模型，首次运行可能需要较长时间…'));
     try {
       const started = await bridge.run({
@@ -215,7 +278,7 @@ export default function DictationButton({
         engine,
         device,
         idleReleaseSeconds: getModelIdleSeconds(),
-        microphone,
+        microphone: engine === 'windows-sdk' ? '' : microphone,
       });
       if (!started.ok) throw new Error(started.error);
       if (token !== generation.current) return;
@@ -223,7 +286,10 @@ export default function DictationButton({
         const next = await bridge.run({ action: 'read', id: started.data.id });
         if (token !== generation.current) return;
         if (!next.ok) throw new Error(next.error);
-        if (next.data.text) textCallback.current(next.data.text);
+        if (next.data.text) {
+          shortcut.current.heard = true;
+          textCallback.current(next.data.text);
+        }
         if (next.data.error) throw new Error(next.data.error);
         const level = Number(next.data.level) || 0;
         if (next.data.microphoneName) setActiveInput(next.data.microphoneName);
@@ -238,13 +304,16 @@ export default function DictationButton({
               : next.data.processing
                 ? '正在离线识别…'
                 : next.data.ready
-                  ? '正在离线听写，点击麦克风停止。'
+                  ? engine === 'windows-sdk'
+                    ? '正在听写（Windows SDK），点击麦克风停止。'
+                    : '正在离线听写，点击麦克风停止。'
                   : '正在加载语音模型，首次运行可能需要较长时间…',
           ) + suffix,
         );
         if (next.data.done) break;
       }
       statusCallback.current('');
+      success = true;
     } catch (e) {
       if (token === generation.current) {
         const key = e instanceof Error ? e.message : '';
@@ -259,11 +328,67 @@ export default function DictationButton({
         stopping.current = false;
         setListening(false);
         setFinishing(false);
+        if (success && shortcut.current.send && shortcut.current.heard)
+          shortcutFinished.current?.();
+        shortcut.current.send = false;
       }
     }
   };
   const begin = (selected = language) => {
     activePromise.current = start(selected);
+  };
+  useEffect(() => {
+    if (!toggleRequest || shortcut.current.seen === toggleRequest || disabled || settingBusy)
+      return;
+    shortcut.current.seen = toggleRequest;
+    if (stopping.current) return;
+    if (running.current) {
+      shortcut.current.send = true;
+      stop();
+    } else begin();
+  }, [toggleRequest, disabled, settingBusy]);
+  const prepareWindows = async (action: 'status' | 'register' | 'prepare') => {
+    if (settingBusy || running.current) return;
+    busyRef.current = 'windows';
+    setSettingBusy('windows');
+    setWindowsProgress(null);
+    setMessage(t('正在准备系统语音模型…'));
+    const task =
+      action === 'prepare'
+        ? backgroundTasks.begin(t('Windows 系统语音模型'), {
+            open: () => setOpen(true),
+            cancel: () => {
+              void bridge?.run({ action: 'windows-cancel' });
+            },
+          })
+        : null;
+    windowsPreparation.current = task;
+    try {
+      const r = await bridge?.run({ action: `windows-${action}`, engine });
+      if (task)
+        backgroundTasks.finish(
+          task,
+          r?.ok ? t('Windows 语音组件已准备。') : t('Windows 系统语音模型准备失败。'),
+        );
+      if (mounted.current)
+        setMessage(
+          r?.ok
+            ? action === 'status'
+              ? `${t('Windows 语音状态')}: ${r.data?.state || 'Ready'}`
+              : t('Windows 语音组件已准备。')
+            : t(errors[r?.error || 'windows-ai-unavailable'] || errors['windows-ai-unavailable']) +
+                (r?.hresult ? ` (${r.hresult})` : '') +
+                (r?.data?.detail ? ` ${String(r.data.detail).slice(0, 600)}` : '') +
+                (r?.data?.reason ? ` [${String(r.data.reason).slice(0, 100)}]` : ''),
+        );
+    } catch {
+      if (task) backgroundTasks.finish(task, t('Windows 系统语音模型准备失败。'));
+      if (mounted.current) setMessage(t(errors['windows-ai-unavailable']));
+    } finally {
+      windowsPreparation.current = null;
+      busyRef.current = '';
+      if (mounted.current) setSettingBusy('');
+    }
   };
   const changeLanguage = async (selected: 'zh-CN' | 'en-US') => {
     const resume = running.current;
@@ -314,7 +439,15 @@ export default function DictationButton({
         className={`icon-button chat-dictation ${listening ? 'listening' : ''}`}
         aria-label={t(listening ? '停止语音输入' : '语音输入')}
         aria-pressed={listening}
-        title={names[engine] + ' · ' + t('本地识别；识别文字可编辑，点击发送后才提交。')}
+        title={
+          names[engine] +
+          ' · ' +
+          t(
+            engine === 'windows-sdk'
+              ? '可能使用在线语音服务；识别文字可编辑。'
+              : '本地识别；识别文字可编辑，点击发送后才提交。',
+          )
+        }
         disabled={disabled || finishing || !!settingBusy || !bridge}
         onClick={() => (listening ? stop() : begin())}
       >
@@ -373,7 +506,13 @@ export default function DictationButton({
             <select
               aria-label={t('语音输入麦克风')}
               value={microphone}
-              disabled={listening || finishing || microphonesBusy || !!settingBusy}
+              disabled={
+                listening ||
+                finishing ||
+                microphonesBusy ||
+                !!settingBusy ||
+                engine === 'windows-sdk'
+              }
               onChange={(e) => {
                 save('voiceMicrophone', e.target.value);
                 setMicrophone(e.target.value);
@@ -406,7 +545,7 @@ export default function DictationButton({
           </button>
           {microphoneError && <p role="status">{microphoneError}</p>}
           <p className="chat-voice-note">
-            {t('三种语音引擎共用此选择，不更改 Windows 默认输入设备。')}
+            {t('本地引擎共用所选麦克风；Windows SDK 使用系统默认输入，不更改系统设置。')}
           </p>
           <label>
             {t('识别引擎')}
@@ -453,10 +592,59 @@ export default function DictationButton({
                 ? '轻量中文优先，CPU 双线程；模型约 228 MiB。'
                 : engine === 'whisper-small'
                   ? '多语言识别，模型约 245 MiB。首次 NPU/GPU 编译会较慢。'
-                  : '使用 Windows 已安装的离线语音识别包。',
+                  : engine === 'windows-ai'
+                    ? 'Windows AI 语音在本机识别；实验性接口，需要受支持的 Windows 11 与系统模型。设备由 Windows 自动选择。'
+                    : engine === 'windows-sdk'
+                      ? 'Windows SDK 听写可能使用在线语音服务，需要麦克风和在线语音识别权限。'
+                      : '使用 Windows 已安装的离线语音识别包。',
             )}
           </p>
-          {engine !== 'system' && (
+          {['windows-ai', 'windows-sdk'].includes(engine) && (
+            <div className="row">
+              <button
+                disabled={!!settingBusy || listening || finishing}
+                onClick={() => void prepareWindows('status')}
+              >
+                {t('检查 Windows 语音')}
+              </button>
+              <button
+                disabled={!!settingBusy || listening || finishing}
+                onClick={() => void prepareWindows('register')}
+              >
+                {t('注册语音组件权限')}
+              </button>
+              {engine === 'windows-ai' && (
+                <button
+                  disabled={!!settingBusy || listening || finishing}
+                  onClick={() => void prepareWindows('prepare')}
+                >
+                  {t('准备 Windows 语音模型')}
+                </button>
+              )}
+            </div>
+          )}
+          {engine === 'windows-ai' && (
+            <p className="chat-voice-note">
+              {t(
+                '准备模型会通过 Windows Update 下载可选系统模型，可在 Windows 设置的 AI 组件中管理。',
+              )}
+            </p>
+          )}
+          {settingBusy === 'windows' && windowsPreparation.current && (
+            <div className="chat-voice-readiness" role="status">
+              <span>
+                {windowsProgress
+                  ? `${Math.round(windowsProgress.value * 100)}%`
+                  : t('等待 Windows 返回模型进度…')}
+              </span>
+              <progress
+                aria-label={t('系统语音模型准备进度')}
+                max={1}
+                value={windowsProgress?.value}
+              />
+            </div>
+          )}
+          {['sensevoice-small', 'whisper-small'].includes(engine) && (
             <>
               <div className="chat-voice-readiness">
                 <span>{t(installed ? '模型已安装' : '模型未安装')}</span>

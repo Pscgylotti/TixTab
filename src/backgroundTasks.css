@@ -1,0 +1,68 @@
+.background-task-dock {
+  position: fixed;
+  right: 14px;
+  top: 144px;
+  z-index: 900;
+  width: 260px;
+  max-width: calc(100vw - 16px);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: 0 5px 22px #0003;
+  overflow: hidden;
+}
+.background-task-dock header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  touch-action: none;
+  cursor: grab;
+}
+.background-task-dock header strong {
+  flex: 1;
+  font-size: 12px;
+}
+.background-task-dock button {
+  min-height: 24px;
+  padding: 3px 5px;
+}
+.background-task-list {
+  max-height: 180px;
+  overflow: auto;
+  padding: 0 8px 6px;
+}
+.background-task-list article {
+  padding: 6px 2px;
+  border-top: 1px solid var(--border);
+}
+.background-task-list article > div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.background-task-list strong {
+  flex: 1;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.background-task-list small {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.background-task-list progress {
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-top: 5px;
+}
+.modal-scrim.background-hidden {
+  display: none;
+}

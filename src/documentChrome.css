@@ -458,7 +458,7 @@
 .chrome-minimal .status-tools .insert-dock > div {
   display: none;
 }
-.chrome-minimal .statusbar > .row:last-child > button:last-child {
+.chrome-minimal .statusbar .help-button {
   display: none;
 }
 .chrome-minimal .keyboard-toggle {

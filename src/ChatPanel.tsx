@@ -66,6 +66,7 @@ export default function ChatPanel({
   onNavigate,
   onModels,
   onSvgInsert,
+  voiceRequest = 0,
 }: {
   documentId: string;
   source: Uint8Array | null;
@@ -80,6 +81,7 @@ export default function ChatPanel({
   onNavigate: (id: string) => void;
   onModels?: () => void;
   onSvgInsert: (image: ImportedImage) => void;
+  voiceRequest?: number;
 }) {
   useLocale();
   const floating = useChatWindow();
@@ -126,6 +128,9 @@ export default function ChatPanel({
     [loginBusy, setLoginBusy] = useState(false),
     [loading, setLoading] = useState(true),
     [confirmClear, setConfirmClear] = useState(false);
+  const [voiceSendPending, setVoiceSendPending] = useState(false);
+  const promptRef = useRef(prompt);
+  promptRef.current = prompt;
   const mounted = useRef(true),
     abort = useRef<AbortController | null>(null),
     history = useRef(messages),
@@ -379,10 +384,11 @@ export default function ChatPanel({
       if (mounted.current) setBusy(false);
     }
   };
-  const send = async (original = false, generateSvg = false) => {
+  const send = async (original = false, generateSvg = false, voicePrompt?: string) => {
+    const inputPrompt = voicePrompt ?? prompt;
     if (
       job.current ||
-      (!original && !prompt.trim() && !contexts.length && !images.length) ||
+      (!original && !inputPrompt.trim() && !contexts.length && !images.length) ||
       !canChat ||
       loading
     )
@@ -444,7 +450,7 @@ export default function ChatPanel({
       const user: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'user',
-        text: original ? '' : prompt.trim().slice(0, generateSvg ? 7000 : 8000),
+        text: original ? '' : inputPrompt.trim().slice(0, generateSvg ? 7000 : 8000),
         ...(original || generateSvg
           ? { action: original ? ('summary' as const) : ('svg' as const) }
           : {}),
@@ -452,7 +458,7 @@ export default function ChatPanel({
           ? t(summaryPrompt)
           : generateSvg
             ? t(svgPrompt)
-            : prompt.trim()
+            : inputPrompt.trim()
               ? undefined
               : t('请分析附加的内容。'),
         reading:
@@ -575,6 +581,12 @@ export default function ChatPanel({
       }
     }
   };
+  useEffect(() => {
+    if (!voiceSendPending || loading || busy || loginBusy) return;
+    setVoiceSendPending(false);
+    if (canChat) void send(false, false, promptRef.current);
+    else setStatus(t('请先配置聊天后端，语音文字已保留在输入框。'));
+  }, [voiceSendPending, loading, busy, loginBusy, canChat]);
   const clear = async () => {
     await queue.current;
     await del(key);
@@ -1040,6 +1052,8 @@ export default function ChatPanel({
           <div className="chat-send-row">
             <span className="chat-keyboard-slot" />
             <DictationButton
+              toggleRequest={voiceRequest}
+              onShortcutFinished={() => setVoiceSendPending(true)}
               hostDocument={floating.target?.ownerDocument}
               onModels={
                 onModels
@@ -1050,9 +1064,14 @@ export default function ChatPanel({
                   : undefined
               }
               disabled={busy || loginBusy}
-              onText={(text) =>
-                setPrompt((current) => (current + (current ? '\n' : '') + text).slice(0, 8000))
-              }
+              onText={(text) => {
+                promptRef.current = (
+                  promptRef.current +
+                  (promptRef.current ? '\n' : '') +
+                  text
+                ).slice(0, 8000);
+                setPrompt(promptRef.current);
+              }}
               onStatus={setStatus}
             />
             <span className="chat-send-hint">{t('Enter 发送 · Shift+Enter 换行')}</span>

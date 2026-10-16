@@ -57,6 +57,10 @@ export async function verifyPdfUi(page) {
       'No-op export must be byte-identical',
     );
     await page.getByRole('button', { name: '插入空白页', exact: true }).click();
+    await page
+      .getByRole('dialog', { name: '插入空白页', exact: true })
+      .getByRole('button', { name: '插入页面', exact: true })
+      .click();
     await page.getByRole('button', { name: '第 2 页', exact: true }).click({ button: 'right' });
     await page.getByRole('menuitem', { name: '上移', exact: true }).click();
     await page.locator('.page-list').evaluate((el) => {
@@ -64,7 +68,10 @@ export async function verifyPdfUi(page) {
     });
     await page.getByRole('button', { name: '第 6 页', exact: true }).click({ button: 'right' });
     await page.getByRole('menuitem', { name: '删除', exact: true }).click();
-    await page.getByRole('dialog').getByRole('button', { name: '删除当前页', exact: true }).click();
+    await page
+      .getByRole('alertdialog', { name: '删除页面', exact: true })
+      .getByRole('button', { name: '确认删除', exact: true })
+      .click();
     await page.locator('.page-list').evaluate((el) => {
       el.scrollTop = 0;
     });
@@ -130,6 +137,10 @@ export async function verifyPdfUi(page) {
       signed,
     );
     await page.getByRole('button', { name: '插入空白页', exact: true }).click();
+    await page
+      .getByRole('dialog', { name: '插入空白页', exact: true })
+      .getByRole('button', { name: '插入页面', exact: true })
+      .click();
     const count = await page.evaluate(() => window.__surfacePdfQa.files.length);
     if (
       (await page
@@ -192,12 +203,13 @@ export async function verifyPdfUi(page) {
       'Actual UI signature guard: unchanged bytes, no export before confirmation, cancel, explicit modified copy, unchanged source; English/night/560px/44px verified (synthetic signature only)',
     );
   } finally {
-    await page.evaluate(() => {
-      if (window.__surfacePdfQa) {
-        HTMLAnchorElement.prototype.click = window.__surfacePdfQa.original;
-        delete window.__surfacePdfQa;
-      }
-    });
+    if (!page.isClosed())
+      await page.evaluate(() => {
+        if (window.__surfacePdfQa) {
+          HTMLAnchorElement.prototype.click = window.__surfacePdfQa.original;
+          delete window.__surfacePdfQa;
+        }
+      });
     if (viewport) await page.setViewportSize(viewport);
   }
 }

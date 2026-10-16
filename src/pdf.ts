@@ -4,9 +4,30 @@ import { trackPerformance } from './performanceLedger';
 import { releasePdfRenderCache } from './pdfRenderCache';
 export { exportPdf, SignedPdfExportError } from './pdfExportClient';
 export type { PdfExportProgress } from './pdfExportClient';
+const retained = new WeakMap<PDFDocumentProxy, { count: number; retire: boolean }>();
+export function retainPdf(pdf: PDFDocumentProxy | null) {
+  if (!pdf) return () => {};
+  const hold = retained.get(pdf) ?? { count: 0, retire: false };
+  hold.count++;
+  retained.set(pdf, hold);
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    if (--hold.count === 0) {
+      retained.delete(pdf);
+      if (hold.retire) void pdf.destroy();
+    }
+  };
+}
 export function destroyPdf(pdf: PDFDocumentProxy | null | undefined) {
   if (!pdf) return Promise.resolve();
   releasePdfRenderCache(pdf);
+  const hold = retained.get(pdf);
+  if (hold) {
+    hold.retire = true;
+    return Promise.resolve();
+  }
   return pdf.destroy();
 }
 export async function loadPdf(bytes: Uint8Array) {

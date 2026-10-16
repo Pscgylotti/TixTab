@@ -644,6 +644,20 @@ export default function TouchKeyboard({
     setVoiceStatus('');
     setOpen(false);
   };
+  useEffect(() => {
+    if (!open) return;
+    const physicalInput = (event: KeyboardEvent) => {
+      if (
+        !event.isTrusted ||
+        ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'NumLock', 'ScrollLock'].includes(event.key)
+      )
+        return;
+      setVoiceStatus('');
+      setOpen(false);
+    };
+    view.addEventListener('keydown', physicalInput, true);
+    return () => view.removeEventListener('keydown', physicalInput, true);
+  }, [open, view]);
   const toggle = (
     <button
       className={`keyboard-toggle${dock ? ' keyboard-docked' : ''}`}

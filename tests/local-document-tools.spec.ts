@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs/promises';
 const { PDFDocument } = createRequire(import.meta.url)('pdf-lib');
 const xml = `<?xml version="1.0"?><score-partwise version="4.0"><defaults><page-layout><page-width>1000</page-width><page-height>1400</page-height></page-layout></defaults><part-list><score-part id="P1"><part-name>Piano</part-name></score-part></part-list><part id="P1"><measure number="1" width="800"><attributes><divisions>1</divisions><time><beats>2</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes><print><system-layout><top-system-distance>100</top-system-distance></system-layout></print><note default-x="100" default-y="-10"><pitch><step>A</step><octave>4</octave></pitch><duration>1</duration></note><note default-x="300" default-y="-15"><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration></note></measure></part></score-partwise>`;
-async function fixture(page: any) {
+async function fixture(page: any, count = 2) {
   await page.addInitScript(
     ({ xml }: any) => {
       (window as any).toolCalls = [];
@@ -40,6 +40,7 @@ async function fixture(page: any) {
     { xml },
   );
   await page.goto('/');
+  await expect(page.getByRole('button', { name: '打开', exact: true })).toBeEnabled();
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   const bytes = await page.evaluate(() => {
     const c = document.createElement('canvas');
@@ -54,7 +55,7 @@ async function fixture(page: any) {
   });
   const pdf = await PDFDocument.create(),
     image = await pdf.embedPng(Buffer.from(bytes, 'base64'));
-  for (let i = 0; i < 2; i++)
+  for (let i = 0; i < count; i++)
     pdf.addPage([360, 480]).drawImage(image, { x: 0, y: 0, width: 360, height: 480 });
   await page.locator('input[type=file]').setInputFiles({
     name: 'Local tools.pdf',
@@ -96,6 +97,111 @@ test('document correction previews, applies below handwriting, indexes only and 
       () => (window as any).toolCalls.filter((r: any) => r.action === 'correct')[0].device,
     ),
   ).toBe('NPU');
+});
+
+test('presentation follows live music playback and shared audio-follow positions in all three views', async ({
+  page,
+}) => {
+  await fixture(page, 3);
+  await expect(page.getByRole('textbox', { name: '文档名称', exact: true })).toHaveValue(
+    'Local tools',
+  );
+  await page.getByRole('button', { name: '额外工具', exact: true }).click();
+  await page.getByRole('menuitem', { name: '五线谱识别', exact: true }).click();
+  await page.getByLabel('文档工具范围', { exact: true }).selectOption('all');
+  await page.getByRole('button', { name: '开始识别', exact: true }).click();
+  await expect(page.locator('.local-document-body > p[role=status]')).toContainText('已完成 3');
+  await page.getByRole('button', { name: '关闭文档工具', exact: true }).click();
+  const player = page.getByLabel('五线谱播放器', { exact: true });
+  for (const mode of ['单页标注', '连续页面预览', '双页预览']) {
+    await page.getByRole('button', { name: mode, exact: true }).click();
+    await player.getByLabel('乐谱页面', { exact: true }).selectOption({ index: 0 });
+    await player.getByLabel('播放速度', { exact: true }).fill('240');
+    await player.getByRole('button', { name: '播放乐谱', exact: true }).click();
+    await page.getByRole('button', { name: '展示全屏', exact: true }).click();
+    const display = page.locator('.presentation-view');
+    await expect(player).toBeHidden();
+    await expect(display).toHaveAttribute('data-page-index', '2', { timeout: 6000 });
+    await expect(display.locator('.music-score-layer line')).toHaveCount(1);
+    // Both playback and microphone following publish through this same cursor.
+    await expect(
+      player.getByRole('button', { name: '播放乐谱', exact: true, includeHidden: true }),
+    ).toHaveCount(1, {
+      timeout: 6000,
+    });
+    await page.evaluate(async () => {
+      const s = await import('/src/workspaceStore.ts' as string),
+        t = await import('/src/musicTransport.ts' as string);
+      const n = (await s.bootstrapWorkspace()).notebook;
+      t.setScoreCursor({ pageId: n.pages[0].id, beat: 0, seek: () => {} });
+    });
+    await expect(display).toHaveAttribute('data-page-index', '0');
+    await page.keyboard.press('Escape');
+    await expect(display).toHaveCount(0);
+    await expect(player).toBeVisible();
+  }
+});
+
+test('background correction keeps its PDF alive across tabs and preserves new handwriting', async ({
+  page,
+}) => {
+  await fixture(page);
+  await expect(page.getByRole('textbox', { name: '文档名称', exact: true })).toHaveValue(
+    'Local tools',
+  );
+  await page.evaluate(() => {
+    const bridge = (window as any).surfaceDesktop.documentTools,
+      original = bridge.run;
+    (window as any).__correctionNumber = 0;
+    bridge.run = async (r: any) => {
+      if (r.action === 'correct') {
+        (window as any).__correctionNumber++;
+        await new Promise<void>((resolve) => {
+          (window as any).__completeCorrection = resolve;
+        });
+      }
+      return original(r);
+    };
+  });
+  await page.getByRole('button', { name: '额外工具', exact: true }).click();
+  await page.getByRole('menuitem', { name: '文档矫正', exact: true }).click();
+  await page.getByLabel('文档工具范围', { exact: true }).selectOption('all');
+  await page.getByRole('button', { name: '开始矫正', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).__correctionNumber)).toBe(1);
+  await page.getByRole('button', { name: '关闭文档工具', exact: true }).click();
+  await expect(page.getByLabel('后台任务', { exact: true })).toContainText('文档矫正');
+  const box = (await page.locator('.page-editor').boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.4);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.45, { steps: 8 });
+  await page.mouse.up();
+  await page.getByRole('button', { name: '新建文档标签', exact: true }).click();
+  await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('Other document');
+  await page.evaluate(() => (window as any).__completeCorrection());
+  await expect.poll(() => page.evaluate(() => (window as any).__correctionNumber)).toBe(2);
+  await page.evaluate(() => (window as any).__completeCorrection());
+  await expect(page.getByLabel('后台任务', { exact: true })).toContainText('已完成 2');
+  await expect(page.getByRole('button', { name: '停止任务 文档矫正', exact: true })).toHaveCount(0);
+  const state = await page.evaluate(async () => {
+    const s = await import('/src/workspaceStore.ts' as string),
+      list = (await s.listWorkspace()).documents;
+    const n = (
+      await s.loadWorkspaceDocument(list.find((d: any) => d.name === 'Local tools').id, false)
+    ).notebook;
+    return {
+      strokes: n.pages[0].strokes.length,
+      corrected: n.pages.map((p: any) => p.images.filter((i: any) => i.correction).length),
+    };
+  });
+  expect(state).toEqual({ strokes: 1, corrected: [1, 1] });
+  await expect(page.getByRole('textbox', { name: '文档名称', exact: true })).toHaveValue(
+    'Other document',
+  );
+  await expect(page.locator('.save-state')).toContainText('已自动保存');
+  await page.reload();
+  await expect(page.getByRole('textbox', { name: '文档名称', exact: true })).toHaveValue(
+    'Other document',
+  );
 });
 test('recognized scores persist, correct MIDI, seek from the page and auto turn in all layouts', async ({
   page,

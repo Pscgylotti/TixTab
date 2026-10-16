@@ -18,6 +18,7 @@ import { runLocalDocumentTool, localToolErrors, type LocalToolEngine } from './l
 import { parseMusicScore, remapScoreSystems } from './musicScore';
 import { setLocalImagePicker, pickLocalImage } from './localImagePicker';
 import './localDocumentTools.css';
+import { useBackgroundPanel } from './useBackgroundPanel';
 export default function LocalDocumentToolDialog({
   kind,
   notebook,
@@ -26,14 +27,16 @@ export default function LocalDocumentToolDialog({
   onApply,
   onClose,
   onRecognized,
+  onVisibility,
 }: {
   kind: 'correct' | 'music';
   notebook: Notebook;
   pdf: PDFDocumentProxy | null;
   index: number;
-  onApply: (pages: Page[]) => void;
+  onApply: (pages: Page[], bases: Page[], origin: Notebook) => void | Promise<void>;
   onClose: () => void;
   onRecognized: () => void;
+  onVisibility?: (hidden: boolean) => void;
 }) {
   const [engine, setEngine] = useState<LocalToolEngine>(kind === 'correct' ? 'uvdoc' : 'audiveris'),
     [scope, setScope] = useState('current'),
@@ -57,6 +60,7 @@ export default function LocalDocumentToolDialog({
     device?: string;
   } | null>(null);
   const controller = useRef<AbortController | null>(null),
+    setupCancel = useRef<(() => void) | null>(null),
     alive = useRef(true),
     current = useRef(notebook);
   current.current = notebook;
@@ -65,7 +69,26 @@ export default function LocalDocumentToolDialog({
     setLocalImagePicker(null);
     onClose();
   };
-  const { close, confirmation } = useRuntimeClose(closeNow);
+  const panel = useBackgroundPanel({
+    title: t(kind === 'correct' ? '文档矫正' : '五线谱识别'),
+    busy: busy || settingUp,
+    status,
+    done: progress.done,
+    total: progress.total,
+    cancel: () => {
+      controller.current?.abort();
+      setupCancel.current?.();
+    },
+    onClose,
+    onVisibility,
+  });
+  const { close, confirmation } = useRuntimeClose(
+    () => (busy || settingUp ? panel.hide() : closeNow()),
+    undefined,
+    panel.hide,
+  );
+  const hidden = useRef(panel.hidden);
+  hidden.current = panel.hidden;
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -87,6 +110,7 @@ export default function LocalDocumentToolDialog({
   }, [picking]);
   const start = async (previewOnly = false) => {
     if (controller.current || settingUp) return;
+    const origin = current.current;
     const a = new AbortController();
     controller.current = a;
     setBusy(true);
@@ -115,7 +139,9 @@ export default function LocalDocumentToolDialog({
         }
         for (const target of previewOnly ? targets.slice(0, 1) : targets) {
           a.signal.throwIfAborted();
-          const page = current.current.pages.find((p) => p.id === target.pageId);
+          const page =
+            current.current.pages.find((p) => p.id === target.pageId) ??
+            origin.pages.find((p) => p.id === target.pageId);
           if (!page) continue;
           setStatus(t('正在矫正文档…'));
           const result = await correctTarget(page, target, pdf, mode, device, a.signal);
@@ -124,8 +150,12 @@ export default function LocalDocumentToolDialog({
             setPreview({ ...result, target, page });
             setStatus(t('预览已生成，确认后应用。'));
           } else {
-            const latest = current.current.pages.find((p) => p.id === target.pageId)!;
-            onApply([await applyCorrection(latest, target, result.image, result.model, a.signal)]);
+            const latest = current.current.pages.find((p) => p.id === target.pageId) ?? page;
+            await onApply(
+              [await applyCorrection(latest, target, result.image, result.model, a.signal)],
+              [latest],
+              origin,
+            );
             completed++;
             setProgress((p) => ({ ...p, done: completed }));
           }
@@ -157,8 +187,8 @@ export default function LocalDocumentToolDialog({
             if (!result.noteLocations && result.systems?.length)
               score = remapScoreSystems(score, result.systems);
             a.signal.throwIfAborted();
-            const latest = current.current.pages.find((p) => p.id === page.id);
-            if (latest) onApply([{ ...latest, score }]);
+            const latest = current.current.pages.find((p) => p.id === page.id) ?? page;
+            await onApply([{ ...latest, score }], [latest], origin);
             completed++;
           } catch (e) {
             if (a.signal.aborted) throw e;
@@ -167,7 +197,7 @@ export default function LocalDocumentToolDialog({
           }
           setProgress((p) => ({ ...p, done: completed + failures }));
         }
-        if (completed) onRecognized();
+        if (completed && !hidden.current) onRecognized();
       }
       if (!previewOnly) setStatus(t('已完成 {0} 项，未识别 {1} 项。', completed, failures));
     } catch (e) {
@@ -200,9 +230,11 @@ export default function LocalDocumentToolDialog({
     controller.current = a;
     setBusy(true);
     try {
-      onApply([
-        await applyCorrection(page, preview.target, preview.image, preview.model, a.signal),
-      ]);
+      await onApply(
+        [await applyCorrection(page, preview.target, preview.image, preview.model, a.signal)],
+        [page],
+        current.current,
+      );
       setPreview(null);
       setStatus(t('已应用矫正，可撤销。'));
     } catch {
@@ -223,11 +255,11 @@ export default function LocalDocumentToolDialog({
   return (
     <>
       {confirmation}
-      <div className="modal-scrim">
+      <div className={`modal-scrim${panel.hidden ? ' background-hidden' : ''}`}>
         <section
           className="modal local-document-dialog"
           role="dialog"
-          aria-modal="true"
+          aria-modal={panel.hidden ? undefined : true}
           aria-label={t(kind === 'correct' ? '文档矫正' : '五线谱识别')}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
@@ -344,7 +376,14 @@ export default function LocalDocumentToolDialog({
                 </>
               )}
             </div>
-            <LocalToolSetup key={engine} engine={engine} onBusy={setSettingUp} />
+            <LocalToolSetup
+              key={engine}
+              engine={engine}
+              onBusy={setSettingUp}
+              onCancel={(cancel) => {
+                setupCancel.current = cancel;
+              }}
+            />
             {preview && (
               <div className="correction-comparison">
                 <figure>
