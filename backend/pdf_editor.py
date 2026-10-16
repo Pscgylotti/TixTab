@@ -21,6 +21,20 @@ def overlaps(a, b):
     return not r.is_empty and r.width > .05 and r.height > .05
 
 
+def substantial(a, b):
+    """More than a quarter of the smaller box is shared. Line boxes of tightly set
+    headings touch by fractions of a point without sharing any glyphs."""
+    r = fitz.Rect(a) & fitz.Rect(b)
+    if r.is_empty:
+        return False
+    smaller = min(fitz.Rect(a).get_area(), fitz.Rect(b).get_area())
+    return smaller > 0 and r.get_area() > .25 * smaller
+
+
+def compact(text):
+    return ''.join(text.split())
+
+
 def elements(page):
     result = []
     # Exclude image bytes from text extraction: inspection is geometry/text only.
@@ -38,8 +52,13 @@ def elements(page):
                     kind='text', rect=list(rect), raw=raw, text=span['text'], font=span['font'],
                     fontSize=span['size'], color='#%06x' % (span['color'] & 0xffffff),
                     origin=list(span['origin']), blocked=blocked))
+    # MuPDF lists a shading fill (`sh`) as a pseudo image without an XObject.
+    # It is not an image occurrence and must not block edits of images near it.
+    painted = [fitz.Rect(b) for kind, b in page.get_bboxlog() if kind == 'fill-image']
     for i, info in enumerate(page.get_image_info(xrefs=True)):
         raw = list(info['bbox'])
+        if not info['xref'] and not any(max(abs(r.x0 - raw[0]), abs(r.y0 - raw[1]), abs(r.x1 - raw[2]), abs(r.y1 - raw[3])) < .5 for r in painted):
+            continue
         rect = fitz.Rect(raw) * page.rotation_matrix
         matrix = info['transform']
         # Skewed, reflected or clipped occurrences need operator-level editing.
@@ -121,7 +140,10 @@ def prepare_edit(doc, page, request, all_elements=None, font_cache=None, editabl
     # Redaction is occurrence-local, unlike replace_image(xref), which changes all
     # uses of a shared image. Never silently erase another overlapping occurrence.
     same = [e for e in all_elements if e['id'] != item['id'] and e['kind'] == item['kind'] and overlaps(e['raw'],area)]
-    if same:
+    # Image redaction removes every image it touches. Text redaction keeps glyphs
+    # that only graze the area, so only real text overlap is refused up front;
+    # grazing neighbours are checked after removal (see apply_prepared).
+    if any(item['kind'] == 'image' or substantial(e['raw'], area) for e in same):
         raise ValueError('overlapping-elements')
     # Do not apply user-authored redactions as a side effect of a content edit.
     if any(a.type[0] == fitz.PDF_ANNOT_REDACT for a in (page.annots() or [])):
@@ -197,7 +219,8 @@ def prepare_edit(doc, page, request, all_elements=None, font_cache=None, editabl
                         fontname=font_name,fontsize=font_size,color=ink,overlay=True)
             else:
                 page.insert_image(target,stream=image_bytes,keep_proportion=False,overlay=True)
-    return dict(kind=item['kind'],area=area,insert=insert,warning=warning)
+    return dict(id=item['id'],kind=item['kind'],area=area,insert=insert,warning=warning,
+                neighbours=[e for e in same if e['kind']=='text'])
 
 
 def apply_prepared(page, prepared):
@@ -207,6 +230,12 @@ def apply_prepared(page, prepared):
         matching=[item for item in prepared if item['kind']==kind]
         for item in matching: page.add_redact_annot(item['area'],fill=False,cross_out=False)
         if matching: page.apply_redactions(images=1 if kind=='image' else 0,graphics=0,text=0 if kind=='text' else 1)
+    # Text that only touched an edited area must have survived its removal intact.
+    edited={item['id'] for item in prepared}
+    for neighbour in {n['id']:n for item in prepared for n in item.get('neighbours',[])}.values():
+        if neighbour['id'] in edited: continue
+        if compact(neighbour['text']) not in compact(page.get_textbox(fitz.Rect(neighbour['raw']))):
+            raise ValueError('overlapping-elements')
     for kind in ['image','text']:
         for item in prepared:
             if item['kind']==kind: item['insert']()

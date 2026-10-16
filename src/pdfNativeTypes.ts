@@ -117,4 +117,7 @@ export const pdfEditErrors: Record<string, string> = {
   'crop-range': '裁剪后至少需要保留每个方向 5% 的页面。',
   'shared-page': '源页面被重复引用，请先使用复制页面创建独立副本。',
   'page-range': '请输入有效的页码范围。',
+  'invalid-transform': '此变换会使对象消失，请调整后重试。',
+  'invalid-stroke': '线宽必须在 0–1000 之间。',
+  'pdf-object-memory': '此页对象过大，暂时无法编辑。',
 };
