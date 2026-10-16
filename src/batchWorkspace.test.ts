@@ -1,12 +1,12 @@
 import { expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
-import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { batchOutputName } from './batchWorkspace';
 const { createBatchPdf } = createRequire(import.meta.url)('../electron/batch-pdf.cjs');
 it('indexes only PDFs recursively, persists folder grants and exports without overwriting originals', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'tixtab-batch-')),
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'tixtab-batch-'))),
     input = join(root, 'input'),
     output = join(root, 'output');
   await mkdir(join(input, 'nested'), { recursive: true });

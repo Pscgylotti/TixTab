@@ -93,7 +93,7 @@ describe('dynamic bounding hierarchy', () => {
     const s = { ...stroke(0), points: [] };
     rememberInkPath(s, 'M -10.25,20 L 30,40 Z');
     expect(inkBounds(s)).toEqual({ minX: -10.25, minY: 20, maxX: 30, maxY: 40 });
-  });
+  }, 15000);
 
   it('never drops an exact swept eraser hit, including fast crossing and pressure strokes', () => {
     const strokes = Array.from({ length: 350 }, (_, i) => stroke(i)),

@@ -11,13 +11,19 @@ const sha = async (path) => {
   for await (const chunk of createReadStream(path)) hash.update(chunk);
   return hash.digest('hex');
 };
+const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], {
+  encoding: 'utf8',
+  windowsHide: true,
+}).trim();
+// When only unbundled tests/metadata change after packaging, retain the exact
+// packaging revision as well as the final corresponding-source revision.
+const buildSourceCommit = process.argv[2] ?? sourceCommit;
+if (!/^[0-9a-f]{40}$/.test(buildSourceCommit)) throw Error('Invalid build source commit');
 const info = {
   version: pkg.version,
   source: 'https://github.com/Pscgylotti/TixTab',
-  sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], {
-    encoding: 'utf8',
-    windowsHide: true,
-  }).trim(),
+  sourceCommit,
+  buildSourceCommit,
   platform: 'Windows x64',
   electron: pkg.devDependencies.electron,
   license: pkg.license,
