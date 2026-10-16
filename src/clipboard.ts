@@ -1,4 +1,30 @@
-import { rememberClipboard } from './clipboardShelf';
+import { browserShelf, rememberClipboard } from './clipboardShelf';
+import { canvasPng } from './imageDownload';
+export async function copyCanvasImage(canvas: HTMLCanvasElement, signal: AbortSignal) {
+  signal.throwIfAborted();
+  const png = canvasPng(canvas).then((blob) => {
+    signal.throwIfAborted();
+    return blob;
+  });
+  // Begin the clipboard write in the click handler to preserve user activation.
+  await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+  if (signal.aborted || window.surfaceDesktop?.clipboardShelf) return;
+  const blob = await png,
+    shelf = await browserShelf.run('list');
+  // The browser fallback needs a data URL; avoid allocating one that could
+  // never fit its memory budget. Desktop OS history records the PNG directly.
+  if (!shelf || (blob.size * 8) / 3 + 2048 > shelf.limit || signal.aborted) return;
+  const image = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    const abort = () => reader.abort();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reader.onabort = () => reject(Error('image-copy-cancelled'));
+    reader.onloadend = () => signal.removeEventListener('abort', abort);
+    signal.addEventListener('abort', abort, { once: true });
+    reader.readAsDataURL(blob);
+  });
+  if (!signal.aborted) rememberClipboard({ text: '', html: '', image });
+}
 export async function copyImage(data: string) {
   const response = await fetch(data);
   const blob = await response.blob();

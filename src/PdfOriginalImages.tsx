@@ -1,8 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { trackPerformance } from './performanceLedger';
 import { createPortal } from 'react-dom';
 import type { PDFDocumentProxy } from './pdfTypes';
-import { X, ScanText } from 'lucide-react';
+import { X, ScanText, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Page } from './model';
 import { getPdfImages } from './pdfNight';
 import { polygonBox, transformPolygon, type ImagePolygon } from './pdfNightGeometry';
@@ -10,6 +10,9 @@ import { requestPdfTile, renderingCancelled } from './pdfRenderCache';
 import { t as tr, useLocale } from './i18n';
 import ZoomableImagePreview from './ZoomableImagePreview';
 import ImageDownloadButton from './ImageDownloadButton';
+import ImageCopyButton from './ImageCopyButton';
+import { DocumentEditContext } from './DocumentEditContext';
+import { adjacentOriginalImage, type OriginalImageSelection } from './originalImageGallery';
 import { refreshPenHover, registerPenTargets, usePenInteraction } from './penInteraction';
 export default function PdfOriginalImages({
   pdf,
@@ -28,17 +31,69 @@ export default function PdfOriginalImages({
   const penActive = usePenInteraction(pageId),
     loadImages = enabled || penActive;
   const [images, setImages] = useState<ImagePolygon[]>([]),
-    [selected, setSelected] = useState<number[] | null>(null),
+    [selected, setSelected] = useState<OriginalImageSelection | null>(null),
     [status, setStatus] = useState(''),
-    [imageAspect, setImageAspect] = useState<number | null>(null);
-  const [showOcr, setShowOcr] = useState(false);
+    [imageAspect, setImageAspect] = useState<number | null>(null),
+    [readyKey, setReadyKey] = useState('');
+  const [showOcr, setShowOcr] = useState(false),
+    [navigating, setNavigating] = useState(false),
+    [boundary, setBoundary] = useState({ previous: false, next: false });
+  const editing = useContext(DocumentEditContext);
+  const navigationJob = useRef<AbortController | null>(null);
+  const openImage = (polygon: number[], imageIndex: number) => {
+    if (sourceIndex !== null) setSelected({ pageId, sourceIndex, imageIndex, polygon });
+  };
   const anchor = useRef<HTMLSpanElement>(null),
-    canvas = useRef<HTMLCanvasElement>(null),
-    selectedImageIndex = useRef(-1);
+    canvas = useRef<HTMLCanvasElement>(null);
+  const galleryPages = () => editing?.notebook.pages ?? [{ id: pageId, sourceIndex, bitmapOcr }];
+  const selectedPage = selected ? galleryPages().find((p) => p.id === selected.pageId) : undefined;
   const ocr = selected
-    ? bitmapOcr?.find((b) => b.imageIndex === selectedImageIndex.current)?.result
+    ? selectedPage?.bitmapOcr?.find((b) => b.imageIndex === selected.imageIndex)?.result
     : undefined;
-  const pictureBox = selected ? polygonBox(selected) : null;
+  const pictureBox = selected ? polygonBox(selected.polygon) : null;
+  const selectionKey = selected ? `${selected.pageId}:${selected.imageIndex}` : '';
+  const imageReady = imageAspect !== null && readyKey === selectionKey;
+  const navigateImage = async (direction: -1 | 1) => {
+    if (
+      !selected ||
+      !pdf ||
+      navigationJob.current ||
+      (direction < 0 ? boundary.previous : boundary.next)
+    )
+      return;
+    const owner = new AbortController();
+    navigationJob.current = owner;
+    setNavigating(true);
+    try {
+      const next = await adjacentOriginalImage(
+        pdf,
+        galleryPages(),
+        selected,
+        direction,
+        owner.signal,
+      );
+      if (owner.signal.aborted) return;
+      if (next) setSelected(next);
+      else setBoundary((b) => ({ ...b, [direction < 0 ? 'previous' : 'next']: true }));
+    } catch {
+      if (!owner.signal.aborted) setStatus(tr('图片切换失败，请重试。'));
+    } finally {
+      if (navigationJob.current === owner) {
+        navigationJob.current = null;
+        if (!owner.signal.aborted) setNavigating(false);
+      }
+    }
+  };
+  const navigateRef = useRef(navigateImage);
+  navigateRef.current = navigateImage;
+  useEffect(() => {
+    setNavigating(false);
+    setBoundary({ previous: false, next: false });
+    return () => {
+      navigationJob.current?.abort();
+      navigationJob.current = null;
+    };
+  }, [selected, pdf]);
   useLayoutEffect(() => {
     refreshPenHover();
   }, [penActive, images]);
@@ -68,8 +123,7 @@ export default function PdfOriginalImages({
               inside = !inside;
           if (inside)
             return () => {
-              selectedImageIndex.current = i;
-              setSelected(polygon);
+              openImage(polygon, i);
             };
         }
         return null;
@@ -127,8 +181,7 @@ export default function PdfOriginalImages({
               )
                 inside = !inside;
             if (inside) {
-              selectedImageIndex.current = i;
-              setSelected(polygon);
+              openImage(polygon, i);
               break;
             }
           }
@@ -211,8 +264,7 @@ export default function PdfOriginalImages({
         e.timeStamp - previous.time < 450 &&
         Math.hypot(tap.x - previous.x, tap.y - previous.y) < 24
       ) {
-        selectedImageIndex.current = tap.image;
-        setSelected(images[tap.image]);
+        openImage(images[tap.image], tap.image);
         previous = undefined;
       } else previous = { ...tap, time: e.timeStamp };
     };
@@ -233,6 +285,7 @@ export default function PdfOriginalImages({
   }, [enabled, images]);
   useEffect(() => {
     if (!selected || !pdf || sourceIndex === null) return;
+    const output = canvas.current!;
     setShowOcr(false);
     let dead = false;
     let cancel: (() => void) | undefined;
@@ -240,16 +293,16 @@ export default function PdfOriginalImages({
     setImageAspect(null);
     setStatus(tr('加载原图…'));
     void trackPerformance('pdf-display', async () => {
-      const page = await pdf.getPage(sourceIndex + 1);
+      const page = await pdf.getPage(selected.sourceIndex + 1);
       if (dead) return;
       const { drawPdfOriginalImage } = await import('./pdfOriginalImage');
       let extracted = false;
       try {
         extracted = await drawPdfOriginalImage(
           pdf,
-          sourceIndex,
-          selectedImageIndex.current,
-          canvas.current!,
+          selected.sourceIndex,
+          selected.imageIndex,
+          output,
           abort.signal,
         );
       } catch {
@@ -257,12 +310,13 @@ export default function PdfOriginalImages({
       }
       if (dead) return;
       if (extracted) {
-        setImageAspect(canvas.current!.width / canvas.current!.height);
+        setImageAspect(output.width / output.height);
+        setReadyKey(selectionKey);
         setStatus('');
         return;
       }
       const viewport = page.getViewport({ scale: 1 }),
-        box = polygonBox(selected),
+        box = polygonBox(selected.polygon),
         scale = Math.min(
           8,
           Math.max(4, devicePixelRatio * 2),
@@ -278,7 +332,7 @@ export default function PdfOriginalImages({
           1,
           Math.min(Math.floor(viewport.height * scale) - y, Math.ceil(box.height * scale)),
         ),
-        c = canvas.current!;
+        c = output;
       c.width = w;
       c.height = h;
       for (let top = 0; top < h; top += 1024)
@@ -286,7 +340,7 @@ export default function PdfOriginalImages({
           if (dead) return;
           const lease = requestPdfTile(
             pdf,
-            sourceIndex,
+            selected.sourceIndex,
             scale,
             {
               x: x + left,
@@ -303,18 +357,33 @@ export default function PdfOriginalImages({
           c.getContext('2d')!.drawImage(tile, left, top);
         }
       setImageAspect(w / h);
+      setReadyKey(selectionKey);
       setStatus(tr('显示高清页面区域'));
     }).catch((e) => {
       if (!dead && !renderingCancelled(e)) setStatus(tr('原图加载失败'));
     });
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
         e.stopPropagation();
         setSelected(null);
+      } else if (
+        (e.key === 'ArrowLeft' || e.key === 'ArrowRight') &&
+        !e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
+        if (
+          e.target instanceof Element &&
+          e.target.closest('input,textarea,select,[contenteditable=true]')
+        )
+          return;
+        e.preventDefault();
+        e.stopPropagation();
+        void navigateRef.current(e.key === 'ArrowLeft' ? -1 : 1);
       }
     };
     window.addEventListener('keydown', key, true);
-    const output = canvas.current;
     return () => {
       dead = true;
       abort.abort();
@@ -348,8 +417,7 @@ export default function PdfOriginalImages({
                 }}
                 onClick={(event) => {
                   event.stopPropagation();
-                  selectedImageIndex.current = i;
-                  setSelected(polygon);
+                  openImage(polygon, i);
                 }}
               >
                 <svg
@@ -388,6 +456,13 @@ export default function PdfOriginalImages({
               <header>
                 <div className="original-image-heading">
                   <h2>{tr('原图')}</h2>
+                  <span className="original-image-position">
+                    {tr(
+                      '第 {0} 页 · 图片 {1}',
+                      galleryPages().findIndex((p) => p.id === selected.pageId) + 1,
+                      selected.imageIndex + 1,
+                    )}
+                  </span>
                   <button
                     className="icon-button"
                     aria-label={tr('查看 OCR 信息')}
@@ -399,11 +474,18 @@ export default function PdfOriginalImages({
                   </button>
                 </div>
                 <div className="original-image-heading">
+                  <ImageCopyButton
+                    key={`copy:${selectionKey}`}
+                    source={() => canvas.current}
+                    disabled={!imageReady}
+                    onStatus={setStatus}
+                  />
                   <ImageDownloadButton
+                    key={`download:${selectionKey}`}
                     compact
                     source={() => canvas.current}
-                    name={`TixTab-page-${(sourceIndex ?? 0) + 1}-image-${selectedImageIndex.current + 1}.png`}
-                    disabled={!imageAspect}
+                    name={`TixTab-page-${selected.sourceIndex + 1}-image-${selected.imageIndex + 1}.png`}
+                    disabled={!imageReady}
                     onError={setStatus}
                   />
                   <button
@@ -428,11 +510,33 @@ export default function PdfOriginalImages({
                   )}
                 </section>
               )}
-              <ZoomableImagePreview
-                key={selected.join(',')}
-                canvasRef={canvas}
-                aspectRatio={imageAspect ?? pictureBox!.width / Math.max(1, pictureBox!.height)}
-              />
+              <div className="original-image-stage" aria-busy={navigating}>
+                <ZoomableImagePreview
+                  key={selectionKey}
+                  canvasRef={canvas}
+                  aspectRatio={
+                    imageReady ? imageAspect! : pictureBox!.width / Math.max(1, pictureBox!.height)
+                  }
+                />
+                <button
+                  className="original-image-step previous"
+                  aria-label={tr('上一张图片')}
+                  title={tr('上一张图片')}
+                  disabled={navigating || boundary.previous}
+                  onClick={() => void navigateImage(-1)}
+                >
+                  <ChevronLeft size={26} />
+                </button>
+                <button
+                  className="original-image-step next"
+                  aria-label={tr('下一张图片')}
+                  title={tr('下一张图片')}
+                  disabled={navigating || boundary.next}
+                  onClick={() => void navigateImage(1)}
+                >
+                  <ChevronRight size={26} />
+                </button>
+              </div>
             </section>
           </div>,
           document.body,
