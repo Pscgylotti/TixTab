@@ -23,7 +23,8 @@ function createModelLibrary({ root, bundled, catalog, fetch, notify = () => {} }
         files.has(f.path) ||
         !Number.isSafeInteger(f.bytes) ||
         f.bytes <= 0 ||
-        f.bytes > (m.id === 'unimumer-qwen3-vl-2b' ? 2_000_000_000 : 256_000_000) ||
+        f.bytes >
+          (['unimumer-qwen3-vl-2b', 'hymt2-1-8b'].includes(m.id) ? 2_000_000_000 : 256_000_000) ||
         !/^[0-9a-f]{64}$/.test(f.sha256) ||
         new URL(f.url).protocol !== 'https:'
       )

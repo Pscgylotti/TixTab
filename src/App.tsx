@@ -58,6 +58,9 @@ import {
   Plus,
   Minus,
   Trash2,
+  Ellipsis,
+  Eraser,
+  Languages,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -244,6 +247,13 @@ export default function App() {
     );
   }, [appearance.memoryMode]);
   const [blankPageAnchor, setBlankPageAnchor] = useState<DOMRect | null>(null);
+  const [pageQuickAnchor, setPageQuickAnchor] = useState<DOMRect | null>(null);
+  const [translationPanel, setTranslationPanel] = useState<'open' | 'closed' | null>(null);
+  const [translationAnchor] = useState<SelectionInfo>(() => ({
+    text: '',
+    x: innerWidth / 2,
+    y: innerHeight / 2,
+  }));
   const [pageDelete, setPageDelete] = useState<{ id: string; anchor: DOMRect } | null>(null);
   const [pageSelectionMode, setPageSelectionMode] = useState(false);
   const [selectedPageIds, setSelectedPageIds] = useState<string[]>([]);
@@ -1912,6 +1922,7 @@ export default function App() {
   }, [activeId, notebook.name, notebook.batch?.title]);
   const addPage = (event: { currentTarget: HTMLElement }) =>
     setBlankPageAnchor(event.currentTarget.getBoundingClientRect());
+  useEffect(() => setPageQuickAnchor(null), [activeId, index]);
   const insertBlankPage = (paper: Page['paper'], paperColor: string) => {
     const n = current.current,
       p = { ...blankPage(page.width, page.height), paper, paperColor };
@@ -2438,6 +2449,78 @@ export default function App() {
         },
       }}
     >
+      {pageQuickAnchor && (
+        <AnchoredPopover
+          anchor={pageQuickAnchor}
+          label={tr('页面快捷操作')}
+          onClose={() => setPageQuickAnchor(null)}
+          width={230}
+          className="page-quick-popover"
+        >
+          <div className="page-quick-actions">
+            <button
+              onClick={() => {
+                setPageQuickAnchor(null);
+                setSelection(null);
+                setTranslationPanel('open');
+              }}
+            >
+              <Languages size={17} />
+              {tr('翻译')}
+            </button>
+            <button
+              disabled={busy || notebook.pages.length <= 1}
+              onClick={() => {
+                setPageDelete({ id: page.id, anchor: pageQuickAnchor });
+                setPageQuickAnchor(null);
+              }}
+            >
+              <Trash2 size={17} />
+              {tr('删除当前页')}
+            </button>
+            <button
+              disabled={
+                busy || !(page.strokes.length || page.images.length || page.reviews?.length)
+              }
+              onClick={() => {
+                const n = current.current;
+                commit({
+                  ...n,
+                  pages: n.pages.map((p) =>
+                    p.id === page.id
+                      ? { ...p, strokes: [], images: [], reviews: [], inkLayer: 0 }
+                      : p,
+                  ),
+                });
+                setPageQuickAnchor(null);
+              }}
+            >
+              <Eraser size={17} />
+              {tr('删除当前页标注')}
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                setPageQuickAnchor(null);
+                duplicatePage(index);
+              }}
+            >
+              <FilePlus2 size={17} />
+              {tr('复制当前页')}
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                setBlankPageAnchor(pageQuickAnchor);
+                setPageQuickAnchor(null);
+              }}
+            >
+              <Plus size={17} />
+              {tr('插入空白页')}
+            </button>
+          </div>
+        </AnchoredPopover>
+      )}
       {blankPageAnchor && (
         <BlankPageDialog
           width={page.width}
@@ -3186,16 +3269,15 @@ export default function App() {
                 <span className="status-separator" />
                 <button
                   className="delete-button"
-                  disabled={notebook.pages.length <= 1}
+                  aria-label={tr('页面快捷操作')}
+                  title={tr('页面快捷操作')}
+                  aria-expanded={!!pageQuickAnchor}
                   onClick={(event) =>
-                    setPageDelete({
-                      id: page.id,
-                      anchor: event.currentTarget.getBoundingClientRect(),
-                    })
+                    setPageQuickAnchor(event.currentTarget.getBoundingClientRect())
                   }
                 >
-                  <Trash2 size={13} />
-                  {tr('删除当前页')}
+                  <Ellipsis size={17} />
+                  {tr('页面操作')}
                 </button>
                 <button
                   className="icon-button"
@@ -3250,9 +3332,19 @@ export default function App() {
             </button>
           </div>
         )}
+        {translationPanel !== null && (
+          <SelectionFlyout
+            selection={translationAnchor}
+            standalone
+            open={translationPanel === 'open'}
+            onModels={() => setDialog('models')}
+            onClose={() => setTranslationPanel('closed')}
+          />
+        )}
         {selection && (
           <SelectionFlyout
             selection={selection}
+            onModels={() => setDialog('models')}
             onAsk={() => {
               setChatSelection({
                 id: Date.now(),

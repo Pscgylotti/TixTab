@@ -47,7 +47,7 @@ import {
   type PlacedImage,
   type Tool,
 } from './model';
-import { finalInkPath, cullingInkBounds } from './ink';
+import { finalInkPath, cullingInkBounds, inkPaperRadius } from './ink';
 import { paintLiveInk, releaseLiveInk } from './liveInk';
 import { InkSampleClock } from './inkSampling';
 import { savedInkSize } from './inkPreferences';
@@ -355,12 +355,19 @@ function PageEditor({
   const previewEraser = (e: PointerEvent) => {
     const circle = eraserCursor.current;
     if (!circle) return;
-    if (e.pointerType === 'touch' || !(tool === 'eraser' || tailEraser.current || isEraser(e))) {
+    const erasing = tool === 'eraser' || tailEraser.current || isEraser(e);
+    const writing = ['pen', 'ballpoint', 'pencil', 'highlighter'].includes(tool);
+    if (e.pointerType === 'touch' || (!erasing && (!writing || e.altKey || !!(e.buttons & 2)))) {
       hideEraserCursor();
       return;
     }
-    const paperRadius = eraserRadiusAt(e);
+    const pressure =
+      e.pointerType === 'pen' && e.pressure > 0
+        ? Math.max(0.01, pressureMapper.current(e.pressure))
+        : 0.5;
+    const paperRadius = erasing ? eraserRadiusAt(e) : inkPaperRadius(tool, size, pressure);
     const radius = paperRadius * (root.current!.getBoundingClientRect().width / page.width);
+    circle.className = erasing ? 'pdf-eraser-cursor' : 'pdf-ink-cursor';
     circle.style.display = 'block';
     circle.style.width = circle.style.height = `${radius * 2}px`;
     circle.style.transform = `translate(${e.clientX - radius}px,${e.clientY - radius}px)`;
@@ -675,6 +682,7 @@ function PageEditor({
           if (e.pointerType !== 'touch') onActivate?.();
         }}
         onPointerDown={down}
+        onPointerEnter={(e) => previewEraser(e.nativeEvent)}
         onPointerMove={move}
         onPointerLeave={hideEraserCursor}
         onPointerUp={(e) => end(e)}

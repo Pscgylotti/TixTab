@@ -17,7 +17,16 @@ export interface ProviderCapability {
   models: string[];
 }
 const types: Record<ProviderFeature, string[]> = {
-  translation: ['local', 'local-native', 'local-service', 'google', 'web', 'llm'],
+  translation: [
+    'local',
+    'local-native',
+    'hymt2',
+    'hymt2-openvino',
+    'local-service',
+    'google',
+    'web',
+    'llm',
+  ],
   formula: ['texo-native', 'texo-cpu', 'texo-gpu', 'unimumer', 'pix2text', 'web', 'llm'],
   ocr: ['native', 'local', 'windows-ai', 'tesseract-native', 'texo', 'web', 'llm'],
   speech: ['native', 'local', 'system', 'web', 'llm'],
@@ -48,7 +57,9 @@ export function providerCapabilities(): ProviderCapability[] {
       ].includes(id)
         ? []
         : feature === 'translation'
-          ? ['opus-en-zh', 'opus-zh-en']
+          ? id.startsWith('hymt2')
+            ? ['hymt2-1-8b', id === 'hymt2-openvino' ? 'hymt-openvino-runtime' : 'unimumer-runtime']
+            : ['opus-en-zh', 'opus-zh-en']
           : id === 'unimumer'
             ? ['unimumer-qwen3-vl-2b', 'unimumer-runtime']
             : feature === 'formula' || id === 'texo'
@@ -179,9 +190,11 @@ async function attempt(
       : capability.resource === 'remote'
         ? modelName(config.model)
         : feature === 'translation'
-          ? target === 'en'
-            ? 'opus-zh-en'
-            : 'opus-en-zh'
+          ? type.startsWith('hymt2')
+            ? 'hymt2-1-8b'
+            : target === 'en'
+              ? 'opus-zh-en'
+              : 'opus-en-zh'
           : type === 'unimumer'
             ? 'unimumer-qwen3-vl-2b'
             : feature === 'formula' || type === 'texo'
@@ -240,6 +253,19 @@ async function attempt(
       };
     }
     if (feature === 'translation') {
+      if (type.startsWith('hymt2')) {
+        const native = await import('./nativeHyMt');
+        await activate(type, () => {}, true, ctx.signal);
+        const result = await native.translateHyMt(
+          input,
+          target,
+          device,
+          ctx.progress,
+          ctx.signal,
+          type === 'hymt2-openvino' ? 'openvino' : 'llama',
+        );
+        return { ...local(), ...result, provider: type, modelId, engine: 'Hy-MT2 1.8B Q4_K_M' };
+      }
       const normalized = normalizeTranslationText(input);
       if (
         normalized.length > 0 &&

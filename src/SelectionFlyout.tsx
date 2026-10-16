@@ -29,6 +29,14 @@ import { ProviderAdvanced } from './ProviderAdvanced';
 import { executeProvider, providerResultStatus, providerFailureStatus } from './providers';
 import { useWritingHand } from './inputPreferences';
 import { useSelectionPlacement } from './useSelectionPlacement';
+import { useNativeKeyboard } from './nativeKeyboard';
+import { loadHyMtDevice, saveHyMtDevice } from './nativeHyMt';
+import {
+  translationLanguages,
+  recentTranslationTargets,
+  rememberTranslationTarget,
+  useRecentTranslationTargets,
+} from './translationLanguages';
 import './selectionFlyout.css';
 export interface SelectionInfo {
   text: string;
@@ -49,20 +57,35 @@ export default function SelectionFlyout({
   selection,
   onClose,
   onAsk,
+  standalone = false,
+  open = true,
+  onModels,
 }: {
   selection: SelectionInfo;
   onClose: () => void;
   onAsk?: () => void;
+  standalone?: boolean;
+  open?: boolean;
+  onModels?: () => void;
 }) {
   useLocale();
   const api = useProviderConfig('translation', nativeOpusEnabled() ? 'local-native' : 'local');
   const { provider, patch, selectProvider } = api;
-  const [expanded, setExpanded] = useState(false),
+  const localProvider = ['local', 'local-native', 'hymt2', 'hymt2-openvino'].includes(
+    provider.type,
+  );
+  const [hyMtDevice, setHyMtDevice] = useState(() => loadHyMtDevice());
+  const [hyMtOvDevice, setHyMtOvDevice] = useState(() => loadHyMtDevice(true));
+  const [expanded, setExpanded] = useState(standalone),
     [config, setConfig] = useState(false),
     [translation, setTranslation] = useState(''),
-    [target, setTarget] = useState('zh-CN'),
+    [target, setTarget] = useState(() => recentTranslationTargets()[0] ?? 'zh-CN'),
     [status, setStatus] = useState(''),
     [busy, setBusy] = useState(false);
+  const [source, setSource] = useState(selection.text);
+  const sourceText = standalone ? source : selection.text;
+  const recentTargets = useRecentTranslationTargets();
+  const nativeKeyboard = useNativeKeyboard();
   const {
     speak,
     stop,
@@ -77,7 +100,7 @@ export default function SelectionFlyout({
   } = useSpeech(setStatus);
   const [copied, setCopied] = useState(false);
   const hand = useWritingHand();
-  const { ref, position } = useSelectionPlacement(selection, hand, expanded);
+  const { ref, position } = useSelectionPlacement(selection, hand, expanded, open);
   const fallback = provider.fallback,
     setFallback = (value: boolean) => patch({ fallback: value });
   const [opusDevice, setOpusDevice] = useState(loadOpusDevice);
@@ -91,10 +114,39 @@ export default function SelectionFlyout({
     warmCheck.current?.abort();
     stop();
     setBusy(false);
-    setExpanded(false);
+    setExpanded(standalone);
     setTranslation('');
     setStatus('');
   }, [selection.text]);
+  useEffect(() => {
+    if (!open) {
+      abort.current?.abort();
+      warmCheck.current?.abort();
+      stop();
+      setBusy(false);
+    }
+  }, [open]);
+  useEffect(() => {
+    if (!standalone || !open) return;
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', escape);
+    return () => window.removeEventListener('keydown', escape);
+  }, [standalone, open, onClose]);
+  const changeInput = () => {
+    abort.current?.abort();
+    warmCheck.current?.abort();
+    stop();
+    setBusy(false);
+    setTranslation('');
+    setStatus('');
+  };
+  const chooseTarget = (value: string) => {
+    if (value !== target) changeInput();
+    setTarget(value);
+    rememberTranslationTarget(value);
+  };
   useEffect(
     () => () => {
       abort.current?.abort();
@@ -115,7 +167,9 @@ export default function SelectionFlyout({
       );
   const translate = async () => {
     if (busy || !api.ready) return;
-    const text = normalizeTranslationText(selection.text);
+    const text = normalizeTranslationText(sourceText);
+    if (!text) return;
+    rememberTranslationTarget(target);
     if (provider.type === 'google' && !provider.key.trim() && navigator.onLine) {
       window.open(
         `https://translate.google.com/?sl=auto&tl=${encodeURIComponent(target)}&text=${encodeURIComponent(text)}&op=translate`,
@@ -142,7 +196,12 @@ export default function SelectionFlyout({
           config: provider,
           input: text,
           target,
-          device: opusDevice,
+          device:
+            provider.type === 'hymt2-openvino'
+              ? hyMtOvDevice
+              : provider.type === 'hymt2'
+                ? hyMtDevice
+                : opusDevice,
           localPreference: nativeOpusEnabled() ? 'local-native' : 'local',
         },
         {
@@ -160,8 +219,7 @@ export default function SelectionFlyout({
         setStatus(providerResultStatus(result));
       }
     } catch (error) {
-      if (valid())
-        setStatus(providerFailureStatus(error, !['local', 'local-native'].includes(provider.type)));
+      if (valid()) setStatus(providerFailureStatus(error, !localProvider));
     } finally {
       if (abort.current === controller) setBusy(false);
     }
@@ -196,10 +254,11 @@ export default function SelectionFlyout({
   return (
     <div
       ref={ref}
-      className={`selection-flyout ${expanded ? 'expanded' : ''}`}
+      className={`selection-flyout ${expanded ? 'expanded' : ''} ${standalone ? 'standalone-translation' : ''}`}
       data-writing-hand={hand}
       data-placement={position.side}
       style={{
+        display: open ? undefined : 'none',
         left: position.left,
         top: position.top,
         width: position.width,
@@ -207,25 +266,24 @@ export default function SelectionFlyout({
         maxHeight: position.maxHeight,
       }}
       role="dialog"
-      aria-label={tr('划词工具')}
+      aria-label={tr(standalone ? '翻译界面' : '划词工具')}
       onPointerDown={(e) => {
         e.stopPropagation();
         if ((e.target as HTMLElement).closest('button,a')) e.preventDefault();
       }}
     >
       <div className="selection-actions">
-        <button
-          title={tr('复制选区')}
-          aria-label={tr('复制选区')}
-          onClick={() => copy(selection.text)}
-        >
+        <button title={tr('复制选区')} aria-label={tr('复制选区')} onClick={() => copy(sourceText)}>
           {copied ? <span className="copy-done">{tr('已复制')}</span> : <Copy size={16} />}
         </button>
-        <button disabled={!api.ready} onClick={() => void revealTranslation()}>
+        <button
+          disabled={!api.ready || (standalone && !sourceText.trim())}
+          onClick={() => (standalone ? void translate() : void revealTranslation())}
+        >
           <Languages size={16} />
           {tr('翻译')}
         </button>
-        <button aria-label={tr('朗读选区')} onClick={() => speak(selection.text)}>
+        <button aria-label={tr('朗读选区')} onClick={() => speak(sourceText)}>
           <Volume2 size={17} />
         </button>
         {speaking && (
@@ -248,7 +306,7 @@ export default function SelectionFlyout({
             <MessageSquare size={16} />
           </button>
         )}
-        <button aria-label={tr('关闭划词工具')} onClick={onClose}>
+        <button aria-label={tr(standalone ? '关闭翻译界面' : '关闭划词工具')} onClick={onClose}>
           <X size={16} />
         </button>
       </div>
@@ -286,6 +344,10 @@ export default function SelectionFlyout({
                   <option value="local-native">
                     {tr('本地实验 · OPUS OpenVINO（NPU/GPU/CPU）')}
                   </option>
+                  <option value="hymt2">{tr('本地 · Hy-MT2 1.8B（CPU / GPU）')}</option>
+                  <option value="hymt2-openvino">
+                    {tr('本地实验 · Hy-MT2 OpenVINO（CPU / GPU / NPU）')}
+                  </option>
                   <option value="local-service">{tr('本地 HTTP 翻译服务')}</option>
                   <option value="google">{tr('在线 · Google 翻译（默认）')}</option>
                   <option value="web">{tr('自定义网页 HTTP API')}</option>
@@ -318,7 +380,47 @@ export default function SelectionFlyout({
                   </small>
                 </>
               )}
-              {!['local', 'local-native'].includes(provider.type) && (
+              {provider.type.startsWith('hymt2') && (
+                <>
+                  <label>
+                    {tr('翻译计算设备')}
+                    <select
+                      aria-label={tr('翻译计算设备')}
+                      value={provider.type === 'hymt2-openvino' ? hyMtOvDevice : hyMtDevice}
+                      disabled={busy}
+                      onChange={(e) => {
+                        const value = e.target.value as typeof hyMtDevice;
+                        const ov = provider.type === 'hymt2-openvino';
+                        (ov ? setHyMtOvDevice : setHyMtDevice)(value);
+                        saveHyMtDevice(value, ov);
+                      }}
+                    >
+                      <option value="CPU">CPU</option>
+                      <option value="GPU">
+                        GPU {provider.type === 'hymt2-openvino' ? '(OpenVINO)' : '(Vulkan)'}
+                      </option>
+                      {provider.type === 'hymt2-openvino' && (
+                        <option value="NPU">NPU (OpenVINO · {tr('实验性')})</option>
+                      )}
+                      <option value="AUTO">{tr('自动 · GPU → CPU')}</option>
+                    </select>
+                  </label>
+                  <small>
+                    {tr(
+                      '首次需在本地模型管理下载 Hy-MT2 1.8B Q4_K_M（约 1.13 GB）及共享 llama.cpp 运行库；复用现有环境，支持中英日韩法翻译。',
+                    )}
+                  </small>
+                  {provider.type === 'hymt2-openvino' && (
+                    <small>
+                      {tr(
+                        'OpenVINO 另需下载对应运行库，复用同一份模型权重。NPU 路径为实验性，限制较短上下文；不可用时会报告错误，不会伪装成 NPU 成功。',
+                      )}
+                    </small>
+                  )}
+                  {onModels && <button onClick={onModels}>{tr('本地模型管理')}</button>}
+                </>
+              )}
+              {!localProvider && (
                 <>
                   <label>
                     {tr('接口地址')}
@@ -359,19 +461,21 @@ export default function SelectionFlyout({
                 </>
               )}
               <small>
-                {['local', 'local-native'].includes(provider.type)
-                  ? tr(
-                      '内置中英双向开源模型，无需启动服务或配置密钥；首次加载较慢，闲置后自动释放。',
-                    )
-                  : provider.type === 'google'
+                {provider.type.startsWith('hymt2')
+                  ? tr('本地 Hy-MT2，按需运行；闲置释放时间遵循设置。')
+                  : localProvider
                     ? tr(
-                        '无密钥时打开 Google 翻译网页；填入启用了 Cloud Translation API 的密钥后，译文直接显示在浮窗。',
+                        '内置中英双向开源模型，无需启动服务或配置密钥；首次加载较慢，闲置后自动释放。',
                       )
-                    : tr(
-                        '只在点击翻译后发送当前选区。HTTP 接口需返回 translatedText / translation。',
-                      )}
+                    : provider.type === 'google'
+                      ? tr(
+                          '无密钥时打开 Google 翻译网页；填入启用了 Cloud Translation API 的密钥后，译文直接显示在浮窗。',
+                        )
+                      : tr(
+                          '只在点击翻译后发送当前选区。HTTP 接口需返回 translatedText / translation。',
+                        )}
               </small>
-              {!['local', 'local-native'].includes(provider.type) && (
+              {!localProvider && (
                 <ProviderAdvanced feature="translation" {...api} disabled={busy} />
               )}
               <label className="local-fallback">
@@ -390,19 +494,30 @@ export default function SelectionFlyout({
             <button
               className="icon-button"
               aria-label={tr('朗读原文')}
-              onClick={() => speak(selection.text)}
+              onClick={() => speak(sourceText)}
             >
               <Volume2 size={14} />
             </button>
-            <button
-              className="icon-button"
-              title={tr('复制原文')}
-              onClick={() => copy(selection.text)}
-            >
+            <button className="icon-button" title={tr('复制原文')} onClick={() => copy(sourceText)}>
               <Copy size={13} />
             </button>
           </div>
-          <div className="translation-source">{selection.text}</div>
+          {standalone ? (
+            <textarea
+              className="translation-source translation-input"
+              aria-label={tr('翻译原文')}
+              placeholder={tr('输入或粘贴要翻译的内容')}
+              inputMode={nativeKeyboard ? 'text' : 'none'}
+              maxLength={20000}
+              value={source}
+              onChange={(e) => {
+                changeInput();
+                setSource(e.target.value);
+              }}
+            />
+          ) : (
+            <div className="translation-source">{selection.text}</div>
+          )}
           <div className="translation-divider">
             <ArrowDown size={14} />
           </div>
@@ -410,14 +525,21 @@ export default function SelectionFlyout({
             <select
               aria-label={tr('翻译目标语言')}
               value={target}
-              onChange={(e) => setTarget(e.target.value)}
+              onChange={(e) => chooseTarget(e.target.value)}
             >
-              <option value="zh-CN">{tr('简体中文')}</option>
-              <option value="en">English</option>
-              <option value="ja">{tr('日本語')}</option>
-              <option value="ko">한국어</option>
-              <option value="fr">Français</option>
+              {translationLanguages.map((language) => (
+                <option key={language.id} value={language.id}>
+                  {tr(language.label)}
+                </option>
+              ))}
             </select>
+            <div className="translation-recent" role="group" aria-label={tr('最近目标语言')}>
+              {recentTargets.map((id) => (
+                <button key={id} aria-pressed={target === id} onClick={() => chooseTarget(id)}>
+                  {tr(translationLanguages.find((item) => item.id === id)!.label)}
+                </button>
+              ))}
+            </div>
             <button
               className="icon-button"
               title={tr('朗读译文')}
@@ -440,8 +562,10 @@ export default function SelectionFlyout({
           </div>
           <div className="translation-footer">
             <span>
-              {['local', 'local-native'].includes(provider.type)
-                ? tr('本地优先')
+              {localProvider
+                ? provider.type.startsWith('hymt2')
+                  ? 'Hy-MT2 1.8B'
+                  : tr('本地优先')
                 : provider.type === 'google'
                   ? tr('Google 翻译')
                   : endpointLabel(provider.url)}
@@ -469,7 +593,11 @@ export default function SelectionFlyout({
                 onChange={(e) => setRate(Number(e.target.value))}
               />
             </label>
-            <button className="primary" disabled={busy || !api.ready} onClick={translate}>
+            <button
+              className="primary"
+              disabled={busy || !api.ready || !sourceText.trim()}
+              onClick={translate}
+            >
               {busy ? tr('翻译中…') : tr('翻译')}
             </button>
             {busy && (
@@ -485,7 +613,8 @@ export default function SelectionFlyout({
             )}
           </div>
           <p className="translation-status" role="status">
-            {tr(status) || tr('选中文字，按笔侧键或右键，随时查词。')}
+            {tr(status) ||
+              tr(standalone ? '输入原文后点击翻译。' : '选中文字，按笔侧键或右键，随时查词。')}
           </p>
         </div>
       )}

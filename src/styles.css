@@ -671,7 +671,8 @@ input[type='range']:not(.excalidraw *)::-webkit-slider-thumb {
 .surface.tool-eraser {
   cursor: cell;
 }
-.pdf-eraser-cursor {
+.pdf-eraser-cursor,
+.pdf-ink-cursor {
   position: fixed;
   top: 0;
   left: 0;
@@ -681,6 +682,14 @@ input[type='range']:not(.excalidraw *)::-webkit-slider-thumb {
   background: transparent;
   pointer-events: none;
   z-index: 50;
+}
+.pdf-ink-cursor {
+  border: 1px solid #242424;
+  box-shadow: 0 0 0 1px #ffffffb3;
+}
+.surface:is(.tool-pen, .tool-ballpoint, .tool-pencil, .tool-highlighter),
+.page-editor:is(.tool-pen, .tool-ballpoint, .tool-pencil, .tool-highlighter) {
+  cursor: none;
 }
 .paper-position {
   position: absolute;

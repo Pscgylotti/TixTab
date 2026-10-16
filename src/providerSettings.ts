@@ -22,7 +22,16 @@ export interface ProviderConfig extends ProviderProfile {
 }
 export const providerTypes: Record<ProviderSettingsFeature, string[]> = {
   chat: ['llm'],
-  translation: ['local', 'local-native', 'local-service', 'google', 'web', 'llm'],
+  translation: [
+    'local',
+    'local-native',
+    'hymt2',
+    'hymt2-openvino',
+    'local-service',
+    'google',
+    'web',
+    'llm',
+  ],
   speech: ['native', 'local', 'system', 'web', 'llm'],
   ocr: ['native', 'local', 'windows-ai', 'tesseract-native', 'texo', 'web', 'llm'],
   formula: ['texo-native', 'texo-cpu', 'texo-gpu', 'unimumer', 'pix2text', 'web', 'llm'],

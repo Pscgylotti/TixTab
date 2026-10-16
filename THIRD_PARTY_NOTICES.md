@@ -213,6 +213,7 @@ Generated from the locked dependency tree, including development tools. Exact pa
 | @vitest/utils | 3.2.7 | MIT | https://github.com/vitest-dev/vitest |
 | @xmldom/xmldom | 0.8.15 | MIT | git://github.com/xmldom/xmldom |
 | Audiveris (optional local music recognition) | 5.11.0 | AGPL-3.0 | https://github.com/Audiveris/audiveris |
+| Hy-MT2 1.8B (optional local translation weights) | a0c709d9fac510f2c807aa3af52872340dc37a4a | Apache-2.0 | https://huggingface.co/tencent/Hy-MT2-1.8B-GGUF |
 | Leptonica (bundled native OCR helper) | 1.85.0 | BSD-2-Clause | https://github.com/DanBloomberg/leptonica |
 | PyMuPDF (optional local PDF runtime) | 1.28.2 | AGPL-3.0 / separate upstream commercial license | https://github.com/pymupdf/PyMuPDF |
 | Tesseract (bundled native OCR / optional OpenVINO adapter) | 5.5.0 | Apache-2.0 upstream; TixTab adapter: AGPL-3.0-only | https://github.com/tesseract-ocr/tesseract/tree/5.5.0 |
@@ -494,6 +495,7 @@ Generated from the locked dependency tree, including development tools. Exact pa
 | layout-base | 1.0.2 | MIT | https://github.com/iVis-at-Bilkent/layout-base |
 | layout-base | 2.0.1 | MIT | https://github.com/iVis-at-Bilkent/layout-base |
 | lazy-val | 1.0.5 | MIT | develar/lazy-val |
+| llama.cpp (optional Vulkan / OpenVINO runtime) | b11429 | MIT / bundled OpenVINO Apache-2.0 notices | https://github.com/ggml-org/llama.cpp |
 | lodash | 4.18.1 | MIT | lodash/lodash |
 | lodash-es | 4.18.1 | MIT | lodash/lodash |
 | lodash.debounce | 4.0.8 | MIT | lodash/lodash |
