@@ -64,7 +64,7 @@ interface Window {
     fullscreenState?: (active?: boolean) => Promise<boolean>;
     penTailVoice?: {
       configure: (enabled: boolean) => Promise<{ ok: boolean; error?: string }>;
-      onPress: (callback: () => void) => () => void;
+      onPress: (callback: (gesture?: 'press' | 'send') => void) => () => void;
     };
     onFullscreen: (callback: (active: boolean) => void) => () => void;
   };

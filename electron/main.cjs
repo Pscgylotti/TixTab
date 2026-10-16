@@ -481,10 +481,10 @@ app.whenReady().then(() => {
     return dictation.run(owner, request);
   });
   const tailOwners = new Set();
-  const tailVoice = createPenTailVoice(() => {
+  const tailVoice = createPenTailVoice((gesture) => {
     for (const owner of tailOwners)
       if (!owner.isDestroyed() && trusted(owner.getURL())) {
-        owner.send('pen:tail-voice');
+        owner.send('pen:tail-voice', gesture);
         break;
       }
   });

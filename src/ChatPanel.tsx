@@ -67,6 +67,7 @@ export default function ChatPanel({
   onModels,
   onSvgInsert,
   voiceRequest = 0,
+  voiceSendRequest = 0,
 }: {
   documentId: string;
   source: Uint8Array | null;
@@ -82,6 +83,7 @@ export default function ChatPanel({
   onModels?: () => void;
   onSvgInsert: (image: ImportedImage) => void;
   voiceRequest?: number;
+  voiceSendRequest?: number;
 }) {
   useLocale();
   const floating = useChatWindow();
@@ -1053,6 +1055,7 @@ export default function ChatPanel({
             <span className="chat-keyboard-slot" />
             <DictationButton
               toggleRequest={voiceRequest}
+              sendRequest={voiceSendRequest}
               onShortcutFinished={() => setVoiceSendPending(true)}
               hostDocument={floating.target?.ownerDocument}
               onModels={

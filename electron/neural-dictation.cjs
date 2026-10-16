@@ -126,6 +126,7 @@ function createNeuralDictation({
         if (!validIdle(r.idleReleaseSeconds)) return { ok: false, error: 'invalid' };
         idleSeconds = r.idleReleaseSeconds;
         if (worker) send(worker.child, { action: 'idle-policy', idleReleaseSeconds: idleSeconds });
+        await system.run(owner, r);
         return { ok: true };
       }
       if (r?.action === 'status')

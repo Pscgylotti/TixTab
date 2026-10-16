@@ -39,13 +39,13 @@ const info = {
     ),
   ),
   validation: {
-    unit: '554 tests / 116 files',
+    unit: '565 tests / 120 files',
     browser:
-      '23 release browser cases passed: PDFium native object selection/transforms/styles/live previews, native text editing and undo, page rotate/crop, review editing and keyboard policy, cross-sheet erasing in three views with pen-tail/cancel/unmount buffer release, scratch OCR, original image copy/touch/keyboard navigation and standalone translation/quick actions.',
+      '40 browser regressions passed, including targeted reruns after updating stale test interactions. Coverage includes fullscreen presentation in three layouts, trackpad gesture accumulation/momentum and zoom, native speech progress/cancellation/waveforms, single/double pen-tail gestures and final phrase drain, background downloads/processing, workspace cards, Markdown, keyboard policy, chat and real PDF export worker cancellation/recovery.',
     packaged:
       'Static ASAR/build asset SHA256 and file-set verification, required backend/preload modules, native binding/icon and model exclusion; this release did not launch the installer or packaged application',
     nativeModels:
-      '13 native PDF editor tests and 15 Hy-MT2/shared worker/request lifecycle tests passed. Earlier real Hy-MT2 llama.cpp CPU/Vulkan and OpenVINO CPU/GPU smoke evidence retained; local OpenVINO NPU initialization failed and is not claimed to work. Previous UVDoc/Audiveris/homr evidence retained. No new energy or cross-device speed benchmark is claimed.',
+      'Local Windows AI Speech load/start/stop, 20 real microphone meter samples, resident model reuse and two idle WorkloadsSessionHost CPU samples checked. Cold compilation took about 400 seconds and cached loading about 7 seconds on this host only. Previous PDF editor, Hy-MT2 CPU/GPU, UVDoc/Audiveris/homr evidence retained; local Hy-MT2 OpenVINO NPU initialization failed and is not claimed to work. No new energy or cross-device speed benchmark is claimed.',
     installer:
       'Compiled NSIS installer. Earlier isolated upgrade/repair/downgrade fixture evidence retained. Full installation was not rerun on this host.',
     limits:

@@ -35,7 +35,7 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
   clipboardShelf: {
     run: (action, value) => ipcRenderer.invoke('clipboard:shelf', action, value),
     onChanged: (callback) => {
-      const listener = () => callback();
+      const listener = (_event, gesture) => callback(gesture === 'send' ? 'send' : 'press');
       ipcRenderer.on('clipboard:shelf-changed', listener);
       return () => ipcRenderer.removeListener('clipboard:shelf-changed', listener);
     },

@@ -1,8 +1,79 @@
 import { test, expect } from '@playwright/test';
-for (const failure of [false, true])
-  test(`tail voice opt-in ${failure ? 'keeps text without sending on recognition failure' : 'drains the last phrase and sends exactly once'}`, async ({
-    page,
-  }) => {
+test('Windows AI cold startup shows real progress, cancels immediately, and identifies model timeout', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('surfacetab.chat.voiceEngine', 'windows-ai');
+    const listeners = new Set<(p: any) => void>();
+    let complete: (r: any) => void;
+    (window as any).__speechProgress = (p: any) => listeners.forEach((fn) => fn(p));
+    (window as any).__speechComplete = (r: any) => complete(r);
+    (window as any).__speechCalls = [];
+    (window as any).surfaceDesktop = {
+      onFullscreen: () => () => {},
+      dictation: {
+        onProgress: (fn: (p: any) => void) => {
+          listeners.add(fn);
+          return () => listeners.delete(fn);
+        },
+        run: async (r: any) => {
+          (window as any).__speechCalls.push(r);
+          if (r.action === 'start')
+            return new Promise((resolve) => {
+              complete = resolve;
+            });
+          if (r.action === 'cancel') {
+            complete?.({ ok: false, error: 'cancelled' });
+            return { ok: true };
+          }
+          return { ok: true, data: { installed: true, devices: ['CPU'], microphones: [] } };
+        },
+      },
+    };
+  });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: '打开', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: '打开 ChatGPT 聊天', exact: true }).click();
+  await page.getByLabel('聊天接入方式', { exact: true }).selectOption('api');
+  const assistant = page.getByRole('complementary', { name: 'AI 阅读助手' });
+  await page.getByRole('button', { name: '语音输入', exact: true }).click();
+  await page.evaluate(() =>
+    (window as any).__speechProgress({ stage: 'model-loading', value: 0.5 }),
+  );
+  await expect(assistant).toContainText('50%');
+  await page.getByRole('button', { name: '停止语音输入', exact: true }).click();
+  await expect(page.getByRole('button', { name: '语音输入', exact: true })).toBeEnabled();
+  expect(
+    await page.evaluate(
+      () => (window as any).__speechCalls.filter((r: any) => r.action === 'cancel').length,
+    ),
+  ).toBe(1);
+  await expect(assistant).not.toContainText('语音识别失败');
+  await page.getByRole('button', { name: '语音输入', exact: true }).click();
+  await page.evaluate(() =>
+    (window as any).__speechComplete({
+      ok: false,
+      error: 'windows-speech-timeout',
+      data: { stage: 'model-loading' },
+    }),
+  );
+  await expect(assistant).toContainText('系统语音模型加载超时，尚未开始录音');
+  await expect(assistant).not.toContainText('切换到 CPU');
+  await page.getByRole('button', { name: '语音输入', exact: true }).click();
+  await page.evaluate(() =>
+    (window as any).__speechComplete({
+      ok: false,
+      error: 'windows-ai-unavailable',
+      hresult: '0x8007007E',
+      data: { stage: 'model-loading' },
+    }),
+  );
+  await expect(assistant).toContainText('系统语音模型加载失败，尚未开始录音');
+  await expect(assistant).toContainText('0x8007007E');
+});
+for (const scenario of ['single', 'double', 'failure'])
+  test(`tail voice opt-in ${scenario}`, async ({ page }) => {
+    const failure = scenario === 'failure';
     const sent: any[] = [];
     await page.route('https://tail.test/**', async (route) => {
       sent.push(route.request().postDataJSON());
@@ -55,6 +126,7 @@ for (const failure of [false, true])
                   text: stopped ? 'the final words' : reads++ === 0 ? 'First words' : '',
                   done: stopped,
                   ready: true,
+                  level: stopped ? 0 : 44,
                   error: stopped && failure ? 'inference' : undefined,
                 },
               };
@@ -102,8 +174,21 @@ for (const failure of [false, true])
     await page.evaluate(() => (window as any).__pressTail());
     const input = page.getByLabel('向 LLM 提问', { exact: true });
     await expect(input).toHaveValue('First words');
+    await expect(page.getByRole('img', { name: '麦克风音量波形' })).toHaveAttribute(
+      'data-level',
+      '44',
+    );
+    expect(
+      await page
+        .locator('.chat-voice-wave i')
+        .last()
+        .evaluate((el) => el.getBoundingClientRect().height),
+    ).toBeGreaterThan(2);
     expect(sent).toHaveLength(0);
-    await page.evaluate(() => (window as any).__pressTail());
+    await page.evaluate((double) => {
+      (window as any).__pressTail();
+      if (double) (window as any).__pressTail();
+    }, scenario !== 'single');
     if (failure) {
       await expect(input).toHaveValue('First words\nthe final words');
       await expect(page.getByRole('complementary', { name: 'AI 阅读助手' })).toContainText(
@@ -111,6 +196,13 @@ for (const failure of [false, true])
       );
       expect(sent).toHaveLength(0);
     } else {
+      if (scenario === 'single') {
+        await expect(input).toHaveValue('First words\nthe final words');
+        expect(sent).toHaveLength(0);
+        await page.evaluate(() =>
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F19', bubbles: true })),
+        );
+      }
       await expect.poll(() => sent.length).toBe(1);
       expect(sent[0].messages.at(-1).content).toContain('First words\nthe final words');
     }

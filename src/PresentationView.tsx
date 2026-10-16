@@ -147,6 +147,45 @@ export default function PresentationView({
         );
   const zoom = liveZoom ?? fitZoom;
   const widthFits = width * zoom + (shown.length - 1) * 16 <= viewport.width;
+  const wheelPaging = useRef(false);
+  wheelPaging.current = mode !== 'continuous' && widthFits;
+  useEffect(() => {
+    const el = root.current!;
+    let last = -Infinity,
+      x = 0,
+      y = 0,
+      turned = false;
+    let axis: 'horizontal' | 'vertical' | null = null;
+    const wheel = (event: WheelEvent) => {
+      // Pinch zoom and panning a magnified page stay with the PDF viewport.
+      if (!wheelPaging.current || event.ctrlKey || event.metaKey) {
+        last = -Infinity;
+        return;
+      }
+      const now = performance.now();
+      if (now - last > 200) {
+        x = y = 0;
+        turned = false;
+        axis = null;
+      }
+      last = now;
+      const unit = event.deltaMode === 1 ? 16 : 1;
+      x += event.deltaX * (event.deltaMode === 2 ? el.clientWidth : unit);
+      y += event.deltaY * (event.deltaMode === 2 ? el.clientHeight : unit);
+      if (!axis && Math.hypot(x, y) >= 8)
+        axis = Math.abs(x) > Math.abs(y) * 1.4 ? 'horizontal' : 'vertical';
+      if (axis === 'vertical' || (!axis && Math.abs(x) <= Math.abs(y) * 1.4)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      // Keep consuming the momentum tail, so one swipe turns only one spread.
+      if (!turned && Math.abs(x) >= 60) {
+        turned = true;
+        navigateRef.current(x > 0 ? 1 : -1);
+      }
+    };
+    el.addEventListener('wheel', wheel, { capture: true, passive: false });
+    return () => el.removeEventListener('wheel', wheel, true);
+  }, []);
   useLayoutEffect(() => setLiveZoom(null), [viewport.width, viewport.height]);
   useLayoutEffect(() => {
     if (mode !== 'continuous') setLiveZoom(null);

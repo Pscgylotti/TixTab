@@ -171,7 +171,7 @@ import { presentationFullscreen } from './presentationFullscreen';
 import BackgroundTaskDock from './BackgroundTaskDock';
 import { mergeBackgroundPages } from './backgroundPageResults';
 import { useBackgroundPanel } from './useBackgroundPanel';
-import { usePenTailVoice, setPenTailVoice } from './penTailVoice';
+import { usePenTailVoice, setPenTailVoice, createTailGesture } from './penTailVoice';
 import TouchKeyboard from './TouchKeyboard';
 import RegionCapture from './RegionCapture';
 const BitmapOcrDialog = lazy(() => import('./BitmapOcrDialog'));
@@ -249,6 +249,7 @@ export default function App() {
   const locale = useLocale();
   const tailVoiceEnabled = usePenTailVoice();
   const [voiceRequest, setVoiceRequest] = useState(0);
+  const [voiceSendRequest, setVoiceSendRequest] = useState(0);
   const [tailVoiceStatus, setTailVoiceStatus] = useState('');
   const writingHand = useWritingHand();
   const appearance = useAppearance();
@@ -382,24 +383,36 @@ export default function App() {
       .catch(() => {
         if (alive) setTailVoiceStatus(tr('尾键接管不可用，请检查设备与 Windows 笔快捷键设置。'));
       });
-    const press = () => {
+    const openAssistant = () => {
       if (!tailVoiceEnabled) return;
       window.dispatchEvent(new Event('tixtab-exit-presentation'));
       setChatOpen(true);
-      setVoiceRequest((v) => v + 1);
       setDialog((value) => (value === 'settings' || value === 'help' ? null : value));
     };
-    const off = bridge?.onPress(press);
+    const gesture = createTailGesture(
+      () => {
+        openAssistant();
+        setVoiceRequest((v) => v + 1);
+      },
+      () => {
+        openAssistant();
+        setVoiceSendRequest((v) => v + 1);
+      },
+    );
+    const off = bridge?.onPress((kind) => {
+      if (tailVoiceEnabled) gesture.press(kind);
+    });
     const key = (event: KeyboardEvent) => {
-      if (event.key === 'F20' && !event.repeat && tailVoiceEnabled) {
+      if (['F20', 'F19'].includes(event.key) && !event.repeat && tailVoiceEnabled) {
         event.preventDefault();
-        press();
+        gesture.press(event.key === 'F19' ? 'send' : 'press');
       }
     };
     window.addEventListener('keydown', key, true);
     return () => {
       alive = false;
       off?.();
+      gesture.dispose();
       window.removeEventListener('keydown', key, true);
     };
   }, [tailVoiceEnabled, locale]);
@@ -1387,6 +1400,7 @@ export default function App() {
     setScratchFocus(false);
     const old = pdfRef.current;
     setVoiceRequest(0);
+    setVoiceSendRequest(0);
     ensureTab(id, next.batch?.title || next.name, !!next.source);
     viewRef.current = { ...view };
     history.current = [];
@@ -3556,6 +3570,7 @@ export default function App() {
             <Suspense fallback={null}>
               <ChatPanel
                 voiceRequest={voiceRequest}
+                voiceSendRequest={voiceSendRequest}
                 viewMode={viewMode}
                 onModels={() => setDialog('models')}
                 onSvgInsert={(image) => {
@@ -3578,6 +3593,7 @@ export default function App() {
                 onClose={() => {
                   setChatOpen(false);
                   setVoiceRequest(0);
+                  setVoiceSendRequest(0);
                 }}
                 onNavigate={(id) => {
                   const at = notebook.pages.findIndex((p) => p.id === id);
@@ -3916,7 +3932,7 @@ export default function App() {
                     </label>
                     <p className="appearance-note">
                       {tr(
-                        '仅在 TixTab 前台接管尾键：按一次打开聊天并听写，再按一次结束识别并发送。关闭后恢复系统快捷行为。',
+                        '仅在 TixTab 前台接管尾键：单击打开聊天并开始或结束听写，双击结束听写并发送。关闭后恢复系统快捷行为。',
                       )}
                     </p>
                     {tailVoiceStatus && (

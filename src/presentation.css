@@ -11,6 +11,7 @@ body.presentation-active > :not(.presentation-view) {
   touch-action: none;
   user-select: none;
   overflow: hidden;
+  overscroll-behavior: none;
   --page-controls-inset: 0px;
 }
 .presentation-stage {

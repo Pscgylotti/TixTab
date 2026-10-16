@@ -1,8 +1,9 @@
-/** Consume only F20 while this foreground app has explicitly enabled tail voice. */
+/** Consume Surface single/double tail gestures only in the opted-in foreground app. */
 function tailKey(state, message, vk, foreground, emit) {
-  if (vk !== 0x83) return false;
+  if (vk !== 0x83 && vk !== 0x82) return false;
   if (message === 0x101 || message === 0x105) {
-    const consumed = state.down;
+    const consumed = state.down && state.key === vk;
+    if (!consumed) return false;
     state.down = false;
     return consumed;
   }
@@ -10,7 +11,8 @@ function tailKey(state, message, vk, foreground, emit) {
   if (state.down) return true;
   if (!foreground) return false;
   state.down = true;
-  emit();
+  state.key = vk;
+  emit(vk === 0x82 ? 'send' : 'press');
   return true;
 }
 let hookPrototype;
@@ -53,22 +55,28 @@ function createPenTailVoice(onPress) {
         const callback = k.register((code, message, data) => {
           if (code >= 0 && data) {
             const vk = k.decode(data, 'uint32');
-            if (vk === 0x83) {
+            if (vk === 0x83 || vk === 0x82) {
               getPid(getForeground(), pid);
               if (
-                tailKey(state, Number(message), vk, pid.readUInt32LE(0) === process.pid, () => {
-                  // Mark the Win chord as used without changing any modifier's state.
-                  if ((keyState(0x5b) | keyState(0x5c)) & 0x8000) {
-                    const inputs = Buffer.alloc(80);
-                    inputs.writeUInt32LE(1, 0);
-                    inputs.writeUInt16LE(0xe8, 8);
-                    inputs.writeUInt32LE(1, 40);
-                    inputs.writeUInt16LE(0xe8, 48);
-                    inputs.writeUInt32LE(2, 52);
-                    sendInput(2, inputs, 40);
-                  }
-                  setImmediate(onPress);
-                })
+                tailKey(
+                  state,
+                  Number(message),
+                  vk,
+                  pid.readUInt32LE(0) === process.pid,
+                  (gesture) => {
+                    // Mark the Win chord as used without changing any modifier's state.
+                    if ((keyState(0x5b) | keyState(0x5c)) & 0x8000) {
+                      const inputs = Buffer.alloc(80);
+                      inputs.writeUInt32LE(1, 0);
+                      inputs.writeUInt16LE(0xe8, 8);
+                      inputs.writeUInt32LE(1, 40);
+                      inputs.writeUInt16LE(0xe8, 48);
+                      inputs.writeUInt32LE(2, 52);
+                      sendInput(2, inputs, 40);
+                    }
+                    setImmediate(() => onPress(gesture));
+                  },
+                )
               )
                 return 1;
             }

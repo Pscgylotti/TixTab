@@ -20,3 +20,23 @@ export function usePenTailVoice() {
     () => false,
   );
 }
+export function createTailGesture(single: () => void, double: () => void, delay = 500) {
+  let pending: ReturnType<typeof setTimeout> | undefined;
+  const dispose = () => {
+    clearTimeout(pending);
+    pending = undefined;
+  };
+  return {
+    press(kind: 'press' | 'send' = 'press') {
+      if (kind === 'send' || pending !== undefined) {
+        dispose();
+        double();
+      } else
+        pending = setTimeout(() => {
+          pending = undefined;
+          single();
+        }, delay);
+    },
+    dispose,
+  };
+}

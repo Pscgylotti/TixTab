@@ -10,9 +10,10 @@ function createWindowsSpeech({
   onProgress,
 }) {
   let session = null;
-  function close(owner) {
+  let idleSeconds = 1800;
+  function close(owner, expected) {
     const s = session;
-    if (!s || (owner && owner !== s.owner)) return;
+    if (!s || (expected && expected !== s) || (owner && owner !== s.owner)) return;
     session = null;
     clearTimeout(s.limit);
     s.pending?.reject(Error('cancelled'));
@@ -29,13 +30,17 @@ function createWindowsSpeech({
       pending: null,
       buffer: '',
       done: false,
+      stage: 'launch',
+      starting: false,
+      idleSeconds: 1800,
+      idleSince: 0,
     };
     session = s;
     child.stdout.setEncoding('utf8');
     child.stdout.on('data', (chunk) => {
       s.buffer += chunk;
       if (s.buffer.length > 100000) {
-        close(owner);
+        close(s.owner, s);
         return;
       }
       let at;
@@ -45,8 +50,9 @@ function createWindowsSpeech({
         try {
           const result = JSON.parse(line);
           if (result.progress) {
+            s.stage = String(result.progress.stage).slice(0, 60);
             onProgress?.(s.owner, {
-              stage: String(result.progress.stage).slice(0, 60),
+              stage: s.stage,
               value: Math.max(0, Math.min(1, Number(result.progress.value) || 0)),
             });
             continue;
@@ -81,8 +87,13 @@ function createWindowsSpeech({
               return;
             }
             const timer = setTimeout(() => {
-              reject(Error('timeout'));
-              close(s.owner);
+              reject(
+                Object.assign(Error('windows-speech-timeout'), {
+                  stage: s.stage,
+                  action: command.action,
+                }),
+              );
+              close(s.owner, s);
             }, timeout);
             s.pending = {
               resolve: (r) => {
@@ -108,7 +119,22 @@ function createWindowsSpeech({
     cancel: close,
     dispose: () => close(),
     async run(owner, r) {
+      let ownedSession;
       try {
+        if (r.action === 'idle-policy') {
+          if (
+            !Number.isInteger(r.idleReleaseSeconds) ||
+            r.idleReleaseSeconds < 30 ||
+            r.idleReleaseSeconds > 86400
+          )
+            return { ok: false, error: 'invalid' };
+          idleSeconds = r.idleReleaseSeconds;
+          if (session) {
+            session.idleSeconds = idleSeconds;
+            if (session.done) idle(session);
+          }
+          return { ok: true };
+        }
         if (r.action === 'register') {
           if (session) return { ok: false, error: 'busy' };
           await new Promise((resolve, reject) =>
@@ -138,14 +164,30 @@ function createWindowsSpeech({
         if (['status', 'prepare', 'start'].includes(r.action)) {
           if (!['windows-ai', 'windows-sdk'].includes(r.engine))
             return { ok: false, error: 'invalid' };
-          if (session) return { ok: false, error: 'busy' };
-          const s = launch(owner, r.engine);
+          if (session && !session.done) return { ok: false, error: 'busy' };
+          if (session && (r.action !== 'start' || session.engine !== r.engine)) close();
+          const s = session || launch(owner, r.engine);
+          clearTimeout(s.limit);
+          s.owner = owner;
+          s.id = crypto.randomUUID();
+          s.done = false;
+          s.stage = 'launch';
+          s.idleSince = 0;
+          if (
+            Number.isInteger(r.idleReleaseSeconds) &&
+            r.idleReleaseSeconds >= 30 &&
+            r.idleReleaseSeconds <= 86400
+          )
+            idleSeconds = r.idleReleaseSeconds;
+          s.idleSeconds = idleSeconds;
+          ownedSession = s;
+          s.starting = r.action === 'start';
           let microphoneName = '';
           if (r.microphone) {
             const listed = await microphones(owner);
             const input = listed?.data?.microphones?.find((m) => m.id === r.microphone);
             if (!input) {
-              close(owner);
+              close(owner, s);
               return { ok: false, error: 'microphone-missing' };
             }
             microphoneName = input.name;
@@ -153,18 +195,32 @@ function createWindowsSpeech({
           const result = await ask(
             s,
             { ...r, microphoneName },
-            r.action === 'prepare' ? 600000 : 60000,
+            r.action === 'prepare'
+              ? 600000
+              : r.action === 'start' && r.engine === 'windows-ai'
+                ? 600000
+                : 60000,
           );
-          if (r.action !== 'start' || !result.ok) close(owner);
+          s.starting = false;
+          if (r.action !== 'start' || !result.ok) close(owner, s);
           else {
-            s.limit = setTimeout(() => close(owner), 130000);
+            s.limit = setTimeout(() => close(owner, s), 130000);
             return { ok: true, data: { id: s.id } };
           }
           return result;
         }
         const s = session;
         if (!s || s.owner !== owner) return { ok: false, error: 'cancelled' };
-        if (r.action === 'stop') return await ask(s, { action: 'stop' }, 20000);
+        ownedSession = s;
+        if (r.action === 'stop') {
+          // WinRT cannot read a stop command while TryCreateAsync is pending.
+          // Kill only the owned helper, including any microphone startup in flight.
+          if (s.starting) {
+            close(owner);
+            return { ok: true, data: { cancelled: true } };
+          }
+          return await ask(s, { action: 'stop' }, 20000);
+        }
         if (r.action === 'cancel') {
           close(owner);
           return { ok: true };
@@ -172,24 +228,39 @@ function createWindowsSpeech({
         if (r.action === 'read' && r.id === s.id) {
           await new Promise((resolve) => setTimeout(resolve, 100));
           const result = await ask(s, { action: 'read' });
-          if (result.data?.done) close(owner);
+          if (result.data?.done) {
+            if (s.engine === 'windows-ai' && result.ok && !result.data.error) {
+              if (!s.done) s.idleSince = Date.now();
+              s.done = true;
+              idle(s);
+            } else close(owner, s);
+          }
           return result;
         }
         return { ok: false, error: 'invalid' };
       } catch (e) {
-        close(owner);
+        if (ownedSession) close(owner, ownedSession);
         return {
           ok: false,
           error: e.code === 'ENOENT' ? 'runtime' : e.message || 'windows-ai-unavailable',
+          data: e.stage ? { stage: e.stage, action: e.action } : undefined,
         };
       }
     },
   };
+  function idle(s) {
+    clearTimeout(s.limit);
+    s.limit = setTimeout(
+      () => close(s.owner, s),
+      Math.max(0, s.idleSeconds * 1000 - (Date.now() - s.idleSince)),
+    );
+  }
 }
 function createSystemSpeechRouter(legacy, native) {
   const routes = new Map();
   return {
     async run(owner, r) {
+      if (r.action === 'idle-policy') return native.run(owner, r);
       const service =
         r.action === 'start'
           ? r.engine === 'system'

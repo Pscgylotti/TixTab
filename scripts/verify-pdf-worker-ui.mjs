@@ -87,6 +87,10 @@ export async function verifyPdfWorkerUi(page) {
     });
     await page.locator('.busy-overlay').waitFor({ state: 'hidden' });
     await page.getByRole('button', { name: '插入空白页', exact: true }).click();
+    await page
+      .getByRole('dialog', { name: '插入空白页', exact: true })
+      .getByRole('button', { name: '插入页面', exact: true })
+      .click();
     const before = await download(page.getByRole('button', { name: '保存工程', exact: true }));
     if (
       (await page

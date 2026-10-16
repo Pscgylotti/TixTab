@@ -30,6 +30,23 @@ async function swipe(page: Page, dx: number, dy = 0, cancel = false) {
     { dx, dy, cancel },
   );
 }
+async function trackpad(page: Page, deltas: number[], deltaMode = 0) {
+  await page.locator('.presentation-view .surface,.presentation-view .reading-view').evaluate(
+    (el, { deltas, deltaMode }) => {
+      for (const deltaX of deltas)
+        el.dispatchEvent(
+          new WheelEvent('wheel', {
+            bubbles: true,
+            cancelable: true,
+            deltaX,
+            deltaY: 0,
+            deltaMode,
+          }),
+        );
+    },
+    { deltas, deltaMode },
+  );
+}
 
 for (const mode of ['single', 'continuous', 'dual'] as const) {
   test(`${mode}: centered read-only fullscreen, gestures and original view restoration`, async ({
@@ -135,6 +152,8 @@ for (const mode of ['single', 'continuous', 'dual'] as const) {
       .toBeCloseTo(fit * 4);
     await swipe(page, -120);
     if (mode !== 'continuous') await expect(display).toHaveAttribute('data-page-index', '0');
+    await trackpad(page, [100, 80, 60]);
+    if (mode !== 'continuous') await expect(display).toHaveAttribute('data-page-index', '0');
     await surface.evaluate((el) => {
       const r = el.getBoundingClientRect();
       el.dispatchEvent(
@@ -192,6 +211,25 @@ for (const mode of ['single', 'continuous', 'dual'] as const) {
       .poll(async () => Number(await display.getAttribute('data-view-zoom')))
       .toBeCloseTo(fit);
     if (mode !== 'continuous') {
+      await trackpad(page, [20, 20]);
+      await expect(display).toHaveAttribute('data-page-index', '0');
+      await trackpad(page, [30, 90, 75, 55]);
+      await expect(display).toHaveAttribute('data-page-index', mode === 'dual' ? '2' : '1');
+      // A quiet interval separates two physical trackpad gestures.
+      await page.waitForTimeout(230);
+      await trackpad(page, [-80, -60, -40]);
+      await expect(display).toHaveAttribute('data-page-index', '0');
+      await page.waitForTimeout(230);
+      await trackpad(page, [4], 1);
+      await expect(display).toHaveAttribute('data-page-index', mode === 'dual' ? '2' : '1');
+      await page.waitForTimeout(230);
+      await trackpad(page, [-4], 1);
+      await expect(display).toHaveAttribute('data-page-index', '0');
+      await display.locator('.presentation-stage').evaluate(async (el) => {
+        await Promise.all(
+          el.getAnimations().map((animation) => animation.finished.catch(() => {})),
+        );
+      });
       const papers = display.locator('.paper,.reading-paper');
       const rects = await papers.evaluateAll((els) =>
         els.map((el) => {

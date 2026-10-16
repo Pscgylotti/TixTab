@@ -45,6 +45,14 @@ const errors: Record<string, string> = {
   inference: '语音识别失败，请重试或切换引擎。',
   overload: '识别未跟上录音速度，请停止后重试，或切换到 SenseVoiceSmall。',
   timeout: '语音识别超时，请重试或切换到 CPU。',
+  'windows-speech-timeout': 'Windows 语音响应超时，请重试或切换其它语音引擎。',
+  'windows-speech-model-timeout':
+    'Windows 系统语音模型加载超时，尚未开始录音。请重试，或暂时切换其它语音引擎。',
+  'windows-speech-model-failed':
+    'Windows 系统语音模型加载失败，尚未开始录音。请检查系统 AI 组件与 NPU 驱动，或切换其它语音引擎。',
+  'windows-speech-provider-timeout':
+    'Windows ML 推理组件初始化超时，请检查系统 AI 组件与 NPU 驱动，或切换其它语音引擎。',
+  'windows-speech-microphone-timeout': 'Windows 麦克风启动超时，请检查输入设备与麦克风权限。',
   busy: '语音引擎正在处理上一项任务，请稍候。',
   setup: '运行时安装失败，请检查网络后重试。',
   'windows-ai-unavailable': 'Windows AI 语音不可用，请检查系统版本、系统模型和组件身份。',
@@ -69,6 +77,7 @@ export default function DictationButton({
   onModels,
   hostDocument = document,
   toggleRequest = 0,
+  sendRequest = 0,
   onShortcutFinished,
 }: {
   disabled: boolean;
@@ -77,6 +86,7 @@ export default function DictationButton({
   onModels?: () => void;
   hostDocument?: Document;
   toggleRequest?: number;
+  sendRequest?: number;
   onShortcutFinished?: () => void;
 }) {
   const locale = useLocale(),
@@ -110,6 +120,7 @@ export default function DictationButton({
     [message, setMessage] = useState(''),
     [download, setDownload] = useState(0);
   const running = useRef(false),
+    starting = useRef(false),
     generation = useRef(0),
     mounted = useRef(true),
     activePromise = useRef<Promise<void> | null>(null),
@@ -122,7 +133,7 @@ export default function DictationButton({
   const bridge = window.surfaceDesktop?.dictation,
     models = window.surfaceDesktop?.models;
   const recorder = useRef(Symbol('dictation'));
-  const shortcut = useRef({ seen: 0, send: false, heard: false });
+  const shortcut = useRef({ seen: 0, sendSeen: 0, send: false, heard: false });
   const shortcutFinished = useRef(onShortcutFinished);
   const windowsPreparation = useRef<string | null>(null);
   const [windowsProgress, setWindowsProgress] = useState<{ stage: string; value: number } | null>(
@@ -145,6 +156,7 @@ export default function DictationButton({
     generation.current++;
     shortcut.current.send = false;
     running.current = false;
+    starting.current = false;
     stopping.current = false;
     setListening(false);
     setFinishing(false);
@@ -154,6 +166,10 @@ export default function DictationButton({
   };
   const stop = () => {
     if (!running.current || stopping.current) return;
+    if (starting.current && ['windows-ai', 'windows-sdk'].includes(engine)) {
+      cancel();
+      return;
+    }
     stopping.current = true;
     setListening(false);
     setFinishing(true);
@@ -178,6 +194,23 @@ export default function DictationButton({
   useEffect(
     () =>
       bridge?.onProgress?.((progress) => {
+        if (running.current && starting.current) {
+          const stages: Record<string, string> = {
+            readiness: '正在检查系统语音模型…',
+            'provider-register': '正在初始化 Windows ML 推理组件…',
+            'microphone-select': '正在选择麦克风…',
+            'model-loading': '正在加载系统语音模型，首次加载可能需要数分钟…',
+            'model-ready': '系统语音模型已加载…',
+            'recognizer-create': '正在创建语音识别器…',
+            'microphone-start': '正在启动麦克风…',
+            listening: '正在离线听写，点击麦克风停止。',
+          };
+          if (stages[progress.stage])
+            statusCallback.current(
+              t(stages[progress.stage]) +
+                (progress.stage === 'model-loading' ? ` ${Math.round(progress.value * 100)}%` : ''),
+            );
+        }
         if (!windowsPreparation.current) return;
         const stages: Record<string, string> = {
           Installing: '正在下载系统语音模型…',
@@ -261,6 +294,7 @@ export default function DictationButton({
     }
     recorders.set(bridge, recorder.current);
     running.current = true;
+    starting.current = true;
     shortcut.current.send = false;
     shortcut.current.heard = false;
     stopping.current = false;
@@ -270,7 +304,13 @@ export default function DictationButton({
     setActiveInput('');
     const token = ++generation.current;
     let success = false;
-    statusCallback.current(t('正在加载语音模型，首次运行可能需要较长时间…'));
+    statusCallback.current(
+      t(
+        engine === 'windows-ai'
+          ? '正在启动系统听写…'
+          : '正在加载语音模型，首次运行可能需要较长时间…',
+      ),
+    );
     try {
       const started = await bridge.run({
         action: 'start',
@@ -280,8 +320,21 @@ export default function DictationButton({
         idleReleaseSeconds: getModelIdleSeconds(),
         microphone: engine === 'windows-sdk' ? '' : microphone,
       });
-      if (!started.ok) throw new Error(started.error);
+      if (!started.ok) {
+        let key = started.error;
+        if (key === 'windows-speech-timeout') {
+          const stage = started.data?.stage;
+          if (stage === 'model-loading') key = 'windows-speech-model-timeout';
+          else if (stage === 'provider-register') key = 'windows-speech-provider-timeout';
+          else if (stage === 'microphone-start' || stage === 'microphone-select')
+            key = 'windows-speech-microphone-timeout';
+        }
+        if (key === 'windows-ai-unavailable' && started.data?.stage === 'model-loading')
+          key = 'windows-speech-model-failed';
+        throw Object.assign(new Error(key), { hresult: started.hresult });
+      }
       if (token !== generation.current) return;
+      starting.current = false;
       while (token === generation.current) {
         const next = await bridge.run({ action: 'read', id: started.data.id });
         if (token !== generation.current) return;
@@ -306,7 +359,9 @@ export default function DictationButton({
                 : next.data.ready
                   ? engine === 'windows-sdk'
                     ? '正在听写（Windows SDK），点击麦克风停止。'
-                    : '正在离线听写，点击麦克风停止。'
+                    : engine === 'windows-ai' && next.data.stage === 'microphone-start'
+                      ? '正在启动系统听写，可开始说话，点击麦克风停止。'
+                      : '正在离线听写，点击麦克风停止。'
                   : '正在加载语音模型，首次运行可能需要较长时间…',
           ) + suffix,
         );
@@ -317,19 +372,23 @@ export default function DictationButton({
     } catch (e) {
       if (token === generation.current) {
         const key = e instanceof Error ? e.message : '';
-        statusCallback.current(t(errors[key] || errors.inference));
+        const code = (e as { hresult?: string })?.hresult;
+        statusCallback.current(
+          t(errors[key] || errors.inference) +
+            (typeof code === 'string' && /^0x[0-9a-f]{8}$/i.test(code) ? ` (${code})` : ''),
+        );
         if (['runtime', 'model-missing'].includes(key)) setOpen(true);
         if (key !== 'busy') void bridge.run({ action: 'cancel' });
       }
     } finally {
       if (token === generation.current) {
         running.current = false;
+        starting.current = false;
         release();
         stopping.current = false;
         setListening(false);
         setFinishing(false);
-        if (success && shortcut.current.send && shortcut.current.heard)
-          shortcutFinished.current?.();
+        if (success && shortcut.current.send) shortcutFinished.current?.();
         shortcut.current.send = false;
       }
     }
@@ -338,15 +397,31 @@ export default function DictationButton({
     activePromise.current = start(selected);
   };
   useEffect(() => {
+    if (!toggleRequest) {
+      shortcut.current.seen = 0;
+      return;
+    }
     if (!toggleRequest || shortcut.current.seen === toggleRequest || disabled || settingBusy)
       return;
     shortcut.current.seen = toggleRequest;
     if (stopping.current) return;
     if (running.current) {
-      shortcut.current.send = true;
       stop();
     } else begin();
   }, [toggleRequest, disabled, settingBusy]);
+  useEffect(() => {
+    if (!sendRequest) {
+      shortcut.current.sendSeen = 0;
+      return;
+    }
+    if (!sendRequest || shortcut.current.sendSeen === sendRequest || disabled || settingBusy)
+      return;
+    shortcut.current.sendSeen = sendRequest;
+    if (running.current) {
+      shortcut.current.send = true;
+      if (!stopping.current) stop();
+    } else shortcutFinished.current?.();
+  }, [sendRequest, disabled, settingBusy]);
   const prepareWindows = async (action: 'status' | 'register' | 'prepare') => {
     if (settingBusy || running.current) return;
     busyRef.current = 'windows';
