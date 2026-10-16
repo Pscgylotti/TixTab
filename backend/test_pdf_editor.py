@@ -3,7 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 import pymupdf as fitz
-from pdf_editor import run, elements
+import pdf_editor
+from pdf_editor import run, elements, overlaps
 
 
 class PdfEditorTests(unittest.TestCase):
@@ -27,6 +28,61 @@ class PdfEditorTests(unittest.TestCase):
 
     def select(self,kind,index=0,page=0):
         return [e for e in run(self.source,{'action':'inspect','page':page},self.output)['elements'] if e['kind']==kind][index]
+
+    def test_shading_is_not_an_image_and_does_not_block_nearby_images(self):
+        with fitz.open(self.source) as doc:
+            page=doc[0]
+            shading=doc.get_new_xref()
+            doc.update_object(shading,'<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 1 0] /Function << /FunctionType 2 /Domain [0 1] /C0 [1 0 0] /C1 [0 0 1] /N 1 >> >>')
+            page.clean_contents()
+            doc.xref_set_key(page.xref,'Resources/Shading',f'<< /Sh1 {shading} 0 R >>')
+            stream=page.get_contents()[0]
+            # Overlaps the first image (40,160)-(200,240) in top-left page coordinates.
+            doc.update_stream(stream,doc.xref_stream(stream)+b'\nq 20 380 m 260 380 l 260 430 l 20 430 l h W n 240 0 0 50 20 380 cm /Sh1 sh Q\n')
+            doc.save(self.output)
+        self.source.write_bytes(self.output.read_bytes())
+        images=self.select_all('image')
+        self.assertEqual(len(images),2)
+        run(self.source,dict(action='edit',page=0,elementId=images[0]['id'],rect=[40,300,200,380]),self.output)
+        with fitz.open(self.output) as doc:
+            self.assertEqual(sum(1 for kind,_ in doc[0].get_bboxlog() if kind=='fill-shade'),1)
+
+    def select_all(self,kind,page=0):
+        return [e for e in run(self.source,{'action':'inspect','page':page},self.output)['elements'] if e['kind']==kind]
+
+    def heading(self,second_y):
+        doc=fitz.open();page=doc.new_page(width=600,height=400)
+        page.insert_text((60,120),'First heading line',fontsize=17)
+        page.insert_text((60,second_y),'Second heading line',fontsize=17)
+        doc.save(self.source);doc.close()
+        texts=self.select_all('text')
+        return next(e for e in texts if e['text'].startswith('First')),next(e for e in texts if e['text'].startswith('Second'))
+
+    def test_tightly_set_heading_lines_can_be_edited_separately(self):
+        first,second=self.heading(143)
+        # Line boxes touch by a fraction of a point, as in real two-line paper
+        # titles; the glyphs themselves do not meet.
+        self.assertTrue(overlaps(first['raw'],second['raw']))
+        run(self.source,dict(action='edit',page=0,elementId=first['id'],text='Changed heading',overflow=True),self.output)
+        with fitz.open(self.output) as doc:
+            text=doc[0].get_text()
+            self.assertIn('Changed heading',text)
+            self.assertIn('Second heading line',text)
+            self.assertNotIn('First heading line',text)
+
+    def test_text_that_really_overlaps_is_still_refused(self):
+        first,_=self.heading(125)
+        with self.assertRaisesRegex(ValueError,'overlapping-elements'):
+            run(self.source,dict(action='edit',page=0,elementId=first['id'],text='Changed',overflow=True),self.output)
+
+    def test_edit_is_refused_if_removal_would_clip_a_neighbour(self):
+        first,second=self.heading(139)
+        # Passes the up-front check, but erasing line 1 would cut the tops of
+        # line 2's capitals: the post-removal check refuses it, nothing is saved.
+        self.assertFalse(pdf_editor.substantial(first['raw'],second['raw']))
+        with self.assertRaisesRegex(ValueError,'overlapping-elements'):
+            run(self.source,dict(action='edit',page=0,elementId=first['id'],text='Changed',overflow=True),self.output)
+        self.assertFalse(self.output.exists())
 
     def test_text_replacement_removes_old_searchable_content(self):
         e=self.select('text')

@@ -81,6 +81,9 @@ test('native PDF editor uses actual short-lived backend, edits content, and undo
     for (const view of ['单页标注', '连续页面预览', '双页预览']) {
       await page.getByRole('button', { name: view, exact: true }).click();
       await page.getByRole('button', { name: 'PDF 元素', exact: true }).click();
+      // Object editing is the default; text content and images are the second mode.
+      if (view === '单页标注')
+        await page.getByRole('button', { name: '编辑文字内容', exact: true }).click();
       const native = page.getByRole('button', { name: '编辑原生文本', exact: true }).first();
       await expect(native).toBeVisible();
       await native.click();

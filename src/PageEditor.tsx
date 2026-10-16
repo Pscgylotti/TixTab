@@ -68,7 +68,7 @@ import { useAppearance } from './appearance';
 import { lazy, Suspense } from 'react';
 const ImageCropDialog = lazy(() => import('./ImageCropDialog'));
 const ColorKeyDialog = lazy(() => import('./ColorKeyDialog'));
-const NativePdfLayer = lazy(() => import('./NativePdfLayer'));
+const PdfEditLayer = lazy(() => import('./PdfEditLayer'));
 interface Props {
   page: Page;
   pdf: PDFDocumentProxy | null;
@@ -789,7 +789,12 @@ function PageEditor({
         ) : null}
         {tool === 'pdf-edit' && (
           <Suspense fallback={null}>
-            <NativePdfLayer page={page} zoom={zoom} active={active} />
+            <PdfEditLayer
+              page={page}
+              zoom={zoom}
+              active={active}
+              host={viewport.current?.parentElement ?? null}
+            />
           </Suspense>
         )}
       </div>

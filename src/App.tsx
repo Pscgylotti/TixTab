@@ -156,6 +156,7 @@ import {
 import { historyTarget, historyViewportIndex } from './historyNavigation';
 import { trimSourceHistory } from './sourceHistory';
 import { applyNativeDrafts } from './nativePdfDrafts';
+import { editPdfObjects as runPdfObjectEdits } from './pdfObjectsClient';
 import { pdfEditErrors } from './pdfNativeTypes';
 import AppContexts from './AppContexts';
 import type { PageAction } from './pageOperations';
@@ -2417,6 +2418,23 @@ export default function App() {
         pdf,
         mode: viewMode,
         onReviewCreated: () => setTool('hand'),
+        editPdfObjects: async (pageId, edits) => {
+          const snapshot = current.current,
+            target = snapshot.pages.find((p) => p.id === pageId);
+          if (!target || target.sourceIndex === null || !snapshot.source) throw Error('pdf-edit');
+          if (snapshot.pages.some((p) => p.pdfEdits?.length)) throw Error('pending-pdf-edits');
+          if (snapshot.pages.filter((p) => p.sourceIndex === target.sourceIndex).length > 1)
+            throw Error('shared-page');
+          const source = await runPdfObjectEdits(snapshot.source, target.sourceIndex, edits);
+          if (current.current !== snapshot) throw Error('element-stale');
+          commit({
+            ...snapshot,
+            source,
+            pages: snapshot.pages.map((p) =>
+              p.id === pageId ? { ...p, nativeRevision: uid(), bitmapOcr: undefined } : p,
+            ),
+          });
+        },
         stageNative: (pageId, edit) => {
           const n = current.current,
             total = n.pages.reduce(
