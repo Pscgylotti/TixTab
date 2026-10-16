@@ -2,6 +2,7 @@ import ScratchLiveInk from './ScratchLiveInk';
 import ScratchPanel from './ScratchPanel';
 import ScratchSurface from './ScratchSurface';
 import { ScratchInkContext } from './ScratchInkContext';
+import { ScratchEraseSession } from './scratchErase';
 import {
   newScratchPaper,
   editablePages,
@@ -352,12 +353,27 @@ export default function App() {
     [scratchHiddenPdf, setScratchHiddenPdf] = useState(false),
     [scratchFocus, setScratchFocus] = useState(false);
   const scratchLive = useRef<import('react').ComponentRef<typeof ScratchLiveInk>>(null);
+  const scratchErase = useRef<{
+    owner: string;
+    documentId: string;
+    session: ScratchEraseSession;
+  } | null>(null);
   const scratchEnabled = useRef(false);
   scratchEnabled.current = scratchMode;
   const scratchReturn = useRef<WorkspaceView | null>(null);
   const activeScratch =
     notebook.scratchPapers?.find((p) => p.id === notebook.activeScratchId) ??
     notebook.scratchPapers?.[0];
+  useEffect(() => {
+    const gesture = scratchErase.current;
+    if (gesture) scratchLive.current?.previewErase(gesture.owner, []);
+    scratchErase.current = null;
+    return () => {
+      const pending = scratchErase.current;
+      if (pending) scratchLive.current?.previewErase(pending.owner, []);
+      scratchErase.current = null;
+    };
+  }, [activeId, scratchMode, activeScratch?.id, scratchHiddenPdf]);
   const [focusObjectId, setFocusObjectId] = useState<string | string[] | null>(null);
   const [capturing, setCapturing] = useState(false),
     [ocrImage, setOcrImage] = useState<string | null>(null);
@@ -3108,6 +3124,45 @@ export default function App() {
                   ? {
                       commit: routeScratchInk,
                       preview: (p, s, r) => scratchLive.current?.preview(p, s, r),
+                      sampleErase: (p, from, to, radius, rect) => {
+                        if (!scratchEnabled.current || activeRef.current !== activeId) return;
+                        let gesture = scratchErase.current;
+                        if (!gesture) {
+                          gesture = scratchErase.current = {
+                            owner: p.id,
+                            documentId: activeRef.current,
+                            session: new ScratchEraseSession(
+                              visiblePaperHits(current.current),
+                              document.querySelector('.canvas-container')?.getBoundingClientRect(),
+                            ),
+                          };
+                        }
+                        if (gesture.owner === p.id && gesture.documentId === activeRef.current)
+                          gesture.session.sample(p, rect, from, to, radius);
+                      },
+                      previewErase: (owner) => {
+                        const gesture = scratchErase.current;
+                        if (gesture?.owner !== owner || gesture.documentId !== activeRef.current)
+                          return 0;
+                        const parts = gesture.session.preview();
+                        scratchLive.current?.previewErase(owner, parts);
+                        return parts.reduce((n, p) => n + p.strokes.length + p.images.length, 0);
+                      },
+                      finishErase: (owner, cancel) => {
+                        const gesture = scratchErase.current;
+                        if (gesture?.owner !== owner) return;
+                        scratchErase.current = null;
+                        scratchLive.current?.previewErase(owner, []);
+                        if (
+                          cancel ||
+                          gesture.documentId !== activeRef.current ||
+                          !scratchEnabled.current
+                        )
+                          return;
+                        const before = current.current,
+                          next = gesture.session.apply(before);
+                        if (next !== before) commit(next);
+                      },
                     }
                   : null
               }

@@ -46,6 +46,39 @@ export function visiblePaperHits(n: Notebook): PaperHit[] {
 export function paperHit(hits: PaperHit[], x: number, y: number) {
   return hits.find(({ rect: r }) => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
 }
+/** Visit screen-space runs in foreground order, including gaps with no sheet. */
+export function visitPaperSegments(
+  a: Point,
+  b: Point,
+  hits: PaperHit[],
+  visit: (hit: PaperHit | undefined, from: Point, to: Point) => void,
+) {
+  const stops = [0, 1];
+  for (const { rect: r } of hits)
+    for (const [axis, edge] of [
+      [0, r.left],
+      [0, r.right],
+      [1, r.top],
+      [1, r.bottom],
+    ]) {
+      const d = b[axis] - a[axis];
+      if (d) {
+        const t = (edge - a[axis]) / d;
+        if (t > 0 && t < 1) stops.push(t);
+      }
+    }
+  stops.sort((a, b) => a - b);
+  const at = (t: number): Point => [
+    a[0] + (b[0] - a[0]) * t,
+    a[1] + (b[1] - a[1]) * t,
+    a[2] + (b[2] - a[2]) * t,
+  ];
+  for (let j = 1; j < stops.length; j++) {
+    if (stops[j] - stops[j - 1] < 1e-9) continue;
+    const mid = at((stops[j] + stops[j - 1]) / 2);
+    visit(paperHit(hits, mid[0], mid[1]), at(stops[j - 1]), at(stops[j]));
+  }
+}
 export function scratchInsertionAnchor(n: Notebook) {
   const viewport = document.querySelector('.canvas-container')?.getBoundingClientRect();
   if (!viewport) return null;
@@ -104,33 +137,7 @@ export function splitScratchStroke(
   if (screen.length === 1)
     append(paperHit(hits, ...(screen[0].slice(0, 2) as [number, number])), screen[0], screen[0]);
   for (let i = 1; i < screen.length; i++) {
-    const a = screen[i - 1],
-      b = screen[i],
-      stops = [0, 1];
-    for (const { rect: r } of hits)
-      for (const [axis, edge] of [
-        [0, r.left],
-        [0, r.right],
-        [1, r.top],
-        [1, r.bottom],
-      ]) {
-        const d = b[axis] - a[axis];
-        if (d) {
-          const t = (edge - a[axis]) / d;
-          if (t > 0 && t < 1) stops.push(t);
-        }
-      }
-    stops.sort((a, b) => a - b);
-    const at = (t: number): Point => [
-      a[0] + (b[0] - a[0]) * t,
-      a[1] + (b[1] - a[1]) * t,
-      a[2] + (b[2] - a[2]) * t,
-    ];
-    for (let j = 1; j < stops.length; j++) {
-      if (stops[j] - stops[j - 1] < 1e-9) continue;
-      const mid = at((stops[j] + stops[j - 1]) / 2);
-      append(paperHit(hits, mid[0], mid[1]), at(stops[j - 1]), at(stops[j]));
-    }
+    visitPaperSegments(screen[i - 1], screen[i], hits, append);
   }
   return output;
 }

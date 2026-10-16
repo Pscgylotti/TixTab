@@ -340,6 +340,9 @@ function PageEditor({
     eraseLast = useRef<Point | null>(null),
     drawingPointer = useRef<number | null>(null);
   const pressureMapper = useRef(getPressureMapper());
+  // Keep the routing chosen at pointer-down through capture, rerenders and
+  // unmount. The context value itself changes whenever the parent renders.
+  const eraseRoute = useRef<typeof routeStroke>(null);
   const sampleClock = useRef(new InkSampleClock());
   const tailEraser = useRef(false),
     eraserCursor = useRef<HTMLDivElement>(null);
@@ -417,6 +420,8 @@ function PageEditor({
       paintFinish.current?.('cancelled');
       paintFinish.current = undefined;
       frame.current = 0;
+      eraseRoute.current?.finishErase(pageRef.current.id, true);
+      eraseRoute.current = null;
     },
     [],
   );
@@ -446,7 +451,13 @@ function PageEditor({
       try {
         const canvas = live.current!;
         const pending = erased.current;
-        if (pending) {
+        if (pending && eraseRoute.current) {
+          showPending([]);
+          setPendingCount(eraseRoute.current.previewErase(pageRef.current.id));
+          releaseLiveInk(canvas);
+          finish?.();
+          return;
+        } else if (pending) {
           showPending([...pending.images]);
           setPendingCount(pending.images.size + pending.strokes.size);
         } else {
@@ -493,20 +504,24 @@ function PageEditor({
       const from = eraseLast.current ?? p,
         radius = eraserRadiusAt(e),
         box = sweptBounds(from, p, radius);
-      for (const s of committed.current!.candidates(pageRef.current.strokes, box))
-        if (!erased.current.strokes.has(s.id) && hitStroke(s, from, p, radius)) {
-          erased.current.strokes.add(s.id);
-          erased.current.highlights.set(s.id, {
-            ...s,
-            tool: 'ballpoint',
-            color: '#e05b62',
-            size: s.size + 3,
-          });
-        }
-      imageIndex.current!.update(pageRef.current.images);
-      for (const image of imageIndex.current!.search(box, false))
-        if (!erased.current.images.has(image.id) && hitImage(image, from, p, radius))
-          erased.current.images.add(image.id);
+      if (eraseRoute.current) {
+        eraseRoute.current.sampleErase(pageRef.current, from, p, radius, bounds);
+      } else {
+        for (const s of committed.current!.candidates(pageRef.current.strokes, box))
+          if (!erased.current.strokes.has(s.id) && hitStroke(s, from, p, radius)) {
+            erased.current.strokes.add(s.id);
+            erased.current.highlights.set(s.id, {
+              ...s,
+              tool: 'ballpoint',
+              color: '#e05b62',
+              size: s.size + 3,
+            });
+          }
+        imageIndex.current!.update(pageRef.current.images);
+        for (const image of imageIndex.current!.search(box, false))
+          if (!erased.current.images.has(image.id) && hitImage(image, from, p, radius))
+            erased.current.images.add(image.id);
+      }
       eraseLast.current = p;
     } else if (stroke.current) stroke.current.points.push(p);
     if (performance.now() - diagTime.current > 90) {
@@ -551,6 +566,7 @@ function PageEditor({
     tailEraser.current = isEraser(e);
     previewEraser(e.nativeEvent);
     if (tool === 'eraser' || isEraser(e)) {
+      eraseRoute.current = routeStroke;
       erased.current = { strokes: new Set(), images: new Set(), highlights: new Map() };
       eraseLast.current = point(e.nativeEvent);
     } else stroke.current = { id: uid(), tool, color, size, points: [] };
@@ -585,6 +601,9 @@ function PageEditor({
     if (drawingPointer.current !== e.pointerId) return;
     e.stopPropagation();
     if (!cancel && erased.current) sample(e.nativeEvent);
+    if (erased.current && eraseRoute.current)
+      eraseRoute.current.finishErase(pageRef.current.id, cancel);
+    eraseRoute.current = null;
     if (!cancel) {
       // Pointer-up pressure is zero; keep the last contact pressure to avoid an artificial taper.
       if (stroke.current) {
