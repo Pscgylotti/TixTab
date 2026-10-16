@@ -36,10 +36,13 @@ _verified = {}
 
 def verify(path, record):
     info = path.stat()
-    identity = (str(path.resolve()), info.st_size, info.st_mtime_ns)
+    identity = (str(path.resolve()), info.st_size, info.st_mtime_ns, info.st_ctime_ns,
+                info.st_ino, record['sha256'])
     if info.st_size != record['bytes']:
         raise ValueError('Uni-MuMER file size mismatch')
-    if identity not in _verified:
+    # Tiny files cost little to hash, and rapid replacement on Windows can
+    # share a timestamp. Only memoize immutable, large model/runtime assets.
+    if info.st_size < 1_000_000 or identity not in _verified:
         digest = hashlib.sha256()
         with path.open('rb') as stream:
             for chunk in iter(lambda: stream.read(1024 * 1024), b''):
@@ -47,11 +50,14 @@ def verify(path, record):
         digest = digest.hexdigest()
         if digest != record['sha256']:
             raise ValueError('Uni-MuMER file checksum mismatch')
-        _verified[identity] = True
+        if info.st_size >= 1_000_000:
+            if len(_verified) >= 256:
+                _verified.pop(next(iter(_verified)))
+            _verified[identity] = True
 
 
-def assets(which):
-    record = MANIFEST[which]
+def assets(which, manifest=MANIFEST):
+    record = manifest[which]
     base = managed_directory(record['id'], record['revision'])
     if base is None:
         raise ValueError('Download Uni-MuMER model and runtime in Local model manager first')
@@ -63,19 +69,22 @@ def assets(which):
     return paths
 
 
-def runtime():
-    archive = assets('runtime')[0]
+def runtime(record=None):
+    record = record or MANIFEST['runtime']
+    archive = assets('runtime', {'runtime': record})[0]
     root = Path(os.environ.get('SURFACETAB_UNIMUMER_RUNTIME', str(Path.home() / '.surfacetab/unimumer-runtime')))
-    target = root / MANIFEST['runtime']['revision']
+    if record['id'] != 'unimumer-runtime':
+        root = Path.home() / '.surfacetab' / record['id']
+    target = root / record['revision']
     for entry in (target, *target.parents):
         if entry.is_symlink() or (entry.exists() and getattr(entry.lstat(), 'st_file_attributes', 0) & 0x400):
             raise ValueError('Runtime directory contains a link')
     marker = target / '.complete.json'
     if marker.exists():
         manifest = json.loads(marker.read_text('utf-8'))
-        if manifest.get('archive') == MANIFEST['runtime']['files'][0]['sha256']:
-            for record in manifest['files']:
-                verify(target / record['path'], record)
+        if manifest.get('archive') == record['files'][0]['sha256']:
+            for member in manifest['files']:
+                verify(target / member['path'], member)
             return target / manifest['executable']
     target.mkdir(parents=True, exist_ok=True)
     records, executable = [], None
@@ -95,7 +104,7 @@ def runtime():
                 executable = item.filename
     if not executable:
         raise ValueError('Pinned runtime has no llama-server executable')
-    marker.write_text(json.dumps({'archive': MANIFEST['runtime']['files'][0]['sha256'], 'files': records, 'executable': executable}), encoding='utf-8')
+    marker.write_text(json.dumps({'archive': record['files'][0]['sha256'], 'files': records, 'executable': executable}), encoding='utf-8')
     return target / executable
 
 
@@ -133,9 +142,10 @@ class WindowsJob:
 
 @cache_user
 class NativeUnimumer:
+    engine_label = 'Uni-MuMER'
     def __init__(self):
-        self.files = assets('model')
-        self.executable = runtime()
+        self.files = self.model_files()
+        self.executable = self.runtime_executable()
         self.process = None
         self.job = None
         self.log = None
@@ -144,6 +154,28 @@ class NativeUnimumer:
         self.key = secrets.token_urlsafe(32)
         self.logfile = None
         self.gpu_unavailable = False
+
+    def runtime_executable(self):
+        return runtime()
+
+    def process_environment(self, requested):
+        return None
+
+    def resolve_device(self, device):
+        return 'CPU' if device == 'CPU' or device == 'AUTO' and self.gpu_unavailable else 'GPU'
+
+    def actual_device(self, requested, log):
+        return 'GPU' if requested == 'GPU' and re.search(r'offloaded [1-9]\d*/\d+ layers|offloaded [1-9]\d* layers', log) else 'CPU'
+
+    def model_files(self):
+        return assets('model')
+
+    def server_arguments(self, requested):
+        args = [str(self.executable), '-m', str(self.files[0]), '--mmproj', str(self.files[1]), '--host', '127.0.0.1', '--port', str(self.port), '--api-key', self.key, '--alias', 'unimumer-qwen3-vl-2b', '-c', '4096', '-np', '1', '-t', '2', '-tb', '4', '-ngl', '0' if requested == 'CPU' else '99', '-b', '512', '-ub', '128', '--no-webui']
+        args += ['-lv', '4', '--image-max-tokens', '256']
+        if requested == 'CPU': args.append('--no-mmproj-offload')
+        else: args += ['--device', 'Vulkan0']
+        return args
 
     def close(self):
         if self.job: self.job.close(); self.job = None
@@ -171,7 +203,7 @@ class NativeUnimumer:
 
     def start(self, device, cancelled):
         if cancelled.is_set(): raise InterruptedError()
-        requested = 'CPU' if device == 'CPU' or device == 'AUTO' and self.gpu_unavailable else 'GPU'
+        requested = self.resolve_device(device)
         if self.process and self.process.poll() is None and self.requested_device == requested:
             return
         self.close()
@@ -180,30 +212,28 @@ class NativeUnimumer:
         fd, name = tempfile.mkstemp(prefix='surfacetab-unimumer-', suffix='.log')
         logfile = self.logfile = Path(name)
         self.log = os.fdopen(fd, 'wb')
-        args = [str(self.executable), '-m', str(self.files[0]), '--mmproj', str(self.files[1]), '--host', '127.0.0.1', '--port', str(self.port), '--api-key', self.key, '--alias', 'unimumer-qwen3-vl-2b', '-c', '4096', '-np', '1', '-t', '2', '-tb', '4', '-ngl', '0' if requested == 'CPU' else '99', '-b', '512', '-ub', '128', '--no-webui']
-        args += ['-lv', '4', '--image-max-tokens', '256']
-        if requested == 'CPU': args.append('--no-mmproj-offload')
-        else: args += ['--device', 'Vulkan0']
-        self.process = subprocess.Popen(args, cwd=self.executable.parent, stdout=self.log, stderr=subprocess.STDOUT, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        args = self.server_arguments(requested)
+        self.process = subprocess.Popen(args, cwd=self.executable.parent, stdout=self.log, stderr=subprocess.STDOUT, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), env=self.process_environment(requested))
         self.job = WindowsJob(self.process)
         deadline = time.monotonic() + 120
         while time.monotonic() < deadline:
             if cancelled.is_set(): self.close(); raise InterruptedError()
             if self.process.poll() is not None:
+                exit_code = self.process.returncode
                 self.close()
                 if device == 'AUTO':
                     self.gpu_unavailable = True
                     return self.start('CPU', cancelled)
-                raise RuntimeError('Local Uni-MuMER engine exited; check runtime compatibility')
+                raise RuntimeError(f'Local {self.engine_label} engine exited ({exit_code}); check model/runtime/driver compatibility')
             try:
                 if self.request('/health').get('status') == 'ok':
                     log = logfile.read_text('utf-8', errors='replace')
-                    self.encoder_device = 'GPU' if requested == 'GPU' and re.search(r'offloaded [1-9]\d*/\d+ layers|offloaded [1-9]\d* layers', log) else 'CPU'
+                    self.encoder_device = self.actual_device(requested, log)
                     self.requested_device = requested
                     return
             except (OSError, ValueError, urllib.error.URLError): pass
             cancelled.wait(.2)
-        self.close(); raise TimeoutError('Uni-MuMER startup timed out')
+        self.close(); raise TimeoutError(f'{self.engine_label} startup timed out')
 
     def recognize(self, image, device='AUTO', cancelled=None):
         cancelled = cancelled or threading.Event()

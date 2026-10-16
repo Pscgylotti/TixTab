@@ -118,6 +118,13 @@ class TranslateRequest(ModelPolicy):
     device: Literal['AUTO', 'CPU', 'GPU', 'NPU'] = 'AUTO'
 
 
+class HyMtRequest(ModelPolicy):
+    text: str = Field(min_length=1, max_length=10000)
+    target: Literal['zh-CN', 'en', 'ja', 'ko', 'fr']
+    device: Literal['AUTO', 'CPU', 'GPU', 'NPU'] = 'CPU'
+    backend: Literal['llama', 'openvino'] = 'llama'
+
+
 class ReleaseRequest(BaseModel):
     action: Literal['release-idle']
 
@@ -172,8 +179,8 @@ def health():
         _devices = [{'id': d, 'name': core.get_property(d, 'FULL_DEVICE_NAME')} for d in core.available_devices]
     return {'ok': True, 'engine': 'Texo OpenVINO', 'version': ov.__version__, 'devices': _devices,
             'loaded': _model is not None, 'encoderDevice': _model.encoder_device if _model else None,
-            'decoderDevice': _model.encoder_device if _model_kind == ('unimumer', None) and _model else 'CPU', 'idleReleaseSeconds': IDLE_RELEASE_SECONDS,
-            'capabilities': ['recognize', 'unimumer-experimental', 'translate-experimental', 'synthesize-experimental', 'tesseract-npu-queue-v1', 'tesseract-npu-mixed-v1', 'release-idle', 'idle-policy-v1', 'cache-lease-v1'] + (['ocr-experimental'] if importlib.util.find_spec('rapidocr') else []),
+            'decoderDevice': _model.encoder_device if _model_kind and _model_kind[0] in ['unimumer', 'hymt'] and _model else 'CPU', 'idleReleaseSeconds': IDLE_RELEASE_SECONDS,
+            'capabilities': ['recognize', 'hymt2-translation-v1', 'unimumer-experimental', 'translate-experimental', 'synthesize-experimental', 'tesseract-npu-queue-v1', 'tesseract-npu-mixed-v1', 'release-idle', 'idle-policy-v1', 'cache-lease-v1'] + (['ocr-experimental'] if importlib.util.find_spec('rapidocr') else []),
             'modelKind': _model_kind if _model is not None else None}
 
 
@@ -207,6 +214,22 @@ async def translate(body: TranslateRequest, request: Request):
     if not body.text.strip():raise HTTPException(400, 'Translation text is empty')
     return await run_native(request, ('opus', body.direction), lambda: create_opus(body.direction),
                             lambda model, cancelled: model.translate(body.text, body.device, cancelled=cancelled))
+
+
+def create_hymt(backend='llama'):
+    try:
+        from .native_hymt import NativeHyMt, NativeHyMtOpenVino
+    except ImportError:
+        from native_hymt import NativeHyMt, NativeHyMtOpenVino
+    return NativeHyMtOpenVino() if backend == 'openvino' else NativeHyMt()
+
+
+@app.post('/translate-hymt')
+async def translate_hymt(body: HyMtRequest, request: Request):
+    if body.device == 'NPU' and body.backend != 'openvino':
+        raise HTTPException(400, 'NPU requires the OpenVINO backend')
+    return await run_native(request, ('hymt', body.backend), lambda: create_hymt(body.backend),
+                            lambda model, cancelled: model.translate(body.text, body.target, body.device, cancelled=cancelled))
 
 
 def create_ocr():

@@ -166,13 +166,16 @@ assert.ok(
   'Bundled Pinyin dictionary missing',
 );
 const catalog = json('electron/model-catalog.json');
-assert.equal(catalog.models.length, 17);
+assert.equal(catalog.models.length, 19);
 assert.equal(
   catalog.models.reduce((n, m) => n + m.files.length, 0),
-  68,
+  71,
 );
 for (const name of [
   'native_tesseract.py',
+  'native_hymt.py',
+  'hymt-manifest.json',
+  'hymt-openvino-manifest.json',
   'experimental/tesseract_graph.py',
   'experimental/tesseract_batch_graph.py',
   'experimental/tesseract_pipeline.py',

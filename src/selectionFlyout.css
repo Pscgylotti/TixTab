@@ -47,6 +47,38 @@
 .selection-flyout .translation-language > .icon-button:first-of-type {
   margin-left: auto;
 }
+.translation-recent {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.selection-flyout .translation-recent button {
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+  border: 1px solid var(--border);
+}
+.translation-recent button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.selection-flyout.expanded textarea.translation-input {
+  display: block;
+  width: 100%;
+  min-height: 140px;
+  max-height: 340px;
+  resize: vertical;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+  font: inherit;
+  line-height: 1.7;
+  color: var(--text);
+}
 .selection-flyout .translation-footer {
   gap: 6px;
 }

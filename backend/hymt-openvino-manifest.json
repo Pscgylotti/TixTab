@@ -1,0 +1,19 @@
+{
+  "id": "hymt-openvino-runtime",
+  "name": "Hy-MT2 · llama.cpp OpenVINO runtime",
+  "feature": "translation",
+  "revision": "b11429ov2026.4.1",
+  "license": "MIT / Apache-2.0; bundled third-party notices retained",
+  "source": "https://github.com/ggml-org/llama.cpp/blob/b11429/docs/backend/OPENVINO.md",
+  "device": "Windows x64 · OpenVINO CPU / GPU / NPU (experimental)",
+  "optional": true,
+  "files": [
+    {
+      "path": "hymt-openvino-runtime/llama-b11429-bin-win-openvino-2026.4.1-x64.zip",
+      "bytes": 89469524,
+      "sha256": "0b1235df48294415b919701f71f76cf6b2142296be1354fb93b951df81f88921",
+      "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-bin-win-openvino-2026.4.1-x64.zip"
+    }
+  ],
+  "bytes": 89469524
+}

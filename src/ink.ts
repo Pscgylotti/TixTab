@@ -1,11 +1,17 @@
 import { getStrokePoints, getStrokeOutlinePoints, type StrokeOptions } from 'perfect-freehand';
-import type { Stroke } from './model';
+import type { Stroke, Tool } from './model';
 import type { Bounds } from './spatialIndex';
 import { stableInkSamples } from './inkSimplify';
 import { inkCurve, smoothInkPath } from './inkCurve';
 const paths = new WeakMap<Stroke, string>(),
   shapes = new WeakMap<Stroke, Path2D>(),
   bounds = new WeakMap<Stroke, Bounds>();
+const inkThinning = (tool: Tool) =>
+  tool === 'ballpoint' || tool === 'highlighter' ? 0 : tool === 'pencil' ? 0.65 : 0.72;
+/** Same pressure-to-radius mapping as the rendered freehand outline. */
+export function inkPaperRadius(tool: Tool, size: number, pressure: number) {
+  return size * (0.5 - inkThinning(tool) * (0.5 - Math.max(0, Math.min(1, pressure))));
+}
 /** Reuse completed display geometry in an export worker without recomputing it
  * on the UI thread. Callers must only seed paths derived from the same stroke. */
 export function cachedInkPath(stroke: Stroke) {
@@ -29,12 +35,7 @@ export function outline(stroke: Stroke) {
   }
   const options: StrokeOptions = {
     size: stroke.size,
-    thinning:
-      stroke.tool === 'ballpoint' || stroke.tool === 'highlighter'
-        ? 0
-        : stroke.tool === 'pencil'
-          ? 0.65
-          : 0.72,
+    thinning: inkThinning(stroke.tool),
     smoothing: 0.2,
     streamline: 0.25,
     simulatePressure: false,

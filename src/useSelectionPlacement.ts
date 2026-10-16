@@ -5,7 +5,12 @@ interface Anchor {
   y: number;
   range?: Range;
 }
-export function useSelectionPlacement(selection: Anchor, hand: WritingHand, expanded: boolean) {
+export function useSelectionPlacement(
+  selection: Anchor,
+  hand: WritingHand,
+  expanded: boolean,
+  enabled = true,
+) {
   const ref = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState(() =>
     placeSelectionFlyout(
@@ -18,6 +23,7 @@ export function useSelectionPlacement(selection: Anchor, hand: WritingHand, expa
     ),
   );
   useLayoutEffect(() => {
+    if (!enabled) return;
     const element = ref.current!;
     let frame = 0;
     const update = () => {
@@ -116,6 +122,6 @@ export function useSelectionPlacement(selection: Anchor, hand: WritingHand, expa
       visualViewport?.removeEventListener('resize', schedule);
       visualViewport?.removeEventListener('scroll', schedule);
     };
-  }, [selection, hand, expanded]);
+  }, [selection, hand, expanded, enabled]);
   return { ref, position };
 }

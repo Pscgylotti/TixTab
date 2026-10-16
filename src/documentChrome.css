@@ -15,6 +15,20 @@
 .status-tools::-webkit-scrollbar {
   display: none;
 }
+.page-quick-popover {
+  padding: 6px;
+}
+.page-quick-actions {
+  display: grid;
+  gap: 2px;
+}
+.page-quick-actions > button {
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  min-height: 40px;
+  font-size: var(--fs-sm);
+}
 .document-tab {
   position: relative;
   display: flex;

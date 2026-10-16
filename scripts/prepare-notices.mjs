@@ -4,6 +4,8 @@ import { join } from 'node:path';
 // Include build tools too: Electron itself is a dev dependency in package.json.
 const lock = JSON.parse(await readFile('package-lock.json', 'utf8'));
 const notices = [
+    '| Hy-MT2 1.8B (optional local translation weights) | a0c709d9fac510f2c807aa3af52872340dc37a4a | Apache-2.0 | https://huggingface.co/tencent/Hy-MT2-1.8B-GGUF |',
+    '| llama.cpp (optional Vulkan / OpenVINO runtime) | b11429 | MIT / bundled OpenVINO Apache-2.0 notices | https://github.com/ggml-org/llama.cpp |',
     '| Audiveris (optional local music recognition) | 5.11.0 | AGPL-3.0 | https://github.com/Audiveris/audiveris |',
     '| homr (optional local music recognition) | 0.7.0 | AGPL-3.0 | https://github.com/liebharc/homr |',
     '| UVDoc ONNX (optional document correction) | 3bcf535371727d11e783101f79a504c68848aae3 | Apache-2.0 | https://huggingface.co/PaddlePaddle/UVDoc_onnx |',

@@ -542,7 +542,7 @@
     },
     {
       "id": "unimumer-runtime",
-      "name": "Uni-MuMER · llama.cpp Vulkan runtime",
+      "name": "llama.cpp · shared formula / translation runtime",
       "feature": "formula",
       "revision": "b11429",
       "license": "MIT; bundled third-party notices retained",
@@ -794,6 +794,50 @@
         }
       ],
       "bytes": 140262754
+    },
+    {
+      "id": "hymt2-1-8b",
+      "name": "Hy-MT2 1.8B · Q4_K_M",
+      "feature": "translation",
+      "revision": "a0c709d9fac510f2c807aa3af52872340dc37a4a",
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/tencent/Hy-MT2-1.8B-GGUF",
+      "device": "CPU / Vulkan GPU",
+      "optional": true,
+      "files": [
+        {
+          "path": "hymt2/Hy-MT2-1.8B-Q4_K_M.gguf",
+          "bytes": 1133080448,
+          "sha256": "dc5f44fcf1fa496ee7ad725982c0c8c553a4de00259b53af84c4b89fb0c06699",
+          "url": "https://huggingface.co/tencent/Hy-MT2-1.8B-GGUF/resolve/a0c709d9fac510f2c807aa3af52872340dc37a4a/Hy-MT2-1.8B-Q4_K_M.gguf"
+        },
+        {
+          "path": "hymt2/LICENSE.txt",
+          "bytes": 11639,
+          "sha256": "a1d52d448f81c584a47c583e19dfab2d3851c7c84431b07baee093c1113ed114",
+          "url": "https://huggingface.co/tencent/Hy-MT2-1.8B-GGUF/resolve/a0c709d9fac510f2c807aa3af52872340dc37a4a/LICENSE.txt"
+        }
+      ],
+      "bytes": 1133092087
+    },
+    {
+      "id": "hymt-openvino-runtime",
+      "name": "Hy-MT2 · llama.cpp OpenVINO runtime",
+      "feature": "translation",
+      "revision": "b11429ov2026.4.1",
+      "license": "MIT / Apache-2.0; bundled third-party notices retained",
+      "source": "https://github.com/ggml-org/llama.cpp/blob/b11429/docs/backend/OPENVINO.md",
+      "device": "Windows x64 · OpenVINO CPU / GPU / NPU (experimental)",
+      "optional": true,
+      "files": [
+        {
+          "path": "hymt-openvino-runtime/llama-b11429-bin-win-openvino-2026.4.1-x64.zip",
+          "bytes": 89469524,
+          "sha256": "0b1235df48294415b919701f71f76cf6b2142296be1354fb93b951df81f88921",
+          "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-bin-win-openvino-2026.4.1-x64.zip"
+        }
+      ],
+      "bytes": 89469524
     }
   ]
 }
