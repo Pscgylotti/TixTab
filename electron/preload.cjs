@@ -1,5 +1,19 @@
 const { contextBridge, ipcRenderer, webFrame, webUtils } = require('electron');
+let systemLanguages = [];
+try {
+  const prefix = '--tixtab-system-languages=';
+  const argument =
+    typeof process !== 'undefined' && process.argv?.find((s) => s.startsWith(prefix));
+  const languages = argument && JSON.parse(argument.slice(prefix.length));
+  if (Array.isArray(languages))
+    systemLanguages = languages
+      .filter((s) => typeof s === 'string' && /^[a-z0-9_-]{1,100}$/i.test(s))
+      .slice(0, 32);
+} catch {
+  /* An unavailable system preference falls back to English in the renderer. */
+}
 contextBridge.exposeInMainWorld('surfaceDesktop', {
+  systemLanguages,
   setUiScale: (value) => {
     if (typeof value !== 'number' || !Number.isFinite(value) || value < 0.5 || value > 4)
       return false;

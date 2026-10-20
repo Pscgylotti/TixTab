@@ -1,6 +1,40 @@
 import { test, expect } from '@playwright/test';
 import { createRequire } from 'node:module';
 const { PDFDocument, StandardFonts } = createRequire(import.meta.url)('pdf-lib');
+for (const scenario of [
+  { browser: 'en-US', expected: 'en' },
+  { browser: 'de-DE', expected: 'en' },
+  { browser: 'zh-CN', expected: 'zh-CN' },
+  { browser: 'zh-CN', native: ['fr-FR', 'en-GB'], expected: 'en' },
+  { browser: 'en-US', native: ['zh-Hans-CN'], saved: 'en', expected: 'en' },
+]) {
+  test(`startup language ${JSON.stringify(scenario)}`, async ({ browser }) => {
+    const context = await browser.newContext({ locale: scenario.browser });
+    try {
+      await context.addInitScript((value) => {
+        if (value.saved) localStorage.setItem('surfacetab.locale', value.saved);
+        if (value.native)
+          Object.defineProperty(window, 'surfaceDesktop', {
+            value: { systemLanguages: value.native, onFullscreen: () => () => {} },
+          });
+      }, scenario);
+      const page = await context.newPage();
+      await page.goto('/');
+      await expect(page.locator('.busy-overlay')).toHaveCount(0);
+      await expect(page.locator('html')).toHaveAttribute('lang', scenario.expected);
+      await expect(
+        page.getByRole('button', {
+          name: scenario.expected === 'en' ? 'Settings' : '设置',
+          exact: true,
+        }),
+      ).toBeVisible();
+      if (!scenario.saved)
+        expect(await page.evaluate(() => localStorage.getItem('surfacetab.locale'))).toBeNull();
+    } finally {
+      await context.close();
+    }
+  });
+}
 async function english(page: import('@playwright/test').Page) {
   await page.goto('/');
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
@@ -45,7 +79,7 @@ test('界面中英文即时切换并持久保存，文档内容不翻译，延�
   await page.getByRole('button', { name: 'Sketch', exact: true }).click();
   await expect(page.locator('.excalidraw')).toBeVisible();
   await expect(page.locator('.excalidraw').getByTitle('Selection')).toBeVisible();
-  await page.getByRole('button', { name: 'Save sketch and close' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
   await page.reload();
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');

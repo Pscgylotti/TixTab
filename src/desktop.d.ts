@@ -1,5 +1,6 @@
 interface Window {
   surfaceDesktop?: {
+    systemLanguages?: readonly string[];
     setUiScale?: (value: number) => boolean;
     penHaptics?: {
       run: (

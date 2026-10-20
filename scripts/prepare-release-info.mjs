@@ -39,13 +39,13 @@ const info = {
     ),
   ),
   validation: {
-    unit: '565 tests / 120 files',
+    unit: '571 tests / 122 files',
     browser:
-      '40 browser regressions passed, including targeted reruns after updating stale test interactions. Coverage includes fullscreen presentation in three layouts, trackpad gesture accumulation/momentum and zoom, native speech progress/cancellation/waveforms, single/double pen-tail gestures and final phrase drain, background downloads/processing, workspace cards, Markdown, keyboard policy, chat and real PDF export worker cancellation/recovery.',
+      '47 browser regressions passed. Coverage includes startup language negotiation, native system preference priority, saved manual choice and language persistence, fullscreen presentation in three layouts, trackpad gestures, native speech progress/cancellation/waveforms, pen-tail gestures, background tasks, workspace cards, Markdown, keyboard policy, chat and real PDF export worker cancellation/recovery. Window cleanup is covered by unit fixtures; no physical Alt+Tab cleanup is claimed.',
     packaged:
       'Static ASAR/build asset SHA256 and file-set verification, required backend/preload modules, native binding/icon and model exclusion; this release did not launch the installer or packaged application',
     nativeModels:
-      'Local Windows AI Speech load/start/stop, 20 real microphone meter samples, resident model reuse and two idle WorkloadsSessionHost CPU samples checked. Cold compilation took about 400 seconds and cached loading about 7 seconds on this host only. Previous PDF editor, Hy-MT2 CPU/GPU, UVDoc/Audiveris/homr evidence retained; local Hy-MT2 OpenVINO NPU initialization failed and is not claimed to work. No new energy or cross-device speed benchmark is claimed.',
+      'Retained 0.3.6 local Windows AI Speech load/start/stop, microphone metering, resident reuse and idle CPU evidence; native model inference was not rerun for 0.3.7. Previous PDF editor, Hy-MT2 CPU/GPU, UVDoc/Audiveris/homr evidence retained; local Hy-MT2 OpenVINO NPU initialization failed and is not claimed to work. No new energy or cross-device speed benchmark is claimed.',
     installer:
       'Compiled NSIS installer. Earlier isolated upgrade/repair/downgrade fixture evidence retained. Full installation was not rerun on this host.',
     limits:

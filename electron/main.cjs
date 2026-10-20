@@ -29,6 +29,7 @@ const { createDictation } = require('./dictation.cjs');
 const { createNeuralDictation } = require('./neural-dictation.cjs');
 const { createWindowsSpeech, createSystemSpeechRouter } = require('./windows-speech.cjs');
 const { createPenTailVoice } = require('./pen-tail-voice.cjs');
+const { bindWindowLifecycle } = require('./window-lifecycle.cjs');
 const { createRuntimeInstaller } = require('./runtime-installer.cjs');
 const { createPdfEditor } = require('./pdf-editor.cjs');
 const { createImageExport } = require('./image-export.cjs');
@@ -69,6 +70,9 @@ else
 app.whenReady().then(() => {
   if (!singleInstance) return;
   Menu.setApplicationMenu(null);
+  const systemLanguageArguments = [
+    '--tixtab-system-languages=' + JSON.stringify(app.getPreferredSystemLanguages()),
+  ];
   const batchPdf = require('./batch-pdf.cjs').createBatchPdf({
     showItemInFolder: (file) => shell.showItemInFolder(file),
     grantFile: path.join(app.getPath('userData'), 'batch-folders.json'),
@@ -734,12 +738,14 @@ app.whenReady().then(() => {
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
+      additionalArguments: systemLanguageArguments,
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
     },
   });
   win.once('ready-to-show', () => win.show());
+  bindWindowLifecycle(win, app);
   const detachClipboard = attachClipboardNotifications(win, clipboardShelf.capture);
   app.once('before-quit', detachClipboard);
   const penHaptics = createPenHaptics({
@@ -783,6 +789,7 @@ app.whenReady().then(() => {
         outlivesOpener: false,
         overrideBrowserWindowOptions: {
           parent: win,
+          skipTaskbar: true,
           width: 480,
           height: 780,
           minWidth: 340,
@@ -793,6 +800,7 @@ app.whenReady().then(() => {
           backgroundMaterial: 'mica',
           webPreferences: {
             preload: path.join(__dirname, 'preload.cjs'),
+            additionalArguments: systemLanguageArguments,
             contextIsolation: true,
             nodeIntegration: false,
             sandbox: true,

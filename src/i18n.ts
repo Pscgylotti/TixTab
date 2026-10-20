@@ -1,15 +1,21 @@
 import { useSyncExternalStore } from 'react';
 import english from './locales/en.json';
-export type Locale = 'zh-CN' | 'en';
+import { initialLocale, type Locale } from './locale';
+export type { Locale } from './locale';
 const dictionary: Record<string, string> = english;
 const listeners = new Set<() => void>(),
   cache = new Map<string, string>();
-let locale: Locale = 'zh-CN';
+let saved: string | null = null;
 try {
-  if (localStorage.getItem('surfacetab.locale') === 'en') locale = 'en';
+  saved = localStorage.getItem('surfacetab.locale');
 } catch {
   /* Defaults also work without storage. */
 }
+let locale: Locale = initialLocale(
+  saved,
+  (typeof window !== 'undefined' && window.surfaceDesktop?.systemLanguages) ||
+    (typeof navigator !== 'undefined' ? (navigator.languages ?? [navigator.language]) : []),
+);
 const reverse = new Map(Object.entries(dictionary).map(([zh, en]) => [en, zh]));
 function pattern(text: string) {
   const keys: number[] = [];

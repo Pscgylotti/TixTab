@@ -8,13 +8,14 @@ Supports Surface Pen.
 
 ## Get started
 
-1. Use the Windows installer `TixTab-0.3.6-lite-setup-x64.exe`, then launch TixTab from the desktop or Start menu. Basic PDF features need no Node.js or Python. The installer supports upgrading an existing installation and an optional desktop shortcut on its finish page.
+1. Use the Windows installer `TixTab-0.3.7-lite-setup-x64.exe`, then launch TixTab from the desktop or Start menu. Basic PDF features need no Node.js or Python. The installer supports upgrading an existing installation and an optional desktop shortcut on its finish page.
 2. Open PDFs in tabs, or drop a PDF and choose to open it in new tabs or insert all/selected pages after the current page. Drop PNG/JPEG/WebP/GIF/BMP/AVIF/SVG files to insert image objects.
 3. For local AI, open **Settings → Local model library**, download the models you need, and click **Set up** to prepare managed Python and optional acceleration/speech dependencies.
 4. Switch the interface language in Settings. English, offline Chinese Pinyin, LaTeX and voice keyboard modes are included. The compact key layout includes Ctrl, Tab and Esc; tap Ctrl then A/X/C/V/Z/Y to edit. Voice input supports Chinese/English, a live waveform and local engines, and inserts at the current text caret.
 
 ## Features
 
+- First launch selects the first supported system language (Chinese or English), with English as the fallback. A saved manual language choice takes priority.
 - Presentation fullscreen hides the editor UI in all three layouts, centers fitted pages and preserves zoom and score auto-turning. Touchscreen swipes and horizontal trackpad gestures turn single pages/spreads; double-click exits.
 - Optional Windows AI Speech (experimental, local) and Windows SDK Speech (may use online services), with microphone level meters. Windows manages the AI model; first compilation can be slow, and resident models follow the configured idle-unload time. Opt-in Surface Pen tail controls: single-click starts/stops dictation, double-click stops and sends.
 - Downloads and document processing can continue behind a compact progress dock. Physical keyboard input hides the floating keyboard. Untouched blank documents stay out of the workspace; Markdown supports strikethrough.
