@@ -30,7 +30,7 @@ function pattern(text: string) {
   return { regex: new RegExp(source), keys };
 }
 const patterns = Object.entries(dictionary)
-  .filter(([zh]) => /\{\d+\}/.test(zh))
+  .filter(([zh]) => /\{\d+\}/.test(zh) && /\p{Script=Han}/u.test(zh))
   .map(([zh, en]) => ({ zh, en, forward: pattern(zh), reverse: pattern(en) }));
 function format(text: string, args: unknown[]) {
   return text.replace(/\{(\d+)\}/g, (match, i) =>

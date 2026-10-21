@@ -2409,7 +2409,7 @@ export default function App() {
             commit({ ...current.current, activeScratchId: id });
             setScratchFocus(true);
           }}
-          onRename={(id, name) => updateScratch(id, { name })}
+          onRename={(id, name) => updateScratch(id, { name, customName: true })}
           onColor={(color) => {
             if (activeScratch)
               updateScratch(activeScratch.id, {
@@ -3960,7 +3960,7 @@ export default function App() {
                         value={locale}
                         onChange={(e) => setLocale(e.target.value as Locale)}
                       >
-                        <option value="zh-CN">简体中文</option>
+                        <option value="zh-CN">{tr('简体中文')}</option>
                         <option value="en">English</option>
                       </select>
                     </label>

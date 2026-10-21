@@ -376,7 +376,7 @@ export default function PageList({
             style={{ transform: `translate(${ghost.x + 14}px,${ghost.y + 16}px) rotate(-2deg)` }}
           >
             <PageThumbnail page={pages[ghost.index]} pdf={pdf} />
-            <span>复制到草稿纸</span>
+            <span>{tr('复制到草稿纸')}</span>
           </div>,
           document.body,
         )}

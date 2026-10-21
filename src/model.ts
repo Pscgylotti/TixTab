@@ -273,6 +273,7 @@ export function validNotebook(value: unknown): value is Notebook {
           !p ||
           typeof p.id !== 'string' ||
           typeof p.name !== 'string' ||
+          (p.customName !== undefined && typeof p.customName !== 'boolean') ||
           p.name.length > 80 ||
           !p.page ||
           p.page.sourceIndex !== null ||

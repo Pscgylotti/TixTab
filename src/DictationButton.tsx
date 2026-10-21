@@ -515,7 +515,7 @@ export default function DictationButton({
         aria-label={t(listening ? '停止语音输入' : '语音输入')}
         aria-pressed={listening}
         title={
-          names[engine] +
+          t(names[engine]) +
           ' · ' +
           t(
             engine === 'windows-sdk'
@@ -535,7 +535,7 @@ export default function DictationButton({
         disabled={disabled || finishing}
         onChange={(e) => void changeLanguage(e.target.value as 'zh-CN' | 'en-US')}
       >
-        <option value="zh-CN">中文</option>
+        <option value="zh-CN">{t('中文')}</option>
         <option value="en-US">EN</option>
       </select>
       <button

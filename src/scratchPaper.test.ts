@@ -2,15 +2,40 @@ import { describe, it, expect } from 'vitest';
 import { newNotebook, blankPage, validNotebook, type Stroke } from './model';
 import {
   newScratchPaper,
+  scratchPaperName,
   replaceEditablePage,
   splitScratchStroke,
   type ScratchPaper,
 } from './scratchPaper';
 import { decodeObjects, encodeObjects } from './objectClipboard';
 import { encodeProject, decodeProject } from './storage';
+import { setLocale } from './i18n';
 const rect = (x: number, y: number, w: number, h: number) =>
   ({ left: x, top: y, right: x + w, bottom: y + h, width: w, height: h }) as DOMRect;
 describe('independent scratch sheets', () => {
+  it('localizes generated draft labels, preserves custom names and avoids name collisions', () => {
+    const generated = newScratchPaper([]);
+    try {
+      setLocale('en');
+      expect(scratchPaperName(generated)).toBe('Draft 1');
+      expect(generated.name).toBe('草稿纸1');
+      expect(scratchPaperName({ ...generated, name: '草稿纸2' })).toBe('Draft 2');
+      const custom = { ...generated, customName: true };
+      expect(scratchPaperName(custom)).toBe('草稿纸1');
+      expect(scratchPaperName({ name: '我的计算' })).toBe('我的计算');
+      expect(newScratchPaper([{ ...generated, name: 'Draft 1', customName: true }]).name).toBe(
+        '草稿纸2',
+      );
+      const notebook = { ...newNotebook(), scratchPapers: [custom] };
+      expect(decodeProject(encodeProject(notebook))).toEqual(notebook);
+      expect(
+        validNotebook({ ...notebook, scratchPapers: [{ ...custom, customName: 'bad' }] }),
+      ).toBe(false);
+    } finally {
+      setLocale('zh-CN');
+    }
+    expect(scratchPaperName(generated)).toBe('草稿纸1');
+  });
   it('limits to ten, chooses a free name, validates and preserves project data', () => {
     const papers: ScratchPaper[] = [];
     for (let i = 0; i < 10; i++) papers.push(newScratchPaper(papers));

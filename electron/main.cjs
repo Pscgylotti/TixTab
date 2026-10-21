@@ -269,7 +269,10 @@ app.whenReady().then(() => {
       showItemInFolder: (file) => shell.showItemInFolder(file),
       chooseFile: async () => {
         const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
-          title: '选择此文档对应的原始 PDF',
+          title:
+            request?.locale === 'en'
+              ? 'Select the original PDF for this document'
+              : '选择此文档对应的原始 PDF',
           properties: ['openFile'],
           filters: [{ name: 'PDF', extensions: ['pdf'] }],
         });

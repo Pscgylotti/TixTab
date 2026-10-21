@@ -8,7 +8,7 @@ Supports Surface Pen.
 
 ## Get started
 
-1. Use the Windows installer `TixTab-0.3.7-lite-setup-x64.exe`, then launch TixTab from the desktop or Start menu. Basic PDF features need no Node.js or Python. The installer supports upgrading an existing installation and an optional desktop shortcut on its finish page.
+1. Use the Windows installer `TixTab-0.3.8-lite-setup-x64.exe`, then launch TixTab from the desktop or Start menu. Basic PDF features need no Node.js or Python. The installer supports upgrading an existing installation and an optional desktop shortcut on its finish page.
 2. Open PDFs in tabs, or drop a PDF and choose to open it in new tabs or insert all/selected pages after the current page. Drop PNG/JPEG/WebP/GIF/BMP/AVIF/SVG files to insert image objects.
 3. For local AI, open **Settings → Local model library**, download the models you need, and click **Set up** to prepare managed Python and optional acceleration/speech dependencies.
 4. Switch the interface language in Settings. English, offline Chinese Pinyin, LaTeX and voice keyboard modes are included. The compact key layout includes Ctrl, Tab and Esc; tap Ctrl then A/X/C/V/Z/Y to edit. Voice input supports Chinese/English, a live waveform and local engines, and inserts at the current text caret.

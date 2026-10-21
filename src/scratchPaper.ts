@@ -1,15 +1,23 @@
 import { blankPage, uid, type Notebook, type Page, type Point, type Stroke } from './model';
+import { t } from './i18n';
 export interface ScratchPaper {
   id: string;
   name: string;
+  customName?: boolean;
   page: Page;
   view: { x: number; y: number; zoom: number };
 }
 export const MAX_SCRATCH_PAPERS = 10;
+/** Localize generated labels without changing saved content or custom names. */
+export function scratchPaperName(paper: Pick<ScratchPaper, 'name' | 'customName'>) {
+  const match = !paper.customName && /^草稿纸([1-9]\d*)$/.exec(paper.name);
+  return match && Number(match[1]) <= MAX_SCRATCH_PAPERS ? t('草稿纸{0}', match[1]) : paper.name;
+}
 export function newScratchPaper(existing: readonly ScratchPaper[]) {
-  if (existing.length >= MAX_SCRATCH_PAPERS) throw Error('最多创建十张草稿纸');
+  if (existing.length >= MAX_SCRATCH_PAPERS) throw Error(t('最多创建十张草稿纸'));
   let number = 1;
-  while (existing.some((p) => p.name === `草稿纸${number}`)) number++;
+  while (existing.some((p) => p.name === `草稿纸${number}` || p.name === `Draft ${number}`))
+    number++;
   const page = { ...blankPage(20000, 20000), paperColor: '#ffffff' };
   return { id: uid(), name: `草稿纸${number}`, page, view: { x: 10000, y: 10000, zoom: 1 } };
 }

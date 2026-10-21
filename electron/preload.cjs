@@ -42,7 +42,11 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
       return '';
     }
   },
-  revealPdf: (request) => ipcRenderer.invoke('document:reveal-pdf', request),
+  revealPdf: (request) =>
+    ipcRenderer.invoke('document:reveal-pdf', {
+      ...request,
+      locale: document.documentElement.lang,
+    }),
   editCommand: (command) => ipcRenderer.invoke('edit:command', command),
   editKey: (key, select) => ipcRenderer.invoke('edit:key', key, select),
   openClipboardHistory: () => ipcRenderer.invoke('edit:clipboard-history'),

@@ -99,8 +99,8 @@ export default function PageOperationsDialog({
     if (host)
       return createPortal(
         <RegionCapture
-          label="框选裁剪区域"
-          hint="拖动框选要保留的页面区域"
+          label={t('框选裁剪区域')}
+          hint={t('拖动框选要保留的页面区域')}
           targetPageId={notebook.pages[index].id}
           onClose={() => setPicking(false)}
           onCapture={(_, region) => {
