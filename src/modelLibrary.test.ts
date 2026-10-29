@@ -22,6 +22,30 @@ const model = {
   metadata: [{ path: 'example/manifest.json', data: { revision: 'abc123' } }],
   bytes: bytes.length,
 };
+test('the shipped model catalog passes the actual desktop startup validator', () => {
+  const catalog = createRequire(import.meta.url)('../electron/model-catalog.json');
+  const library = createModelLibrary({
+    root: path.join(tmpdir(), 'catalog-check'),
+    bundled: path.join(tmpdir(), 'catalog-check-bundled'),
+    catalog,
+    fetch: () => {
+      throw Error('No downloads in catalog validation');
+    },
+  });
+  expect(catalog.models.some((m: any) => m.id === 'matchmaker')).toBe(true);
+  expect(catalog.models.some((m: any) => m.id === 'docaligner')).toBe(true);
+  library.dispose();
+  for (const m of catalog.models)
+    expect(m.bytes).toBe(m.files.reduce((total: number, f: any) => total + f.bytes, 0));
+  expect(() =>
+    createModelLibrary({
+      root: tmpdir(),
+      bundled: tmpdir(),
+      catalog: { models: [{ ...model, revision: '0.4.0-invalid' }] },
+      fetch: vi.fn(),
+    }),
+  ).toThrow('Invalid model catalog: example');
+});
 afterEach(async () => {
   vi.unstubAllGlobals();
   for (const folder of fixtures.splice(0)) {

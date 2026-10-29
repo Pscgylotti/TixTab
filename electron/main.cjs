@@ -55,10 +55,23 @@ protocol.registerSchemesAsPrivileged([
 if (process.env.SURFACETAB_PROFILE) app.setPath('userData', process.env.SURFACETAB_PROFILE);
 else app.setPath('userData', path.join(app.getPath('appData'), 'surfacetab'));
 app.setAppUserModelId('local.surfacetab.app');
+let documentWindow = null;
+const documentOpen = require('./document-open.cjs').createDocumentOpenQueue({
+  notify: () => {
+    if (documentWindow && !documentWindow.isDestroyed())
+      documentWindow.webContents.send('document:open-request');
+  },
+});
+documentOpen.enqueue(process.argv.slice(app.isPackaged ? 1 : 2));
+app.on('open-file', (event, file) => {
+  event.preventDefault();
+  documentOpen.enqueue([file]);
+});
 const singleInstance = app.requestSingleInstanceLock();
 if (!singleInstance) app.quit();
 else
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv, cwd) => {
+    documentOpen.enqueue(argv.slice(app.isPackaged ? 1 : 2), cwd);
     const window = BrowserWindow.getAllWindows().find(
       (window) => !window.getParentWindow() && !window.isDestroyed(),
     );
@@ -125,6 +138,11 @@ app.whenReady().then(() => {
   });
   const providerSender = (event) =>
     event.senderFrame === event.sender.mainFrame && trusted(event.senderFrame.url);
+  ipcMain.handle('document:open-next', (event) =>
+    providerSender(event) && event.sender === documentWindow?.webContents
+      ? documentOpen.next()
+      : null,
+  );
   const nativeOcr = require('./native-ocr.cjs').createNativeOcr({
     // Experimental developer build is opt-in; the lite installer ships CPU only.
     npu: app.isPackaged
@@ -337,7 +355,7 @@ app.whenReady().then(() => {
   ipcMain.handle('runtimes:run', (event, request) => {
     if (
       !providerSender(event) ||
-      !['openvino', 'speech', 'pdf', 'homr'].includes(request?.id) ||
+      !['openvino', 'speech', 'pdf', 'homr', 'copista', 'matchmaker'].includes(request?.id) ||
       !['status', 'install', 'cancel', 'diagnostics', 'sources', 'configure-sources'].includes(
         request?.action,
       )
@@ -410,6 +428,58 @@ app.whenReady().then(() => {
         ),
   });
   app.once('before-quit', () => documentTools.dispose());
+  const musicOutput = require('./music-midi.cjs').createMusicMidi({
+    notify: (owner, value) => {
+      if (!owner.isDestroyed() && trusted(owner.getURL())) owner.send('music:output-state', value);
+    },
+  });
+  const musicFollow = require('./music-follow.cjs').createMusicFollow({
+    root: path.join(app.getPath('home'), '.surfacetab'),
+    backend,
+    resolveModel: (name) =>
+      modelLibrary
+        .resolve(name)
+        .then(
+          (file) =>
+            file ||
+            (existsSync(path.join(root, 'models', name)) ? path.join(root, 'models', name) : null),
+        ),
+    notify: (owner, value) => {
+      if (!owner.isDestroyed() && trusted(owner.getURL())) owner.send('music:follow-state', value);
+    },
+  });
+  app.once('before-quit', () => musicFollow.dispose());
+  const followOwners = new WeakSet();
+  ipcMain.handle('music:follow', (event, request) => {
+    if (!providerSender(event)) return { ok: false, error: 'untrusted' };
+    const owner = event.sender;
+    if (!followOwners.has(owner)) {
+      followOwners.add(owner);
+      const cancel = () => void musicFollow.cancel(owner);
+      owner.once('destroyed', cancel);
+      owner.on('render-process-gone', cancel);
+      owner.on('did-start-navigation', (_e, _u, _i, mainFrame) => {
+        if (mainFrame) cancel();
+      });
+    }
+    return musicFollow.run(owner, request);
+  });
+  const musicOwners = new WeakSet();
+  app.once('before-quit', () => musicOutput.dispose());
+  ipcMain.handle('music:output', (event, request) => {
+    if (!providerSender(event)) return { ok: false, error: 'untrusted' };
+    const owner = event.sender;
+    if (!musicOwners.has(owner)) {
+      musicOwners.add(owner);
+      const cancel = () => musicOutput.cancel(owner);
+      owner.once('destroyed', cancel);
+      owner.on('render-process-gone', cancel);
+      owner.on('did-start-navigation', (_event, _url, _inPlace, mainFrame) => {
+        if (mainFrame) cancel();
+      });
+    }
+    return musicOutput.run(owner, request);
+  });
   const documentToolOwners = new WeakSet();
   ipcMain.handle('document:local-tools', (event, request) => {
     if (!providerSender(event)) return { ok: false, error: 'untrusted' };
@@ -748,6 +818,7 @@ app.whenReady().then(() => {
     },
   });
   win.once('ready-to-show', () => win.show());
+  documentWindow = win;
   bindWindowLifecycle(win, app);
   const detachClipboard = attachClipboardNotifications(win, clipboardShelf.capture);
   app.once('before-quit', detachClipboard);

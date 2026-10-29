@@ -63,6 +63,7 @@ import PdfTextLayer from './PdfTextLayer';
 import PdfNavigationLayer from './PdfNavigationLayer';
 import PdfOriginalImages from './PdfOriginalImages';
 import InkSelectionLayer from './InkSelectionLayer';
+import { selectInk } from './inkSelection';
 import ReviewLayer from './ReviewLayer';
 import { useAppearance } from './appearance';
 import { lazy, Suspense } from 'react';
@@ -182,6 +183,17 @@ function PageEditor({
   );
   const [selected, setSelected] = useState<string[]>([]);
   const [inkSelected, setInkSelected] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selectedReview) return;
+    setSelected([]);
+    setInkSelected(false);
+    selectInk(page.id, []);
+  }, [selectedReview]);
+  useEffect(() => {
+    if (selectedReview && !page.reviews?.some((n) => n.id === selectedReview))
+      setSelectedReview(null);
+  }, [page.reviews, selectedReview]);
   const [clipboardError, setClipboardError] = useState('');
   const clipboardBusy = useRef(false);
   const [groupBusy, setGroupBusy] = useState(false);
@@ -212,10 +224,14 @@ function PageEditor({
     if (!active) {
       setSelected([]);
       setInkSelected(false);
+      setSelectedReview(null);
     }
   }, [active]);
   const deleteSelected = () => {
-    if (selected.length) {
+    if (selectedReview) {
+      onChange({ ...page, reviews: page.reviews?.filter((n) => n.id !== selectedReview) });
+      setSelectedReview(null);
+    } else if (selected.length) {
       onChange(removePageImages(page, selected));
       setSelected([]);
     }
@@ -287,18 +303,19 @@ function PageEditor({
         e.defaultPrevented ||
         !active ||
         tool !== 'object' ||
-        (!selected.length && !inkSelected) ||
+        (!selected.length && !inkSelected && !selectedReview) ||
         (e.target as HTMLElement).closest('input,textarea,select,[contenteditable="true"]') ||
         document.querySelector('[aria-modal="true"]')
       )
         return;
-      if (e.key === 'Delete' && selected.length) {
+      if (e.key === 'Delete' && (selected.length || selectedReview)) {
         e.preventDefault();
         deleteSelected();
       }
       if (e.key === 'Escape') {
         setSelected([]);
         setInkSelected(false);
+        setSelectedReview(null);
       }
       if ((e.ctrlKey || e.metaKey) && !e.altKey) {
         if (selected.length && (e.key.toLowerCase() === 'c' || e.key.toLowerCase() === 'x')) {
@@ -320,13 +337,14 @@ function PageEditor({
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [tool, selected, inkSelected, page, active]);
+  }, [tool, selected, inkSelected, selectedReview, page, active]);
   useEffect(() => {
     const ids = Array.isArray(focusObjectId) ? focusObjectId : [focusObjectId];
     const chosen = page.images.filter((i) => ids.includes(i.id)).map((i) => i.id);
     if (chosen.length && active) {
       setSelected(chosen);
       setInkSelected(false);
+      setSelectedReview(null);
     }
   }, [focusObjectId, active]);
   const pageRef = useRef(page);
@@ -726,6 +744,7 @@ function PageEditor({
           onSelect={(ids) => {
             setSelected(ids);
             setInkSelected(false);
+            setSelectedReview(null);
           }}
           onChange={onChange}
         />
@@ -785,7 +804,14 @@ function PageEditor({
           onActivate={onActivate}
         />
         {page.reviews?.length || tool === 'review' ? (
-          <ReviewLayer page={page} tool={tool} zoom={zoom} onChange={onChange} />
+          <ReviewLayer
+            page={page}
+            tool={tool}
+            zoom={zoom}
+            onChange={onChange}
+            selected={selectedReview}
+            onSelect={setSelectedReview}
+          />
         ) : null}
         {tool === 'pdf-edit' && (
           <Suspense fallback={null}>
@@ -800,26 +826,28 @@ function PageEditor({
       </div>
       {active &&
         tool === 'object' &&
-        (selected.length > 0 || inkSelected || page.strokes.length > 0) &&
+        (selected.length > 0 || selectedReview || inkSelected || page.strokes.length > 0) &&
         viewport.current?.parentElement &&
         createPortal(
           <div className="object-inspector" onPointerDown={(e) => e.stopPropagation()}>
             <span>
-              {inkSelected
-                ? tr('手写层')
-                : selectedImage
-                  ? selectedImage.group
-                    ? tr('组合对象')
-                    : selectedImage.kind === 'text'
-                      ? tr('文本框')
-                      : isPicture(selectedImage)
-                        ? tr('图片')
-                        : selectedImage.kind === 'sketch'
-                          ? tr('草图')
-                          : tr('公式')
-                  : selected.length
-                    ? tr('已选择 {0} 个对象', selected.length)
-                    : tr('选择对象或手写层')}
+              {selectedReview
+                ? tr('便签')
+                : inkSelected
+                  ? tr('手写层')
+                  : selectedImage
+                    ? selectedImage.group
+                      ? tr('组合对象')
+                      : selectedImage.kind === 'text'
+                        ? tr('文本框')
+                        : isPicture(selectedImage)
+                          ? tr('图片')
+                          : selectedImage.kind === 'sketch'
+                            ? tr('草图')
+                            : tr('公式')
+                    : selected.length
+                      ? tr('已选择 {0} 个对象', selected.length)
+                      : tr('选择对象或手写层')}
             </span>
             {selectedImage && !selectedImage.group && (
               <button
@@ -940,6 +968,7 @@ function PageEditor({
                 aria-pressed={inkSelected}
                 onClick={() => {
                   setSelected([]);
+                  setSelectedReview(null);
                   setInkSelected(true);
                   setOrderOpen(true);
                 }}
@@ -975,16 +1004,17 @@ function PageEditor({
                 )}
               </div>
             )}
-            {!!selected.length && (
+            {(!!selected.length || selectedReview) && (
               <button aria-label={tr('删除选中对象')} onClick={deleteSelected}>
                 <Trash2 size={15} />
               </button>
             )}
-            {(selected.length > 0 || inkSelected) && (
+            {(selected.length > 0 || inkSelected || selectedReview) && (
               <button
                 aria-label={tr('取消对象选择')}
                 onClick={() => {
                   setSelected([]);
+                  setSelectedReview(null);
                   setInkSelected(false);
                   setOrderOpen(false);
                 }}

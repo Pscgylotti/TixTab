@@ -4,6 +4,7 @@ import {
   followScore,
   scoreTimeline,
   scoreAt,
+  scoreViewportIndex,
   timelineNotes,
   cursorNote,
   scoreAnchors,
@@ -35,6 +36,23 @@ const score: MusicScore = {
   tempo: 120,
   positioning: 'layout',
 };
+it('keeps playing the right page before turning the actual spread by two pages', () => {
+  // A spread can start at either parity after manual page navigation.
+  for (const start of [0, 1]) {
+    let left = start;
+    const views = Array.from({ length: 5 }, (_, n) => {
+      left = scoreViewportIndex('dual', left, start + n);
+      return left;
+    });
+    expect(views).toEqual([start, start, start + 2, start + 2, start + 4]);
+  }
+  // A following jump into a spread's right page keeps its left-page alignment.
+  expect(scoreViewportIndex('dual', 1, 6)).toBe(5);
+  expect(scoreViewportIndex('dual', 5, 2)).toBe(1);
+  expect(scoreViewportIndex('dual', 1, 0)).toBe(0);
+  expect(scoreViewportIndex('single', 1, 2)).toBe(2);
+  expect(scoreViewportIndex('continuous', 1, 2)).toBe(2);
+});
 it('bounds audio pitch estimates and advances near the matching note', () => {
   const input = Float32Array.from(
     { length: 2048 },

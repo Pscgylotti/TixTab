@@ -17,7 +17,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 ROOT = Path(__file__).resolve().parent
 SOURCES = json.loads((ROOT / 'python-sources.json').read_text('utf-8'))['indexes']
-ALLOWED = {'requirements.txt','requirements-openvino.txt','requirements-ocr.txt','requirements-asr.txt','requirements-pdf.txt','requirements-homr.txt'}
+ALLOWED = {'requirements.txt','requirements-openvino.txt','requirements-ocr.txt','requirements-asr.txt','requirements-pdf.txt','requirements-homr.txt','requirements-copista.txt','requirements-matchmaker.txt'}
 
 
 def redact(text):

@@ -1,4 +1,4 @@
-export type RuntimeId = 'openvino' | 'speech' | 'pdf' | 'homr';
+export type RuntimeId = 'openvino' | 'speech' | 'pdf' | 'homr' | 'copista' | 'matchmaker';
 export type RuntimeSources = {
   packages: 'auto' | 'pypi' | 'tuna' | 'ustc' | 'custom';
   python: 'auto' | 'github' | 'npmmirror';

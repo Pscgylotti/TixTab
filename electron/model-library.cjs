@@ -15,7 +15,9 @@ function createModelLibrary({ root, bundled, catalog, fetch, notify = () => {} }
   let job = null;
   for (const m of catalog.models) {
     if (!/^[a-z0-9-]+$/.test(m.id) || !/^[a-zA-Z0-9.]+$/.test(m.revision) || models.has(m.id))
-      throw new Error('Invalid model catalog');
+      throw new Error(
+        `Invalid model catalog: ${String(m.id).slice(0, 100)} revision=${String(m.revision).slice(0, 100)}`,
+      );
     for (const f of m.files) {
       if (
         !/^[a-zA-Z0-9_./-]+$/.test(f.path) ||

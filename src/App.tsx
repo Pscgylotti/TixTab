@@ -124,11 +124,15 @@ import {
   deleteWorkspaceDocument,
   discardWorkspaceDraft,
   listWorkspace,
+  findWorkspacePdfProjects,
   loadWorkspaceDocument,
   saveWorkspaceDocument,
   updateWorkspaceDocument,
   type WorkspaceView,
+  type WorkspaceDocument,
 } from './workspaceStore';
+import { pdfFingerprint } from './pdfAssociation';
+import LinkedPdfDialog from './LinkedPdfDialog';
 import PageList from './PageList';
 import PageJump from './PageJump';
 import SidebarResizer from './SidebarResizer';
@@ -156,6 +160,7 @@ import {
   type BatchManifest,
 } from './batchWorkspace';
 import { historyTarget, historyViewportIndex } from './historyNavigation';
+import { scoreViewportIndex } from './musicTransport';
 import { trimSourceHistory } from './sourceHistory';
 import { applyNativeDrafts } from './nativePdfDrafts';
 import { editPdfObjects as runPdfObjectEdits } from './pdfObjectsClient';
@@ -313,6 +318,24 @@ export default function App() {
     anchor: DropAnchor;
     documentId: string;
   } | null>(null);
+  const [linkedPdf, setLinkedPdf] = useState<{
+    name: string;
+    documents: WorkspaceDocument[];
+  } | null>(null);
+  const linkedPdfResolve = useRef<((id: string | null) => void) | null>(null);
+  const [externalRequest, setExternalRequest] = useState(0);
+  const externalOpening = useRef(false);
+  const externalPending = useRef(true);
+  useEffect(
+    () =>
+      window.surfaceDesktop?.documentOpen?.onRequest(() => {
+        externalPending.current = true;
+        window.dispatchEvent(new Event('tixtab-exit-presentation'));
+        setExternalRequest((n) => n + 1);
+      }),
+    [],
+  );
+  useEffect(() => () => linkedPdfResolve.current?.(null), []);
   const [zoteroOpen, setZoteroOpen] = useState(false);
   useEffect(() => {
     document
@@ -1726,49 +1749,110 @@ export default function App() {
       notify(tr('无法定位原始 PDF，文件可能已移动或删除。'));
     }
   };
-  const openFiles = (files: File[]) =>
-    documentOperation(async () => {
-      const supported = files.filter((f) => /\.(pdf|tixtab)$/i.test(f.name));
-      if (!supported.length) {
-        notify(tr('请拖入 PDF 或 TixTab 工程文件'));
-        return;
-      }
-      await persist(current.current);
-      const failures: string[] = [];
-      let starterId: string | null = isEmptyStarterNotebook(current.current)
-        ? activeRef.current
-        : null;
-      for (const f of supported) {
-        let doc: PDFDocumentProxy | null = null;
-        try {
-          let next: Notebook;
-          if (/\.pdf$/i.test(f.name)) {
-            const imported = await importPdf(new Uint8Array(await f.arrayBuffer()), f.name);
-            next = imported.notebook;
-            next.sourcePath = window.surfaceDesktop?.getPdfFilePath?.(f) || undefined;
-            doc = imported.pdf;
-          } else {
-            next = decodeProject(await f.text());
-            doc = next.source ? await loadPdf(next.source) : null;
-            if (
-              doc &&
-              next.pages.some((p) => p.sourceIndex !== null && p.sourceIndex >= doc!.numPages)
-            )
-              throw new Error(tr('工程的页面索引无效'));
+  const importFiles = async (files: File[], externalPath?: string) => {
+    const supported = files.filter((f) => /\.(pdf|tixtab)$/i.test(f.name));
+    if (!supported.length) {
+      notify(tr('请拖入 PDF 或 TixTab 工程文件'));
+      return;
+    }
+    await persist(current.current);
+    const failures: string[] = [];
+    let starterId: string | null = isEmptyStarterNotebook(current.current)
+      ? activeRef.current
+      : null;
+    for (const f of supported) {
+      let doc: PDFDocumentProxy | null = null;
+      try {
+        let next: Notebook;
+        if (/\.pdf$/i.test(f.name)) {
+          const bytes = new Uint8Array(await f.arrayBuffer());
+          if (externalPath) {
+            const matches = await findWorkspacePdfProjects(
+              externalPath,
+              await pdfFingerprint(bytes),
+            );
+            let choice: string | null = matches[0]?.id ?? 'new';
+            if (matches.length > 1) {
+              setBusy(false);
+              choice = await new Promise<string | null>((resolve) => {
+                linkedPdfResolve.current = resolve;
+                setLinkedPdf({ name: f.name, documents: matches });
+              });
+              setBusy(true);
+            }
+            if (!choice) continue;
+            if (choice !== 'new') {
+              if (choice !== activeRef.current) await loadDocument(choice);
+              starterId = null;
+              continue;
+            }
           }
-          const id = starterId || uid();
-          await persist(next, id, defaultView);
-          activate(id, next, doc);
-          starterId = null;
-          doc = null;
-        } catch (e) {
-          void destroyPdf(doc);
-          failures.push(`${f.name}: ${e instanceof Error ? e.message : e}`);
+          const imported = await importPdf(bytes, f.name);
+          next = imported.notebook;
+          next.sourcePath = externalPath || window.surfaceDesktop?.getPdfFilePath?.(f) || undefined;
+          doc = imported.pdf;
+        } else {
+          next = decodeProject(await f.text());
+          if (next.source && !next.sourceFingerprint)
+            next.sourceFingerprint = await pdfFingerprint(next.source);
+          doc = next.source ? await loadPdf(next.source) : null;
+          if (
+            doc &&
+            next.pages.some((p) => p.sourceIndex !== null && p.sourceIndex >= doc!.numPages)
+          )
+            throw new Error(tr('工程的页面索引无效'));
         }
+        const id = starterId || uid();
+        await persist(next, id, defaultView);
+        activate(id, next, doc);
+        starterId = null;
+        doc = null;
+      } catch (e) {
+        void destroyPdf(doc);
+        failures.push(`${f.name}: ${e instanceof Error ? e.message : e}`);
       }
-      setWorkspaceOpen(false);
-      if (failures.length) notify(tr('部分文件导入失败：{0}', failures.join('；')));
-    });
+    }
+    setWorkspaceOpen(false);
+    if (failures.length) notify(tr('部分文件导入失败：{0}', failures.join('；')));
+  };
+  const openFiles = (files: File[]) => documentOperation(() => importFiles(files));
+  const externalHandler = useRef<() => Promise<void>>(async () => {});
+  externalHandler.current = async () => {
+    const bridge = window.surfaceDesktop?.documentOpen;
+    if (
+      !bridge ||
+      !externalPending.current ||
+      externalOpening.current ||
+      operation.current ||
+      busyRef.current
+    )
+      return;
+    externalPending.current = false;
+    externalOpening.current = true;
+    try {
+      await documentOperation(async () => {
+        for (;;) {
+          const request = await bridge.next();
+          if (!request) break;
+          if (!request.bytes) {
+            notify(tr('打开失败：{0}', request.name + ': ' + request.error));
+            continue;
+          }
+          await importFiles(
+            [new window.File([request.bytes as Uint8Array<ArrayBuffer>], request.name)],
+            request.path,
+          );
+        }
+      });
+    } catch (e) {
+      notify(tr('打开失败：{0}', e instanceof Error ? e.message : e));
+    } finally {
+      externalOpening.current = false;
+    }
+  };
+  useEffect(() => {
+    if (ready && !busy && !presentation) void externalHandler.current();
+  }, [ready, busy, presentation, externalRequest]);
   const openZotero = (attachment: ZoteroPdf) =>
     documentOperation(async () => {
       await persist(current.current);
@@ -3222,6 +3306,21 @@ export default function App() {
                   >
                     <ExtraTools
                       notebook={entry.notebook}
+                      active={entry.id === activeId}
+                      presentation={!!presentation && entry.id === activeId}
+                      onPlayerChange={(change) => {
+                        if (
+                          entry.id !== activeRef.current ||
+                          entry.notebook.batch?.itemId !== current.current.batch?.itemId
+                        )
+                          return;
+                        const old = current.current.musicPlayer;
+                        const next = { open: false, ...old, ...change };
+                        if (JSON.stringify(old) === JSON.stringify(next)) return;
+                        // Player preferences are document metadata, not an undoable page edit.
+                        current.current = { ...current.current, musicPlayer: next };
+                        setNotebook(current.current);
+                      }}
                       pdf={entry.pdf}
                       index={entry.index}
                       disabled={busy || !ready}
@@ -3243,12 +3342,7 @@ export default function App() {
                       }}
                       onNavigate={(at) => {
                         if (presenting.current || entry.id !== activeRef.current) return;
-                        if (
-                          viewRef.current.mode === 'dual' &&
-                          Math.floor(viewRef.current.index / 2) === Math.floor(at / 2)
-                        )
-                          return;
-                        setIndex(at);
+                        setIndex((left) => scoreViewportIndex(viewRef.current.mode, left, at));
                       }}
                     />
                   </div>
@@ -4218,6 +4312,18 @@ export default function App() {
                 presentationClosing.current = false;
                 setPresentation(null);
               })();
+            }}
+          />
+        )}
+        {linkedPdf && (
+          <LinkedPdfDialog
+            {...linkedPdf}
+            activeId={activeId}
+            onChoose={(id) => {
+              setLinkedPdf(null);
+              const resolve = linkedPdfResolve.current;
+              linkedPdfResolve.current = null;
+              resolve?.(id);
             }}
           />
         )}

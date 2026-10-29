@@ -2,6 +2,7 @@ import type { PDFDocumentProxy } from './pdfTypes';
 import { uid, type Notebook } from './model';
 import { trackPerformance } from './performanceLedger';
 import { releasePdfRenderCache } from './pdfRenderCache';
+import { pdfFingerprint } from './pdfAssociation';
 export { exportPdf, SignedPdfExportError } from './pdfExportClient';
 export type { PdfExportProgress } from './pdfExportClient';
 const retained = new WeakMap<PDFDocumentProxy, { count: number; retire: boolean }>();
@@ -39,6 +40,7 @@ export async function importPdf(
   bytes: Uint8Array,
   name: string,
 ): Promise<{ notebook: Notebook; pdf: PDFDocumentProxy }> {
+  const sourceFingerprint = await pdfFingerprint(bytes);
   const pdf = await loadPdf(bytes);
   const pages: Notebook['pages'] = [];
   // Ask the worker for a batch of pages at a time instead of one round trip each.
@@ -61,5 +63,14 @@ export async function importPdf(
       });
     });
   }
-  return { pdf, notebook: { version: 1, name: name.replace(/\.pdf$/i, ''), source: bytes, pages } };
+  return {
+    pdf,
+    notebook: {
+      version: 1,
+      name: name.replace(/\.pdf$/i, ''),
+      source: bytes,
+      sourceFingerprint,
+      pages,
+    },
+  };
 }

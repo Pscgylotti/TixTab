@@ -39,15 +39,15 @@ const info = {
     ),
   ),
   validation: {
-    unit: '574 tests / 123 files',
+    unit: '605 tests / 129 files; 8 Node integration tests; 12 Python checks passed, 1 optional local-performance fixture skipped',
     browser:
-      '38 browser regressions passed. Coverage includes language negotiation and persistence, Draft controls/default names/custom names, correction and music recognition controls, music playback in three views, Markdown, scratch management, image editing and native PDF object operations. Native window cleanup remains covered by unit fixtures; no physical Alt+Tab cleanup is claimed.',
+      '25 browser regressions passed. Coverage includes Copista/homr/Audiveris score data, correction previews and manual geometry, background processing, Matchmaker capture cleanup, MIDI output lifecycle, two-page turning, fullscreen/collapsed controls, repeated project imports, OS PDF launch/legacy project lookup, Review note objects in four views and optional-tool error isolation. Native interfaces are mocked in browser tests.',
     packaged:
       'Static ASAR/build asset SHA256 and file-set verification, required backend/preload modules, native binding/icon and model exclusion; this release did not launch the installer or packaged application',
     nativeModels:
-      'Retained previous local Windows AI Speech load/start/stop, microphone metering, resident reuse and idle CPU evidence; native model inference was not rerun for 0.3.8. Previous PDF editor, Hy-MT2 CPU/GPU, UVDoc/Audiveris/homr evidence retained; local Hy-MT2 OpenVINO NPU initialization failed and is not claimed to work. No new energy or cross-device speed benchmark is claimed.',
+      'Python geometry, Copista layout and synthetic Matchmaker pause/jump/cache regressions passed. Retained earlier local Copista, DocAligner CPU/NPU and LILI performance evidence documented in docs; those real-input runs were not repeated during packaging. Windows AI Speech, PDF editor, Hy-MT2 CPU/GPU, UVDoc/Audiveris/homr evidence retained; local Hy-MT2 OpenVINO NPU initialization failed and is not claimed to work. No energy or cross-device speed benchmark is claimed.',
     installer:
-      'Compiled NSIS installer. Earlier isolated upgrade/repair/downgrade fixture evidence retained. Full installation was not rerun on this host.',
+      'Compiled NSIS installer and separate install/uninstall include harness for opt-in PDF association. Earlier upgrade/repair/downgrade evidence retained. Installer and packaged application were not executed on this host.',
     limits:
       'Synthetic pen input is not real hardware validation. Resource measurements are not battery-life measurements. Recognition may be inaccurate.',
   },

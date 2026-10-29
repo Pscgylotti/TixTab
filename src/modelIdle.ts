@@ -35,6 +35,9 @@ function notifyIdlePolicy() {
   void window.surfaceDesktop?.dictation
     ?.run({ action: 'idle-policy', idleReleaseSeconds: getModelIdleSeconds() })
     .catch(() => {});
+  void window.surfaceDesktop?.musicFollow
+    ?.run({ action: 'idle-policy', idleReleaseSeconds: getModelIdleSeconds() })
+    .catch(() => {});
 }
 if (typeof window !== 'undefined' && window.addEventListener) {
   window.addEventListener('storage', (event) => {

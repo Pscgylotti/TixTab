@@ -34,6 +34,21 @@ function createRuntimeInstaller({
       imports: "import importlib.util; assert importlib.util.find_spec('homr')",
       python: require('./runtime-homr-manifest.json'),
     },
+    copista: {
+      directory: 'homr-runtime',
+      requirements: 'requirements-copista.txt',
+      imports: 'import homr,torch,torchvision,scipy,cv2',
+      python: require('./runtime-homr-manifest.json'),
+    },
+    matchmaker: {
+      directory: 'homr-runtime',
+      requirements: 'requirements-matchmaker.txt',
+      imports:
+        "import sys,importlib.metadata as m; assert m.version('pymatchmaker') == '0.4.0'; sys.modules['fluidsynth']=None; from matchmaker.dp import OnlineTimeWarpingArztFrame",
+      python: require('./runtime-homr-manifest.json'),
+      wheel: 'pymatchmaker-0.4.0-cp312-cp312-win_amd64.whl',
+      wheelSha256: '58cc47bdcde0da681388abaefd0847c0253f67a89d51854b57e831c98e4467a2',
+    },
     openvino: {
       directory: 'openvino-runtime',
       requirements: 'requirements-ocr.txt',
@@ -374,6 +389,20 @@ function createRuntimeInstaller({
         1500000,
         true,
       );
+      if (profiles[id].wheel) {
+        const wheelFile = path.join(backend, 'wheels', profiles[id].wheel);
+        const actual = require('node:crypto')
+          .createHash('sha256')
+          .update(await fs.readFile(wheelFile))
+          .digest('hex');
+        if (actual !== profiles[id].wheelSha256) throw Error('component-invalid');
+        await command(
+          pythonFor(id),
+          ['-m', 'pip', '--isolated', 'install', '--no-deps', wheelFile],
+          current,
+          120000,
+        );
+      }
       emit(current, 'verify');
       const verified = await status(id, current);
       current.controller.signal.throwIfAborted();

@@ -1,0 +1,33 @@
+.feature-message-scrim {
+  z-index: 7100;
+}
+.feature-message {
+  width: min(480px, 90vw);
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 12px 50px #0003;
+}
+.feature-message header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.feature-message p {
+  line-height: 1.6;
+}
+.feature-message pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 160px;
+  overflow: auto;
+  font-size: 12px;
+}
+.feature-message footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}

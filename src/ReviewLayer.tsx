@@ -1,4 +1,13 @@
-import { useContext, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+  type PointerEvent,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { StickyNote, Trash2, X } from 'lucide-react';
 import { DocumentEditContext } from './DocumentEditContext';
@@ -13,17 +22,21 @@ export default function ReviewLayer({
   tool,
   zoom,
   onChange,
+  selected,
+  onSelect: setSelected,
 }: {
   page: Page;
   tool: Tool;
   zoom: number;
   onChange: (page: Page) => void;
+  selected: string | null;
+  onSelect: Dispatch<SetStateAction<string | null>>;
 }) {
   useLocale();
   const nativeKeyboard = useNativeKeyboard();
   const context = useContext(DocumentEditContext);
   const root = useRef<HTMLDivElement>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  const canManipulate = tool === 'hand' || tool === 'object';
   const [closed, setClosed] = useState<Set<string>>(() => new Set());
   const [hover, setHover] = useState<string | null>(null);
   const [draft, setDraft] = useState<ReviewNote['region'] | null>(null);
@@ -200,8 +213,8 @@ export default function ReviewLayer({
     return () => clearTimeout(timer);
   }, [note, text]);
   useEffect(() => {
-    if (tool !== 'hand') {
-      save();
+    if (tool !== 'hand') save();
+    if (!canManipulate) {
       adjusting.current = null;
       setAdjusted(null);
       cardContact.current = null;
@@ -283,8 +296,9 @@ export default function ReviewLayer({
           return (
             <button
               key={n.id}
-              className={`review-anchor ${selected === n.id || hover === n.id ? 'highlighted' : ''} ${tool === 'hand' && selected === n.id ? 'editing' : ''}`}
+              className={`review-anchor ${selected === n.id || hover === n.id ? 'highlighted' : ''} ${canManipulate && selected === n.id ? 'editing' : ''}`}
               aria-label={t('便签 {0}', i + 1)}
+              aria-pressed={selected === n.id}
               style={{
                 left: n.region.x,
                 top: n.region.y,
@@ -295,11 +309,11 @@ export default function ReviewLayer({
               }}
               onPointerDown={(e) => {
                 e.stopPropagation();
-                if (tool !== 'hand' || e.button !== 0 || adjusting.current) return;
+                if (!canManipulate || e.button !== 0 || adjusting.current) return;
                 e.preventDefault();
                 save();
                 setSelected(n.id);
-                if (selected !== n.id) return;
+                if (selected !== n.id && tool !== 'object') return;
                 suppressClick.current = false;
                 adjusting.current = {
                   pointer: e.pointerId,
@@ -346,12 +360,12 @@ export default function ReviewLayer({
                   rx={5 / zoom}
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth={tool === 'hand' && selected === n.id ? 1.5 : 0.75}
+                  strokeWidth={canManipulate && selected === n.id ? 1.5 : 0.75}
                   vectorEffect="non-scaling-stroke"
                 />
               </svg>
               <StickyNote style={{ width: 16 / zoom, height: 16 / zoom }} />
-              {tool === 'hand' &&
+              {canManipulate &&
                 selected === n.id &&
                 (['nw', 'ne', 'sw', 'se'] as const).map((corner) => (
                   <span
@@ -430,7 +444,7 @@ export default function ReviewLayer({
               )
                 return null;
               const connector = reviewConnector(region, { x, y, width });
-              const editing = tool === 'hand' && selected === n.id;
+              const editing = canManipulate && selected === n.id;
               return (
                 <div
                   key={n.id}
@@ -545,7 +559,7 @@ export default function ReviewLayer({
                         <X size={14} />
                       </button>
                     </header>
-                    {editing ? (
+                    {editing && tool === 'hand' ? (
                       <textarea
                         aria-label={t('便签内容')}
                         inputMode={nativeKeyboard ? 'text' : 'none'}

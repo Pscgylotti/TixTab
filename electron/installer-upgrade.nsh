@@ -1,3 +1,4 @@
+!include "${__FILEDIR__}\installer-pdf.nsh"
 !ifndef BUILD_UNINSTALLER
 # Keep normal uninstall shortcut cleanup, but defer creation to the finish page.
 # These defines must precede electron-builder's MUI_PAGE_FINISH expansion.
@@ -11,6 +12,7 @@
 
 !macro customHeader
 !include WordFunc.nsh
+!insertmacro TixTabPdfHeader
 
 Var TixTabInstalledVersion
 Var TixTabInstalledFolder
@@ -126,11 +128,13 @@ FunctionEnd
 !macroend
 
 !macro customInit
+  StrCpy $TixTabPdfChecked ${BST_UNCHECKED}
   Call TixTabCheckInstalledVersion
   Call TixTabNormalizeInstallDirectory
 !macroend
 
 !macro customInstall
+  !insertmacro TixTabPdfInstall
   # Only a signed identity package is registered on end-user machines. Never
   # enable developer mode or install a development trust certificate here.
   IfFileExists "$INSTDIR\native\windows-ai-ocr\TixTab.WindowsAI.Ocr.identity.msix" 0 tixtab_ocr_identity_done
@@ -141,6 +145,7 @@ FunctionEnd
 
 !macro customPageAfterChangeDir
   Page custom TixTabUpgradePage
+  Page custom TixTabPdfPage TixTabPdfPageLeave
   # Replace the upstream substring-based sanitizer; this also preserves legacy
   # upgrade locations instead of silently appending a second application folder.
   !undef MUI_PAGE_CUSTOMFUNCTION_PRE

@@ -38,6 +38,12 @@ it('defaults to 1800 seconds, persists valid values and rejects invalid limits',
   for (const value of [0, 29, 86401, NaN, 30.5]) expect(() => setModelIdleSeconds(value)).toThrow();
   expect(getModelIdleSeconds()).toBe(60);
 });
+it('updates a parked native score reference when the user changes the idle setting', () => {
+  const run = vi.fn().mockResolvedValue({ ok: true });
+  vi.stubGlobal('window', { surfaceDesktop: { musicFollow: { run } } });
+  setModelIdleSeconds(90);
+  expect(run).toHaveBeenCalledExactlyOnceWith({ action: 'idle-policy', idleReleaseSeconds: 90 });
+});
 it('rearms against elapsed idle time, frees once and cancels when work resumes', async () => {
   const release = vi.fn();
   const cancel = scheduleModelIdle(release);

@@ -27,7 +27,7 @@ export interface ScoreNote {
 }
 export interface MusicScore {
   version: 1;
-  engine: 'audiveris' | 'homr' | 'import';
+  engine: 'audiveris' | 'homr' | 'copista' | 'import';
   musicxml: string;
   notes: ScoreNote[];
   systems: ScoreRect[];
@@ -50,7 +50,7 @@ export function validMusicScore(value: unknown): value is MusicScore {
   const s = value as MusicScore;
   return (
     s.version === 1 &&
-    ['audiveris', 'homr', 'import'].includes(s.engine) &&
+    ['audiveris', 'homr', 'copista', 'import'].includes(s.engine) &&
     typeof s.musicxml === 'string' &&
     s.musicxml.length <= 4 * 1024 * 1024 &&
     finite(s.duration) &&

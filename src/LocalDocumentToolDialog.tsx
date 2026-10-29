@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import CorrectionEditor from './CorrectionEditor';
 import { t } from './i18n';
 import type { Notebook, Page } from './model';
 import type { PDFDocumentProxy } from './pdfTypes';
@@ -10,11 +11,21 @@ import LocalToolSetup from './LocalToolSetup';
 import { useRuntimeClose } from './useRuntimeClose';
 import {
   correctionTargets,
+  correctionInput,
   correctTarget,
   applyCorrection,
   type CorrectionTarget,
 } from './documentCorrection';
-import { runLocalDocumentTool, localToolErrors, type LocalToolEngine } from './localDocumentTools';
+import {
+  runLocalDocumentTool,
+  localToolErrors,
+  correctionEngine,
+  defaultCorrection,
+  type CorrectionOptions,
+  type CorrectionMode,
+  type CorrectionPoint,
+  type LocalToolEngine,
+} from './localDocumentTools';
 import { parseMusicScore, remapScoreSystems } from './musicScore';
 import { setLocalImagePicker, pickLocalImage } from './localImagePicker';
 import './localDocumentTools.css';
@@ -41,7 +52,9 @@ export default function LocalDocumentToolDialog({
   const [engine, setEngine] = useState<LocalToolEngine>(kind === 'correct' ? 'uvdoc' : 'audiveris'),
     [scope, setScope] = useState('current'),
     [range, setRange] = useState(''),
-    [mode, setMode] = useState<'auto' | 'scan' | 'photo'>('auto'),
+    [mode, setMode] = useState<CorrectionMode>('scan'),
+    [options, setOptions] = useState<CorrectionOptions>({ ...defaultCorrection }),
+    [previewDirty, setPreviewDirty] = useState(false),
     [device, setDevice] = useState<'AUTO' | 'CPU' | 'GPU' | 'NPU'>('AUTO'),
     [scanOnly, setScanOnly] = useState(true);
   const [busy, setBusy] = useState(false),
@@ -53,11 +66,13 @@ export default function LocalDocumentToolDialog({
     [picked, setPicked] = useState<CorrectionTarget | null>(null);
   const [preview, setPreview] = useState<{
     original: string;
+    rawOriginal?: string;
     image: string;
     model: string;
     target: CorrectionTarget;
     page: Page;
     device?: string;
+    corners?: CorrectionPoint[] | null;
   } | null>(null);
   const controller = useRef<AbortController | null>(null),
     setupCancel = useRef<(() => void) | null>(null),
@@ -108,7 +123,12 @@ export default function LocalDocumentToolDialog({
     window.addEventListener('keydown', key, true);
     return () => window.removeEventListener('keydown', key, true);
   }, [picking]);
-  const start = async (previewOnly = false) => {
+  const changeOptions = (next: CorrectionOptions) => {
+    setOptions(next);
+    setPreviewDirty(true);
+  };
+  const activeEngine = kind === 'correct' ? correctionEngine(options) : engine;
+  const start = async (previewOnly = false, loadOnly = false) => {
     if (controller.current || settingUp) return;
     const origin = current.current;
     const a = new AbortController();
@@ -117,7 +137,7 @@ export default function LocalDocumentToolDialog({
     setLogs('');
     setStatus(t(kind === 'correct' ? '正在统计位图索引…' : '正在识别五线谱…'));
     setProgress({ done: 0, total: 0 });
-    setPreview(null);
+    if (!previewOnly) setPreview(null);
     let failures = 0,
       completed = 0;
     try {
@@ -129,9 +149,11 @@ export default function LocalDocumentToolDialog({
             );
       if (kind === 'correct') {
         const targets =
-          scope === 'picked' && picked
-            ? [picked]
-            : await correctionTargets(selected, pdf, scanOnly, a.signal);
+          previewOnly && preview
+            ? [preview.target]
+            : scope === 'picked' && picked
+              ? [picked]
+              : await correctionTargets(selected, pdf, scanOnly, a.signal);
         setProgress({ done: 0, total: previewOnly ? Math.min(1, targets.length) : targets.length });
         if (!targets.length) {
           setStatus(t('范围内没有符合条件的位图。'));
@@ -144,11 +166,46 @@ export default function LocalDocumentToolDialog({
             origin.pages.find((p) => p.id === target.pageId);
           if (!page) continue;
           setStatus(t('正在矫正文档…'));
-          const result = await correctTarget(page, target, pdf, mode, device, a.signal);
+          if (loadOnly) {
+            const original = await correctionInput(page, target, pdf, a.signal);
+            setPreview({
+              original,
+              rawOriginal: original,
+              image: '',
+              model: 'manual',
+              target,
+              page,
+            });
+            setPreviewDirty(true);
+            setStatus(t('拖动控制点后点击更新预览。'));
+            return;
+          }
+          const result = await correctTarget(
+            page,
+            target,
+            pdf,
+            mode,
+            device,
+            a.signal,
+            options,
+            previewOnly && preview?.target === target ? preview.original : undefined,
+          );
           a.signal.throwIfAborted();
           if (previewOnly) {
-            setPreview({ ...result, target, page });
-            setStatus(t('预览已生成，确认后应用。'));
+            setPreview({
+              ...result,
+              rawOriginal: preview?.rawOriginal || result.original,
+              target,
+              page,
+            });
+            setPreviewDirty(false);
+            setStatus(
+              t(
+                result.warning === 'no-text-curves'
+                  ? '未找到可靠的文字曲线，已保留原始几何；可使用曲面网格或 UVDoc。'
+                  : '预览已生成，确认后应用。',
+              ),
+            );
           } else {
             const latest = current.current.pages.find((p) => p.id === target.pageId) ?? page;
             await onApply(
@@ -179,7 +236,7 @@ export default function LocalDocumentToolDialog({
             if (!result?.musicxml) throw Error('no-score');
             let score = parseMusicScore(
               result.musicxml,
-              engine === 'homr' ? 'homr' : 'audiveris',
+              engine === 'homr' || engine === 'copista' ? engine : 'audiveris',
               result.noteLocations
                 ? { systems: result.systems ?? [], noteLocations: result.noteLocations }
                 : undefined,
@@ -220,7 +277,7 @@ export default function LocalDocumentToolDialog({
     }
   };
   const applyPreview = async () => {
-    if (!preview || busy) return;
+    if (!preview?.image || previewDirty || busy) return;
     const page = current.current.pages.find((p) => p.id === preview.page.id);
     if (page !== preview.page) {
       setStatus(t('页面已改变，请重新预览。'));
@@ -255,7 +312,9 @@ export default function LocalDocumentToolDialog({
   return (
     <>
       {confirmation}
-      <div className={`modal-scrim${panel.hidden ? ' background-hidden' : ''}`}>
+      <div
+        className={`modal-scrim local-document-scrim${panel.hidden ? ' background-hidden' : ''}`}
+      >
         <section
           className="modal local-document-dialog"
           role="dialog"
@@ -287,6 +346,7 @@ export default function LocalDocumentToolDialog({
                   >
                     <option value="audiveris">Audiveris</option>
                     <option value="homr">homr</option>
+                    <option value="copista">Copista 28M</option>
                   </select>
                 </label>
               )}
@@ -294,11 +354,12 @@ export default function LocalDocumentToolDialog({
                 {t('范围')}
                 <select
                   aria-label={t('文档工具范围')}
-                  disabled={busy}
+                  disabled={busy || settingUp}
                   value={scope}
                   onChange={(e) => {
                     setScope(e.target.value);
                     setPreview(null);
+                    setOptions({ ...options, corners: undefined, mesh: undefined });
                   }}
                 >
                   <option value="current">{t('当前页')}</option>
@@ -313,7 +374,11 @@ export default function LocalDocumentToolDialog({
                   placeholder="1-3, 5"
                   value={range}
                   disabled={busy}
-                  onChange={(e) => setRange(e.target.value)}
+                  onChange={(e) => {
+                    setRange(e.target.value);
+                    setPreview(null);
+                    setOptions({ ...options, corners: undefined, mesh: undefined });
+                  }}
                 />
               )}
               {kind === 'correct' && (
@@ -323,22 +388,63 @@ export default function LocalDocumentToolDialog({
                     <select
                       aria-label={t('矫正方式')}
                       value={mode}
-                      disabled={busy}
+                      disabled={busy || settingUp}
                       onChange={(e) => {
-                        setMode(e.target.value as typeof mode);
+                        const value = e.target.value as CorrectionMode;
+                        setMode(value);
+                        changeOptions({
+                          ...defaultCorrection,
+                          method:
+                            value === 'card'
+                              ? 'docaligner'
+                              : value === 'book' || value === 'wrinkle'
+                                ? 'uvdoc'
+                                : value === 'photo'
+                                  ? 'perspective'
+                                  : value === 'manual'
+                                    ? 'manual'
+                                    : 'projection',
+                          aspect: value === 'card' ? 'id-landscape' : 'auto',
+                        });
                         setPreview(null);
                       }}
                     >
-                      <option value="auto">{t('自动')}</option>
                       <option value="scan">{t('扫描倾斜')}</option>
-                      <option value="photo">{t('透视与曲面')}</option>
+                      <option value="card">{t('证件扫描照')}</option>
+                      <option value="photo">{t('拍摄透视')}</option>
+                      <option value="book">{t('书页弯曲')}</option>
+                      <option value="wrinkle">{t('文档褶皱')}</option>
+                      <option value="manual">{t('手动校准')}</option>
+                    </select>
+                  </label>
+                  <label>
+                    {t('校准算法')}
+                    <select
+                      aria-label={t('校准算法')}
+                      disabled={busy || settingUp}
+                      value={options.method}
+                      onChange={(e) =>
+                        changeOptions({
+                          ...options,
+                          method: e.target.value as CorrectionOptions['method'],
+                          mesh: e.target.value === 'manual' ? options.mesh : undefined,
+                        })
+                      }
+                    >
+                      <option value="projection">{t('文字投影纠偏')}</option>
+                      <option value="lines">{t('直线角度纠偏')}</option>
+                      <option value="perspective">{t('轮廓四角透视')}</option>
+                      <option value="docaligner">DocAligner · FastViT T8</option>
+                      <option value="book">{t('文字曲线展平')}</option>
+                      <option value="uvdoc">UVDoc</option>
+                      <option value="manual">{t('手动几何调整')}</option>
                     </select>
                   </label>
                   <label>
                     {t('设备')}
                     <select
                       aria-label={t('矫正设备')}
-                      disabled={busy}
+                      disabled={busy || activeEngine === 'geometry'}
                       value={device}
                       onChange={(e) => setDevice(e.target.value as typeof device)}
                     >
@@ -367,6 +473,7 @@ export default function LocalDocumentToolDialog({
                           setPicked(target);
                           setScope('picked');
                           setPreview(null);
+                          setOptions({ ...options, corners: undefined, mesh: undefined });
                         }
                       });
                     }}
@@ -376,27 +483,125 @@ export default function LocalDocumentToolDialog({
                 </>
               )}
             </div>
+            {kind === 'correct' && (
+              <div className="correction-adjustments">
+                <label>
+                  {t('输出比例')}
+                  <select
+                    aria-label={t('输出比例')}
+                    value={options.aspect}
+                    disabled={busy}
+                    onChange={(e) =>
+                      changeOptions({
+                        ...options,
+                        aspect: e.target.value as CorrectionOptions['aspect'],
+                      })
+                    }
+                  >
+                    <option value="auto">{t('保持检测比例')}</option>
+                    <option value="id-landscape">{t('证件横向')}</option>
+                    <option value="id-portrait">{t('证件纵向')}</option>
+                    <option value="a4">A4</option>
+                    <option value="letter">Letter</option>
+                    <option value="square">1:1</option>
+                  </select>
+                </label>
+                <label>
+                  {t('旋转')}
+                  <input
+                    aria-label={t('校准旋转')}
+                    type="range"
+                    min={-180}
+                    max={180}
+                    step={0.1}
+                    value={options.rotation}
+                    disabled={busy}
+                    onChange={(e) =>
+                      changeOptions({ ...options, rotation: Number(e.target.value) })
+                    }
+                  />
+                  <input
+                    aria-label={t('旋转角度')}
+                    type="number"
+                    min={-180}
+                    max={180}
+                    step={0.1}
+                    value={options.rotation}
+                    disabled={busy}
+                    onChange={(e) =>
+                      changeOptions({
+                        ...options,
+                        rotation: Math.max(-180, Math.min(180, Number(e.target.value))),
+                      })
+                    }
+                  />
+                </label>
+                {['book', 'uvdoc'].includes(options.method) && (
+                  <label>
+                    {t('展平强度')}
+                    <input
+                      aria-label={t('展平强度')}
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={options.strength}
+                      disabled={busy}
+                      onChange={(e) =>
+                        changeOptions({ ...options, strength: Number(e.target.value) })
+                      }
+                    />
+                    <output>{Math.round(options.strength * 100)}%</output>
+                  </label>
+                )}
+                <label>
+                  {t('阴影均衡')}
+                  <input
+                    aria-label={t('阴影均衡')}
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={options.lighting}
+                    disabled={busy}
+                    onChange={(e) =>
+                      changeOptions({ ...options, lighting: Number(e.target.value) })
+                    }
+                  />
+                  <output>{Math.round(options.lighting * 100)}%</output>
+                </label>
+              </div>
+            )}
             <LocalToolSetup
-              key={engine}
-              engine={engine}
+              key={activeEngine}
+              engine={activeEngine}
               onBusy={setSettingUp}
               onCancel={(cancel) => {
                 setupCancel.current = cancel;
               }}
             />
             {preview && (
-              <div className="correction-comparison">
-                <figure>
-                  <figcaption>{t('原图')}</figcaption>
-                  <img src={preview.original} alt={t('矫正前')} />
-                </figure>
-                <figure>
-                  <figcaption>
-                    {t('预览')} · {preview.device || preview.model}
-                  </figcaption>
-                  <img src={preview.image} alt={t('矫正后')} />
-                </figure>
-              </div>
+              <CorrectionEditor
+                original={preview.original}
+                image={preview.image}
+                detected={preview.corners}
+                options={options}
+                disabled={busy}
+                onChange={changeOptions}
+                onReset={() => {
+                  changeOptions({ ...defaultCorrection, method: 'manual' });
+                  setPreview({
+                    ...preview,
+                    original: preview.rawOriginal || preview.original,
+                    image: '',
+                    corners: null,
+                  });
+                }}
+                onContinue={() => {
+                  changeOptions({ ...defaultCorrection, method: 'manual' });
+                  setPreview({ ...preview, original: preview.image, image: '', corners: null });
+                }}
+              />
             )}
             {status && <p role="status">{status}</p>}
             {progress.total > 0 && (
@@ -427,17 +632,33 @@ export default function LocalDocumentToolDialog({
             ) : (
               <>
                 {kind === 'correct' && (
+                  <button disabled={settingUp} onClick={() => void start(true, true)}>
+                    {t('选择图片并调整')}
+                  </button>
+                )}
+                {kind === 'correct' && (
                   <button
                     disabled={settingUp || !window.surfaceDesktop?.documentTools}
                     onClick={() => void start(true)}
                   >
-                    {t('预览第一张')}
+                    {t(preview ? '更新预览' : '预览第一张')}
                   </button>
                 )}
-                {preview && <button onClick={() => void applyPreview()}>{t('应用预览')}</button>}
+                {preview && (
+                  <button
+                    disabled={!preview.image || previewDirty}
+                    onClick={() => void applyPreview()}
+                  >
+                    {t('应用预览')}
+                  </button>
+                )}
                 <button
                   className="primary"
-                  disabled={settingUp || !window.surfaceDesktop?.documentTools}
+                  disabled={
+                    settingUp ||
+                    !window.surfaceDesktop?.documentTools ||
+                    (kind === 'correct' && !!(options.corners || options.mesh))
+                  }
                   onClick={() => void start()}
                 >
                   {t(kind === 'correct' ? '开始矫正' : '开始识别')}

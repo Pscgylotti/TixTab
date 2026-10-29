@@ -1,0 +1,5 @@
+# Reuse the homr Python environment; download the detector and evidence model separately.
+-r requirements-homr.txt
+torch==2.10.0
+torchvision==0.25.0
+scipy==1.17.0

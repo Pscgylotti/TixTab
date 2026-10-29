@@ -35,6 +35,14 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
   },
   createDesktopShortcut: () => ipcRenderer.invoke('app:desktop-shortcut'),
   openDocumentUrl: (url) => ipcRenderer.invoke('document:open-url', url),
+  documentOpen: {
+    next: () => ipcRenderer.invoke('document:open-next'),
+    onRequest: (callback) => {
+      const listener = () => callback();
+      ipcRenderer.on('document:open-request', listener);
+      return () => ipcRenderer.removeListener('document:open-request', listener);
+    },
+  },
   getPdfFilePath: (file) => {
     try {
       return webUtils.getPathForFile(file);
@@ -64,6 +72,22 @@ contextBridge.exposeInMainWorld('surfaceDesktop', {
   nativeOcr: { run: (request) => ipcRenderer.invoke('ocr:native', request) },
   pdfEditor: { run: (request) => ipcRenderer.invoke('pdf-editor:run', request) },
   documentTools: { run: (request) => ipcRenderer.invoke('document:local-tools', request) },
+  musicFollow: {
+    run: (request) => ipcRenderer.invoke('music:follow', request),
+    onProgress: (callback) => {
+      const listener = (_event, value) => callback(value);
+      ipcRenderer.on('music:follow-state', listener);
+      return () => ipcRenderer.removeListener('music:follow-state', listener);
+    },
+  },
+  musicOutput: {
+    run: (request) => ipcRenderer.invoke('music:output', request),
+    onState: (callback) => {
+      const listener = (_event, value) => callback(value);
+      ipcRenderer.on('music:output-state', listener);
+      return () => ipcRenderer.removeListener('music:output-state', listener);
+    },
+  },
   runtimes: {
     run: (request) => ipcRenderer.invoke('runtimes:run', request),
     onProgress: (callback) => {

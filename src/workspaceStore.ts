@@ -1,5 +1,6 @@
 import type { PDFDocumentProxy } from './pdfTypes';
 import { workspacePreview } from './workspacePreview';
+import { pdfFingerprint, samePdfPath } from './pdfAssociation';
 import { editablePages } from './scratchPaper';
 import {
   isEmptyStarterNotebook,
@@ -74,10 +75,12 @@ export interface WorkspaceDocument {
   scene?: Record<string, unknown>;
   zotero?: Notebook['zotero'];
   bookmarks?: Notebook['bookmarks'];
+  musicPlayer?: Notebook['musicPlayer'];
   batch?: Notebook['batch'];
   batchInfo?: { total: number; current: number; edited: number };
   documentName?: string;
   sourcePath?: string;
+  sourceFingerprint?: string;
   hasPdf?: boolean;
   archiveFor?: string;
 }
@@ -247,6 +250,7 @@ async function saveWorkspaceDocumentImpl(
       documentName: notebook.batch ? notebook.name : undefined,
       batch: notebook.batch,
       sourcePath: notebook.sourcePath,
+      sourceFingerprint: notebook.sourceFingerprint ?? old?.sourceFingerprint,
       hasPdf: !!notebook.source,
       archiveFor: archiveFor ?? old?.archiveFor,
       createdAt: old?.createdAt ?? now,
@@ -264,6 +268,7 @@ async function saveWorkspaceDocumentImpl(
       scene: notebook.scene,
       zotero: notebook.zotero,
       bookmarks: notebook.bookmarks,
+      musicPlayer: notebook.musicPlayer,
     };
     store.put(record);
     if (activate && !archiveFor && !old?.archiveFor)
@@ -308,6 +313,7 @@ export async function loadWorkspaceDocument(id: string, track = true) {
     name: meta.documentName || meta.name,
     batch: meta.batch,
     sourcePath: meta.sourcePath,
+    sourceFingerprint: meta.sourceFingerprint,
     source: source.source,
     pages: meta.pageIds.map((id) => pages.get(id)!),
     scratchPapers: meta.scratchPapers?.map(({ pageId, ...p }) => ({
@@ -318,6 +324,7 @@ export async function loadWorkspaceDocument(id: string, track = true) {
     scene: meta.scene,
     zotero: meta.zotero,
     bookmarks: meta.bookmarks,
+    musicPlayer: meta.musicPlayer,
   };
   if (
     !validNotebook(notebook) ||
@@ -331,6 +338,37 @@ export async function loadWorkspaceDocument(id: string, track = true) {
   return { meta, notebook };
 }
 let bootstrapping: ReturnType<typeof bootstrapWorkspaceImpl> | undefined;
+/** Index legacy sources one at a time; never retain all PDFs or load their page objects. */
+export async function findWorkspacePdfProjects(path: string, fingerprint: string) {
+  const { documents } = await listWorkspace();
+  const db = await database();
+  const matches: WorkspaceDocument[] = [];
+  for (const meta of documents) {
+    if (!meta.sourceFingerprint && meta.hasPdf !== false) {
+      const source = await request<{ source: Uint8Array | null } | undefined>(
+        db.transaction('sources').objectStore('sources').get(meta.id),
+      );
+      if (source?.source?.length) {
+        meta.sourceFingerprint = await pdfFingerprint(source.source);
+        const tx = db.transaction('documents', 'readwrite'),
+          done = finished(tx);
+        const store = tx.objectStore('documents');
+        const latest = await request<WorkspaceDocument | undefined>(store.get(meta.id));
+        if (latest)
+          store.put({
+            ...latest,
+            sourceFingerprint: latest.sourceFingerprint ?? meta.sourceFingerprint,
+          });
+        await done;
+        if (saved?.id === meta.id && !saved.notebook.sourceFingerprint)
+          saved.notebook = { ...saved.notebook, sourceFingerprint: meta.sourceFingerprint };
+      }
+    }
+    if (samePdfPath(meta.sourcePath, path) || meta.sourceFingerprint === fingerprint)
+      matches.push(meta);
+  }
+  return matches.sort((a, b) => b.updatedAt - a.updatedAt);
+}
 export function bootstrapWorkspace() {
   return (bootstrapping ??= bootstrapWorkspaceImpl().finally(() => {
     bootstrapping = undefined;

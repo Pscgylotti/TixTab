@@ -1,6 +1,7 @@
 import { instrumentVoice } from './musicInstruments';
 import type { ScoreNote } from './musicScore';
-/** Bounded oscillator voices and a short scheduling horizon; no soundfont/model heap. */
+import captureUrl from './scoreCapture.worklet.js?url&no-inline';
+/** Native MIDI output or bounded oscillator voices, sharing the score transport. */
 export class MusicAudio {
   private context: AudioContext | null = null;
   private gain: GainNode | null = null;
@@ -12,13 +13,36 @@ export class MusicAudio {
   private stream: MediaStream | null = null;
   private analyser: AnalyserNode | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
+  private capture: AudioWorkletNode | null = null;
+  private captureSink: GainNode | null = null;
+  private captureLoaded = false;
   private disposed = false;
   private micGeneration = 0;
   private generation = 0;
   private instrument = 0;
   private waves = new Map<number, PeriodicWave>();
+  private output = '';
+  private volume = 0.6;
+  private nativeToken = '';
+  private nativeOff: (() => void) | undefined;
+  setOutput(output: string) {
+    if (this.output !== output) this.stop();
+    this.output = output;
+  }
+  private configureMidi() {
+    if (this.nativeToken)
+      void window.surfaceDesktop?.musicOutput
+        ?.run({
+          action: 'configure',
+          token: this.nativeToken,
+          program: this.instrument,
+          volume: this.volume,
+        })
+        .catch(() => {});
+  }
   setInstrument(program: number) {
     if (Number.isInteger(program) && program >= 0 && program <= 127) this.instrument = program;
+    this.configureMidi();
   }
   async ready() {
     if (this.disposed) throw Error('cancelled');
@@ -32,6 +56,8 @@ export class MusicAudio {
     return this.context;
   }
   setVolume(value: number) {
+    this.volume = Math.max(0, Math.min(1, value));
+    this.configureMidi();
     if (this.gain)
       this.gain.gain.setValueAtTime(
         Math.max(0, Math.min(1, value)) * 0.22,
@@ -41,8 +67,13 @@ export class MusicAudio {
   currentBeat() {
     return (
       this.startBeat +
-      (this.context
-        ? (Math.max(0, this.context.currentTime - this.startTime) * this.tempo) / 60
+      (this.output || this.context
+        ? (Math.max(
+            0,
+            (this.output ? performance.now() / 1000 : this.context!.currentTime) - this.startTime,
+          ) *
+            this.tempo) /
+          60
         : 0)
     );
   }
@@ -50,6 +81,12 @@ export class MusicAudio {
     this.generation++;
     clearInterval(this.timer);
     this.timer = undefined;
+    const token = this.nativeToken;
+    this.nativeToken = '';
+    this.nativeOff?.();
+    this.nativeOff = undefined;
+    if (token)
+      void window.surfaceDesktop?.musicOutput?.run({ action: 'stop', token }).catch(() => {});
     for (const [voice, envelope] of this.voices) {
       try {
         voice.stop();
@@ -68,11 +105,60 @@ export class MusicAudio {
     duration: number,
     tick: (beat: number) => void,
     done: () => void,
+    failed: (error: string) => void = () => {},
   ) {
     this.stop();
     const generation = this.generation;
+    if (this.disposed) return false;
+    if (this.output) {
+      const bridge = window.surfaceDesktop?.musicOutput;
+      if (!bridge) throw Error('device-unavailable');
+      const token = crypto.randomUUID();
+      this.nativeToken = token;
+      this.volume = volume;
+      this.nativeOff = bridge.onState((event) => {
+        if (event.token !== token || generation !== this.generation) return;
+        this.stop();
+        if (event.state === 'ended') {
+          tick(duration);
+          done();
+        } else failed(event.error || 'device-unavailable');
+      });
+      try {
+        const result = await bridge.run({
+          action: 'play',
+          token,
+          output: this.output,
+          program: this.instrument,
+          volume,
+          notes: notes.map(({ midi, beat, duration, muted }) => ({ midi, beat, duration, muted })),
+          beat,
+          tempo,
+          duration,
+        });
+        if (generation !== this.generation) return false;
+        if (!result.ok || !Number.isFinite(result.startedAt))
+          throw Error(result.error || 'device-unavailable');
+        this.startBeat = beat;
+        this.tempo = tempo;
+        this.startTime = performance.now() / 1000 + (result.startedAt! - Date.now()) / 1000;
+        tick(beat);
+        this.timer = setInterval(() => {
+          const current = Math.min(duration, this.currentBeat());
+          tick(current);
+          if (current >= duration) {
+            this.stop();
+            done();
+          }
+        }, 40);
+        return true;
+      } catch (error) {
+        if (generation === this.generation) this.stop();
+        throw error;
+      }
+    }
     const ctx = await this.ready();
-    if (this.generation !== generation) return;
+    if (this.generation !== generation) return false;
     this.setVolume(volume);
     this.startTime = ctx.currentTime + 0.03;
     this.startBeat = beat;
@@ -130,7 +216,9 @@ export class MusicAudio {
       }
     };
     pump();
+    if (this.generation !== generation) return false;
     this.timer = setInterval(pump, 40);
+    return true;
   }
   async microphone() {
     this.stopMic();
@@ -146,12 +234,41 @@ export class MusicAudio {
     this.stream = stream;
     this.source = ctx.createMediaStreamSource(stream);
     this.analyser = ctx.createAnalyser();
-    this.analyser.fftSize = 2048;
+    this.analyser.fftSize = 16384;
+    this.analyser.smoothingTimeConstant = 0;
     this.source.connect(this.analyser);
     return { analyser: this.analyser, sampleRate: ctx.sampleRate };
   }
+  async streamMicrophone(onAudio: (samples: Float32Array, time: number) => void) {
+    await this.microphone();
+    const generation = this.micGeneration;
+    const ctx = this.context!;
+    if (!this.captureLoaded) {
+      await ctx.audioWorklet.addModule(captureUrl);
+      this.captureLoaded = true;
+    }
+    if (this.disposed || generation !== this.micGeneration) throw Error('cancelled');
+    this.capture = new AudioWorkletNode(ctx, 'tixtab-score-capture');
+    this.capture.port.onmessage = (event) => {
+      if (generation === this.micGeneration) onAudio(event.data.samples, event.data.time);
+    };
+    this.captureSink = ctx.createGain();
+    this.captureSink.gain.value = 0;
+    this.source!.connect(this.capture);
+    this.capture.connect(this.captureSink);
+    this.captureSink.connect(ctx.destination);
+  }
   stopMic() {
     this.micGeneration++;
+    if (this.capture) {
+      this.capture.port.onmessage = null;
+      this.capture.port.postMessage('stop');
+      this.capture.disconnect();
+      this.capture.port.close();
+      this.capture = null;
+    }
+    this.captureSink?.disconnect();
+    this.captureSink = null;
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
     this.source?.disconnect();

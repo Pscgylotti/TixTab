@@ -1,6 +1,116 @@
+.modal-scrim.local-document-scrim {
+  /* A foreground editor must remain usable above its background progress dock. */
+  z-index: 910;
+}
 .local-document-dialog {
-  width: min(760px, 96vw);
+  width: min(980px, 96vw);
   max-height: 90dvh;
+}
+.correction-adjustments {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--surface-sunken);
+  border-radius: var(--r-md);
+}
+.correction-adjustments label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+}
+.correction-adjustments input[type='range'] {
+  flex: 1;
+  min-width: 60px;
+}
+.correction-adjustments input[type='number'] {
+  width: 70px;
+}
+.correction-editor {
+  display: grid;
+  gap: 12px;
+}
+.correction-editor-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.correction-editor-toolbar button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.correction-editor-toolbar button[aria-pressed='true'] {
+  background: var(--accent);
+  color: white;
+}
+.correction-image-scroll {
+  overflow: auto;
+  max-height: 40dvh;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: #444;
+  padding: 14px;
+}
+.correction-edit-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.correction-guide {
+  fill: #4d87ff10;
+  stroke: #4d87ff;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.correction-control {
+  cursor: grab;
+  touch-action: none;
+  outline: none;
+}
+.correction-hit {
+  fill: transparent;
+}
+.correction-handle {
+  fill: white;
+  stroke: #4775db;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.correction-control:focus .correction-handle {
+  fill: #4775db;
+  stroke: white;
+}
+.correction-size-probe {
+  display: none;
+}
+.correction-comparison figure {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+}
+.correction-comparison figcaption {
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.correction-overlay {
+  position: relative;
+  height: 30dvh;
+  background: var(--surface-sunken);
+}
+.correction-overlay img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .local-document-dialog header,
 .local-document-dialog footer {

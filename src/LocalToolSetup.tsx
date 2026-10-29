@@ -13,7 +13,8 @@ export default function LocalToolSetup({
   onBusy: (busy: boolean) => void;
   onCancel?: (cancel: (() => void) | null) => void;
 }) {
-  const runtime = engine === 'uvdoc' ? 'openvino' : engine === 'homr' ? 'homr' : null;
+  const geometric = engine === 'geometry' || engine === 'docaligner' || engine === 'uvdoc';
+  const runtime = geometric ? 'openvino' : engine === 'audiveris' ? null : engine;
   const state = useRuntimeInstall();
   const [ready, setReady] = useState(false),
     [busy, setBusy] = useState(false),
@@ -40,14 +41,15 @@ export default function LocalToolSetup({
         b.documentTools.run({ action: 'status' }),
         b.models?.list(),
       ]);
-      const available =
-        engine === 'uvdoc'
-          ? r.data?.document
-          : engine === 'homr'
-            ? r.data?.homr
-            : r.data?.audiveris;
+      const available = geometric
+        ? r.data?.document
+        : r.data?.[engine as 'homr' | 'copista' | 'audiveris'];
       if (!a.signal.aborted)
-        setReady(!!available && !!models?.some((m) => m.id === engine && m.source !== 'missing'));
+        setReady(
+          !!available &&
+            (engine === 'geometry' ||
+              !!models?.some((m) => m.id === engine && m.source !== 'missing')),
+        );
     })().catch(() => {});
     return () => {
       alive.current = false;
@@ -80,7 +82,10 @@ export default function LocalToolSetup({
       }
       a.signal.throwIfAborted();
       setStatus(t('正在下载本地组件…'));
-      if (!(await b.models.list()).some((m) => m.id === engine && m.source !== 'missing')) {
+      if (
+        engine !== 'geometry' &&
+        !(await b.models.list()).some((m) => m.id === engine && m.source !== 'missing')
+      ) {
         const r = await b.models.run(engine, 'install');
         if (!r.ok) throw Error(r.error || 'missing-model');
       }
@@ -113,11 +118,17 @@ export default function LocalToolSetup({
     <section className="local-tool-setup">
       <p>
         {t(
-          engine === 'uvdoc'
-            ? '复用 OpenVINO 环境，UVDoc 支持 CPU / GPU / NPU；处理结束后释放模型。'
-            : engine === 'audiveris'
-              ? 'Audiveris 使用随组件提供的 Java，按需运行，完成后退出。'
-              : 'homr 使用本地 ONNX 模型，需要兼容的 Python 环境。',
+          engine === 'geometry'
+            ? '几何矫正复用现有本地环境，无需下载模型。'
+            : engine === 'docaligner'
+              ? 'DocAligner 自动检测证件与文档四角，支持手动修正，复用 OpenVINO 环境。'
+              : engine === 'uvdoc'
+                ? '复用 OpenVINO 环境，UVDoc 支持 CPU / GPU / NPU；处理结束后释放模型。'
+                : engine === 'audiveris'
+                  ? 'Audiveris 使用随组件提供的 Java，按需运行，完成后退出。'
+                  : engine === 'copista'
+                    ? 'Copista 28M 复用 homr 的 Python 环境，在本地 CPU 识谱；每页完成后释放模型。'
+                    : 'homr 使用本地 ONNX 模型，需要兼容的 Python 环境。',
         )}
       </p>
       <button
@@ -129,11 +140,17 @@ export default function LocalToolSetup({
             ? '已就绪'
             : busy
               ? '正在准备…'
-              : engine === 'uvdoc'
-                ? '准备本地组件 · 30 MiB'
-                : engine === 'audiveris'
-                  ? '准备本地组件 · 81 MiB'
-                  : '准备本地组件 · 134 MiB',
+              : engine === 'geometry'
+                ? '准备几何矫正组件'
+                : engine === 'docaligner'
+                  ? '准备 DocAligner · 13 MiB'
+                  : engine === 'uvdoc'
+                    ? '准备本地组件 · 30 MiB'
+                    : engine === 'audiveris'
+                      ? '准备本地组件 · 81 MiB'
+                      : engine === 'copista'
+                        ? '准备 Copista 28M · 模型 119 MiB，另需运行组件'
+                        : '准备本地组件 · 134 MiB',
         )}
       </button>
       {busy && <progress value={progress} max={1} />}

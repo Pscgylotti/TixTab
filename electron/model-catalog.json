@@ -796,6 +796,49 @@
       "bytes": 140262754
     },
     {
+      "id": "copista",
+      "name": "Copista 28M · copisteria 1.3.4",
+      "feature": "music",
+      "revision": "44464d11234a22ba23634ec8eb1e31e3b012021a",
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/kobimusic/copista-28m",
+      "device": "CPU · PyTorch · shared homr Python",
+      "optional": true,
+      "files": [
+        {
+          "path": "copista/source.zip",
+          "bytes": 856762,
+          "sha256": "73cc7c77c5e369d2eb54df8fe696890f47543fe5c927ac1821fa24e1927a6b24",
+          "url": "https://codeload.github.com/kobimusic/copisteria/zip/c685f280914d91a694494588d9f6a376d7917eba"
+        },
+        {
+          "path": "copista/evidence-2m.pt",
+          "bytes": 8145299,
+          "sha256": "7a3eb0362b44016e941680c5df1e133239576592ab134057c3dbac8e9f3b8838",
+          "url": "https://huggingface.co/kobimusic/copista-28m/resolve/44464d11234a22ba23634ec8eb1e31e3b012021a/evidence-2m.pt"
+        },
+        {
+          "path": "copista/detector-28m.pt",
+          "bytes": 115352175,
+          "sha256": "9f1db282271fb1064461387da4a2e15de14b099c49b619c21429cdc45be85cfe",
+          "url": "https://huggingface.co/kobimusic/copista-28m/resolve/44464d11234a22ba23634ec8eb1e31e3b012021a/small/v7_obj-recall-30m_best.pt"
+        },
+        {
+          "path": "copista/LICENSE",
+          "bytes": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "url": "https://huggingface.co/kobimusic/copista-28m/resolve/44464d11234a22ba23634ec8eb1e31e3b012021a/LICENSE"
+        },
+        {
+          "path": "copista/NOTICE",
+          "bytes": 360,
+          "sha256": "738faff0f4c7d22bb4e768f48ae8c165c9e56a9c23c195079cd58ccda8326b6f",
+          "url": "https://huggingface.co/kobimusic/copista-28m/resolve/44464d11234a22ba23634ec8eb1e31e3b012021a/NOTICE"
+        }
+      ],
+      "bytes": 124365954
+    },
+    {
       "id": "hymt2-1-8b",
       "name": "Hy-MT2 1.8B · Q4_K_M",
       "feature": "translation",
@@ -838,6 +881,62 @@
         }
       ],
       "bytes": 89469524
+    },
+    {
+      "id": "docaligner",
+      "name": "DocAligner · FastViT T8",
+      "feature": "document",
+      "revision": "1.1.1",
+      "license": "Apache-2.0",
+      "source": "https://github.com/DocsaidLab/DocAligner",
+      "device": "OpenVINO CPU / GPU / NPU",
+      "optional": true,
+      "files": [
+        {
+          "path": "docaligner/fastvit_t8.onnx",
+          "bytes": 13167814,
+          "sha256": "950070fd4a46e25d46db7c35d0ed77612d9063f70d4543c7c504f0da6a943a89",
+          "url": "https://github.com/DocsaidLab/DocAligner/releases/download/1.1.1/fastvit_t8_h_e_bifpn_256_fp32.onnx"
+        },
+        {
+          "path": "docaligner/LICENSE",
+          "bytes": 11357,
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "url": "https://raw.githubusercontent.com/DocsaidLab/DocAligner/1.1.1/LICENSE"
+        }
+      ],
+      "bytes": 13179171
+    },
+    {
+      "id": "matchmaker",
+      "name": "Matchmaker · reference soundfont & synthesizer",
+      "feature": "music",
+      "revision": "0.4.0GeneralUser2.0.3",
+      "license": "Apache-2.0 / LGPL-2.1 / GeneralUser GS License v2.0",
+      "source": "https://github.com/pymatchmaker/matchmaker",
+      "device": "CPU · shared homr Python",
+      "optional": true,
+      "files": [
+        {
+          "path": "matchmaker/fluidsynth.zip",
+          "bytes": 2727529,
+          "sha256": "fab7a2e4b85675b66970f97a39bbc239729c5e0f237198b5922a6a73cbc8677c",
+          "url": "https://github.com/FluidSynth/fluidsynth/releases/download/v2.6.1/fluidsynth-v2.6.1-win10-x64-cpp11.zip"
+        },
+        {
+          "path": "matchmaker/GeneralUser-GS.sf2",
+          "bytes": 32319396,
+          "sha256": "9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe",
+          "url": "https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/684543d5e5efaef08d02be50dcda8d552478fa60/GeneralUser-GS.sf2"
+        },
+        {
+          "path": "matchmaker/SOUNDFONT-LICENSE.txt",
+          "bytes": 2317,
+          "sha256": "7b32efefdf95ce38a043799f0659853ddc00fbaa14d8c50f0aca16b9b8b405be",
+          "url": "https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/684543d5e5efaef08d02be50dcda8d552478fa60/documentation/LICENSE.txt"
+        }
+      ],
+      "bytes": 35049242
     }
   ]
 }

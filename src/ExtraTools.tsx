@@ -1,9 +1,11 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { Wrench, Images, ScanLine, ScanText, Music } from 'lucide-react';
 import type { Notebook, Page } from './model';
+import type { MusicPlayerState } from './musicPlayerState';
 import type { PDFDocumentProxy } from './pdfTypes';
 import AnchoredPopover from './AnchoredPopover';
 import { t } from './i18n';
+import FeatureBoundary from './FeatureBoundary';
 const LocalDocumentToolDialog = lazy(() => import('./LocalDocumentToolDialog'));
 const MusicPlayer = lazy(() => import('./MusicPlayer'));
 const ImageExportDialog = lazy(() => import('./ImageExportDialog'));
@@ -16,6 +18,9 @@ export default function ExtraTools({
   onNavigate,
   onBackground,
   onJobClose,
+  active = true,
+  presentation = false,
+  onPlayerChange,
 }: {
   notebook: Notebook;
   pdf: PDFDocumentProxy | null;
@@ -25,11 +30,15 @@ export default function ExtraTools({
   onNavigate: (index: number) => void;
   onBackground?: (hidden: boolean) => void;
   onJobClose?: () => void;
+  active?: boolean;
+  presentation?: boolean;
+  onPlayerChange: (change: Partial<MusicPlayerState>) => void;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null),
     [images, setImages] = useState(false),
-    [local, setLocal] = useState<'correct' | 'music' | null>(null),
-    [player, setPlayer] = useState(false);
+    [local, setLocal] = useState<'correct' | 'music' | null>(null);
+  const player = notebook.musicPlayer?.open ?? false;
+  const setPlayer = (open: boolean) => onPlayerChange({ open });
   return (
     <>
       <button
@@ -95,7 +104,14 @@ export default function ExtraTools({
         </AnchoredPopover>
       )}
       {local && (
-        <Suspense fallback={null}>
+        <FeatureBoundary
+          key={local}
+          name={t(local === 'correct' ? '文档矫正' : '五线谱识别')}
+          onClose={() => {
+            setLocal(null);
+            onJobClose?.();
+          }}
+        >
           <LocalDocumentToolDialog
             kind={local}
             notebook={notebook}
@@ -109,22 +125,31 @@ export default function ExtraTools({
             onVisibility={onBackground}
             onRecognized={() => setPlayer(true)}
           />
-        </Suspense>
+        </FeatureBoundary>
       )}
-      {player && (
-        <Suspense fallback={null}>
+      {player && active && (
+        <FeatureBoundary name={t('五线谱播放器')} onClose={() => setPlayer(false)}>
           <MusicPlayer
+            key={notebook.batch?.itemId ?? notebook.pages[0].id}
             notebook={notebook}
+            presentation={presentation}
+            onStateChange={onPlayerChange}
             onApply={(pages) => {
               void onApply(pages, notebook.pages, notebook);
             }}
             onNavigate={onNavigate}
             onClose={() => setPlayer(false)}
           />
-        </Suspense>
+        </FeatureBoundary>
       )}
       {images && (
-        <Suspense fallback={null}>
+        <FeatureBoundary
+          name={t('提取图片')}
+          onClose={() => {
+            setImages(false);
+            onJobClose?.();
+          }}
+        >
           <ImageExportDialog
             notebook={notebook}
             pdf={pdf}
@@ -135,7 +160,7 @@ export default function ExtraTools({
             }}
             onVisibility={onBackground}
           />
-        </Suspense>
+        </FeatureBoundary>
       )}
     </>
   );

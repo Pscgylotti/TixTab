@@ -1,0 +1,18 @@
+{
+  "package": "pymatchmaker",
+  "version": "0.4.0",
+  "commit": "eacec8128e80fc6de980ac1371f6368176633b38",
+  "source": "https://codeload.github.com/pymatchmaker/matchmaker/zip/eacec8128e80fc6de980ac1371f6368176633b38",
+  "sourceSha256": "29725d0aa3c26d680401b5b3f0a043253e3cd1c92a732de0758cf1c0b2881ec2",
+  "wheel": "pymatchmaker-0.4.0-cp312-cp312-win_amd64.whl",
+  "sha256": "58cc47bdcde0da681388abaefd0847c0253f67a89d51854b57e831c98e4467a2",
+  "build": {
+    "python": "CPython 3.12 x64",
+    "compiler": "MSVC 2022",
+    "Cython": "3.1.3",
+    "setuptools": "80.9.0",
+    "wheel": "0.46.3"
+  },
+  "patches": [],
+  "license": "Apache-2.0"
+}

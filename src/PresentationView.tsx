@@ -8,7 +8,7 @@ import ReadingView from './ReadingView';
 import { t } from './i18n';
 import './presentation.css';
 import { NavigationContext } from './DocumentNavigator';
-import { useScoreCursor } from './musicTransport';
+import { scoreViewportIndex, useScoreCursor } from './musicTransport';
 
 const noop = () => {};
 export default function PresentationView({
@@ -60,11 +60,13 @@ export default function PresentationView({
   useEffect(() => {
     if (!cursor.seek) return;
     const at = pages.findIndex((p) => p.id === cursor.pageId);
-    if (at < 0 || at === current.current || (mode === 'dual' && at === current.current + 1)) return;
-    const direction = at > current.current ? 1 : -1;
-    current.current = at;
+    if (at < 0) return;
+    const next = scoreViewportIndex(mode, current.current, at);
+    if (next === current.current) return;
+    const direction = next > current.current ? 1 : -1;
+    current.current = next;
     setTurn((v) => ({ serial: v.serial + 1, direction }));
-    setIndex(at);
+    setIndex(next);
   }, [cursor.pageId, cursor.seek, pages, mode]);
   useLayoutEffect(() => {
     const app = document.getElementById('root');
@@ -106,6 +108,11 @@ export default function PresentationView({
   }, [fullscreen]);
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
+      if (
+        (event.target as HTMLElement)?.closest('.music-player-presentation') &&
+        !['Escape', 'F11'].includes(event.key)
+      )
+        return;
       event.preventDefault();
       event.stopImmediatePropagation();
       if (event.key === 'Escape' || event.key === 'F11') close.current();

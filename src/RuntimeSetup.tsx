@@ -7,12 +7,14 @@ import RuntimeInstallProgress, { runtimeErrors } from './RuntimeInstallProgress'
 import RuntimeDownloadSettings from './RuntimeDownloadSettings';
 export { runtimeErrors, runtimeStages } from './RuntimeInstallProgress';
 
-const ids: RuntimeId[] = ['openvino', 'speech', 'pdf', 'homr'];
+const ids: RuntimeId[] = ['openvino', 'speech', 'pdf', 'homr', 'copista', 'matchmaker'];
 const labels = {
   openvino: '公式、翻译、OCR、文档矫正与朗读加速',
   speech: 'SenseVoice / Whisper 语音输入',
   pdf: 'PDF 原生元素编辑',
   homr: 'homr 五线谱识别',
+  copista: 'Copista 28M 五线谱识别（复用 homr 环境）',
+  matchmaker: 'Matchmaker 实时跟谱（复用 homr 环境）',
 };
 
 export default function RuntimeSetup() {

@@ -5,7 +5,7 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:systemai="http://schemas.microsoft.com/appx/manifest/systemai/windows10"
   IgnorableNamespaces="uap uap10 rescap systemai">
-  <Identity Name="TixTab.WindowsAI.Ocr" Publisher="CN=TixTab" Version="0.3.8.0" ProcessorArchitecture="x64" />
+  <Identity Name="TixTab.WindowsAI.Ocr" Publisher="CN=TixTab" Version="0.3.9.0" ProcessorArchitecture="x64" />
   <Properties><uap10:AllowExternalContent>true</uap10:AllowExternalContent><DisplayName>TixTab Windows AI OCR</DisplayName><PublisherDisplayName>TixTab</PublisherDisplayName><Logo>Assets\Logo.png</Logo></Properties>
   <Resources><Resource Language="en-us" /><Resource Language="zh-cn" /></Resources>
   <Dependencies><TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.26100.0" MaxVersionTested="10.0.26226.0" /></Dependencies>

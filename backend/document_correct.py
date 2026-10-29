@@ -10,6 +10,10 @@ import sys
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from document_geometry import (detect_corners, rectify, rotate, projection_angle,
+                               flatten_book, mesh_warp, lighting, docaligner)
+
 os.environ.setdefault('OMP_NUM_THREADS', '2')
 os.environ.setdefault('MKL_NUM_THREADS', '2')
 import cv2
@@ -72,7 +76,7 @@ def perspective(image):
     return image, False
 
 
-def unwarp(image, model_file, device, cache_directory):
+def unwarp(image, model_file, device, cache_directory, strength=1.):
     import openvino as ov
     from openvino import opset13 as op
     core = ov.Core()
@@ -124,6 +128,10 @@ def unwarp(image, model_file, device, cache_directory):
     del compiled, prepared, grid_model, model
     if grid.shape != (1, 2, 45, 31) or not np.isfinite(grid).all():
         raise ValueError('model-output')
+    if strength != 1:
+        xx, yy = np.meshgrid(np.linspace(-1, 1, 31), np.linspace(-1, 1, 45))
+        identity = np.stack([xx, yy])[None].astype(np.float32)
+        grid = identity + (grid-identity)*strength
     # Match the source model's align_corners and zero padding exactly. These
     # cheap, image-sized operations do not constrain the NPU graph's shape.
     source = op.parameter([1, 3, height, width], np.float32)
@@ -145,22 +153,62 @@ def unwarp(image, model_file, device, cache_directory):
 
 def run(directory, model_file, cache_directory):
     request = json.loads((directory/'request.json').read_text('utf-8'))
-    image = cv2.imread(str(directory/'input.png'), cv2.IMREAD_COLOR)
+    image = cv2.imdecode(np.fromfile(directory/'input.png', np.uint8), cv2.IMREAD_COLOR)
     if image is None or image.shape[0]*image.shape[1] > 4_000_000:
         raise ValueError('image-size')
     cv2.setNumThreads(2)
-    mode = request.get('mode')
-    if mode not in ['scan', 'photo', 'auto']:
+    mode = request.get('mode', 'auto')
+    if mode not in ['scan', 'photo', 'auto', 'card', 'book', 'wrinkle', 'manual']:
+        raise ValueError('invalid')
+    options = request.get('options') or {}
+    method = options.get('method', 'lines' if mode == 'scan' else 'uvdoc')
+    if method not in ['lines', 'projection', 'perspective', 'book', 'uvdoc', 'docaligner', 'manual']:
+        raise ValueError('invalid')
+    strength = float(options.get('strength', 1))
+    angle_adjust = float(options.get('rotation', 0))
+    illumination = float(options.get('lighting', 0))
+    aspect = options.get('aspect', 'auto')
+    if (not 0 <= strength <= 1 or not -180 <= angle_adjust <= 180 or
+        not 0 <= illumination <= 1 or aspect not in ['auto', 'id-landscape', 'id-portrait', 'a4', 'letter', 'square']):
         raise ValueError('invalid')
     warped = False
     metrics = dict(device='CPU')
-    if mode in ['photo', 'auto']:
-        image, warped = perspective(image)
-        image, metrics = unwarp(image, model_file, request.get('device', 'AUTO'), cache_directory)
-    image, angle = deskew(image)
-    if not cv2.imwrite(str(directory/'output.png'), image):
+    corners = options.get('corners')
+    if method == 'docaligner' and corners is None:
+        corners, metrics = docaligner(image, model_file, request.get('device', 'AUTO'), cache_directory)
+    if method == 'perspective' and corners is None:
+        corners = detect_corners(image)
+        if corners is None:
+            raise ValueError('no-document')
+    if options.get('mesh') is not None:
+        if method != 'manual' or corners is not None:
+            raise ValueError('invalid-geometry')
+        image = mesh_warp(image, options['mesh'])
+    if corners is not None:
+        image = rectify(image, corners, aspect)
+        warped = True
+    elif aspect != 'auto':
+        image = rectify(image, [[0, 0], [1, 0], [1, 1], [0, 1]], aspect)
+    angle = 0.
+    curved = False
+    if method == 'uvdoc':
+        image, metrics = unwarp(image, model_file, request.get('device', 'AUTO'), cache_directory, strength)
+    elif method == 'book':
+        image, curved = flatten_book(image, strength)
+    elif method == 'projection':
+        angle = projection_angle(image)
+        image = rotate(image, angle)
+    elif method == 'lines':
+        _, angle = deskew(image)
+        image = rotate(image, angle)
+    image = lighting(rotate(image, angle_adjust), illumination)
+    success, encoded = cv2.imencode('.png', image)
+    if not success:
         raise ValueError('image-write')
-    return dict(angle=round(angle, 3), perspective=warped, model='UVDoc' if mode!='scan' else 'scan-deskew',
+    encoded.tofile(directory/'output.png')
+    return dict(angle=round(angle, 3), perspective=warped, corners=corners, curved=curved,
+                model={'uvdoc': 'UVDoc', 'docaligner': 'DocAligner FastViT T8'}.get(method, 'geometry-'+method),
+                warning='no-text-curves' if method == 'book' and not curved else None,
                 width=image.shape[1], height=image.shape[0], **metrics)
 
 
@@ -172,5 +220,5 @@ if __name__ == '__main__':
         import traceback
         traceback.print_exc()
         code = str(error)
-        result = dict(ok=False, error=code if code in ['image-size', 'invalid', 'model-output', 'image-write', 'device-unavailable', 'device-incompatible'] else 'correction-failed')
+        result = dict(ok=False, error=code if code in ['image-size', 'invalid', 'invalid-geometry', 'no-document', 'model-output', 'image-write', 'device-unavailable', 'device-incompatible'] else 'correction-failed')
     (directory/'result.json').write_text(json.dumps(result), encoding='utf-8')

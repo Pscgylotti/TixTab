@@ -17,6 +17,11 @@ function createLocalDocumentTools({ root, backend, resolveModel, spawnProcess = 
   const diagnostics = new WeakMap();
   const python = (kind) => path.join(root, kind + '-runtime', 'Scripts', 'python.exe');
   const audiverisRoot = path.join(root, 'audiveris-5.11.0');
+  const copista = require('./copista-component.cjs').createCopistaComponent({
+    root,
+    resolveModel,
+    command,
+  });
   async function files(directory, depth = 0) {
     if (depth > 16) throw Error('directory-limit');
     const found = [];
@@ -203,13 +208,16 @@ function createLocalDocumentTools({ root, backend, resolveModel, spawnProcess = 
           data: {
             document: existsSync(python('openvino')),
             homr: existsSync(python('homr')),
+            copista: copista.ready(),
             audiveris: !!(await audiveris()),
           },
         };
       if (disposed || job) return { ok: false, error: disposed ? 'cancelled' : 'busy' };
       if (
         !['prepare', 'correct', 'recognize'].includes(request?.action) ||
-        !['uvdoc', 'audiveris', 'homr'].includes(request?.engine)
+        !['geometry', 'docaligner', 'uvdoc', 'audiveris', 'homr', 'copista'].includes(
+          request?.engine,
+        )
       )
         return { ok: false, error: 'invalid' };
       const current = { owner, id: request.id, child: null, cancelled: false, logs: '' };
@@ -220,6 +228,7 @@ function createLocalDocumentTools({ root, backend, resolveModel, spawnProcess = 
         if (request.action === 'prepare') {
           if (request.engine === 'audiveris') await prepareAudiveris(current);
           else if (request.engine === 'homr') await prepareHomr(current);
+          else if (request.engine === 'copista') await copista.prepare(current);
           else if (!existsSync(python('openvino'))) throw Error('runtime-missing');
           return { ok: true };
         }
@@ -244,17 +253,45 @@ function createLocalDocumentTools({ root, backend, resolveModel, spawnProcess = 
         directory = await fs.mkdtemp(path.join(root, 'document-job-'));
         await fs.writeFile(path.join(directory, 'input.png'), bytes);
         if (request.action === 'correct') {
-          if (request.engine !== 'uvdoc' || !['scan', 'photo', 'auto'].includes(request.mode))
+          if (
+            !['geometry', 'docaligner', 'uvdoc'].includes(request.engine) ||
+            !['scan', 'photo', 'auto', 'card', 'book', 'wrinkle', 'manual'].includes(request.mode)
+          )
             throw Error('invalid');
           if (!existsSync(python('openvino'))) throw Error('runtime-missing');
           if (!['AUTO', 'CPU', 'GPU', 'NPU'].includes(request.device || 'AUTO'))
             throw Error('invalid');
-          const model = request.mode === 'scan' ? '' : await resolveModel('uvdoc/inference.onnx');
-          if (request.mode !== 'scan' && !model) throw Error('missing-model');
+          const options = request.options || {};
+          if (JSON.stringify(options).length > 6000) throw Error('invalid');
+          const method = options.method || (request.mode === 'scan' ? 'lines' : 'uvdoc');
+          if (
+            ![
+              'lines',
+              'projection',
+              'perspective',
+              'book',
+              'uvdoc',
+              'docaligner',
+              'manual',
+            ].includes(method)
+          )
+            throw Error('invalid');
+          const needsModel = ['uvdoc', 'docaligner'].includes(method);
+          if (needsModel && method !== request.engine) throw Error('invalid');
+          const model = !needsModel
+            ? ''
+            : await resolveModel(
+                method === 'uvdoc' ? 'uvdoc/inference.onnx' : 'docaligner/fastvit_t8.onnx',
+              );
+          if (needsModel && !model) throw Error('missing-model');
           await fs.mkdir(path.join(root, 'uvdoc-cache'), { recursive: true });
           await fs.writeFile(
             path.join(directory, 'request.json'),
-            JSON.stringify({ mode: request.mode, device: request.device || 'AUTO' }),
+            JSON.stringify({
+              mode: request.mode,
+              device: request.device || 'AUTO',
+              options: { ...options, method },
+            }),
           );
           await command(
             current,
@@ -316,6 +353,44 @@ function createLocalDocumentTools({ root, backend, resolveModel, spawnProcess = 
           return {
             ok: true,
             data: { musicxml: xml[0].data.toString('utf8'), width, height, engine: 'audiveris' },
+          };
+        }
+        if (request.engine === 'copista') {
+          const component = await copista.prepare(current);
+          await command(
+            current,
+            component.python,
+            [
+              '-I',
+              '-X',
+              'utf8',
+              path.join(backend, 'copista_runner.py'),
+              directory,
+              component.source,
+              component.detector,
+              component.evidence,
+            ],
+            directory,
+          );
+          const result = JSON.parse(
+            (await boundedFile(path.join(directory, 'result.json'), 4 * 1024 * 1024)).toString(
+              'utf8',
+            ),
+          );
+          if (!result.ok) return result;
+          const musicxml = await boundedFile(
+            path.join(directory, 'input.musicxml'),
+            4 * 1024 * 1024,
+          );
+          return {
+            ok: true,
+            data: {
+              ...result.data,
+              musicxml: musicxml.toString('utf8'),
+              width,
+              height,
+              engine: 'copista',
+            },
           };
         }
         if (request.engine !== 'homr') throw Error('invalid');

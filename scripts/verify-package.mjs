@@ -132,6 +132,14 @@ for (const name of [
   'homr_runner.py',
   'homr_layout.py',
   'requirements-homr.txt',
+  'requirements-copista.txt',
+  'copista_runner.py',
+  'copista_layout.py',
+  'document_geometry.py',
+  'matchmaker_runner.py',
+  'requirements-matchmaker.txt',
+  'wheels/pymatchmaker-0.4.0-cp312-cp312-win_amd64.whl',
+  'wheels/matchmaker-build.json',
 ])
   assert.deepEqual(
     readFileSync(join(dirname(dirname(archive)), 'backend', name)),
@@ -185,10 +193,15 @@ assert.ok(
   'Bundled Pinyin dictionary missing',
 );
 const catalog = json('electron/model-catalog.json');
-assert.equal(catalog.models.length, 19);
+assert.deepEqual(
+  catalog,
+  JSON.parse(readFileSync('electron/model-catalog.json', 'utf8')),
+  'Packaged model catalog differs from the validated build source',
+);
 assert.equal(
-  catalog.models.reduce((n, m) => n + m.files.length, 0),
-  71,
+  entries.filter((name) => /^\/dist\/assets\/scoreCapture\.worklet-[^/]+\.js$/.test(name)).length,
+  1,
+  'Continuous score capture worklet must ship as a local file',
 );
 for (const name of [
   'native_tesseract.py',

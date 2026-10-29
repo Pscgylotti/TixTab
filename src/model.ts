@@ -2,6 +2,7 @@ import type { ScratchPaper } from './scratchPaper';
 import { validOcr, type OcrAnnotation } from './ocrLayout';
 import { validNativeEdits, type NativePdfEdit } from './pdfNativeTypes';
 import { validMusicScore, type MusicScore } from './musicScore';
+import { validMusicPlayerState, type MusicPlayerState } from './musicPlayerState';
 export type Tool =
   | 'pen'
   | 'ballpoint'
@@ -130,6 +131,8 @@ export interface Notebook {
   source: Uint8Array | null;
   /** Local workspace association; omitted from portable project exports. */
   sourcePath?: string;
+  /** Identity of the original PDF, independent of edits to the embedded source. */
+  sourceFingerprint?: string;
   pages: Page[];
   scratchPapers?: ScratchPaper[];
   activeScratchId?: string;
@@ -137,6 +140,7 @@ export interface Notebook {
   zotero?: ZoteroSource;
   bookmarks?: { id: string; pageId: string; title: string }[];
   batch?: { id: string; title: string; itemId: string };
+  musicPlayer?: MusicPlayerState;
 }
 export const uid = () => crypto.randomUUID();
 export const blankPage = (width = 595.28, height = 841.89): Page => ({
@@ -258,6 +262,12 @@ export function validNotebook(value: unknown): value is Notebook {
   )
     return false;
   if (n.zotero !== undefined && !validZoteroSource(n.zotero)) return false;
+  if (n.musicPlayer !== undefined && !validMusicPlayerState(n.musicPlayer)) return false;
+  if (
+    n.sourceFingerprint !== undefined &&
+    (typeof n.sourceFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(n.sourceFingerprint))
+  )
+    return false;
   if (
     n.sourcePath !== undefined &&
     (typeof n.sourcePath !== 'string' || n.sourcePath.length > 32767)

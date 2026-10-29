@@ -1,12 +1,34 @@
 import { abortWait } from './abortWait';
 import { uid } from './model';
-export type LocalToolEngine = 'uvdoc' | 'audiveris' | 'homr';
+export type LocalToolEngine =
+  'geometry' | 'docaligner' | 'uvdoc' | 'audiveris' | 'homr' | 'copista';
+export type CorrectionMode = 'auto' | 'scan' | 'photo' | 'card' | 'book' | 'wrinkle' | 'manual';
+export type CorrectionPoint = [number, number];
+export interface CorrectionOptions {
+  method: 'lines' | 'projection' | 'perspective' | 'book' | 'uvdoc' | 'docaligner' | 'manual';
+  aspect: 'auto' | 'id-landscape' | 'id-portrait' | 'a4' | 'letter' | 'square';
+  rotation: number;
+  strength: number;
+  lighting: number;
+  corners?: CorrectionPoint[];
+  mesh?: CorrectionPoint[];
+}
+export const defaultCorrection: CorrectionOptions = {
+  method: 'projection',
+  aspect: 'auto',
+  rotation: 0,
+  strength: 1,
+  lighting: 0,
+};
+export const correctionEngine = (options: CorrectionOptions): LocalToolEngine =>
+  options.method === 'uvdoc' || options.method === 'docaligner' ? options.method : 'geometry';
 export interface LocalDocumentToolsBridge {
   run(request: {
     action: 'status' | 'diagnostics' | 'prepare' | 'correct' | 'recognize' | 'cancel';
     id?: string;
     engine?: LocalToolEngine;
-    mode?: 'scan' | 'photo' | 'auto';
+    mode?: CorrectionMode;
+    options?: CorrectionOptions;
     device?: 'AUTO' | 'CPU' | 'GPU' | 'NPU';
     image?: string;
   }): Promise<{
@@ -21,6 +43,7 @@ export interface LocalDocumentToolsBridge {
       inferenceMs?: number;
       mappingMs?: number;
       homr?: boolean;
+      copista?: boolean;
       audiveris?: boolean;
       image?: string;
       musicxml?: string;
@@ -28,10 +51,12 @@ export interface LocalDocumentToolsBridge {
       noteLocations?: import('./musicScore').ScoreLocations;
       width?: number;
       height?: number;
-      engine?: 'audiveris' | 'homr';
+      engine?: 'audiveris' | 'homr' | 'copista';
       model?: string;
       angle?: number;
       perspective?: boolean;
+      corners?: CorrectionPoint[] | null;
+      warning?: string;
     };
   }>;
 }
@@ -45,6 +70,8 @@ export const localToolErrors: Record<string, string> = {
   'local-tool-failed': '本地处理失败，请查看诊断信息。',
   'recognition-failed': '本地识别未完成，请查看诊断信息。',
   'correction-failed': '图像矫正失败，请查看诊断信息。',
+  'invalid-geometry': '调整点交叉或区域过小，请重新调整。',
+  'no-document': '未找到完整文档边缘，请手动拖动四角。',
   'device-unavailable': '所选设备不可用，请切换到 CPU 或自动。',
   'device-incompatible': '模型无法在所选设备运行，请切换到 CPU。',
   'component-invalid': '本地组件不完整，请重新准备。',

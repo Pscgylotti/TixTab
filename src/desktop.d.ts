@@ -15,12 +15,15 @@ interface Window {
     nativeOcr?: import('./nativeCppOcr').NativeCppOcrBridge;
     pdfEditor?: import('./pdfNativeTypes').PdfEditorBridge;
     documentTools?: import('./localDocumentTools').LocalDocumentToolsBridge;
+    musicOutput?: import('./musicOutput').MusicOutputBridge;
+    musicFollow?: import('./matchmakerFollow').MatchmakerBridge;
     onNativePen?: (
       callback: (sample: import('./penInteraction').NativePenSample) => void,
     ) => () => void;
     createDesktopShortcut?: () => Promise<{ ok: boolean; error?: string; path?: string }>;
     openDocumentUrl?: (url: string) => Promise<boolean>;
     getPdfFilePath?: (file: File) => string;
+    documentOpen?: import('./pdfAssociation').DocumentOpenBridge;
     revealPdf?: (request: { path?: string }) => Promise<{
       ok: boolean;
       path?: string;

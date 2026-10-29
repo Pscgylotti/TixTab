@@ -20,6 +20,14 @@ export function scoreAt(timeline: TimedScore[], beat: number) {
   for (let i = timeline.length - 1; i >= 0; i--) if (timeline[i].start <= beat) return timeline[i];
   return timeline[0];
 }
+/** Keep the sounding page inside the current spread, anchored to its actual left page. */
+export function scoreViewportIndex(
+  mode: 'single' | 'continuous' | 'dual',
+  left: number,
+  target: number,
+) {
+  return mode === 'dual' ? Math.max(0, left + 2 * Math.floor((target - left) / 2)) : target;
+}
 export function timelineNotes(timeline: TimedScore[]) {
   return timeline
     .flatMap((p) =>

@@ -1,11 +1,11 @@
 /* Leave the editor's layout intact so its position survives presentation. */
-body.presentation-active > :not(.presentation-view) {
+body.presentation-active > :not(.presentation-view):not(.music-player-presentation) {
   visibility: hidden;
 }
 .presentation-view {
   position: fixed;
   inset: 0;
-  z-index: 2147483647;
+  z-index: 2147483646;
   background: var(--bg-canvas);
   outline: none;
   touch-action: none;
