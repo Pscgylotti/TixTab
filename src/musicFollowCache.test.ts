@@ -126,6 +126,12 @@ async function fixture(referenceBytes = 4096) {
   cleanups.push(async () => {
     for (const owner of owners) await f.cancel(owner);
     f.dispose();
+    // Idle expiry removes the session before its asynchronous directory cleanup
+    // finishes. Wait for that cleanup before removing the parent on Windows.
+    vi.useRealTimers();
+    await vi.waitFor(async () => {
+      expect((await readdir(root)).filter((name) => name.startsWith('music-follow-'))).toEqual([]);
+    });
     await rm(root, { recursive: true, force: true });
   });
   return {
