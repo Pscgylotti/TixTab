@@ -325,6 +325,11 @@ test('Matchmaker streams continuous AudioWorklet PCM, follows pages and releases
           referenceKey: r.referenceKey,
           uploaded: !!r.notes,
         });
+        if (r.action === 'audio' && w.nextFollowError) {
+          const error = w.nextFollowError;
+          delete w.nextFollowError;
+          return error;
+        }
         if (r.action === 'start') {
           if (r.notes) referenceKey = r.referenceKey;
           if (referenceKey !== r.referenceKey) return { ok: false, error: 'reference-missing' };
@@ -439,6 +444,48 @@ test('Matchmaker streams continuous AudioWorklet PCM, follows pages and releases
   expect(starts).toHaveLength(3); // One miss + upload, then one warm start.
   expect(starts.filter((r: any) => r.uploaded)).toHaveLength(1);
   expect(starts[2].referenceKey).toBe(starts[1].referenceKey);
+  await page.evaluate(() => {
+    (window as any).nextFollowError = {
+      ok: false,
+      error: 'worker-exited',
+      logs: 'RuntimeError: test worker stopped during audio analysis',
+    };
+  });
+  await expect(player.locator('p[role="status"]')).toContainText('跟谱组件意外退出');
+  await expect(player).toHaveAttribute('data-following', 'false');
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window as any).testMicStream
+          .getTracks()
+          .every((t: MediaStreamTrack) => t.readyState === 'ended'),
+      ),
+    )
+    .toBe(true);
+  await player.getByText('错误详情', { exact: true }).click();
+  await expect(player.locator('.music-follow-diagnostics pre')).toContainText(
+    'RuntimeError: test worker stopped',
+  );
+  await page.evaluate(() => (window as any).testMicCleanup());
+  await follow.click();
+  await expect(player.locator('.music-follow-diagnostics')).toHaveCount(0);
+  await expect(player).toHaveAttribute('data-following', 'true');
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as any).nativeFollowCalls.filter((r: any) => r.action === 'start').length,
+      ),
+    )
+    .toBe(4);
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window as any).testMicStream
+          .getTracks()
+          .every((t: MediaStreamTrack) => t.readyState === 'live'),
+      ),
+    )
+    .toBe(true);
   await follow.click();
   await expect
     .poll(() =>
@@ -816,10 +863,12 @@ test('recognized scores persist, correct MIDI, seek from the page and auto turn 
   await expect(player.getByLabel('MIDI 音色', { exact: true })).toHaveValue('0');
   await player.getByLabel('MIDI 音色', { exact: true }).selectOption('40');
   await player.getByRole('button', { name: '修正音符', exact: true }).click();
+  // Exercise a real hit within the system; a coordinate-free synthetic event
+  // points outside the score and must not select a note.
   await page
     .locator('.music-score-layer rect')
     .first()
-    .dispatchEvent('pointerdown', { pointerId: 1, button: 0, bubbles: true });
+    .click({ position: { x: 4, y: 4 } });
   await player.getByLabel('音符 MIDI 音高', { exact: true }).fill('72');
   const download = page.waitForEvent('download');
   await player.getByRole('button', { name: 'MIDI ↓', exact: true }).click();

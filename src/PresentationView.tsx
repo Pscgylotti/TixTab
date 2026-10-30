@@ -8,7 +8,7 @@ import ReadingView from './ReadingView';
 import { t } from './i18n';
 import './presentation.css';
 import { NavigationContext } from './DocumentNavigator';
-import { scoreViewportIndex, useScoreCursor } from './musicTransport';
+import { scoreNoteAt, scoreViewportIndex, useScoreCursor } from './musicTransport';
 
 const noop = () => {};
 export default function PresentationView({
@@ -57,6 +57,32 @@ export default function PresentationView({
   };
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
+  const seekAt = (clientX: number, clientY: number) => {
+    if (!cursor.seek) return;
+    for (const layer of root.current?.querySelectorAll<SVGSVGElement>('.music-score-layer') ?? []) {
+      const box = layer.getBoundingClientRect();
+      if (
+        !box.width ||
+        !box.height ||
+        clientX < box.left ||
+        clientX > box.right ||
+        clientY < box.top ||
+        clientY > box.bottom
+      )
+        continue;
+      const page = pages.find((p) => p.id === layer.dataset.scorePageId);
+      if (!page?.score) continue;
+      const note = scoreNoteAt(
+        page.score,
+        (clientX - box.left) / box.width,
+        (clientY - box.top) / box.height,
+      );
+      if (note) {
+        cursor.seek(page.id, note.beat, note.id);
+        return;
+      }
+    }
+  };
   useEffect(() => {
     if (!cursor.seek) return;
     const at = pages.findIndex((p) => p.id === cursor.pageId);
@@ -65,7 +91,7 @@ export default function PresentationView({
     if (next === current.current) return;
     const direction = next > current.current ? 1 : -1;
     current.current = next;
-    setTurn((v) => ({ serial: v.serial + 1, direction }));
+    if (mode !== 'continuous') setTurn((v) => ({ serial: v.serial + 1, direction }));
     setIndex(next);
   }, [cursor.pageId, cursor.seek, pages, mode]);
   useLayoutEffect(() => {
@@ -231,6 +257,7 @@ export default function PresentationView({
       onContextMenu={(e) => e.preventDefault()}
       onDoubleClick={() => close.current()}
       onPointerDownCapture={(e) => {
+        if (e.button !== 0) return;
         pointers.current.add(e.pointerId);
         if (pointers.current.size !== 1) {
           gesture.current = null;
@@ -264,7 +291,11 @@ export default function PresentationView({
         ) {
           tap.current = null;
           navigate(dx < 0 ? 1 : -1);
-        } else if (!g.moved && Math.hypot(dx, dy) <= 10 && e.pointerType !== 'mouse') {
+        } else if (!g.moved && Math.hypot(dx, dy) <= 10) {
+          // The read-only page keeps pointer events disabled. Hit-test after
+          // a completed tap so a swipe or pinch never seeks the score.
+          seekAt(e.clientX, e.clientY);
+          if (e.pointerType === 'mouse') return;
           const previous = tap.current;
           if (
             previous &&

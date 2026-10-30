@@ -17,6 +17,7 @@ function createMusicFollow({
   root = path.resolve(root);
   const sessions = new Map();
   const intents = new WeakMap();
+  const lastFailures = new WeakMap();
   let disposed = false;
   let idleSeconds = 1800;
   const python = path.join(root, 'homr-runtime', 'Scripts', 'python.exe');
@@ -43,19 +44,27 @@ function createMusicFollow({
     if (s.directory && path.resolve(s.directory).startsWith(root + path.sep + 'music-follow-'))
       await fs.rm(s.directory, { recursive: true, force: true }).catch(() => {});
   }
-  async function close(owner, s = sessions.get(owner)) {
+  function failure(s, error, detail = '') {
+    return { ok: false, error, logs: [s.logs, detail].filter(Boolean).join('\n').slice(-10000) };
+  }
+  async function close(owner, s = sessions.get(owner), result = { ok: false, error: 'cancelled' }) {
     if (!s) return;
     if (s.closing) return s.closing;
-    if (sessions.get(owner) === s) sessions.delete(owner);
+    if (sessions.get(owner) === s) {
+      sessions.delete(owner);
+      // A worker can exit between PCM packets, with no pending caller. Keep
+      // its bounded diagnostic until that session's next packet or stop.
+      if (result.error !== 'cancelled') lastFailures.set(owner, { token: s.token, result });
+    }
     s.cancelled = true;
     clearTimeout(s.idle);
     clearTimeout(s.readyTimer);
     for (const item of s.pending.values()) {
       clearTimeout(item.timer);
-      item.resolve({ ok: false, error: 'cancelled' });
+      item.resolve(result);
     }
     s.pending.clear();
-    s.readyResolve?.({ ok: false, error: 'cancelled' });
+    s.readyResolve?.(result);
     s.closing = Promise.resolve().then(async () => {
       if (s.child) {
         const child = s.child;
@@ -81,7 +90,15 @@ function createMusicFollow({
   }
   function touch(s) {
     clearTimeout(s.idle);
-    s.idle = setTimeout(() => void close(s.owner, s), 15000);
+    s.idle = setTimeout(
+      () =>
+        void close(
+          s.owner,
+          s,
+          failure(s, 'timeout', 'No audio or control request received within 15000 ms.'),
+        ),
+      15000,
+    );
     s.idle.unref?.();
   }
   function park(s) {
@@ -103,13 +120,16 @@ function createMusicFollow({
     return new Promise((resolve) => {
       const id = ++s.sequence;
       const timer = setTimeout(() => {
-        void close(s.owner, s);
-        resolve({ ok: false, error: 'timeout' });
+        void close(
+          s.owner,
+          s,
+          failure(s, 'timeout', `No response to ${request.action} within 5000 ms.`),
+        );
       }, 5000);
       s.pending.set(id, { resolve, timer });
       s.child.stdin.write(JSON.stringify({ ...request, id }) + '\n', (error) => {
         if (error) {
-          void close(s.owner, s);
+          void close(s.owner, s, failure(s, 'transport-error', error.message));
         }
       });
     });
@@ -154,6 +174,7 @@ function createMusicFollow({
     } else if (!key) return { ok: false, error: 'invalid' };
     if (idleOk(r.idleReleaseSeconds)) idleSeconds = r.idleReleaseSeconds;
     intents.set(owner, r.token);
+    lastFailures.delete(owner);
     const cached = sessions.get(owner);
     if (
       cached?.ready &&
@@ -258,7 +279,10 @@ function createMusicFollow({
         },
       );
       s.child = child;
-      child.stdin?.on?.('error', () => void close(owner, s));
+      child.stdin?.on?.(
+        'error',
+        (error) => void close(owner, s, failure(s, 'transport-error', error.message)),
+      );
       lowerPriority(child);
       let buffer = '';
       child.stderr.on('data', (data) => {
@@ -268,15 +292,18 @@ function createMusicFollow({
         s.readyResolve = resolve;
       });
       const timer = setTimeout(() => {
-        s.readyResolve?.({ ok: false, error: 'timeout', logs: s.logs });
-        void close(owner, s);
+        void close(owner, s, failure(s, 'timeout', 'No ready response within 120000 ms.'));
       }, 120000);
       s.readyTimer = timer;
       child.stdout.on('data', (data) => {
         if (s.cancelled) return;
         buffer += data.toString();
         if (buffer.length > 65536) {
-          void close(owner, s);
+          void close(
+            owner,
+            s,
+            failure(s, 'transport-error', 'Worker response exceeded 65536 characters.'),
+          );
           return;
         }
         let at;
@@ -302,28 +329,41 @@ function createMusicFollow({
           } else if (m.event === 'preparing')
             notify(owner, { token: s.token, progress: m.progress });
           else if (m.event === 'error') {
-            s.readyResolve?.({ ok: false, error: m.error, logs: s.logs });
-            void close(owner, s);
+            void close(
+              owner,
+              s,
+              failure(s, m.error || 'follow-failed', typeof m.logs === 'string' ? m.logs : ''),
+            );
           } else {
             const p = s.pending.get(m.id);
             if (p) {
               s.pending.delete(m.id);
               clearTimeout(p.timer);
-              p.resolve(m);
+              p.resolve(
+                m.ok
+                  ? m
+                  : failure(
+                      s,
+                      m.error || 'follow-failed',
+                      typeof m.logs === 'string' ? m.logs : '',
+                    ),
+              );
             }
           }
         }
       });
-      child.once('error', () => {
+      child.once('error', (error) => {
         clearTimeout(timer);
-        s.readyResolve?.({ ok: false, error: 'runtime-missing' });
-        void close(owner, s);
+        void close(owner, s, failure(s, 'runtime-missing', error.message));
       });
-      child.once('close', () => {
+      child.once('close', (code, signal) => {
         clearTimeout(timer);
-        s.readyResolve?.({ ok: false, error: 'follow-failed', logs: s.logs });
         s.child = null;
-        void close(owner, s);
+        void close(
+          owner,
+          s,
+          failure(s, 'worker-exited', `Worker exited (code=${code}, signal=${signal || 'none'}).`),
+        );
       });
       const result = await ready;
       if (disposed || intents.get(owner) !== r.token) {
@@ -343,6 +383,7 @@ function createMusicFollow({
   return {
     cancel: (owner) => {
       intents.delete(owner);
+      lastFailures.delete(owner);
       return close(owner);
     },
     dispose() {
@@ -358,6 +399,7 @@ function createMusicFollow({
       }
       if (r?.action === 'stop') {
         if (!r.token || intents.get(owner) === r.token) intents.delete(owner);
+        if (!r.token || lastFailures.get(owner)?.token === r.token) lastFailures.delete(owner);
         const s = sessions.get(owner);
         if (!s || (r.token && s.token !== r.token)) return { ok: true };
         if (!s.ready || !s.cacheable) await close(owner, s);
@@ -374,8 +416,12 @@ function createMusicFollow({
       }
       if (r?.action === 'start') return start(owner, r);
       const s = sessions.get(owner);
-      if (!s || !s.active || !s.ready || r?.token !== s.token)
-        return { ok: false, error: 'cancelled' };
+      if (!s || !s.active || !s.ready || r?.token !== s.token) {
+        const failed = lastFailures.get(owner);
+        return failed && failed.token === r?.token
+          ? failed.result
+          : { ok: false, error: 'cancelled' };
+      }
       if (r.action === 'seek' && finite(r.beat, 0, 100000) && Number.isInteger(r.epoch))
         return send(s, { action: 'seek', beat: r.beat, epoch: r.epoch });
       if (
@@ -385,12 +431,25 @@ function createMusicFollow({
         finite(r.time, 0, 1e9) &&
         Number.isInteger(r.epoch)
       ) {
-        if (!r.samples.every((n) => finite(n, -4, 4))) return { ok: false, error: 'invalid' };
+        // Device gain and transient peaks must not end a live session. Scale
+        // the whole packet uniformly to retain its waveform; discard only
+        // non-finite samples. Quiet audio is never amplified.
+        let peak = 0,
+          damaged = false;
+        for (const value of r.samples) {
+          if (Number.isFinite(value)) peak = Math.max(peak, Math.abs(value));
+          else damaged = true;
+        }
+        const gain = peak > 4 ? 4 / peak : 1;
+        const samples =
+          gain < 1 || damaged
+            ? Float32Array.from(r.samples, (value) => (Number.isFinite(value) ? value * gain : 0))
+            : r.samples;
         return send(s, {
           action: 'audio',
           epoch: r.epoch,
           time: r.time,
-          pcm: Buffer.from(r.samples.buffer, r.samples.byteOffset, r.samples.byteLength).toString(
+          pcm: Buffer.from(samples.buffer, samples.byteOffset, samples.byteLength).toString(
             'base64',
           ),
         });

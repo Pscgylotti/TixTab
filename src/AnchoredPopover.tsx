@@ -9,7 +9,7 @@ export default function AnchoredPopover({
   className = '',
   alert = false,
 }: {
-  anchor: DOMRect;
+  anchor: DOMRect | HTMLElement;
   label: string;
   onClose: () => void;
   children: ReactNode;
@@ -21,24 +21,30 @@ export default function AnchoredPopover({
     [position, setPosition] = useState({ left: 8, top: 8 });
   useLayoutEffect(() => {
     const measure = () => {
+      if (anchor instanceof HTMLElement && !anchor.isConnected) {
+        onClose();
+        return;
+      }
+      const bounds = anchor instanceof HTMLElement ? anchor.getBoundingClientRect() : anchor;
       const r = root.current!.getBoundingClientRect(),
         left = Math.max(
           8,
-          Math.min(window.innerWidth - r.width - 8, anchor.left + anchor.width / 2 - r.width / 2),
+          Math.min(window.innerWidth - r.width - 8, bounds.left + bounds.width / 2 - r.width / 2),
         ),
-        below = window.innerHeight - anchor.bottom - 8,
-        above = anchor.top - 8;
+        below = window.innerHeight - bounds.bottom - 8,
+        above = bounds.top - 8;
       const top =
         below >= r.height
-          ? anchor.bottom + 6
+          ? bounds.bottom + 6
           : above >= r.height
-            ? anchor.top - r.height - 6
-            : Math.max(8, Math.min(window.innerHeight - r.height - 8, anchor.bottom + 6));
+            ? bounds.top - r.height - 6
+            : Math.max(8, Math.min(window.innerHeight - r.height - 8, bounds.bottom + 6));
       setPosition({ left, top });
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(root.current!);
+    if (anchor instanceof HTMLElement) observer.observe(anchor);
     window.addEventListener('resize', measure);
     const outside = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node)) onClose();

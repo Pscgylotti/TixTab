@@ -1,3 +1,4 @@
+import { getTouchMode } from './inputPreferences';
 import LocalImagePickerLayer from './LocalImagePickerLayer';
 import MusicScoreLayer from './MusicScoreLayer';
 import { ScratchInkContext } from './ScratchInkContext';
@@ -567,6 +568,7 @@ function PageEditor({
     if (e.pointerType === 'pen') penTime.current = performance.now();
     if (
       e.pointerType === 'touch' &&
+      !getTouchMode() &&
       (drawingPointer.current !== null || performance.now() - penTime.current < 650)
     ) {
       e.stopPropagation();

@@ -25,18 +25,28 @@ export interface MatchmakerBridge {
   }>;
   onProgress(callback: (value: { token: string; progress: number }) => void): () => void;
 }
+export class MatchmakerFollowError extends Error {
+  readonly logs: string;
+  constructor(code = 'follow-failed', logs = '') {
+    super(code);
+    this.name = 'MatchmakerFollowError';
+    this.logs = logs.slice(-10000);
+  }
+}
 export class MatchmakerFollow {
   private token = uid();
   private epoch = 0;
   private closed = false;
   private pending = false;
+  private ready = false;
+  private pendingSeek: { beat: number; epoch: number } | undefined;
   private queue: { samples: Float32Array; time: number; epoch: number }[] = [];
   private off: (() => void) | undefined;
   constructor(
     private result: (
       data: NonNullable<Awaited<ReturnType<MatchmakerBridge['run']>>['data']>,
     ) => void,
-    private failed: (error: string) => void,
+    private failed: (error: MatchmakerFollowError) => void,
   ) {}
   async start(
     notes: ScoreNote[],
@@ -47,8 +57,8 @@ export class MatchmakerFollow {
     method: 'global' | 'oltw' = 'global',
   ) {
     const bridge = window.surfaceDesktop?.musicFollow;
-    if (!bridge) throw Error('runtime-missing');
-    if (!notes.length || notes.length > 100000) throw Error('score-limit');
+    if (!bridge) throw new MatchmakerFollowError('runtime-missing');
+    if (!notes.length || notes.length > 100000) throw new MatchmakerFollowError('score-limit');
     const reference = {
       notes: notes.map(({ midi, beat, duration, muted }) => ({
         midi,
@@ -91,6 +101,8 @@ export class MatchmakerFollow {
       r = await bridge.run(request);
       if (!this.closed && !r.ok && r.error === 'reference-missing')
         r = await bridge.run({ ...request, notes: reference.notes });
+    } catch (error) {
+      throw new MatchmakerFollowError('transport-error', String(error));
     } finally {
       this.off?.();
       this.off = undefined;
@@ -99,21 +111,19 @@ export class MatchmakerFollow {
       void bridge.run({ action: 'stop', token: this.token }).catch(() => {});
       return false;
     }
-    if (!r.ok) throw Error(r.error || 'follow-failed');
+    if (!r.ok) throw new MatchmakerFollowError(r.error, r.logs);
+    this.ready = true;
+    void this.pump();
     return true;
   }
   seek(beat: number) {
     if (this.closed) return;
     this.queue = [];
     const epoch = ++this.epoch;
-    void window.surfaceDesktop?.musicFollow
-      ?.run({ action: 'seek', token: this.token, beat, epoch })
-      .then((r) => {
-        if (!this.closed && !r.ok) this.failed(r.error || 'follow-failed');
-      })
-      .catch(() => {
-        if (!this.closed) this.failed('follow-failed');
-      });
+    // Dragging can emit many seeks before one audio analysis completes. Only
+    // the latest position matters; serialize it before audio from its epoch.
+    this.pendingSeek = { beat, epoch };
+    void this.pump();
   }
   audio(samples: Float32Array, time: number) {
     if (this.closed) return;
@@ -123,32 +133,43 @@ export class MatchmakerFollow {
     void this.pump();
   }
   private async pump() {
-    if (this.pending || this.closed) return;
+    if (this.pending || this.closed || !this.ready) return;
     this.pending = true;
     try {
-      while (!this.closed && this.queue.length) {
-        const frame = this.queue.shift()!;
+      while (!this.closed && (this.pendingSeek || this.queue.length)) {
+        const seek = this.pendingSeek;
+        this.pendingSeek = undefined;
+        const command = seek
+          ? { action: 'seek' as const, ...seek }
+          : { action: 'audio' as const, ...this.queue.shift()! };
         const r = await window.surfaceDesktop!.musicFollow!.run({
-          action: 'audio',
           token: this.token,
-          ...frame,
+          ...command,
         });
         if (this.closed) break;
         if (!r.ok) {
-          this.failed(r.error || 'follow-failed');
-          break;
+          throw new MatchmakerFollowError(r.error, r.logs);
         }
-        if (r.data?.epoch === this.epoch) this.result(r.data);
+        if (command.action === 'audio' && r.data?.epoch === this.epoch) this.result(r.data);
       }
-    } catch {
-      if (!this.closed) this.failed('follow-failed');
+    } catch (error) {
+      if (!this.closed) {
+        this.stop();
+        this.failed(
+          error instanceof MatchmakerFollowError
+            ? error
+            : new MatchmakerFollowError('transport-error', String(error)),
+        );
+      }
     } finally {
       this.pending = false;
     }
   }
   stop() {
+    if (this.closed) return;
     this.closed = true;
     this.queue = [];
+    this.pendingSeek = undefined;
     this.off?.();
     this.off = undefined;
     void window.surfaceDesktop?.musicFollow

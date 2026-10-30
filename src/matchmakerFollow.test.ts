@@ -70,6 +70,52 @@ it('seeking discards queued audio and ignores the prior position response', asyn
   expect(result).toHaveBeenCalledWith(expect.objectContaining({ beat: 4 }));
   f.stop();
 });
+it('coalesces rapid seeks behind in-flight audio instead of flooding the backend', async () => {
+  const { calls, audio } = bridge(),
+    result = vi.fn(),
+    failed = vi.fn();
+  const f = new MatchmakerFollow(result, failed);
+  await f.start(notes, 120, 0, 0, () => {});
+  f.audio(new Float32Array(640), 0.04);
+  for (let i = 1; i <= 30; i++) f.seek(i);
+  f.audio(new Float32Array(640), 0.08);
+  expect(calls.filter((c) => c.action === 'seek')).toHaveLength(0);
+  audio.shift()!({ ok: true, data: { state: 'matched', beat: 1, epoch: 0 } });
+  await settle();
+  expect(calls.filter((c) => c.action === 'seek')).toEqual([
+    expect.objectContaining({ beat: 30, epoch: 30 }),
+  ]);
+  expect(calls.at(-1)).toMatchObject({ action: 'audio', epoch: 30, time: 0.08 });
+  expect(result).not.toHaveBeenCalled();
+  expect(failed).not.toHaveBeenCalled();
+  f.stop();
+  audio.shift()!({ ok: true });
+});
+
+it('keeps listening through an extended unmatched passage and reports actual failures with details', async () => {
+  const { calls, audio } = bridge(),
+    result = vi.fn(),
+    failed = vi.fn();
+  const f = new MatchmakerFollow(result, failed);
+  await f.start(notes, 120, 0, 0, () => {});
+  for (let i = 0; i < 200; i++) {
+    f.audio(new Float32Array(640), i * 0.04);
+    audio.shift()!({ ok: true, data: { state: 'uncertain', beat: 0, epoch: 0 } });
+    await settle();
+  }
+  expect(result).toHaveBeenCalledTimes(200);
+  expect(failed).not.toHaveBeenCalled();
+  f.audio(new Float32Array(640), 9);
+  f.audio(new Float32Array(640), 9.04);
+  audio.shift()!({ ok: false, error: 'follow-failed', logs: 'ValueError: test failure' });
+  await settle();
+  expect(failed).toHaveBeenCalledWith(
+    expect.objectContaining({ message: 'follow-failed', logs: 'ValueError: test failure' }),
+  );
+  expect(calls.at(-1).action).toBe('stop');
+  f.audio(new Float32Array(640), 9.08);
+  expect(audio).toHaveLength(0);
+});
 it('stopping during startup removes progress subscriptions and cannot restart capture', async () => {
   const { b, off } = bridge();
   let ready!: (r: any) => void;
@@ -87,6 +133,44 @@ it('stopping during startup removes progress subscriptions and cannot restart ca
   expect(await start).toBe(false);
   expect(off).toHaveBeenCalledTimes(1);
   expect(b.run.mock.calls.filter((c) => c[0].action === 'stop').length).toBeGreaterThan(0);
+});
+it('waits for reference preparation before sending the latest seek', async () => {
+  const { b, calls } = bridge();
+  let ready!: (r: any) => void;
+  b.run.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        ready = resolve;
+      }),
+  );
+  const f = new MatchmakerFollow(vi.fn(), vi.fn());
+  const start = f.start(notes, 120, 0, 0, vi.fn());
+  await vi.waitFor(() => expect(ready).toBeTypeOf('function'));
+  f.seek(2);
+  f.seek(5);
+  expect(calls.filter((r) => r.action === 'seek')).toHaveLength(0);
+  ready({ ok: true });
+  expect(await start).toBe(true);
+  await settle();
+  expect(calls.filter((r) => r.action === 'seek')).toEqual([
+    expect.objectContaining({ beat: 5, epoch: 2 }),
+  ]);
+  f.stop();
+});
+
+it('keeps backend startup diagnostics without misreporting a microphone permission failure', async () => {
+  const { b } = bridge();
+  b.run.mockResolvedValueOnce({
+    ok: false,
+    error: 'follow-failed',
+    logs: 'ImportError: unavailable component',
+  });
+  const f = new MatchmakerFollow(vi.fn(), vi.fn());
+  await expect(f.start(notes, 120, 0, 0, vi.fn())).rejects.toMatchObject({
+    message: 'follow-failed',
+    logs: 'ImportError: unavailable component',
+  });
+  f.stop();
 });
 it('main-process cancellation during model lookup prevents spawning and another owner cannot send audio', async () => {
   const root = await mkdtemp(join(tmpdir(), 'tixtab-follow-test-'));
@@ -188,7 +272,10 @@ it('does not upload after a cancelled cache probe and releases progress callback
   expect(off).toHaveBeenCalledTimes(1);
   b.run.mockRejectedValueOnce(Error('IPC disconnected'));
   const next = new MatchmakerFollow(vi.fn(), vi.fn());
-  await expect(next.start(notes, 120, 0, 0, vi.fn())).rejects.toThrow('IPC disconnected');
+  await expect(next.start(notes, 120, 0, 0, vi.fn())).rejects.toMatchObject({
+    message: 'transport-error',
+    logs: 'Error: IPC disconnected',
+  });
   expect(off).toHaveBeenCalledTimes(2);
   next.stop();
 });

@@ -1,21 +1,11 @@
 import { useMemo } from 'react';
 import type { Page } from './model';
-import { cursorNote, scoreAnchors, useScoreCursor } from './musicTransport';
+import { cursorNote, scoreAnchors, scoreNoteAt, useScoreCursor } from './musicTransport';
 import { t } from './i18n';
 export default function MusicScoreLayer({ page }: { page: Page }) {
   const cursor = useScoreCursor(page.id),
     score = page.score;
   const anchors = useMemo(() => (score ? scoreAnchors(score) : []), [score]);
-  const rows = useMemo(() => {
-    const seen = new Set<string>(),
-      groups = (score?.systems ?? []).map(() => [] as NonNullable<typeof score>['notes']);
-    for (const n of anchors)
-      if (!seen.has(`${n.sourceId}:${n.system}:${n.region.x}`)) {
-        seen.add(`${n.sourceId}:${n.system}:${n.region.x}`);
-        groups[n.system]?.push(n);
-      }
-    return groups;
-  }, [score, anchors]);
   if (!score || !cursor.seek) return null;
   const note = cursor.pageId === page.id ? cursorNote(score, cursor.beat, anchors) : undefined,
     system = note && score.systems[note.system],
@@ -25,6 +15,7 @@ export default function MusicScoreLayer({ page }: { page: Page }) {
   return (
     <svg
       className="music-score-layer"
+      data-score-page-id={page.id}
       viewBox={`0 0 ${page.width} ${page.height}`}
       aria-label={t('谱面定位')}
     >
@@ -42,13 +33,7 @@ export default function MusicScoreLayer({ page }: { page: Page }) {
             const b = e.currentTarget.ownerSVGElement!.getBoundingClientRect(),
               x = (e.clientX - b.left) / b.width,
               y = (e.clientY - b.top) / b.height;
-            const nearest = rows[i].reduce<typeof note>((best, n) => {
-              const distance = (n.region.x - x) ** 2 + (n.region.y - y) ** 2 * 0.2;
-              const old = best
-                ? (best.region.x - x) ** 2 + (best.region.y - y) ** 2 * 0.2
-                : Infinity;
-              return distance < old ? n : best;
-            }, undefined);
+            const nearest = scoreNoteAt(score, x, y, anchors);
             if (nearest) cursor.seek!(page.id, nearest.beat, nearest.id);
           }}
           onPointerUp={(e) => e.stopPropagation()}

@@ -1,5 +1,6 @@
 /* Local palette also covers lazy loading, native controls and overflow surfaces. */
-.workspace-manager {
+.workspace-manager,
+.workspace-action-popover {
   color-scheme: light;
   --library-panel: var(--surface);
   --library-nav: var(--surface-sunken);
@@ -152,17 +153,9 @@
   background: var(--accent-soft);
 }
 .workspace-name-editor {
-  display: flex;
-  gap: 5px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-.workspace-name-editor label {
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-  flex: 1;
-  min-width: 120px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
 }
 .workspace-name-editor input {
   background: var(--library-input);
@@ -170,22 +163,55 @@
   width: 100%;
   border: 1px solid var(--border-strong);
   border-radius: var(--r-md);
-  margin-top: 5px;
   padding: 8px;
   font-size: var(--fs-md);
   min-height: var(--ctl);
 }
 .workspace-delete {
-  padding: 12px;
-  background: var(--library-delete);
-  border-radius: var(--r-md);
-  margin-bottom: 12px;
+  padding: 14px;
   font-size: var(--fs-md);
   line-height: 1.7;
-  border: 1px solid var(--danger-border);
 }
 .workspace-delete p {
   margin-top: 0;
+  overflow-wrap: anywhere;
+}
+.workspace-action-popover {
+  color: var(--text);
+  background: var(--library-panel);
+  overflow: auto;
+}
+.workspace-action-popover header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--library-border);
+}
+.workspace-action-popover h2 {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.workspace-action-popover button {
+  min-height: max(40px, var(--ctl));
+}
+.workspace-action-target {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.workspace-action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.workspace-action-popover .error {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 .workspace-empty {
   text-align: center;
@@ -223,7 +249,8 @@
     padding: 10px;
   }
 }
-[data-night='true'] .workspace-manager {
+[data-night='true'] .workspace-manager,
+[data-night='true'] .workspace-action-popover {
   color-scheme: dark;
   scrollbar-color: #52617a #1b222e;
 }

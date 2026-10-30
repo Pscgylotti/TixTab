@@ -28,3 +28,31 @@ export function setWritingHand(value: WritingHand) {
   }
   listeners.forEach((fn) => fn());
 }
+
+let touchMode = false;
+try {
+  touchMode = localStorage.getItem('tixtab.touchMode') === 'true';
+} catch {
+  /* Session only. */
+}
+const touchListeners = new Set<() => void>();
+export const getTouchMode = () => touchMode;
+export function subscribeTouchMode(fn: () => void) {
+  touchListeners.add(fn);
+  return () => {
+    touchListeners.delete(fn);
+  };
+}
+export function useTouchMode() {
+  return useSyncExternalStore(subscribeTouchMode, getTouchMode);
+}
+export function setTouchMode(enabled: boolean) {
+  if (enabled === touchMode) return;
+  touchMode = enabled;
+  try {
+    localStorage.setItem('tixtab.touchMode', String(enabled));
+  } catch {
+    /* Session only. */
+  }
+  touchListeners.forEach((fn) => fn());
+}

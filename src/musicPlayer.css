@@ -111,6 +111,20 @@
   font-size: var(--fs-sm);
   color: var(--text-muted);
 }
+.music-follow-diagnostics {
+  margin-top: 8px;
+  font-size: var(--fs-sm);
+}
+.music-follow-diagnostics summary {
+  cursor: pointer;
+}
+.music-follow-diagnostics pre {
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
 .music-score-layer {
   position: absolute;
   inset: 0;

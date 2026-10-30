@@ -11,12 +11,27 @@ import os
 from pathlib import Path
 import sys
 import time
+import traceback
 
 RATE, HOP = 16000, 320
 
 
 def emit(**data):
     print(json.dumps(data, separators=(',', ':'), allow_nan=False), flush=True)
+
+
+def decode_pcm(encoded):
+    import numpy as np
+    data = base64.b64decode(encoded, validate=True)
+    if len(data) not in (HOP*4, HOP*8):
+        raise ValueError('invalid')
+    pcm = np.frombuffer(data, '<f4')
+    if not np.isfinite(pcm).all():
+        pcm = np.nan_to_num(pcm, nan=0., posinf=0., neginf=0.)
+    peak = float(np.max(np.abs(pcm)))
+    if peak > 4:
+        pcm = (pcm.astype(np.float64)*(4/peak)).astype(np.float32)
+    return pcm
 
 
 def matchmaker_imports():
@@ -314,12 +329,7 @@ class GlobalFollowing:
         np = self.np
         if request['epoch'] != self.epoch:
             return dict(state='stale', epoch=self.epoch)
-        data = base64.b64decode(request['pcm'], validate=True)
-        if len(data) not in (HOP*4, HOP*8):
-            raise ValueError('invalid')
-        pcm = np.frombuffer(data, '<f4')
-        if not np.isfinite(pcm).all() or np.max(np.abs(pcm)) > 4:
-            raise ValueError('invalid')
+        pcm = decode_pcm(request['pcm'])
         stamp = float(request['time'])
         if not np.isfinite(stamp) or (self.last_time is not None and stamp <= self.last_time):
             return dict(state='stale', epoch=self.epoch)
@@ -476,12 +486,7 @@ class Following:
         np = self.np
         if request['epoch'] != self.epoch:
             return dict(state='stale', epoch=self.epoch)
-        data = base64.b64decode(request['pcm'], validate=True)
-        if len(data) not in (HOP*4, HOP*8):
-            raise ValueError('invalid')
-        pcm = np.frombuffer(data, '<f4')
-        if not np.isfinite(pcm).all() or np.max(np.abs(pcm)) > 4:
-            raise ValueError('invalid')
+        pcm = decode_pcm(request['pcm'])
         stamp = float(request['time'])
         if not np.isfinite(stamp) or (self.last_time is not None and stamp <= self.last_time):
             return dict(state='stale', epoch=self.epoch)
@@ -599,16 +604,19 @@ def main():
             else:
                 raise ValueError('invalid')
             emit(id=request['id'], ok=True, data=result)
-        except Exception as error:
-            print(str(error), file=sys.stderr, flush=True)
-            emit(id=request['id'], ok=False, error='follow-failed')
+        except Exception:
+            # stderr can arrive after stdout; carry the traceback in the reply
+            # so the UI does not lose the cause of an in-session failure.
+            logs = traceback.format_exc()[-10000:]
+            print(logs, file=sys.stderr, flush=True)
+            emit(id=request['id'], ok=False, error='follow-failed', logs=logs)
 
 
 if __name__ == '__main__':
     try:
         main()
     except Exception:
-        import traceback
-        traceback.print_exc(file=sys.stderr)
-        emit(event='error', error='follow-failed')
+        logs = traceback.format_exc()[-10000:]
+        print(logs, file=sys.stderr, flush=True)
+        emit(event='error', error='follow-failed', logs=logs)
         sys.exit(1)

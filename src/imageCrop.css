@@ -38,7 +38,86 @@
   position: absolute;
   border: 2px solid var(--accent);
   box-shadow: 0 0 0 2000px #0008;
-  pointer-events: none;
+  cursor: grab;
+}
+.image-crop-source.dragging,
+.image-crop-source.dragging .image-crop-region {
+  cursor: grabbing;
+}
+.image-crop-handle {
+  position: absolute;
+  width: min(24px, 25%);
+  height: min(24px, 25%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.image-crop-handle::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  max-width: 100%;
+  max-height: 100%;
+  border: 1px solid white;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.image-crop-handle.n,
+.image-crop-handle.s {
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  min-width: 8px;
+  cursor: ns-resize;
+}
+.image-crop-handle.w,
+.image-crop-handle.e {
+  top: 50%;
+  transform: translateY(-50%);
+  height: calc(100% - 48px);
+  min-height: 8px;
+  cursor: ew-resize;
+}
+.image-crop-handle.n,
+.image-crop-handle.nw,
+.image-crop-handle.ne {
+  top: 0;
+}
+.image-crop-handle.s,
+.image-crop-handle.sw,
+.image-crop-handle.se {
+  bottom: 0;
+}
+.image-crop-handle.w,
+.image-crop-handle.nw,
+.image-crop-handle.sw {
+  left: 0;
+}
+.image-crop-handle.e,
+.image-crop-handle.ne,
+.image-crop-handle.se {
+  right: 0;
+}
+.image-crop-handle.nw,
+.image-crop-handle.se {
+  cursor: nwse-resize;
+  z-index: 2;
+}
+.image-crop-handle.ne,
+.image-crop-handle.sw {
+  cursor: nesw-resize;
+  z-index: 2;
+}
+.image-crop-handle.n::after,
+.image-crop-handle.s::after {
+  width: 18px;
+  height: 4px;
+}
+.image-crop-handle.w::after,
+.image-crop-handle.e::after {
+  width: 4px;
+  height: 18px;
 }
 .image-crop-values {
   display: grid;

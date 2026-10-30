@@ -444,7 +444,9 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-.paper[data-blank-paper='true']::after {
+/* Custom blank paper already draws its pattern inline, including at night. */
+.paper[data-blank-paper='true']::after,
+[data-night='true'] .paper[data-blank-paper='true']::after {
   background-image: none;
 }
 .anchored-popover {

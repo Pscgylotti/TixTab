@@ -1,3 +1,5 @@
+import { getTouchMode } from './inputPreferences';
+import { isTouchReplay } from './touchMode';
 import { MIN_ZOOM, MAX_ZOOM } from './pageFit';
 import { performanceDelay, trackPerformance } from './performanceLedger';
 import { useAppearance, renderPolicy, pageRenderScale } from './appearance';
@@ -269,11 +271,11 @@ export default function PdfSurface({
       return;
     if (
       (e.target as HTMLElement).closest('button') ||
-      (e.pointerType === 'touch' && performance.now() - penTime.current < 650)
+      (e.pointerType === 'touch' && !getTouchMode() && performance.now() - penTime.current < 650)
     )
       return;
     e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
+    if (!isTouchReplay(e.nativeEvent)) e.currentTarget.setPointerCapture(e.pointerId);
     flushTransform();
     pointers.current.down(e.pointerId, e.clientX, e.clientY);
   };

@@ -4,15 +4,17 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
 const { createLocalDocumentTools } = require('../electron/local-document-tools.cjs');
-const { audioPermission } = require('../electron/local-media-permission.cjs');
+const { localMediaPermission } = require('../electron/local-media-permission.cjs');
 const { zipMembers } = require('../electron/local-tool-zip.cjs');
-test('only audio media permission is accepted, including permission preflight', () => {
-  assert.equal(audioPermission('media', { mediaTypes: ['audio'] }), true);
-  assert.equal(audioPermission('media', { mediaTypes: ['audio', 'video'] }), false);
-  assert.equal(audioPermission('media', { mediaTypes: [] }), false);
-  assert.equal(audioPermission('media', { mediaType: 'audio' }, true), true);
-  assert.equal(audioPermission('media', { mediaType: 'video' }, true), false);
-  assert.equal(audioPermission('display-capture', { mediaTypes: ['audio'] }), false);
+test('only audio and video capture permissions are accepted, including permission preflight', () => {
+  assert.equal(localMediaPermission('media', { mediaTypes: ['audio'] }), true);
+  assert.equal(localMediaPermission('media', { mediaTypes: ['audio', 'video'] }), true);
+  assert.equal(localMediaPermission('media', { mediaTypes: [] }), false);
+  assert.equal(localMediaPermission('media', { mediaType: 'audio' }, true), true);
+  assert.equal(localMediaPermission('media', { mediaType: 'video' }, true), true);
+  assert.equal(localMediaPermission('media', { mediaTypes: ['screen'] }), false);
+  assert.equal(localMediaPermission('media', { mediaType: 'unknown' }, true), false);
+  assert.equal(localMediaPermission('display-capture', { mediaTypes: ['audio'] }), false);
 });
 test('owned cancellation kills only its own worker, waits for cleanup and releases job storage', async () => {
   const base = path.resolve('.cache/local-document-tests');

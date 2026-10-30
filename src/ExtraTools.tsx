@@ -1,6 +1,7 @@
-import { lazy, useState } from 'react';
-import { Wrench, Images, ScanLine, ScanText, Music } from 'lucide-react';
+import { lazy, useEffect, useState } from 'react';
+import { Wrench, Images, ScanLine, ScanText, Music, Camera } from 'lucide-react';
 import type { Notebook, Page } from './model';
+import { uid } from './model';
 import type { MusicPlayerState } from './musicPlayerState';
 import type { PDFDocumentProxy } from './pdfTypes';
 import AnchoredPopover from './AnchoredPopover';
@@ -9,6 +10,7 @@ import FeatureBoundary from './FeatureBoundary';
 const LocalDocumentToolDialog = lazy(() => import('./LocalDocumentToolDialog'));
 const MusicPlayer = lazy(() => import('./MusicPlayer'));
 const ImageExportDialog = lazy(() => import('./ImageExportDialog'));
+const CameraDialog = lazy(() => import('./CameraDialog'));
 export default function ExtraTools({
   notebook,
   pdf,
@@ -36,7 +38,11 @@ export default function ExtraTools({
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null),
     [images, setImages] = useState(false),
+    [camera, setCamera] = useState(false),
     [local, setLocal] = useState<'correct' | 'music' | null>(null);
+  useEffect(() => {
+    if (!active) setCamera(false);
+  }, [active]);
   const player = notebook.musicPlayer?.open ?? false;
   const setPlayer = (open: boolean) => onPlayerChange({ open });
   return (
@@ -59,6 +65,16 @@ export default function ExtraTools({
           onClose={() => setAnchor(null)}
         >
           <div className="extra-tools-menu" role="menu">
+            <button
+              role="menuitem"
+              onClick={() => {
+                setAnchor(null);
+                setCamera(true);
+              }}
+            >
+              <Camera size={17} aria-hidden="true" />
+              {t('拍照')}
+            </button>
             <button
               role="menuitem"
               onClick={() => {
@@ -102,6 +118,41 @@ export default function ExtraTools({
             </button>
           </div>
         </AnchoredPopover>
+      )}
+      {camera && active && (
+        <FeatureBoundary name={t('拍照')} onClose={() => setCamera(false)}>
+          <CameraDialog
+            onClose={() => setCamera(false)}
+            onInsert={async (data, width, height) => {
+              const page = notebook.pages[index];
+              if (!page) throw new Error('page-unavailable');
+              const scale = Math.min((page.width * 0.8) / width, (page.height * 0.65) / height, 1),
+                w = width * scale,
+                h = height * scale;
+              await onApply(
+                [
+                  {
+                    ...page,
+                    images: [
+                      ...page.images,
+                      {
+                        id: uid(),
+                        kind: 'image',
+                        data,
+                        x: (page.width - w) / 2,
+                        y: (page.height - h) / 2,
+                        width: w,
+                        height: h,
+                      },
+                    ],
+                  },
+                ],
+                notebook.pages,
+                notebook,
+              );
+            }}
+          />
+        </FeatureBoundary>
       )}
       {local && (
         <FeatureBoundary

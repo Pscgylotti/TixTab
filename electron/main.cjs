@@ -781,13 +781,13 @@ app.whenReady().then(() => {
     if (typeof active === 'boolean') window.setFullScreen(active);
     return window.isFullScreen();
   });
-  const { audioPermission } = require('./local-media-permission.cjs');
+  const { localMediaPermission } = require('./local-media-permission.cjs');
   session.defaultSession.setPermissionRequestHandler((wc, permission, callback, details) =>
     callback(
       trusted(wc.getURL()) &&
         trusted(details?.requestingUrl || wc.getURL()) &&
         (['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission) ||
-          audioPermission(permission, details)),
+          localMediaPermission(permission, details)),
     ),
   );
   session.defaultSession.setPermissionCheckHandler(
@@ -796,7 +796,7 @@ app.whenReady().then(() => {
       trusted(wc.getURL()) &&
       trusted(details?.requestingUrl || wc.getURL()) &&
       (['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission) ||
-        audioPermission(permission, details, true)),
+        localMediaPermission(permission, details, true)),
   );
   const win = new BrowserWindow({
     width: 1440,

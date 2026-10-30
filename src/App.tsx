@@ -200,7 +200,8 @@ const ZoteroDialog = lazy(() => import('./ZoteroDialog'));
 import type { ZoteroPdf } from './ZoteroDialog';
 import ReadingView from './ReadingView';
 import SelectionFlyout, { type SelectionInfo } from './SelectionFlyout';
-import { useWritingHand, setWritingHand } from './inputPreferences';
+import { useWritingHand, setWritingHand, useTouchMode, setTouchMode } from './inputPreferences';
+import { installTouchMode } from './touchMode';
 import type { WritingHand } from './selectionPlacement';
 import { inkTools as tools } from './inkTools';
 import PenToolWheel from './PenToolWheel';
@@ -257,6 +258,8 @@ export default function App() {
   const [voiceSendRequest, setVoiceSendRequest] = useState(0);
   const [tailVoiceStatus, setTailVoiceStatus] = useState('');
   const writingHand = useWritingHand();
+  const touchMode = useTouchMode();
+  useEffect(installTouchMode, []);
   const appearance = useAppearance();
   useEffect(() => {
     void (window.surfaceDesktop?.clipboardShelf || browserShelf).run(
@@ -4009,6 +4012,17 @@ export default function App() {
                     <button className="model-manager-open" onClick={() => setDialog('models')}>
                       {tr('本地模型管理')}
                     </button>
+                    <label className="appearance-setting">
+                      <span>
+                        <input
+                          type="checkbox"
+                          checked={touchMode}
+                          onChange={(event) => setTouchMode(event.target.checked)}
+                        />{' '}
+                        {tr('开启触控模式')}
+                      </span>
+                    </label>
+                    <p className="appearance-note">{tr('单指使用当前工具，双指移动与缩放。')}</p>
                     <label className="appearance-setting">
                       <span>
                         <input

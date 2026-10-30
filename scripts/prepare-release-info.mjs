@@ -39,15 +39,15 @@ const info = {
     ),
   ),
   validation: {
-    unit: '605 tests / 129 files; 8 Node integration tests; 12 Python checks passed, 1 optional local-performance fixture skipped',
+    unit: '615 tests / 129 files; 3 Node integration tests; 8 Python score-following checks passed, 1 optional local-performance fixture skipped',
     browser:
-      '25 browser regressions passed. Coverage includes Copista/homr/Audiveris score data, correction previews and manual geometry, background processing, Matchmaker capture cleanup, MIDI output lifecycle, two-page turning, fullscreen/collapsed controls, repeated project imports, OS PDF launch/legacy project lookup, Review note objects in four views and optional-tool error isolation. Native interfaces are mocked in browser tests.',
+      '37 browser regressions passed across targeted runs. Coverage includes camera capture/device switching/orientation/lifecycle, mouse/pen/touch crop movement and resizing, touch editing and two-finger navigation in three views, Copista/homr/Audiveris score data, correction, Matchmaker/MIDI lifecycle, two-page turning, fullscreen score seeking and smooth system scrolling, project persistence, optional-tool error isolation and workspace night/popover behavior. Camera/audio interfaces are mocked; pointer inputs use browser automation.',
     packaged:
       'Static ASAR/build asset SHA256 and file-set verification, required backend/preload modules, native binding/icon and model exclusion; this release did not launch the installer or packaged application',
     nativeModels:
-      'Python geometry, Copista layout and synthetic Matchmaker pause/jump/cache regressions passed. Retained earlier local Copista, DocAligner CPU/NPU and LILI performance evidence documented in docs; those real-input runs were not repeated during packaging. Windows AI Speech, PDF editor, Hy-MT2 CPU/GPU, UVDoc/Audiveris/homr evidence retained; local Hy-MT2 OpenVINO NPU initialization failed and is not claimed to work. No energy or cross-device speed benchmark is claimed.',
+      'Python synthetic Matchmaker pause/jump/cache, high-amplitude PCM and failure protocol regressions passed. Earlier geometry, Copista layout and local model evidence is retained; real camera/microphone, Windows AI/NPU and LILI performance checks were not repeated during packaging. No energy or cross-device speed benchmark is claimed.',
     installer:
-      'Compiled NSIS installer and separate install/uninstall include harness for opt-in PDF association. Earlier upgrade/repair/downgrade evidence retained. Installer and packaged application were not executed on this host.',
+      'Compiled NSIS installer. Earlier opt-in PDF association, upgrade/repair/downgrade evidence retained. Installer and packaged application were not executed on this host.',
     limits:
       'Synthetic pen input is not real hardware validation. Resource measurements are not battery-life measurements. Recognition may be inaccurate.',
   },

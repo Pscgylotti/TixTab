@@ -1,12 +1,13 @@
-// Only microphone capture is needed for score following. Camera requests stay denied.
-function audioPermission(permission, details, check = false) {
+// Called only after the main process verifies the requesting local app origin.
+function localMediaPermission(permission, details, check = false) {
+  const allowed = (type) => type === 'audio' || type === 'video';
   return (
     permission === 'media' &&
     (check
-      ? details?.mediaType === 'audio'
+      ? allowed(details?.mediaType)
       : Array.isArray(details?.mediaTypes) &&
         details.mediaTypes.length > 0 &&
-        details.mediaTypes.every((type) => type === 'audio'))
+        details.mediaTypes.every(allowed))
   );
 }
-module.exports = { audioPermission };
+module.exports = { localMediaPermission };

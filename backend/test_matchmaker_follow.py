@@ -10,12 +10,61 @@ import os
 import json
 from pathlib import Path
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
+import tempfile
 
 import numpy as np
 from matchmaker_runner import GlobalFollowing
+import matchmaker_runner
 
 ASSETS = Path(os.environ.get('TIXTAB_FOLLOW_TEST_ASSETS',
                              Path(__file__).resolve().parents[1]/'.cache/follow-correction'))
+
+
+class ProtocolTests(unittest.TestCase):
+    def test_pcm_peaks_preserve_waveform_and_do_not_amplify_quiet_audio(self):
+        pcm = np.zeros(640, dtype='<f4')
+        pcm[:5] = [40, -20, np.nan, np.inf, -np.inf]
+        decoded = matchmaker_runner.decode_pcm(base64.b64encode(pcm).decode())
+        np.testing.assert_array_equal(decoded[:5], [4, -2, 0, 0, 0])
+        quiet = np.full(320, .001, dtype='<f4')
+        np.testing.assert_array_equal(matchmaker_runner.decode_pcm(base64.b64encode(quiet).decode()), quiet)
+        with self.assertRaises(ValueError):
+            matchmaker_runner.decode_pcm(base64.b64encode(pcm[:20]).decode())
+
+    def test_failed_audio_reply_contains_traceback_without_waiting_for_stderr(self):
+        class Follower:
+            def __init__(self, *_args):
+                self.hmm = SimpleNamespace()
+                self.extractor = SimpleNamespace()
+                self.beat, self.epoch = 0, 0
+
+            def audio(self, _request):
+                raise ValueError('test analysis failure')
+
+            def reset(self, beat, epoch, **_kwargs):
+                self.beat, self.epoch = beat, epoch
+
+        requests = [dict(id=1, action='audio', pcm='do-not-log-audio'),
+                    dict(id=2, action='suspend'), dict(action='stop')]
+        output, errors = io.StringIO(), io.StringIO()
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory)/'request.json'
+            config.write_text('{}', encoding='utf-8')
+            with patch.object(matchmaker_runner, 'GlobalFollowing', Follower), \
+                    patch('sys.argv', ['runner', str(config), 'synth', 'bank']), \
+                    patch('sys.stdin', io.StringIO('\n'.join(map(json.dumps, requests)))), \
+                    contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                matchmaker_runner.main()
+        ready, failed, suspended = map(json.loads, output.getvalue().splitlines())
+        self.assertEqual(ready['event'], 'ready')
+        self.assertFalse(failed['ok'])
+        self.assertEqual(failed['id'], 1)
+        self.assertIn('ValueError: test analysis failure', failed['logs'])
+        self.assertIn('Traceback', failed['logs'])
+        self.assertNotIn('do-not-log-audio', output.getvalue()+errors.getvalue())
+        self.assertTrue(suspended['ok'])
 
 
 @unittest.skipUnless((ASSETS/'GeneralUser-GS.sf2').is_file() and (ASSETS/'synth').is_dir(),
@@ -94,6 +143,15 @@ class FollowingTests(unittest.TestCase):
         self.f.reset(12, 0, manual=True)
         self.send(np.zeros(320))
         self.assertEqual(self.f.beat, 12)
+
+    def test_loud_distorted_audio_does_not_stop_following_and_normal_notes_resume(self):
+        for peak in [4.01, 40, 1e30]:
+            pcm = np.full(640, peak, dtype='<f4')
+            pcm[::2] *= -1
+            for _ in range(10):
+                result = self.send(pcm, noise=0)
+                self.assertIn(result['state'], ['listening', 'uncertain', 'matched'])
+        self.assert_located(self.play(29, 12))
 
     def test_long_score_has_linear_storage_and_no_growing_audio_history(self):
         notes = [dict(midi=54+i % 30, beat=i*.1, duration=.08) for i in range(10000)]

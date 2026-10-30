@@ -8,6 +8,8 @@ import {
   timelineNotes,
   cursorNote,
   scoreAnchors,
+  scoreNoteAt,
+  scoreScrollTarget,
 } from './musicTransport';
 import { scoreMidi } from './musicMidi';
 import { validMusicScore, correctScoreNote, type MusicScore } from './musicScore';
@@ -36,6 +38,27 @@ const score: MusicScore = {
   tempo: 120,
   positioning: 'layout',
 };
+it('seeks printed notes and continuations only inside a score system', () => {
+  const tied: MusicScore = {
+    ...score,
+    systems: [...score.systems, { x: 0.1, y: 0.6, width: 0.8, height: 0.2 }],
+    notes: [
+      {
+        ...score.notes[0],
+        continuations: [{ beat: 2, duration: 1, system: 1, region: { ...region, y: 0.65 } }],
+      },
+    ],
+  };
+  expect(scoreNoteAt(tied, 0.22, 0.31)?.beat).toBe(0);
+  expect(scoreNoteAt(tied, 0.22, 0.66)?.beat).toBe(2);
+  expect(scoreNoteAt(tied, 0.22, 0.5)).toBeUndefined();
+});
+it('scrolls only when the current musical system leaves the reading band', () => {
+  expect(scoreScrollTarget(100, 1000, 300, 150)).toBeNull();
+  expect(scoreScrollTarget(100, 1000, 900, 150)).toBe(680);
+  expect(scoreScrollTarget(800, 1000, 300, 150)).toBe(80);
+  expect(scoreScrollTarget(0, 1000, 30, 150)).toBe(0);
+});
 it('keeps playing the right page before turning the actual spread by two pages', () => {
   // A spread can start at either parity after manual page navigation.
   for (const start of [0, 1]) {

@@ -57,6 +57,38 @@ export function cursorNote(
   }
   return result;
 }
+/** Same printed-note hit test for editing and read-only presentation. */
+export function scoreNoteAt(
+  score: MusicScore,
+  x: number,
+  y: number,
+  anchors = scoreAnchors(score),
+) {
+  const system = score.systems.findIndex(
+    (r) => x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height,
+  );
+  if (system < 0) return undefined;
+  let nearest: ScoreNote | undefined,
+    distance = Infinity;
+  for (const note of anchors) {
+    if (note.system !== system) continue;
+    const next = (note.region.x - x) ** 2 + (note.region.y - y) ** 2 * 0.2;
+    if (next < distance) {
+      nearest = note;
+      distance = next;
+    }
+  }
+  return nearest;
+}
+/** Move by musical systems when they leave the reading band, never by whole pages. */
+export function scoreScrollTarget(top: number, height: number, rowTop: number, rowHeight: number) {
+  if (
+    rowTop >= top + height * 0.08 &&
+    rowTop + Math.min(rowHeight, height * 0.6) <= top + height * 0.82
+  )
+    return null;
+  return Math.max(0, rowTop - height * 0.22);
+}
 interface Cursor {
   pageId: string;
   beat: number;
@@ -66,20 +98,21 @@ interface Cursor {
 let inactive: Cursor = { pageId: '', beat: 0, seek: null };
 let cursor: Cursor = inactive;
 const listeners = new Set<() => void>();
+export const getScoreCursor = () => cursor;
+export function subscribeScoreCursor(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
 export function setScoreCursor(value: Cursor) {
   if (inactive.seek !== value.seek) inactive = { pageId: '', beat: 0, seek: value.seek };
   cursor = value;
   listeners.forEach((f) => f());
 }
 export function useScoreCursor(pageId?: string) {
-  return useSyncExternalStore(
-    (f) => {
-      listeners.add(f);
-      return () => {
-        listeners.delete(f);
-      };
-    },
-    () => (!pageId || pageId === cursor.pageId ? cursor : inactive),
+  return useSyncExternalStore(subscribeScoreCursor, () =>
+    !pageId || pageId === cursor.pageId ? cursor : inactive,
   );
 }
 export function estimateMidi(samples: Float32Array, sampleRate: number): number | null {

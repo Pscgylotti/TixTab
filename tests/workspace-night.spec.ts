@@ -5,7 +5,13 @@ const sharp = createRequire(import.meta.url)('sharp');
 // Computed backgrounds miss white canvas/image pixels, gradients and filtered
 // borders. Check the rendered pixels too; normal text has only short light runs.
 async function expectNoWhiteBlocks(page: Page, path: string) {
-  const screenshot = await page.screenshot({ path });
+  // Saved first-page thumbnails retain the document's own colors. Mask only
+  // that content; the surrounding UI, empty covers and OCR pixels stay checked.
+  const screenshot = await page.screenshot({
+    path,
+    mask: [page.locator('.workspace-preview img')],
+    maskColor: '#1f2632',
+  });
   const { data, info } = await sharp(screenshot)
     .removeAlpha()
     .raw()
@@ -64,7 +70,8 @@ test('overflowing workspace keeps its own dark palette and native controls after
     }
   });
   await page.getByRole('button', { name: '管理工作空间' }).click();
-  await expect(page.locator('.workspace-document')).toHaveCount(21);
+  // The untouched startup document is intentionally not added to the library.
+  await expect(page.locator('.workspace-document')).toHaveCount(20);
   // A later global skin must not reset the component's inherited palette.
   await page.addStyleTag({
     content:
@@ -102,16 +109,29 @@ test('night workspace stays dark after lazy editors load, including OCR image pi
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
   await page.getByRole('button', { name: '实验性夜间模式', exact: true }).click();
   expect(
-    await page.locator('.paper').evaluate((el) => getComputedStyle(el, '::after').backgroundImage),
+    await page.locator('.paper').evaluate((el) => getComputedStyle(el).backgroundImage),
   ).toContain('rgb(85, 96, 117)');
-  await expect(page.locator('.paper')).toHaveCSS('background-image', 'none');
-  await page.getByRole('button', { name: '设置', exact: true }).click();
-  await page.getByRole('button', { name: '横线', exact: true }).click();
-  await page.getByRole('button', { name: '关闭', exact: true }).click();
   expect(
     await page.locator('.paper').evaluate((el) => getComputedStyle(el, '::after').backgroundImage),
-  ).toContain('rgb(59, 67, 82)');
-  await expect(page.locator('.paper')).toHaveCSS('background-image', 'none');
+  ).toBe('none');
+  // Paper styles now belong to pages, rather than the global settings dialog.
+  await page.evaluate(async () => {
+    const store = await import('/src/workspaceStore.ts' as string);
+    const { meta, notebook } = await store.bootstrapWorkspace();
+    await store.saveWorkspaceDocument(meta.id, {
+      ...notebook,
+      name: 'Night editor fixture',
+      pages: notebook.pages.map((p: any) => ({ ...p, paper: 'lines' })),
+    });
+  });
+  await page.reload();
+  await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  expect(
+    await page.locator('.paper').evaluate((el) => getComputedStyle(el).backgroundImage),
+  ).toContain('rgb(85, 96, 117)');
+  expect(
+    await page.locator('.paper').evaluate((el) => getComputedStyle(el, '::after').backgroundImage),
+  ).toBe('none');
   for (const mode of ['连续页面预览', '双页预览']) {
     await page.getByRole('button', { name: mode, exact: true }).click();
     await expect(page.locator('.reading-paper')).toHaveCSS('background-color', 'rgb(28, 32, 39)');
@@ -193,6 +213,8 @@ test('workspace night surfaces stay dark during switching, editing, hover and po
 }) => {
   await page.goto('/');
   await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  // Untouched blank documents intentionally stay out of the workspace.
+  await page.getByLabel('文档名称', { exact: true }).fill('Night workspace fixture');
   await page.evaluate(async () => {
     const { setNight } = await import('/src/appearance.ts' as string);
     setNight(true);
@@ -214,6 +236,7 @@ test('workspace night surfaces stay dark during switching, editing, hover and po
   await page.getByRole('button', { name: '新建分组', exact: true }).click();
   await page.getByLabel('新的名称').fill('Night folder');
   expect(await lightSurfaces(page, '.workspace-manager')).toEqual([]);
+  expect(await lightSurfaces(page, '.workspace-action-popover')).toEqual([]);
   await page.getByRole('button', { name: '保存名称', exact: true }).click();
   await expect(page.locator('.workspace-empty')).toBeVisible();
   expect(await lightSurfaces(page, '.workspace-manager')).toEqual([]);
@@ -229,6 +252,7 @@ test('workspace night surfaces stay dark during switching, editing, hover and po
   for (const width of [1440, 560]) {
     await page.setViewportSize({ width, height: 960 });
     expect(await lightSurfaces(page, '.workspace-manager')).toEqual([]);
+    expect(await lightSurfaces(page, '.workspace-action-popover')).toEqual([]);
     await page.screenshot({ path: `test-results/workspace-night-${width}.png` });
   }
   await page.getByRole('button', { name: '取消', exact: true }).click();

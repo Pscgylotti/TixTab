@@ -8,12 +8,14 @@ Supports Surface Pen.
 
 ## Get started
 
-1. Use the Windows installer `TixTab-0.3.9-lite-setup-x64.exe`, then launch TixTab from the desktop or Start menu. Basic PDF features need no Node.js or Python. The installer supports upgrades, an optional desktop shortcut, and an unchecked PDF association option. Windows asks you to confirm the default PDF app in Settings.
+1. Use the Windows installer `TixTab-0.3.10-lite-setup-x64.exe`, then launch TixTab from the desktop or Start menu. Basic PDF features need no Node.js or Python. The installer supports upgrades, an optional desktop shortcut, and an unchecked PDF association option. Windows asks you to confirm the default PDF app in Settings.
 2. Open PDFs in tabs, or drop a PDF and choose to open it in new tabs or insert all/selected pages after the current page. Drop PNG/JPEG/WebP/GIF/BMP/AVIF/SVG files to insert image objects.
 3. For local AI, open **Settings → Local model library**, download the models you need, and click **Set up** to prepare managed Python and optional acceleration/speech dependencies.
 4. Switch the interface language in Settings. English, offline Chinese Pinyin, LaTeX and voice keyboard modes are included. The compact key layout includes Ctrl, Tab and Esc; tap Ctrl then A/X/C/V/Z/Y to edit. Voice input supports Chinese/English, a live waveform and local engines, and inserts at the current text caret.
 
 ## Features
+
+- Camera capture with device switching, rotation/mirroring, movable crop selections and copy/insert. Optional touch mode enables one-finger editing and two-finger navigation. Presentation supports score seeking and smooth system following. [0.3.10 release notes](docs/releases/0.3.10.md).
 
 - Opening a PDF from Windows restores its associated workspace project, or offers a cover/date picker when several projects match. New PDFs create a project; the original PDF is not overwritten by editing. Imported `.tixtab` files are saved as independent workspace copies.
 - Local Copista 28M recognition, Windows MIDI outputs, Matchmaker global HMM/OLTW audio following and cached score references. Player settings persist in projects; collapsed/fullscreen controls retain Play and Follow audio. Two-page playback turns after the right page. [Setup and limits](docs/COPISTA-AND-SCORE-FOLLOWING.md).

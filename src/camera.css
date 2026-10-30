@@ -1,0 +1,90 @@
+.camera-dialog {
+  width: min(780px, 94vw);
+}
+.camera-dialog h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.camera-viewfinder {
+  position: relative;
+  margin: 12px auto 0;
+  background: #151922;
+  border-radius: 14px;
+  overflow: hidden;
+  aspect-ratio: var(--camera-aspect);
+  width: min(calc(100% - 40px), calc(52vh * var(--camera-aspect)));
+}
+.camera-viewfinder:has(.camera-error) {
+  min-height: 180px;
+}
+.camera-devices,
+.camera-photo-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 20px;
+}
+.camera-devices label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.camera-devices select {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+}
+.camera-devices button,
+.camera-photo-tools button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  min-width: 40px;
+}
+.camera-resolution {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+.camera-viewfinder video,
+.camera-viewfinder img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.camera-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  color: #eef1f7;
+  text-align: center;
+}
+.camera-status {
+  min-height: 1.5em;
+  margin: 12px 20px;
+}
+.camera-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 20px 20px;
+}
+.camera-dialog footer button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}

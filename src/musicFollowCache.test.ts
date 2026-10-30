@@ -47,6 +47,25 @@ const reference = {
   instrument: 0,
   method: 'global',
 };
+it('attenuates loud packets and removes invalid samples without disconnecting the live session', async () => {
+  const { f, owner, children } = await fixture(),
+    w = owner();
+  await f.run(w, request('loud', reference, true));
+  const packet = { action: 'audio', token: 'loud', epoch: 0, time: 1 };
+  const input = new Float32Array(640);
+  input.set([40, -20, NaN, Infinity, -Infinity]);
+  expect((await f.run(w, { ...packet, samples: input })).ok).toBe(true);
+  const sent = children[0].requests.at(-1);
+  const pcm = Buffer.from(sent.pcm, 'base64');
+  expect(Array.from({ length: 5 }, (_, i) => pcm.readFloatLE(i * 4))).toEqual([4, -2, 0, 0, 0]);
+  const quiet = new Float32Array(320).fill(0.001);
+  expect((await f.run(w, { ...packet, time: 2, samples: quiet })).ok).toBe(true);
+  expect(Buffer.from(children[0].requests.at(-1).pcm, 'base64')).toEqual(Buffer.from(quiet.buffer));
+  expect((await f.run(w, { ...packet, time: 3, samples: new Float32Array(20) })).error).toBe(
+    'invalid',
+  );
+  expect(children[0].stdin.end).not.toHaveBeenCalled();
+});
 function request(token: string, payload = reference, upload = false) {
   return {
     action: 'start',
@@ -227,4 +246,79 @@ it('restart racing a stop keeps the new session active and ignores delayed old p
   children[0].emit('close', 0);
   children[0].stdout.emit('data', JSON.stringify({ event: 'ready', referenceBytes: 4096 }) + '\n');
   expect((await f.run(w, { action: 'seek', token: 'three', beat: 3, epoch: 1 })).ok).toBe(true);
+});
+
+it('preserves response timeout details instead of overwriting them with cancellation', async () => {
+  const { f, owner, children, root } = await fixture(),
+    w = owner();
+  await f.run(w, request('one', reference, true));
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  children[0].stdin.write = (_line: string, done: () => void) => done();
+  const response = f.run(w, { action: 'seek', token: 'one', beat: 3, epoch: 1 });
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(await response).toMatchObject({
+    ok: false,
+    error: 'timeout',
+    logs: expect.stringContaining('seek'),
+  });
+  expect(children[0].stdin.end).toHaveBeenCalledTimes(1);
+  await vi.waitFor(async () =>
+    expect((await readdir(root)).filter((name) => name.startsWith('music-follow-'))).toEqual([]),
+  );
+});
+
+it('returns worker errors and crash diagnostics to the active caller', async () => {
+  const { f, owner, children, root } = await fixture(),
+    w = owner();
+  await f.run(w, request('one', reference, true));
+  children[0].stdin.write = (line: string, done: () => void) => {
+    done();
+    const { id } = JSON.parse(line);
+    // stderr and stdout are independent streams; the error response itself
+    // carries diagnostics even if stderr arrives later.
+    children[0].stdout.emit(
+      'data',
+      JSON.stringify({ id, ok: false, error: 'follow-failed', logs: 'ValueError: invalid state' }) +
+        '\n',
+    );
+  };
+  expect(await f.run(w, { action: 'seek', token: 'one', beat: 3, epoch: 1 })).toMatchObject({
+    ok: false,
+    error: 'follow-failed',
+    logs: 'ValueError: invalid state',
+  });
+  children[0].stdin.write = (_line: string, done: () => void) => done();
+  const response = f.run(w, { action: 'seek', token: 'one', beat: 4, epoch: 2 });
+  children[0].stderr.emit('data', 'RuntimeError: worker crashed');
+  children[0].exitCode = 1;
+  children[0].emit('close', 1);
+  expect(await response).toMatchObject({
+    ok: false,
+    error: 'worker-exited',
+    logs: expect.stringContaining('RuntimeError: worker crashed'),
+  });
+  await vi.waitFor(async () =>
+    expect((await readdir(root)).filter((name) => name.startsWith('music-follow-'))).toEqual([]),
+  );
+});
+
+it('keeps a crash between packets available only to its own session, then clears it on stop', async () => {
+  const { f, owner, children, root } = await fixture(),
+    w = owner();
+  await f.run(w, request('one', reference, true));
+  children[0].stderr.emit('data', 'RuntimeError: crash between packets');
+  children[0].exitCode = 1;
+  children[0].emit('close', 1);
+  const next = { action: 'audio', token: 'one', samples: new Float32Array(640), time: 1, epoch: 0 };
+  expect(await f.run(w, next)).toMatchObject({
+    error: 'worker-exited',
+    logs: expect.stringContaining('crash between packets'),
+  });
+  expect(await f.run(owner(), next)).toEqual({ ok: false, error: 'cancelled' });
+  expect(await f.run(w, { ...next, token: 'another' })).toEqual({ ok: false, error: 'cancelled' });
+  await f.run(w, { action: 'stop', token: 'one' });
+  expect(await f.run(w, next)).toEqual({ ok: false, error: 'cancelled' });
+  await vi.waitFor(async () =>
+    expect((await readdir(root)).filter((name) => name.startsWith('music-follow-'))).toEqual([]),
+  );
 });

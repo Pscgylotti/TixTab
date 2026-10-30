@@ -9,7 +9,7 @@ import { correctScoreNote, midiName } from './musicScore';
 import { scoreTimeline, scoreAt, timelineNotes, setScoreCursor } from './musicTransport';
 import type { FollowResult } from './musicFollow';
 import { MusicAudio } from './musicAudio';
-import { MatchmakerFollow } from './matchmakerFollow';
+import { MatchmakerFollow, MatchmakerFollowError } from './matchmakerFollow';
 import { installRuntime } from './runtimeInstall';
 import {
   savedMusicOutput,
@@ -75,7 +75,8 @@ export default function MusicPlayer({
       window.surfaceDesktop?.musicFollow ? (saved?.followEngine ?? 'global') : 'cqt',
     ),
     [preparingFollow, setPreparingFollow] = useState(false),
-    [status, setStatus] = useState('');
+    [status, setStatus] = useState(''),
+    [followDiagnostics, setFollowDiagnostics] = useState('');
   const [position, setPosition] = useState(
     saved?.position ?? {
       x: Math.max(12, window.innerWidth - 350),
@@ -159,6 +160,50 @@ export default function MusicPlayer({
     setFollowing(false);
     setMicLevel(0);
     setStatus('');
+    setFollowDiagnostics('');
+  };
+  const showFollowError = (error: unknown) => {
+    stopFollowing();
+    const code = error instanceof Error ? error.message : 'follow-failed';
+    setFollowDiagnostics(
+      error instanceof MatchmakerFollowError
+        ? [code, error.logs].filter(Boolean).join('\n')
+        : String(error).slice(-10000),
+    );
+    if (error instanceof MatchmakerFollowError) {
+      setStatus(
+        t(
+          ['runtime-missing', 'missing-model', 'component-invalid'].includes(code)
+            ? '请先准备 Matchmaker 组件；若仍失败，请重新安装跟谱运行组件。'
+            : code === 'score-limit'
+              ? '跟谱乐谱过长，请分段识别或提高参考速度。'
+              : code === 'empty-score'
+                ? '没有可跟随的音符，请检查音符是否全部静音。'
+                : code === 'timeout'
+                  ? '跟谱组件响应超时，请重新开启声音跟随。'
+                  : code === 'busy'
+                    ? '跟谱请求过于频繁，请重新开启声音跟随。'
+                    : code === 'worker-exited'
+                      ? '跟谱组件意外退出，请查看错误详情后重新开启声音跟随。'
+                      : code === 'transport-error'
+                        ? '跟谱通信中断，请查看错误详情后重新开启声音跟随。'
+                        : code === 'cancelled'
+                          ? '跟谱会话已结束，请重新开启声音跟随。'
+                          : code === 'invalid'
+                            ? '跟谱收到无效数据，请查看错误详情。'
+                            : '跟谱分析失败，请查看错误详情后重试。',
+        ),
+      );
+    } else {
+      setStatus(
+        t(
+          error instanceof Error &&
+            ['NotAllowedError', 'NotFoundError', 'NotReadableError'].includes(error.name)
+            ? '无法使用麦克风，请检查系统与应用权限。'
+            : '无法启动声音跟随，请查看错误详情。',
+        ),
+      );
+    }
   };
   const resetFollowing = (beat: number) => {
     nativeFollow.current?.seek(beat);
@@ -323,6 +368,7 @@ export default function MusicPlayer({
     const token = ++followToken.current;
     followPending.current = true;
     setFollowing(true);
+    setFollowDiagnostics('');
     setStatus(t('正在请求麦克风…'));
     try {
       if (followEngine !== 'cqt') {
@@ -343,10 +389,9 @@ export default function MusicPlayer({
                 ),
               );
           },
-          () => {
+          (error) => {
             if (alive.current && token === followToken.current) {
-              stopFollowing();
-              setStatus(t('跟谱分析失败，请重新开启声音跟随。'));
+              showFollowError(error);
             }
           },
         );
@@ -437,21 +482,7 @@ export default function MusicPlayer({
       }, 100);
     } catch (e) {
       if (alive.current && token === followToken.current) {
-        stopFollowing();
-        setStatus(
-          t(
-            followEngine !== 'cqt' &&
-              ['runtime-missing', 'missing-model', 'follow-failed'].includes((e as Error).message)
-              ? '请先准备 Matchmaker 组件；若仍失败，请重新安装跟谱运行组件。'
-              : (e as Error).message === 'score-limit'
-                ? '跟谱乐谱过长，请分段识别或提高参考速度。'
-                : (e as Error).message === 'empty-score'
-                  ? '没有可跟随的音符，请检查音符是否全部静音。'
-                  : (e as Error).message === 'timeout'
-                    ? '跟谱组件响应超时，请重新开启声音跟随。'
-                    : '无法使用麦克风，请检查系统与应用权限。',
-          ),
-        );
+        showFollowError(e);
       }
     }
   };
@@ -836,6 +867,12 @@ export default function MusicPlayer({
           )}
           {current?.score.positioning === 'estimated' && <small>{t('谱面位置为估计值')}</small>}
           {status && <p role="status">{status}</p>}
+          {followDiagnostics && (
+            <details className="music-follow-diagnostics">
+              <summary>{t('错误详情')}</summary>
+              <pre>{followDiagnostics}</pre>
+            </details>
+          )}
         </>
       )}
     </section>,

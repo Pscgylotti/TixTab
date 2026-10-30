@@ -1,3 +1,5 @@
+import { getTouchMode } from './inputPreferences';
+import { isTouchReplay } from './touchMode';
 import { MIN_ZOOM, MAX_ZOOM } from './pageFit';
 import { performanceDelay, trackPerformance } from './performanceLedger';
 import { useAppearance, renderPolicy, pageRenderScale } from './appearance';
@@ -30,6 +32,13 @@ import { useScrollViewport } from './useScrollViewport';
 import { zoomReadingPoint } from './readingZoom';
 import { ScrollVelocity, inertiaStep } from './scrollInertia';
 import type { WorkspacePosition } from './workspaceStore';
+import {
+  cursorNote,
+  getScoreCursor,
+  scoreAnchors,
+  scoreScrollTarget,
+  subscribeScoreCursor,
+} from './musicTransport';
 const ReadingPage = memo(function ReadingPage({
   page,
   pdf,
@@ -530,9 +539,18 @@ export default function ReadingView({
       !restore
     )
       return;
+    const scoreNavigation =
+      presentation &&
+      mode === 'continuous' &&
+      lastMode.current === mode &&
+      lastReset.current === resetView &&
+      !!getScoreCursor().seek;
     lastMode.current = mode;
     lastReset.current = resetView;
     observedIndex.current = index;
+    // The score subscription below reveals the current system. Snapping to
+    // the new page's top here would fight its smooth, partial-page movement.
+    if (scoreNavigation && !restore) return;
     stopInertia();
     velocity.current.reset();
     touches.current.clear();
@@ -551,6 +569,49 @@ export default function ReadingView({
     }
     measure();
   }, [index, mode, resetView, pages[index]?.id, restoredPosition]);
+  useLayoutEffect(() => {
+    if (!presentation || mode !== 'continuous') return;
+    const anchors = new Map(
+      pages.filter((p) => p.score).map((p) => [p.id, scoreAnchors(p.score!)]),
+    );
+    let lastSystem = '';
+    const follow = () => {
+      const cursor = getScoreCursor(),
+        el = root.current;
+      if (!el || !cursor.seek) {
+        lastSystem = '';
+        return;
+      }
+      const at = pages.findIndex((p) => p.id === cursor.pageId),
+        page = pages[at];
+      if (!page?.score) return;
+      const note = cursorNote(page.score, cursor.beat, anchors.get(page.id));
+      const system = note && page.score.systems[note.system];
+      if (!note || !system) return;
+      const key = `${page.id}:${note.system}`;
+      if (key === lastSystem) return;
+      lastSystem = key;
+      const rowTop =
+        (content.current?.offsetTop ?? 0) +
+        pageInset +
+        layout.offsets[at] +
+        system.y * page.height * zoom;
+      const target = scoreScrollTarget(
+        el.scrollTop,
+        el.clientHeight,
+        rowTop,
+        system.height * page.height * zoom,
+      );
+      if (target === null || Math.abs(target - el.scrollTop) < 1) return;
+      stopInertia();
+      el.scrollTo({
+        top: target,
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+      });
+    };
+    follow();
+    return subscribeScoreCursor(follow);
+  }, [presentation, mode, pages, layout, zoom, pageInset]);
   useEffect(() => {
     if (mode !== 'continuous' || !viewport.height) return;
     // A layout jump can precede the viewport state update. Never publish the old position.
@@ -591,13 +652,13 @@ export default function ReadingView({
     stopInertia();
     if (
       (e.target as HTMLElement).closest('button,a') ||
-      (e.pointerType === 'touch' && performance.now() - penTime.current < 650) ||
+      (e.pointerType === 'touch' && !getTouchMode() && performance.now() - penTime.current < 650) ||
       !(e.pointerType === 'touch' || (tool === 'hand' && e.button === 0) || e.button === 1)
     )
       return;
     e.preventDefault();
     flush();
-    e.currentTarget.setPointerCapture(e.pointerId);
+    if (!isTouchReplay(e.nativeEvent)) e.currentTarget.setPointerCapture(e.pointerId);
     pointers.current.down(e.pointerId, e.clientX, e.clientY);
     if (e.pointerType === 'touch') {
       touches.current.add(e.pointerId);

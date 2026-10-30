@@ -1,3 +1,5 @@
+import { getTouchMode } from './inputPreferences';
+import { isTouchReplay } from './touchMode';
 import { paperAppearance } from './paperAppearance';
 import { useAppearance } from './appearance';
 import {
@@ -109,11 +111,12 @@ export default function ScratchSurface({
   }, []);
   const down = (e: ReactPointerEvent) => {
     if (e.pointerType === 'pen') penTime.current = performance.now();
-    if (e.pointerType === 'touch' && performance.now() - penTime.current < 650) return;
+    if (e.pointerType === 'touch' && !getTouchMode() && performance.now() - penTime.current < 650)
+      return;
     if (!(e.pointerType === 'touch' || (tool === 'hand' && e.button === 0) || e.button === 1))
       return;
     e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
+    if (!isTouchReplay(e.nativeEvent)) e.currentTarget.setPointerCapture(e.pointerId);
     pointers.current.down(e.pointerId, e.clientX, e.clientY);
   };
   const end = (e: ReactPointerEvent) => {

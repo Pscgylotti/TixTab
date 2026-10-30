@@ -1,5 +1,11 @@
 import { t as tr, useLocale } from './i18n';
-import { useEffect, useState, useRef, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import {
   FolderPlus,
   Pin,
@@ -22,6 +28,8 @@ import {
   type WorkspaceFolder,
 } from './workspaceStore';
 import './workspace.css';
+import './pageEditing.css';
+import AnchoredPopover from './AnchoredPopover';
 interface Props {
   activeId: string;
   onOpen: (id: string) => Promise<void>;
@@ -55,7 +63,11 @@ export default function WorkspaceManager({
     kind: 'document' | 'folder' | 'new-folder';
     id: string;
     name: string;
+    originalName: string;
+    anchor: HTMLElement;
   } | null>(null);
+  const manager = useRef<HTMLElement>(null),
+    actionPanel = useRef<HTMLDivElement>(null);
   const contact = useRef<{
     pointerId: number;
     id: string;
@@ -144,7 +156,43 @@ export default function WorkspaceManager({
     }
     cancelDrag();
   };
-  const [deleting, setDeleting] = useState<WorkspaceDocument | null>(null);
+  const [deleting, setDeleting] = useState<(WorkspaceDocument & { anchor: HTMLElement }) | null>(
+    null,
+  );
+  const closeActions = useCallback(() => {
+    if (busy) return;
+    setEditing(null);
+    setDeleting(null);
+    setError('');
+  }, [busy]);
+  const editName = (
+    kind: 'document' | 'folder' | 'new-folder',
+    id: string,
+    name: string,
+    anchor: HTMLElement,
+  ) => {
+    setDeleting(null);
+    setError('');
+    setEditing({ kind, id, name, originalName: name, anchor });
+  };
+  useEffect(() => {
+    const anchor = editing?.anchor ?? deleting?.anchor,
+      panel = actionPanel.current;
+    if (!anchor || !panel) return;
+    const input = panel.querySelector('input');
+    if (input) {
+      input.focus({ preventScroll: true });
+      input.select();
+    } else panel.querySelector<HTMLButtonElement>('[data-cancel]')?.focus({ preventScroll: true });
+    return () => {
+      if (panel.contains(document.activeElement) || document.activeElement === document.body) {
+        const target = anchor.isConnected
+          ? anchor
+          : manager.current?.querySelector<HTMLInputElement>('.workspace-search input');
+        target?.focus({ preventScroll: true });
+      }
+    };
+  }, [editing?.anchor, deleting?.anchor]);
   const refresh = async () => {
     const data = await listWorkspace();
     setDocuments(data.documents);
@@ -187,6 +235,7 @@ export default function WorkspaceManager({
   return (
     <div className="modal-scrim">
       <section
+        ref={manager}
         className="modal workspace-manager"
         role="dialog"
         aria-modal="true"
@@ -239,7 +288,12 @@ export default function WorkspaceManager({
           </div>
         )}
         <div className="workspace-library-body">
-          <nav aria-label={tr('文档分组')}>
+          <nav
+            aria-label={tr('文档分组')}
+            onScroll={() => {
+              if (editing || deleting) closeActions();
+            }}
+          >
             <button className={folder === 'all' ? 'active' : ''} onClick={() => setFolder('all')}>
               {tr('全部文档')}
               <span>{documents.length}</span>
@@ -263,7 +317,7 @@ export default function WorkspaceManager({
                 <button
                   aria-label={tr('重命名分组 {0}', f.name)}
                   disabled={busy}
-                  onClick={() => setEditing({ kind: 'folder', id: f.id, name: f.name })}
+                  onClick={(e) => editName('folder', f.id, f.name, e.currentTarget)}
                 >
                   <Pencil size={13} />
                 </button>
@@ -284,13 +338,18 @@ export default function WorkspaceManager({
             ))}
             <button
               disabled={busy}
-              onClick={() => setEditing({ kind: 'new-folder', id: '', name: '' })}
+              onClick={(e) => editName('new-folder', '', '', e.currentTarget)}
             >
               <FolderPlus size={15} />
               {tr('新建分组')}
             </button>
           </nav>
-          <div className="workspace-library-content">
+          <div
+            className="workspace-library-content"
+            onScroll={() => {
+              if (editing || deleting) closeActions();
+            }}
+          >
             <label className="workspace-search">
               <Search size={17} />
               <input
@@ -301,58 +360,10 @@ export default function WorkspaceManager({
                 onChange={(e) => setSearch(e.target.value)}
               />
             </label>
-            {editing && (
-              <form
-                className="workspace-name-editor"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  saveName();
-                }}
-              >
-                <label>
-                  {editing.kind === 'document' ? tr('文档名称') : tr('分组名称')}
-                  <input
-                    autoFocus
-                    aria-label={tr('新的名称')}
-                    maxLength={editing.kind === 'document' ? 120 : 80}
-                    value={editing.name}
-                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                  />
-                </label>
-                <button className="primary" disabled={busy}>
-                  {tr('保存名称')}
-                </button>
-                <button type="button" disabled={busy} onClick={() => setEditing(null)}>
-                  {tr('取消')}
-                </button>
-              </form>
-            )}
-            {error && (
+            {error && !editing && !deleting && (
               <p className="error" role="alert">
                 {tr(error)}
               </p>
-            )}
-            {deleting && (
-              <div className="workspace-delete" role="alertdialog" aria-label={tr('确认删除文档')}>
-                <p>
-                  {tr('删除「{0}」及其本地标注？此操作无法撤销，导出的文件仍保留。', deleting.name)}
-                </p>
-                <button disabled={busy} onClick={() => setDeleting(null)}>
-                  {tr('取消')}
-                </button>
-                <button
-                  className="danger"
-                  disabled={busy}
-                  onClick={() =>
-                    void run(async () => {
-                      await onDelete(deleting.id);
-                      setDeleting(null);
-                    })
-                  }
-                >
-                  {tr('确认删除文档')}
-                </button>
-              </div>
             )}
             <div className="workspace-document-list">
               {filtered.map((d) => (
@@ -447,7 +458,7 @@ export default function WorkspaceManager({
                     <button
                       aria-label={tr('重命名文档 {0}', d.name)}
                       disabled={busy}
-                      onClick={() => setEditing({ kind: 'document', id: d.id, name: d.name })}
+                      onClick={(e) => editName('document', d.id, d.name, e.currentTarget)}
                     >
                       <Pencil size={15} />
                     </button>
@@ -461,7 +472,11 @@ export default function WorkspaceManager({
                     <button
                       aria-label={tr('删除文档 {0}', d.name)}
                       disabled={busy}
-                      onClick={() => setDeleting(d)}
+                      onClick={(e) => {
+                        setEditing(null);
+                        setError('');
+                        setDeleting({ ...d, anchor: e.currentTarget });
+                      }}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -476,6 +491,112 @@ export default function WorkspaceManager({
             )}
           </div>
         </div>
+        {(editing || deleting) && (
+          <AnchoredPopover
+            anchor={(editing ?? deleting)!.anchor}
+            label={
+              deleting
+                ? tr('确认删除文档')
+                : editing!.kind === 'new-folder'
+                  ? tr('新建分组')
+                  : editing!.kind === 'document'
+                    ? tr('重命名文档 {0}', editing!.originalName)
+                    : tr('重命名分组 {0}', editing!.originalName)
+            }
+            alert={!!deleting}
+            onClose={closeActions}
+            className="workspace-action-popover"
+            width={340}
+          >
+            <div ref={actionPanel} aria-busy={busy}>
+              <header>
+                <h2>
+                  {deleting
+                    ? tr('确认删除文档')
+                    : editing!.kind === 'new-folder'
+                      ? tr('新建分组')
+                      : editing!.kind === 'document'
+                        ? tr('文档名称')
+                        : tr('分组名称')}
+                </h2>
+                <button
+                  className="icon-button"
+                  aria-label={tr('关闭')}
+                  disabled={busy}
+                  onClick={closeActions}
+                >
+                  <X size={18} />
+                </button>
+              </header>
+              {editing ? (
+                <form
+                  className="workspace-name-editor"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    saveName();
+                  }}
+                >
+                  {editing.originalName && (
+                    <p className="workspace-action-target">{editing.originalName}</p>
+                  )}
+                  <input
+                    aria-label={tr('新的名称')}
+                    maxLength={editing.kind === 'document' ? 120 : 80}
+                    value={editing.name}
+                    disabled={busy}
+                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                  />
+                  {error && (
+                    <p className="error" role="alert">
+                      {tr(error)}
+                    </p>
+                  )}
+                  <div className="workspace-action-buttons">
+                    <button type="button" data-cancel disabled={busy} onClick={closeActions}>
+                      {tr('取消')}
+                    </button>
+                    <button className="primary" disabled={busy}>
+                      {tr('保存名称')}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                deleting && (
+                  <div className="workspace-delete">
+                    <p>
+                      {tr(
+                        '删除「{0}」及其本地标注？此操作无法撤销，导出的文件仍保留。',
+                        deleting.name,
+                      )}
+                    </p>
+                    {error && (
+                      <p className="error" role="alert">
+                        {tr(error)}
+                      </p>
+                    )}
+                    <div className="workspace-action-buttons">
+                      <button data-cancel disabled={busy} onClick={closeActions}>
+                        {tr('取消')}
+                      </button>
+                      <button
+                        className="danger"
+                        disabled={busy}
+                        onClick={() =>
+                          void run(async () => {
+                            await onDelete(deleting.id);
+                            setDeleting(null);
+                          })
+                        }
+                      >
+                        {tr('确认删除文档')}
+                      </button>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          </AnchoredPopover>
+        )}
       </section>
     </div>
   );
